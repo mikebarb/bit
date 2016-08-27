@@ -17,6 +17,8 @@ class StudentsControllerTest < ActionController::TestCase
   end
 
   test "should create student" do
+    # as the initials field must be unique, must get rid of loaded factory entries before update test.
+    delete :destroy, id: @student
     assert_difference('Student.count') do
       post :create, student: { comment: @student.comment, gname: @student.gname, initials: @student.initials, pname: @student.pname, sex: @student.sex, sname: @student.sname }
     end

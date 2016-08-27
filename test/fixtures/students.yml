@@ -1,17 +1,17 @@
 # Read about fixtures at http://api.rubyonrails.org/classes/ActiveRecord/FixtureSet.html
 
 one:
-  gname: MyString
-  sname: MyString
-  pname: MyString
-  initials: MyString
-  sex: MyString
-  comment: MyText
+  gname: "Thomas"
+  sname: "Whiles"
+  pname: "Tom"
+  initials: "TW"
+  sex: "male"
+  comment: "Great boy."
 
 two:
-  gname: MyString
-  sname: MyString
-  pname: MyString
-  initials: MyString
-  sex: MyString
-  comment: MyText
+  gname: "Dianne"
+  sname: "Barrington"
+  pname: "Di"
+  initials: "DB"
+  sex: "female"
+  comment: "Dillignet girl."
