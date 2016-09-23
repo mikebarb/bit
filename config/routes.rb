@@ -1,5 +1,8 @@
 Rails.application.routes.draw do
+  get 'calendar/display'
+
   resources :sessions
+  get 'sessions/:id/move' => 'sessions#move', as: :move_session
 
   resources :slots
 
@@ -12,6 +15,7 @@ Rails.application.routes.draw do
 
   # You can have the root of your site routed with "root"
   # root 'welcome#index'
+root 'calendar#display'
 
   # Example of regular route:
   #   get 'products/:id' => 'catalog#view'

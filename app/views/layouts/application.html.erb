@@ -5,6 +5,15 @@
   <%= stylesheet_link_tag    'application', media: 'all', 'data-turbolinks-track' => true %>
   <%= javascript_include_tag 'application', 'data-turbolinks-track' => true %>
   <%= csrf_meta_tags %>
+  <nav>
+    <ul>
+      <%= link_to "sessions", sessions_path %>
+      <%= link_to "students", students_path %>
+      <%= link_to "tutors", tutors_path %>
+      <%= link_to "slots", slots_path %>
+      <%= link_to "calendar", calendar_display_path %>
+    </ul>
+  </nav>
 </head>
 <body>
 
