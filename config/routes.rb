@@ -3,7 +3,7 @@ Rails.application.routes.draw do
 
   resources :sessions
   get 'sessions/:id/move' => 'sessions#move', as: :move_session
-
+  post 'sessions/:id' => 'sessions#update', as: :update_session
   resources :slots
 
   resources :tutors
