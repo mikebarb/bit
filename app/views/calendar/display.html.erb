@@ -1,0 +1,47 @@
+<h1>Calendar#display</h1>
+
+<div class="positionable" id=comments>
+  <p>Test</>
+</div>
+
+<table>
+  <% @cal.each do |rows| %>
+    <tr>
+    <% rows.each do |cells| %>
+       <% logger.debug "display (cells)- " + cells.inspect %>
+       <% if cells.key?("slotid") then %>
+         <td class="cell slot" id=<%= cells["slotid"].to_s %>  >
+       <% else %>
+         <td class=cell %>
+       <% end %> 
+       <% if cells.key?("values") then %>       
+         <% if cells["values"].respond_to?(:each) then %>
+           <% logger.debug "display (cells values) exist" %>
+           <% cells["values"].each do |entry| %>
+             <% logger.debug "display (cells values as entries) " + entry.inspect %>
+             <div class=session id=<%= entry.id.to_s %> >
+               <br>
+               <div class=tutor id=<%= entry.tutor.id.to_s %> >
+                 tutor: <%= entry.tutor.pname %>
+               </div>
+               <% if entry.students.respond_to?(:each) then %>
+                 <% entry.students.each do |student| %>
+                   <% logger.debug "display (student)- " + student.inspect %>
+                   <% if student then %>
+                     <div class=student id=<%= student.id.to_s %> >
+                       student: <%= student.pname %>
+                     </div>
+                   <% end %>
+                 <% end %>
+               <% end %>
+             </div>
+           <% end %>
+         <% end %>
+       <% elsif cells.key?("value") then %>     
+         <%= cells["value"].to_s %>
+       <% end %>
+       </td>
+    <% end %>
+    </tr>
+  <% end %>
+</table>

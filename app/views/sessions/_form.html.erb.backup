@@ -1,0 +1,45 @@
+<%= form_for(@session) do |f| %>
+  <% if @session.errors.any? %>
+    <div id="error_explanation">
+      <h2><%= pluralize(@session.errors.count, "error") %> prohibited this session from being saved:</h2>
+
+      <ul>
+      <% @session.errors.full_messages.each do |message| %>
+        <li><%= message %></li>
+      <% end %>
+      </ul>
+    </div>
+  <% end %>
+
+  <div class="field">
+    <% thisstudent = @session.students.first %>
+    <% logger.debug "form.html thisstudent - " + thisstudent.inspect %>
+    <% if thisstudent.nil? %>
+      <% thisstudent = Student.new %>
+      <%= f.label "Student" %><br>
+      <%= f.collection_select(:id, Student.all, :id, :displayname, :prompt => "Select" ) %>
+    <% else %>
+      <%= f.label thisstudent.id %><br>
+      <%= f.collection_select(thisstudent.id, Student.all, :id, :displayname) %>
+    <% end %>
+  </div>
+
+  <div class="field">
+    <%= f.label :tutor_id %><br>
+    <%= f.collection_select(:tutor_id, Tutor.all, :id, :displayname) %>
+  </div>
+
+  <div class="field">
+    <%= f.label :slot_id %><br>
+    <%= f.collection_select(:slot_id, Slot.all, :id, :timeslot_with_location) %>
+  </div>
+
+  <div class="field">
+    <%= f.label :comments %><br>
+    <%= f.text_area :comments %>
+  </div>
+
+  <div class="actions">
+    <%= f.submit %>
+  </div>
+<% end %>

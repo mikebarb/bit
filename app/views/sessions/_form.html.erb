@@ -1,0 +1,43 @@
+<%= form_for(setup_session(@session)) do |f| %>
+  <% if @session.errors.any? %>
+    <div id="error_explanation">
+      <h2><%= pluralize(@session.errors.count, "error") %> prohibited this session from being saved:</h2>
+
+      <ul>
+      <% @session.errors.full_messages.each do |message| %>
+        <li><%= message %></li>
+      <% end %>
+      </ul>
+    </div>
+  <% end %>
+  <h2>Students<h2>
+  <%= f.fields_for :roles do |ff| %>
+    <div class="field">
+      <%= ff.collection_select(:student_id, Student.all,
+          :id, :displayname, prompt: true) %>
+      <% if ff.object.persisted? %>
+        <%= ff.check_box :_destroy %>
+        <%= ff.label :_destroy, "Remove" %>
+      <% end %>
+    </div>
+  <% end %>
+
+  <div class="field">
+    <%= f.label :tutor_id %><br>
+    <%= f.collection_select(:tutor_id, Tutor.all, :id, :displayname) %>
+  </div>
+
+  <div class="field">
+    <%= f.label :slot_id %><br>
+    <%= f.collection_select(:slot_id, Slot.all, :id, :timeslot_with_location) %>
+  </div>
+
+  <div class="field">
+    <%= f.label :comments %><br>
+    <%= f.text_area :comments %>
+  </div>
+
+  <div class="actions">
+    <%= f.submit %>
+  </div>
+<% end %>

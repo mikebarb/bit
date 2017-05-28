@@ -1,0 +1,82 @@
+// Place all the styles related to the calendar controller here.
+// They will automatically be included in application.css.
+// You can use Sass (SCSS) here: http://sass-lang.com/
+
+
+
+.session {
+  margin: 10;
+  background-color: #f8f;
+  border:2px solid #77d;
+  font-size: x-small;
+  line-height: 8px;
+}
+.tutor {
+  margin: 5;
+  color: black;
+  background-color: #aaf;
+  line-height: 18px;
+  //border:1px solid black;
+}
+.student {
+  margin: 5;
+  color: black;
+  background-color: #afa;
+  line-height: 18px;
+  //border:1px solid black;
+}
+td {
+  vertical-align: top;
+}
+table {
+  width: 100%; 
+}
+table, th, td {
+  border: 1px solid black;
+}
+.positionable {
+  position: absolute;
+  display: block;
+  right: 0;
+  bottom: 0;
+  background-color: #bcd5e6;
+  text-align: center;
+  width: 120px;
+  height: 75px;
+  z-index: 10;
+}
+
+.from, .from1, .to {
+  display: block;
+  background-color: #bcd5e6;
+  text-align: center;
+  width: 120px;
+}
+
+.ui-draggable {
+  background-color: #ffd5e6;
+}
+.ui-draggable-dragging {
+  border: 5px solid red;
+}
+
+.ui-state-highlight {
+  border: 5px solid green;
+}
+
+.my-over {
+  border: 2px solid blue;
+}
+
+.processing {
+  background-colour: green;
+}
+
+.processingerror {
+  background-colour: red;
+}
+
+.processingsuccess {
+  background-colour: yellow;
+}
+

@@ -1,4 +1,6 @@
 Rails.application.routes.draw do
+  resources :roles
+
   get 'calendar/display'
 
   resources :sessions
@@ -9,6 +11,7 @@ Rails.application.routes.draw do
   resources :tutors
 
   resources :students
+  get 'students/:id/showsessions' => 'students#showsessions', as: :show_sessions
 
   # The priority is based upon order of creation: first created -> highest priority.
   # See how all your routes lay out with "rake routes".

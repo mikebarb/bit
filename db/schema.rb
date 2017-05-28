@@ -11,10 +11,19 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema.define(version: 20160828052344) do
+ActiveRecord::Schema.define(version: 20161003050134) do
+
+  create_table "roles", force: true do |t|
+    t.integer  "session_id"
+    t.integer  "student_id"
+    t.datetime "created_at"
+    t.datetime "updated_at"
+  end
+
+  add_index "roles", ["session_id"], name: "index_roles_on_session_id"
+  add_index "roles", ["student_id"], name: "index_roles_on_student_id"
 
   create_table "sessions", force: true do |t|
-    t.integer  "student_id"
     t.integer  "tutor_id"
     t.integer  "slot_id"
     t.text     "comments"

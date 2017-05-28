@@ -1,0 +1,17 @@
+# Read about fixtures at http://api.rubyonrails.org/classes/ActiveRecord/FixtureSet.html
+
+one:
+  gname: "Michael"
+  sname: "Clark"
+  pname: "Mike"
+  initials: "MC"
+  sex: "male"
+  comment: "Good leadership qualities"
+
+two:
+  gname: "Belinda"
+  sname: "Duffy"
+  pname: "Bel"
+  initials: "BD"
+  sex: "female"
+  comment: "An excellent assistant"

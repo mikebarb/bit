@@ -1,0 +1,19 @@
+<p id="notice"><%= notice %></p>
+
+<p>
+  <strong>Timeslot:</strong>
+  <%= @slot.timeslot %>
+</p>
+
+<p>
+  <strong>Location:</strong>
+  <%= @slot.location %>
+</p>
+
+<p>
+  <strong>Comment:</strong>
+  <%= @slot.comment %>
+</p>
+
+<%= link_to 'Edit', edit_slot_path(@slot) %> |
+<%= link_to 'Back', slots_path %>

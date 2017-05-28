@@ -1,0 +1,46 @@
+<p id="notice"><%= notice %></p>
+
+<% students = @session.students %>
+<% tutor = Tutor.find(@session.tutor_id) %>
+<% slot = Slot.find(@session.slot_id) %>
+
+<strong>Students</strong>
+<% if students.count > 0 %>
+  <% students.each do |student| %>
+    <p>
+      <%= student.id %>
+      <%= ": " + student.gname + ' ' + student.sname + ' (' + student.initials + ')' %>
+    </p>
+  <% end %>
+<% else %>
+  <p> Currently no students are selected </p>
+<% end %>
+
+<p>
+  <strong>Tutor</strong>
+</p>
+<p>
+  <%= @session.tutor_id %>
+  <%= ":" + tutor.gname + ' ' + tutor.sname + ' (' + tutor.initials + ')' %>
+</p>
+
+<p>
+  <strong>Slot:</strong>
+  <%= @session.slot_id %>
+</p>
+
+<p>
+  <%= slot.timeslot %> 
+</p>
+<p>
+  <%= slot.location %>
+</p>
+
+<p>
+  <strong>Comments:</strong>
+  <%= @session.comments %>
+</p>
+
+<%= link_to 'Edit', edit_session_path(@session) %> |
+<%= link_to 'Move', move_session_path(@session) %> |
+<%= link_to 'Back', sessions_path %>

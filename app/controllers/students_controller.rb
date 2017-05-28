@@ -1,5 +1,5 @@
 class StudentsController < ApplicationController
-  before_action :set_student, only: [:show, :edit, :update, :destroy]
+  before_action :set_student, only: [:show, :showsessions, :edit, :update, :destroy]
 
   # GET /students
   # GET /students.json
@@ -10,6 +10,13 @@ class StudentsController < ApplicationController
   # GET /students/1
   # GET /students/1.json
   def show
+  end
+  
+  # GET /studentsessions/1
+  # GET /studentsessions/1.json
+  def showsessions
+    #@sessions = Student.sessions
+    #logger.debug "student_controller - showsessions - " + @sessions.inspect
   end
 
   # GET /students/new
