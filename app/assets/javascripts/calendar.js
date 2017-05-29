@@ -3,6 +3,8 @@
 # You can use CoffeeScript in this file: http://coffeescript.org/
 */
 
+/* global $ */
+
 $(document).ready(function() {
   //console.log("documentready");  
 
@@ -124,7 +126,7 @@ $(document).ready(function() {
      var mydata = "{sessionid:" + sessionid + "}";
      //alert("called sessionupdateslot: slotid- " + slotid + " sessionid- " + sessionid + " mydata- " + mydata );
      alert("called studentupdatesession: studentid- " + studentid + " sessionid- to " + sessionid + " from " + ui.draggable.context.parentElement.id );
-     mythis.dragged = ui.draggable;  
+     mythis.dragged = ui.draggable;
   };
 
 
@@ -136,7 +138,7 @@ $(document).ready(function() {
      mythis.dragged = ui.draggable;  
      $.ajax({
         type: "POST",
-        url: "http://localhost:3000/sessions/" + sessionid,
+        url: "https://bit-micmac.c9users.io/sessions/" + sessionid,
         data: {session : {'slot_id' : slotid }},
         dataType: "json",
         context: mythis,
