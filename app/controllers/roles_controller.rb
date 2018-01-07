@@ -32,7 +32,28 @@ class RolesController < ApplicationController
         format.json { render :show, status: :created, location: @role }
       else
         format.html { render :new }
-        format.json { render json: @role.errors, status: :unprocessable_entity }
+        format.json { render json: @role.errors.full_messages, status: :unprocessable_entity }
+      end
+    end
+  end
+
+  # PATCH/PUT /studentchangesession.json
+  def studentchangesession
+    @role = Role.where(:student_id => params[:student_id], :session_id => params[:old_session_id]).first
+    logger.debug("studentchangesession")
+    logger.debug("before_role: " + @role.inspect)
+    logger.debug("new_session_id: " + params[:new_session_id].inspect)
+    @role.session_id = params[:new_session_id]
+    logger.debug("after_role: " + @role.inspect)
+    respond_to do |format|
+      if @role.save
+      #if @role.update
+        #format.html { redirect_to @student, notice: 'Student was successfully updated.' }
+        format.json { render :show, status: :ok, location: @role }
+      else
+        #format.html { render :edit }
+        logger.debug("errors.messages: " + @role.errors.messages.inspect)
+        format.json { render json: @role.errors.messages, status: :unprocessable_entity }
       end
     end
   end
@@ -69,6 +90,8 @@ class RolesController < ApplicationController
 
     # Never trust parameters from the scary internet, only allow the white list through.
     def role_params
-      params.require(:role).permit(:session_id, :student_id)
+      params.require(:role).permit(:session_id, :student_id, :new_sesson_id, :old_session_id,
+        :domchange => [:action, :ele_new_parent_id, :ele_old_parent_id, :move_ele_id, :element_type]
+      )
     end
 end

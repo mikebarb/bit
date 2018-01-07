@@ -1,7 +1,7 @@
 <p id="notice"><%= notice %></p>
 
 <% students = @session.students %>
-<% tutor = Tutor.find(@session.tutor_id) %>
+<% tutors = @session.tutors %>
 <% slot = Slot.find(@session.slot_id) %>
 
 <strong>Students</strong>
@@ -17,12 +17,18 @@
 <% end %>
 
 <p>
-  <strong>Tutor</strong>
+  <strong>Tutors</strong>
 </p>
-<p>
-  <%= @session.tutor_id %>
-  <%= ":" + tutor.gname + ' ' + tutor.sname + ' (' + tutor.initials + ')' %>
-</p>
+<% if tutors.count > 0 %>
+  <% tutors.each do |tutor| %>
+    <p>
+      <%= tutor.id %>
+      <%= ": " + tutor.gname + ' ' + tutor.sname + ' (' + tutor.initials + ')' %>
+    </p>
+  <% end %>
+<% else %>
+  <p> Currently no tutors are selected </p>
+<% end %>
 
 <p>
   <strong>Slot:</strong>

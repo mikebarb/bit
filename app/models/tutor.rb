@@ -1,5 +1,7 @@
 class Tutor < ActiveRecord::Base
-  has_many :sessions, dependent: :destroy
+  has_many :tutroles
+  has_many :sessions, through: :tutroles
+  accepts_nested_attributes_for :sessions
 
   validates :gname, :sname, :initials, presence:true
   validates :initials, uniqueness:true

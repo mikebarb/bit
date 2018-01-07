@@ -15,10 +15,13 @@
   <tbody>
     <% @sessions.each do |session| %>
       <% student = session.students.first %>
-      <% tutor = Tutor.find(session.tutor_id) %>
-      <% slot = Slot.find(session.slot_id) %>
+      <% tutor = session.tutors.first %>
+      <% if session.slot_id %>
+        <% slot = Slot.find(session.slot_id) %>
+      <% end %>
       <tr>
         <td><%= session.id %></td>
+
         <% if student.nil? %>
           <td></td> <td></td> <td></td>
         <% else %>
@@ -27,12 +30,23 @@
           <td><%= student.gname + ' ' + student.sname %></td>
           <td><%= student.initials %></td>
         <% end %>
-        <td><%= session.tutor_id %></td>
-        <td><%= tutor.gname + ' ' + tutor.sname %></td>
-        <td><%= tutor.initials %></td>
-        <td><%= session.slot_id %></td>
-        <td><%= slot.timeslot %></td>
-        <td><%= slot.location %></td>
+
+        <% if tutor.nil? %>
+          <td></td> <td></td> <td></td>
+        <% else %>
+          <td><%= tutor.id %></td>
+          <td><%= tutor.gname + ' ' + tutor.sname %></td>
+          <td><%= tutor.initials %></td>
+        <% end %>
+
+        <% if slot.nil? %>
+          <td></td> <td></td> <td></td>
+        <% else %>
+          <td><%= session.slot_id %></td>
+          <td><%= slot.timeslot %></td>
+          <td><%= slot.location %></td>
+        <% end %>
+        
         <td><%= session.comments %></td>
         <td><%= link_to 'Show', session %></td>
         <td><%= link_to 'Edit', edit_session_path(session) %></td>

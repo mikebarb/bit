@@ -2,7 +2,6 @@ class Student < ActiveRecord::Base
   has_many :roles
   has_many :sessions, through: :roles
   accepts_nested_attributes_for :sessions
-  accepts_nested_attributes_for :sessions
 
   validates :gname, :sname, :initials, presence:true
   validates :initials, uniqueness:true

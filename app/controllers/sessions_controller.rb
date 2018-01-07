@@ -20,6 +20,10 @@ class SessionsController < ApplicationController
 
   # GET /sessions/1/edit
   def edit
+    @testStudents = Student.all
+    logger.debug "testStudents: " + @testStudents.inspect
+    @testTutors = Tutor.all
+    logger.debug "testTutors: " + @testTutors.inspect
   end
 
   # GET /sessions/1/move
@@ -49,6 +53,8 @@ class SessionsController < ApplicationController
   # PATCH/PUT /sessions/1.json
   def update
     respond_to do |format|
+      logger.debug "session_params: " + session_params.inspect
+      
       if @session.update(session_params)
         format.html { redirect_to @session, notice: 'Session was successfully updated.' }
         format.json { render :show, status: :ok, location: @session }
@@ -77,9 +83,12 @@ class SessionsController < ApplicationController
 
     # Never trust parameters from the scary internet, only allow the white list through.
     def session_params
-      params.require(:session).permit(:tutor_id, :slot_id, :comments, 
+      params.require(:session).permit( :slot_id, :comments, 
                                       :students_attributes => [:id, :pname],
-                                      :roles_attributes => [:id, :student_id, :session_id, :_destroy]
+                                      :roles_attributes => [:id, :student_id, :session_id, :_destroy],
+                                      :tutors_attributes => [:id, :pname],
+                                      :tutroles_attributes => [:id, :tutor_id, :session_id, :_destroy],
+                                      :domchange => [:action, :ele_new_parent_id, :ele_old_parent_id, :move_ele_id, :element_type]
                                      )
     end
 end

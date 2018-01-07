@@ -44,6 +44,7 @@ class StudentsController < ApplicationController
     end
   end
 
+  
   # PATCH/PUT /students/1
   # PATCH/PUT /students/1.json
   def update

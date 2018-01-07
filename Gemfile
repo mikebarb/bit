@@ -19,6 +19,8 @@ gem 'coffee-rails', '~> 4.0.0'
 gem 'jquery-rails'
 # Use jquery-ui-rails
 gem 'jquery-ui-rails'
+# Use jQuery-contextMenu plug-in https://github.com/swisnl/jQuery-contextMenu
+# ??????????????????????????
 # Turbolinks makes following links in your web application faster. Read more: https://github.com/rails/turbolinks
 gem 'turbolinks'
 # Build JSON APIs with ease. Read more: https://github.com/rails/jbuilder

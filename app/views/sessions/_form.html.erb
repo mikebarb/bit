@@ -10,7 +10,7 @@
       </ul>
     </div>
   <% end %>
-  <h2>Students<h2>
+  <h2>**Students**<h2>
   <%= f.fields_for :roles do |ff| %>
     <div class="field">
       <%= ff.collection_select(:student_id, Student.all,
@@ -22,10 +22,17 @@
     </div>
   <% end %>
 
-  <div class="field">
-    <%= f.label :tutor_id %><br>
-    <%= f.collection_select(:tutor_id, Tutor.all, :id, :displayname) %>
-  </div>
+  <h2>**Tutors**<h2>
+  <%= f.fields_for :tutroles do |ff| %>
+    <div class="field">
+      <%= ff.collection_select(:tutor_id, Tutor.all,
+          :id, :displayname, prompt: true) %>
+      <% if ff.object.persisted? %>
+        <%= ff.check_box :_destroy %>
+        <%= ff.label :_destroy, "Remove" %>
+      <% end %>
+    </div>
+  <% end %>
 
   <div class="field">
     <%= f.label :slot_id %><br>

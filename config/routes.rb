@@ -1,17 +1,22 @@
 Rails.application.routes.draw do
+  post 'tutorchangesession' => 'tutroles#tutorchangesession', as: :tutorchangesession
+  resources :tutroles
+
+  post 'studentchangesession' => 'roles#studentchangesession', as: :studentchangesession
   resources :roles
 
   get 'calendar/display'
 
-  resources :sessions
   get 'sessions/:id/move' => 'sessions#move', as: :move_session
   post 'sessions/:id' => 'sessions#update', as: :update_session
+  resources :sessions
+
   resources :slots
 
   resources :tutors
 
-  resources :students
   get 'students/:id/showsessions' => 'students#showsessions', as: :show_sessions
+  resources :students
 
   # The priority is based upon order of creation: first created -> highest priority.
   # See how all your routes lay out with "rake routes".

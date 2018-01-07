@@ -1,0 +1,27 @@
+<h1>Listing tutroles</h1>
+
+<table>
+  <thead>
+    <tr>
+      <th>Session</th>
+      <th>Tutor</th>
+      <th colspan="3"></th>
+    </tr>
+  </thead>
+
+  <tbody>
+    <% @tutroles.each do |tutrole| %>
+      <tr>
+        <td><%= tutrole.session %></td>
+        <td><%= tutrole.tutor %></td>
+        <td><%= link_to 'Show', tutrole %></td>
+        <td><%= link_to 'Edit', edit_tutrole_path(tutrole) %></td>
+        <td><%= link_to 'Destroy', tutrole, method: :delete, data: { confirm: 'Are you sure?' } %></td>
+      </tr>
+    <% end %>
+  </tbody>
+</table>
+
+<br>
+
+<%= link_to 'New Tutrole', new_tutrole_path %>

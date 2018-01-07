@@ -2,12 +2,15 @@
 // They will automatically be included in application.css.
 // You can use Sass (SCSS) here: http://sass-lang.com/
 
-
+.no-slot {
+  background-color: grey;
+}
 
 .session {
   margin: 10;
   background-color: #f8f;
   border:2px solid #77d;
+  padding-top: 8px;
   font-size: x-small;
   line-height: 8px;
 }
@@ -46,16 +49,10 @@ table, th, td {
   z-index: 10;
 }
 
-.from, .from1, .to {
-  display: block;
-  background-color: #bcd5e6;
-  text-align: center;
-  width: 120px;
+.ui-draggable {
+  //background-color: #ffd5e6;
 }
 
-.ui-draggable {
-  background-color: #ffd5e6;
-}
 .ui-draggable-dragging {
   border: 5px solid red;
 }
@@ -68,15 +65,36 @@ table, th, td {
   border: 2px solid blue;
 }
 
-.processing {
-  background-colour: green;
+.updating {
+  background-color: amber;
 }
 
-.processingerror {
-  background-colour: red;
+.context-menu {
+  display: none;
+  position: absolute;
+  z-index: 10;
+  //padding: 12px 0;
+  width: 240px;
+  background-color: #fff;
+  border: solid 1px #dfdfdf;
+  box-shadow: 1px 1px 2px #cfcfcf;
 }
 
-.processingsuccess {
-  background-colour: yellow;
+.context-menu--active {
+  display: block;
 }
 
+.context-menu__items {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+.context-menu__item {
+  display: block;
+  margin-bottom: 1px;
+}
+
+.context-menu__item:last-child {
+  margin-bottom: 0;
+}

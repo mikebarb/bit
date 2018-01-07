@@ -1,0 +1,14 @@
+<p id="notice"><%= notice %></p>
+
+<p>
+  <strong>Session:</strong>
+  <%= @tutrole.session %>
+</p>
+
+<p>
+  <strong>Tutor:</strong>
+  <%= @tutrole.tutor %>
+</p>
+
+<%= link_to 'Edit', edit_tutrole_path(@tutrole) %> |
+<%= link_to 'Back', tutroles_path %>

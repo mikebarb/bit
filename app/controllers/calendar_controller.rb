@@ -4,42 +4,9 @@ class CalendarController < ApplicationController
     # define a two dimesional array to hold the table info to be displayed.
     # row and column [0] will hold counts of elements populated in that row or column
     # row and column [1] will hold the titles for that rolw or column.
-#    @sessinfo      = Session
-#                  .select('sessions.id as sessionid, slots.timeslot as timeslot, slots.location as location, students.pname as studentpname, tutors.pname as tutorpname, slots.id as slotid, students.id as studentid, tutors.id as tutorid')
-#                  .joins(:slot)
-#                  .joins(:students)
-#                  .joins(:tutor)
-
-#    @sessinfo      = Session
-#                  .select('sessions.id as sessionid, slots.timeslot as timeslot, slots.location as location, tutors.pname as tutorpname, slots.id as slot_id, tutors.id as tutorid')
-#                  .joins(:slot)
-#                  .joins(:tutor)
 
     @sessinfo      = Session.all
-#                  .joins(:slot)
-#                  .joins(:tutor)
-#                  .joins(:students)
     logger.debug "calendar display - (sessinfo) " + @sessinfo.inspect
-
-#    @roles         = Role.all
-#                  .select('student_id, session_id')
-#                  .joins(:student)
-#    logger.debug "calendar display - (roles) " + @roles.inspect
-
-#    @students      = Student
-#                  .joins(:roles)
-#                  .pluck('roles.session_id, students.id, students.pname')
-#    logger.debug "calendar display - (students) " + @students.inspect
-
-#    @studenthash = Hash.new
-#    @students.each do |a|
-#      unless @studenthash.has_key?(a[0])
-#         @studenthash[a[0]] = Array.new
-#      end
-#      @studenthash[a[0]] << a
-#    end
-    
-#    logger.debug "calendar display - (studenthash) " + @studenthash.inspect
 
     @slotsinfo     = Slot 
                   .select('id, timeslot, location')         
@@ -83,11 +50,15 @@ class CalendarController < ApplicationController
     @slotsinfo.each do |myslot|
       thistime = myslot.timeslot.strftime("%Y-%m-%d %H:%M")
       @cal[@rowindex[myslot.location]][@colindex[thistime]]["slotid"] = myslot.id.to_s
+      #thisdomid = myslot.location[0, 3] + 
+      #                    myslot.timeslot.strftime("%Y%m%d%H%M") + myslot.id.to_s.rjust(3, "0")
+      #logger.debug "********thisdomid: " + thisdomid
+      #@cal[@rowindex[myslot.location]][@colindex[thistime]]["id_dom"] = myslot.location[0, 3] + 
+      #                    myslot.timeslot.strftime("%Y%m%d%H%M") + myslot.id.to_s.rjust(3, "0")
     end 
     
     @sessinfo.each do |entry|
       logger.debug "entry- " + entry.inspect
-#      thistime = entry.slot.timeslot.to_time.strftime("%Y-%m-%d %H:%M")
       thistime = entry.slot.timeslot.strftime("%Y-%m-%d %H:%M")
       logger.debug "thistime- " + thistime.inspect
       logger.debug "colindex- " + @colindex[thistime].inspect
@@ -96,10 +67,10 @@ class CalendarController < ApplicationController
       logger.debug "rowindex- " + @rowindex[thislocation].inspect
       unless @cal[@rowindex[thislocation]][@colindex[thistime]].key?('values') then  
         @cal[@rowindex[thislocation]][@colindex[thistime]]["values"]   = Array.new()
-#        @cal[@rowindex[thislocation]][@colindex[thistime]]["students"] = Array.new()
       end
       @cal[@rowindex[thislocation]][@colindex[thistime]]["values"]   << entry
-#      @cal[@rowindex[thislocation]][@colindex[thistime]]["students"] << @studenthash[entry.id]
+      @cal[@rowindex[thislocation]][@colindex[thistime]]["id_dom"] = thislocation[0, 3] + 
+                                                  entry.slot.timeslot.strftime("%Y%m%d%H%M") 
       @cal[0][@colindex[thistime]]["value"] += 1
       @cal[@rowindex[thislocation]][0]["value"] += 1
     end
