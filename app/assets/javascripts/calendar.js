@@ -7,6 +7,9 @@
 
 $(document).ready(function() {
   //console.log("documentready");  
+  
+  // some global variables for this page
+  var sf = 3     // significant figures for dom id components e.g.session ids, etc.
 
   // this will put obvious border on mouse entering selectable items
   $('.session').mouseenter(function(){
@@ -124,8 +127,16 @@ $(document).ready(function() {
     };
   }
   
-  function getSessionType(ele_id){
-    return ele_id.substr(3+12, 1);
+  // this function extracts the record type (l, n, t, s) from the dom id
+  // for slot, session, tutor and student entries
+  function getRecordType(ele_id){
+    return ele_id.substr(ele_id.length-sf-1, 1);
+  }
+
+  // this function extracts the record id from the dom id
+  // for slot, session, tutor and student entries
+  function getRecordId(ele_id){
+    return ele_id.substr(ele_id.length-sf, sf);
   }
 
   function menuItemActioner( action ) {
@@ -146,8 +157,7 @@ $(document).ready(function() {
         var thisEleId = taskItemInContext.id;
         currentActivity['move_ele_id'] =  thisEleId;
         currentActivity['ele_old_parent_id'] = document.getElementById(thisEleId).parentElement.id;
-        //var t = getSessionType(thisEleId);
-        var t = thisEleId.substr(3+12, 1);
+        var t = getRecordType(thisEleId);
         console.log("id: " + thisEleId + " t: " + t);
         switch(t) {
           case 's':
@@ -169,9 +179,9 @@ $(document).ready(function() {
         console.log("paste");
         //currentActivity['action'] = thisAction;
         thisEleId = taskItemInContext.id;
+        currentActivity['ele_new_parent_id'] = thisEleId;
         var thisEle = document.getElementById(thisEleId);
-        t = thisEleId.substr(3+12, 1);
-        // action nor relevant for a paste, set in the move / copy action.
+        t = getRecordType(thisEleId);        // action nor relevant for a paste, set in the move / copy action.
         // On dropping, need to move up parent tree till find the appropriate parent
         console.log(currentActivity);
         if( currentActivity ) {   // been a cut or move
@@ -194,6 +204,18 @@ $(document).ready(function() {
           //******************************************************
           // Need the database changes and manipulation called here
           //******************************************************
+          personupdatessession( currentActivity );
+          //----- contained in currentActivity
+          //  action: "cut", 
+          //  move_ele_id: "Wod201705301600s002",
+          //  ele_old_parent_id: "Wod201705301600n001", 
+          //  element_type: "student"
+          //  ele_new_parent_id: "Wod201705291630n003"
+          //----------required in ajax (domchange)---------------------------------
+          //  var personid = getRecordId(domchange['move_ele_id']);
+          //  var oldsessionid = getRecordId(domchange['ele_old_parent_id']);
+          //  var sessionid = getRecordId(domchange['ele_new_parent_id']);
+
           currentActivity = {};
         }
       }
@@ -321,11 +343,11 @@ $(document).ready(function() {
         dom_change['element_type'] = "session";
         console.log("---------------dom_change---------------");
         console.dir(dom_change);
-        var session_id = ui.draggable.attr('id').substr(3+12+1, 3);
+        var session_id = getRecordId(ui.draggable.attr('id'));
         console.log("session_id: " + session_id);
-        var slot_id = this.id.substr(3+12+1, 3);
+        var slot_id = getRecordId(this.id);
         console.log("slot_id: " + slot_id);
-        var oldslot_id = ui.draggable.context.parentElement.id.substr(3+12+1, 3);
+        var oldslot_id = getRecordId(ui.draggable.context.parentElement.id);
         console.log("oldslot_id: " + oldslot_id);
         sessionupdateslot( oldslot_id, slot_id, session_id, this, ui, dom_change );
         $( this )
@@ -371,12 +393,13 @@ $(document).ready(function() {
         dom_change['move_ele_id'] = ui.draggable.attr('id');
         dom_change['ele_old_parent_id'] = document.getElementById(dom_change['move_ele_id']).parentElement.id;
         dom_change['ele_new_parent_id'] = this.id;
-        var type = dom_change['move_ele_id'].substr(3+12, 1);
-        dom_change['element_type'] = "tutor";
+        var type = getRecordType(dom_change['move_ele_id']);
         if(type == 's'){
-          dom_change['element_type'] = "student" ;
+          dom_change['element_type'] = "student";
+        } else if(type == 't') {
+          dom_change['element_type'] = "tutor";
         } else {
-          dom_change['element_type'] = "tutor" ;
+          dom_change['element_type'] = "";
         }
         console.log("---------------dom_change---------------");
         console.dir(dom_change);
@@ -387,13 +410,14 @@ $(document).ready(function() {
         console.log("ele_old_parent_id: " + ele_old_parent_id);
         var ele_new_parent_id = this.id;
         console.log("ele_new_parent_id: " + ele_new_parent_id);
-        var person_id = ui.draggable.attr('id').substr(3+12+1, 3);
+        var person_id = getRecordId(ui.draggable.attr('id'));
         console.log("person_id: " + person_id);
-        var session_id = this.id.substr(3+12+1, 3);
+        var session_id = getRecordId(this.id);
         console.log("session_id: " + session_id);
-        var oldsession_id = ui.draggable.context.parentElement.id.substr(3+12+1, 3);
+        var oldsession_id = getRecordId(ui.draggable.context.parentElement.id);
         console.log("oldsession_id: " + oldsession_id);
-        personupdatessession( oldsession_id, session_id, person_id, this, ui, dom_change );        
+        //personupdatessession( oldsession_id, session_id, person_id, this, ui, dom_change );
+        personupdatessession( dom_change );
         console.log ("dropping student or tutor");
         $( this )
           //.append(ui.draggable)
@@ -411,23 +435,17 @@ $(document).ready(function() {
     });
   });
 
-  function personupdatessession( oldsessionid, sessionid, personid, mythis, ui, domchange ){
-    //console.log("calling studentupdatesession");
-    //var mydata = "{sessionid:" + sessionid + "}";
-    //alert("called studentupdatesession: studentid- " + studentid + " sessionid- to " + sessionid + " from " + ui.draggable.context.parentElement.id );
-    //console.log("---------------------this-------------------");
-    //console.dir(this);
-    //console.log("---------------------mythis.dragged-------------------");
-    mythis.dragged = ui.draggable;
-    //console.dir(mythis.dragged);
-    //var myajaxdata = {'student_id' : studentid, 'old_session_id' : oldsessionid, 'new_session_id' : sessionid };
-    //console.log("--------------------myajaxdata-------------------");
-    //console.log(myajaxdata);
-    //console.log("=============================================");
+  //function personupdatessession( oldsessionid, sessionid, personid, mythis, ui, domchange ){
+  function personupdatessession( domchange ){
+    //dom_change['action'] = "move";
+    var personid = getRecordId(domchange['move_ele_id']);
+    var oldsessionid = getRecordId(domchange['ele_old_parent_id']);
+    var sessionid = getRecordId(domchange['ele_new_parent_id']);
+    //mythis.dragged = ui.draggable;
     console.log("personid: " + domchange['move_ele_id']);
     var myurl;
     var mydata;
-    if( 's' == domchange['move_ele_id'].substr(3+12, 1) ){
+    if( 's' == getRecordType(domchange['move_ele_id']) ){
       console.log("we have a student - " + personid);
       myurl = "https://bit2-micmac.c9users.io/studentchangesession/";
       mydata =  { 'student_id'     : personid, 
@@ -435,9 +453,10 @@ $(document).ready(function() {
                   'new_session_id' : sessionid,
                   'domchange'      : domchange 
                 };
+
       //data: {session : {'slot_id' : slotid }, 'domchange' : domchange },
       
-    } else if( 't' == domchange['move_ele_id'].substr(3+12, 1) ){
+    } else if( 't' == getRecordType(domchange['move_ele_id']) ){
       console.log("we have a tutor - " + personid);
       myurl = "https://bit2-micmac.c9users.io/tutorchangesession/";
       mydata =  { 'tutor_id'       : personid, 
@@ -450,27 +469,16 @@ $(document).ready(function() {
       console.log("error - the moving person is not a tutor or student");
       return;
     }
-    //return;
+
     $.ajax({
         type: "POST",
         url: myurl,
         data: mydata,
         dataType: "json",
-        context: mythis,
+        context: domchange,
 
         success: function(){
-            //console.log("done personupdatesession: personid- " + personid + " sessionid- to " + sessionid + " from " + oldsessionid );
-            //console.dir(mythis);
             moveelement(domchange);
-
-            //var newid = mythis.id.substr(0, 3+12+1) + personid;
-            //console.log("newid: " + newid);
-            //var oldid = mythis.dragged.attr('id');
-            //console.log("oldid: " + oldid);
-            //$(this).append(mythis.dragged);
-            //var elemoved = document.getElementById(oldid);
-            //elemoved.id = newid;
-            //$(this).addClass( "processingsuccess" );
         },
         error: function(xhr){
             //$(this).addClass( "processingerror" );
@@ -514,8 +522,9 @@ $(document).ready(function() {
     //  move_ele_id:        "Wod201705291600n003"  -- session
     //console.log("called moveelement");
     //console.dir(domchange);
-    var newid = domchange['ele_new_parent_id'].substr(0, 3+12) + 
-                domchange['move_ele_id'].substr(3+12, 4);
+    var newid = getRecordId(domchange['ele_new_parent_id']) + 
+                getRecordType(domchange['move_ele_id']) + 
+                getRecordId(domchange['move_ele_id']);
     //console.log("moveelement - newid: " + newid);
     var oldid = domchange['move_ele_id'];
     //console.log("moveelement - oldid: " + oldid);

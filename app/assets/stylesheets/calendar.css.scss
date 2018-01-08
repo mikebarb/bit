@@ -21,6 +21,13 @@
   line-height: 18px;
   //border:1px solid black;
 }
+.tutorcomment {
+  background-color: white;
+}
+.tutorinline {
+  display: inline-block;
+  width: 25%;
+}
 .student {
   margin: 5;
   color: black;
@@ -28,6 +35,15 @@
   line-height: 18px;
   //border:1px solid black;
 }
+.studentcomment {
+  background-color: white;
+}
+
+.studentinline {
+  display: inline-block;
+  width: 25%;
+}
+
 td {
   vertical-align: top;
 }

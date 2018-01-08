@@ -1,13 +1,18 @@
-<h1>Calendar#display</h1>
+<h1>Calendar#display2</h1>
 
 <div class="positionable" id=comments>
   <p>Test</p>
 </div>
 
 <span class="context-menu-one btn btn-neutral">right click me</span>
-
+<% logger.debug "--------- now render @cal ---------------------" %>
+<% logger.debug "display (@cal)- " + @cal.inspect %>
+<% @cal.each do |location, calLocation| %>
+<% logger.debug "display (location)- " + location.inspect %>
+<% logger.debug "display (calLocation)- " + calLocation.inspect %>
 <table>
-  <% @cal.each do |rows| %>
+  <% calLocation.each do |rows| %>
+    <% logger.debug "display (rows)- " + rows.inspect %>
     <tr>
     <% rows.each do |cells| %>
        <% logger.debug "display (cells)- " + cells.inspect %>
@@ -30,7 +35,10 @@
                    <% logger.debug "display (tutor)- " + tutor.inspect %>
                    <% if tutor then %>
                      <div class=tutor id=<%= cells["id_dom"] + "t" + tutor.id.to_s.rjust(@sf, "0") %> >
-                       tutor: <%= tutor.pname %>
+                       <div style=persongroup>
+                           <div class="tutorname, tutorinline">tutor: <%= tutor.pname %></div>
+                           <div class="tutorcomment, tutorinline">xx-xx<%= tutor.comment %></div>
+                        </div>
                      </div>
                    <% end %>
                  <% end %>
@@ -41,7 +49,10 @@
                    <% logger.debug "display (student)- " + student.inspect %>
                    <% if student then %>
                      <div class=student id=<%= cells["id_dom"] + "s" + student.id.to_s.rjust(@sf, "0") %> >
-                       student: <%= student.pname %>
+                       <div style=persongroup>
+                           <div class="studentname, studentinline">student: <%= student.pname %></div>
+                           <div class="studentcomment, studentinline">yy-yy<%= student.comment %></div>
+                        </div>
                      </div>
                    <% end %>
                  <% end %>
@@ -58,6 +69,8 @@
     </tr>
   <% end %>
 </table>
+<br>
+<% end %>
 
   <nav id="context-menu" class="context-menu">
     <ul class="context-menu__items">

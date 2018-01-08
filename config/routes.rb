@@ -6,6 +6,7 @@ Rails.application.routes.draw do
   resources :roles
 
   get 'calendar/display'
+  get 'calendar/display2' => 'calendar#display2', as: :calendar_display2
 
   get 'sessions/:id/move' => 'sessions#move', as: :move_session
   post 'sessions/:id' => 'sessions#update', as: :update_session
