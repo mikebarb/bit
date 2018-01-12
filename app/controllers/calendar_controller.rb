@@ -2,6 +2,10 @@ class CalendarController < ApplicationController
   def display2
     @sf = 3   # number of significant figures in dom ids for session,tutor, etc.
     @site = "Kaleen"
+    
+    @tutors = Tutor.all
+    @students = Student.all
+    
     # define a two dimesional array to hold the table info to be displayed.
     # row and column [0] will hold counts of elements populated in that row or column
     # row and column [1] will hold the titles for that rolw or column.

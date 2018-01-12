@@ -1,8 +1,12 @@
 Rails.application.routes.draw do
-  post 'tutorchangesession' => 'tutroles#tutorchangesession', as: :tutorchangesession
+  post 'removetutorfromsession' => 'tutroles#removetutorfromsession', as: :removetutorfromsession
+  post 'tutorcopysession' =>       'tutroles#tutorcopysession', as: :tutorcopysession
+  post 'tutormovesession' =>       'tutroles#tutormovesession', as: :tutormovesession
   resources :tutroles
 
-  post 'studentchangesession' => 'roles#studentchangesession', as: :studentchangesession
+  post 'removestudentfromsession' => 'roles#removestudentfromsession', as: :removestudentfromsession
+  post 'studentcopysession' => 'roles#studentcopysession', as: :studentcopysession
+  post 'studentmovesession' => 'roles#studentmovesession', as: :studentmovesession
   resources :roles
 
   get 'calendar/display'

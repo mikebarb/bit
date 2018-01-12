@@ -12,7 +12,7 @@ $(document).ready(function() {
   var sf = 3     // significant figures for dom id components e.g.session ids, etc.
 
   // this will put obvious border on mouse entering selectable items
-  $('.session').mouseenter(function(){
+  /*$('.session').mouseenter(function(){
      $(this).css('border','3px solid black');
   });
   $('.session').mouseleave(function(){
@@ -24,17 +24,19 @@ $(document).ready(function() {
   $('.student').mouseleave(function(){
     $(this).css('border','0px solid blue');
   });
-  $('.tutor').mouseenter(function(){
+  $('.tutor').hover(function(){
      $(this).css('border','3px solid green');
   });
   $('.tutor').mouseleave(function(){
     $(this).css('border','0px solid green');
-  });
+  });*/
+  
+  $("ui-draggable")
   
   // single click will display the comment.
   $('.session').mousedown(function(){
     $('.positionable').html("session: " + this.id);
-    $(this).css('border','0px solid grey');
+    //$(this).css('border','0px solid grey');
     $('.positionable').css('visibility', 'visible');
     $('.positionable').position({
       of: this,
@@ -139,6 +141,9 @@ $(document).ready(function() {
     return ele_id.substr(ele_id.length-sf, sf);
   }
 
+//***********************************************************************
+// Perform the actions invoked by the context menu items.                *
+//***********************************************************************
   function menuItemActioner( action ) {
     //dom_change['action'] = "move";
     //dom_change['move_ele_id'] = ui.draggable.attr('id');
@@ -149,79 +154,87 @@ $(document).ready(function() {
     console.log("-------------- menu item action passed object ---------------");
     console.log(action);
     var thisAction =  action.getAttribute("data-action");
+    var thisEleId = taskItemInContext.id;    // element clicked on
+    var thisEle = document.getElementById((thisEleId));
+    console.log("thisAction: " + thisAction);
     switch( thisAction ) {
       case "copy":
-      case "cut":
-        console.log("cut or paste");
+      case "move":
+        console.log("copy or cut");
         currentActivity['action'] = thisAction;
-        var thisEleId = taskItemInContext.id;
         currentActivity['move_ele_id'] =  thisEleId;
         currentActivity['ele_old_parent_id'] = document.getElementById(thisEleId).parentElement.id;
-        var t = getRecordType(thisEleId);
-        console.log("id: " + thisEleId + " t: " + t);
-        switch(t) {
-          case 's':
-            console.log("student");
-            currentActivity['element_type'] = 'student';
-            break;
-          case 't':
-            console.log("tutor");
-            currentActivity['element_type'] = 'tutor';
-            break;
-          case 'n':
-            console.log("session");
-            currentActivity['element_type'] = 'session';
-            break;
-          // ignore slot here as it is never moved - only gets dropped into.
-        }
+        console.log("finished the move/copy case processing");
+        console.log(currentActivity);
         break;
       case "paste":
         console.log("paste");
-        //currentActivity['action'] = thisAction;
-        thisEleId = taskItemInContext.id;
-        currentActivity['ele_new_parent_id'] = thisEleId;
-        var thisEle = document.getElementById(thisEleId);
-        t = getRecordType(thisEleId);        // action nor relevant for a paste, set in the move / copy action.
+        //Note, we need the action for the move/copy, not paste.
         // On dropping, need to move up parent tree till find the appropriate parent
         console.log(currentActivity);
-        if( currentActivity ) {   // been a cut or move
-          switch ( currentActivity.element_type) {
-            case 'student':
-            case 'tutor':
-              console.log("processing paste for a student or tutor");
-              // find the seesion element in the tree working upwards
-              //var newParent = clickInsideElementClassList2(thisEle, ['session']);
+        if( currentActivity ) {   // been a cut or move initiated
+          switch ( getRecordType(currentActivity['move_ele_id']) ) {
+            case 's':   //student
+            case 't':   //tutor
+              // find the 'session' element in the tree working upwards
               currentActivity['ele_new_parent_id'] = clickInsideElementClassList2(thisEle, ['session']).id;
               break;
-            case 'session':
-              console.log("processing paste for a student or tutor");
-              //newParent = clickInsideElementClassList2(thisEle, ['slot']);
+            case 'n':   //session
+              // find the 'slot' element in the tree working upwards
               currentActivity['ele_new_parent_id'] = clickInsideElementClassList2(thisEle, ['slot']).id;
               break;
           }
-          console.log("--- current activity on paste before deleting---");
-          console.log(currentActivity);
           //******************************************************
           // Need the database changes and manipulation called here
           //******************************************************
           personupdatessession( currentActivity );
           //----- contained in currentActivity
-          //  action: "cut", 
           //  move_ele_id: "Wod201705301600s002",
           //  ele_old_parent_id: "Wod201705301600n001", 
           //  element_type: "student"
           //  ele_new_parent_id: "Wod201705291630n003"
           //----------required in ajax (domchange)---------------------------------
-          //  var personid = getRecordId(domchange['move_ele_id']);
-          //  var oldsessionid = getRecordId(domchange['ele_old_parent_id']);
-          //  var sessionid = getRecordId(domchange['ele_new_parent_id']);
-
           currentActivity = {};
         }
+        break;
+      case "remove":
+        // This removed the selected element
+        // Actually deletes the mapping record for tutor and student
+        // Will delete the session record for a session if empty.
+        currentActivity['action'] = thisAction;
+        thisEleId = taskItemInContext.id;
+        currentActivity['move_ele_id'] =  thisEleId;
+        currentActivity['ele_old_parent_id'] = document.getElementById(thisEleId).parentElement.id;
+        deleteentry(currentActivity);
+        break;
+      case "addSession":
+        // This will add a new session within the slot holding the element clicked.
+        // Will add a new session record with this slot value.
+        currentActivity['action'] = thisAction;
+        console.log("case = addSession");
+        thisEleId = taskItemInContext.id;
+        thisEle = document.getElementById(thisEleId);
+        currentActivity['ele_new_parent_id'] = clickInsideElementClassList2(thisEle, ['slot']).id;
+        addSession(currentActivity);
+        break;
+      case "removeSession":
+        // This will remove a session clicked on.
+        currentActivity['action'] = thisAction;
+        currentActivity['move_ele_id'] =  thisEleId;
+        console.log("case = removeSession");
+        thisEleId = taskItemInContext.id;
+        thisEle = document.getElementById(thisEleId);
+        currentActivity['ele_old_parent_id'] = clickInsideElementClassList2(thisEle, ['slot']).id;
+        removeSession(currentActivity);
+        break;
       }
-      console.log("--- current activity ---");
+      console.log("--- completed context menu actioner ---");
+      console.log("--- currentActivity ---");
       console.log(currentActivity);
   }
+//***********************************************************************
+// End of performing the actions invoked by the context menu items.     *
+//***********************************************************************
   
   function toggleMenuOn() {
     if ( menuState !== 1 ) {
@@ -261,7 +274,7 @@ $(document).ready(function() {
     }
     while ( (el = el.parentNode) ) {
       if(el.classList){
-    for(i = classNameList.length; i--; ) {
+        for(i = classNameList.length; i--; ) {
           if ( el.classList.contains(classNameList[i]) ) {
             return el;
           }
@@ -318,6 +331,7 @@ $(document).ready(function() {
 
 //------------------------ End of Context Menu -----------------------------
 
+//------------------------ Drag and Drop -----------------------------------
 // This is the drag and drop code
 // which uses ajax to update the database
 // the drag reverts if database update fails.
@@ -326,6 +340,7 @@ $(document).ready(function() {
   $( function() {
     $( ".session" ).draggable({
       revert: true,
+      zIndex: 100,
       //comments display on click, remove when begin the drag
       start: function(event, ui) {
         $('#comments').css('visibility', 'hidden');  
@@ -341,15 +356,16 @@ $(document).ready(function() {
         dom_change['ele_old_parent_id'] = document.getElementById(dom_change['move_ele_id']).parentElement.id;
         dom_change['ele_new_parent_id'] = this.id;
         dom_change['element_type'] = "session";
-        console.log("---------------dom_change---------------");
-        console.dir(dom_change);
-        var session_id = getRecordId(ui.draggable.attr('id'));
-        console.log("session_id: " + session_id);
-        var slot_id = getRecordId(this.id);
-        console.log("slot_id: " + slot_id);
-        var oldslot_id = getRecordId(ui.draggable.context.parentElement.id);
-        console.log("oldslot_id: " + oldslot_id);
-        sessionupdateslot( oldslot_id, slot_id, session_id, this, ui, dom_change );
+        //console.log("---------------dom_change---------------");
+        //console.dir(dom_change);
+        //var session_id = getRecordId(ui.draggable.attr('id'));
+        //console.log("session_id: " + session_id);
+        //var slot_id = getRecordId(this.id);
+        //console.log("slot_id: " + slot_id);
+        //var oldslot_id = getRecordId(ui.draggable.context.parentElement.id);
+        //console.log("oldslot_id: " + oldslot_id);
+        //sessionupdateslot( oldslot_id, slot_id, session_id, this, ui, dom_change );
+        sessionupdateslot( dom_change );
         $( this )
           .removeClass( "my-over" );
       },
@@ -364,10 +380,11 @@ $(document).ready(function() {
     });
   });
 
-  // for moving the students
+  // for moving the students and tutors
   $( function() {
     $( ".student, .tutor" ).draggable({
       revert: true,
+      zIndex: 100,
       //comments display on click, remove when begin the drag
       start: function(event, ui) {
         $('#comments').css('visibility', 'hidden');  
@@ -377,17 +394,6 @@ $(document).ready(function() {
     $( ".session" ).droppable({
       accept: ".student, .tutor",
       drop: function( event, ui ) {
-        console.log("----------------passed parameters------------------------");
-        console.log ("--this--");
-        console.dir (this);
-        console.log ("--ui.draggable--");
-        console.dir (ui.draggable);
-        console.log ("--ui.draggable.attr('id')--");
-        console.dir (ui.draggable.attr('id'));
-        console.log ("--ui--");
-        console.dir (ui);
-        console.log ("================");
-        
         var dom_change = {};
         dom_change['action'] = "move";
         dom_change['move_ele_id'] = ui.draggable.attr('id');
@@ -401,28 +407,13 @@ $(document).ready(function() {
         } else {
           dom_change['element_type'] = "";
         }
-        console.log("---------------dom_change---------------");
-        console.dir(dom_change);
-        
-        var move_ele_id = ui.draggable.attr('id');
-        console.log("move_ele_id: " + move_ele_id);
-        var ele_old_parent_id = document.getElementById(move_ele_id).parentElement.id;
-        console.log("ele_old_parent_id: " + ele_old_parent_id);
-        var ele_new_parent_id = this.id;
-        console.log("ele_new_parent_id: " + ele_new_parent_id);
-        var person_id = getRecordId(ui.draggable.attr('id'));
-        console.log("person_id: " + person_id);
-        var session_id = getRecordId(this.id);
-        console.log("session_id: " + session_id);
-        var oldsession_id = getRecordId(ui.draggable.context.parentElement.id);
-        console.log("oldsession_id: " + oldsession_id);
-        //personupdatessession( oldsession_id, session_id, person_id, this, ui, dom_change );
+
         personupdatessession( dom_change );
-        console.log ("dropping student or tutor");
+
         $( this )
           //.append(ui.draggable)
-          .removeClass( "my-over" )
-          .addClass( "ui-state-highlight" );
+          .removeClass( "my-over" );
+          //.addClass( "ui-state-highlight" );
       },
       over: function( event, ui ) {
         $( this )
@@ -435,33 +426,113 @@ $(document).ready(function() {
     });
   });
 
-  //function personupdatessession( oldsessionid, sessionid, personid, mythis, ui, domchange ){
+//------------------------ End of Drag and Drop ----------------------------
+
+
+//----- Common Functions used by both Drag & Drop and Context Menu ---------
+
+  // delete one of tutor, student or session. 
+  function deleteentry( domchange ){
+    console.log("deleteentry called");
+    console.log(domchange);
+    //var action = domchange['action'];   //move or copy
+    var itemid = getRecordId(domchange['move_ele_id']);
+    var oldparentid = getRecordId(domchange['ele_old_parent_id']);
+    //var newparentid = getRecordId(domchange['ele_new_parent_id']);
+    console.log("eleid full: " + domchange['move_ele_id']);
+    var itemtype = getRecordType(domchange['move_ele_id']);
+    if( 'n' == itemtype ){ //session
+      console.log("we have a session - " + itemid);
+      var mytype = 'DELETE';
+      var myurl = "https://bit2-micmac.c9users.io/sessions/" + parseInt(itemid, 10);
+      var mydata =  { 'domchange'      : domchange };
+      
+    } else if( 't' == itemtype ){
+      console.log("we have a tutor - " + itemid);
+      mytype = 'POST';
+      myurl = "https://bit2-micmac.c9users.io/removetutorfromsession";
+      mydata =  { 'tutor_id'     : itemid, 
+                  'old_session_id' : oldparentid,
+                  'domchange'      : domchange 
+                };
+    } else if( 's' == itemtype ){
+      console.log("we have a student- " + itemid);
+      myurl = "https://bit2-micmac.c9users.io/removestudentfromsession";
+      console.log("myurl: " + myurl)
+      mytype = 'POST';
+      mydata =  { 'student_id'     : itemid, 
+                  'old_session_id' : oldparentid,
+                  'domchange'      : domchange 
+                };
+    }
+    $.ajax({
+        type: mytype,
+        url: myurl,
+        data: mydata,
+        dataType: "json",
+        context: domchange,
+        success: function(){
+            console.log("done - deleted session " + itemid );
+            deleteelement(domchange);
+        },
+        error: function(request, textStatus, errorThrown){
+            //$(this).addClass( "processingerror" );
+            console.log("ajax error occured: " + request.status.to_s + " - " + textStatus );
+            alert("ajax error occured: " + request.status.to_s + " - " + textStatus );
+        }
+    });
+    //data: {session : {'slot_id' : slotid }, 'domchange' : domchange },
+  }
+
+  function deleteelement( domchange ){
+    //  action:             "move"
+    //  ele_new_parent_id:  "Wod201705291630l002"  -- slot
+    //  ele_old_parent_id:  "Wod201705291600l001"  -- slot
+    //  move_ele_id:        "Wod201705291600n003"  -- session
+    console.log("called deleteelement");
+    console.dir(domchange);
+    var eleid = domchange['move_ele_id'];
+    console.log("deleteelement - id: " + eleid);
+    var eledelete = document.getElementById(eleid);
+    eledelete.remove();
+  }
+
+  //This function is called for either move or copy
+  //Does ajax to move or copy a student or tutor to another session
   function personupdatessession( domchange ){
-    //dom_change['action'] = "move";
+    console.log("personupdatesession called");
+    console.log(domchange);
+    var action = domchange['action'];   //move or copy
     var personid = getRecordId(domchange['move_ele_id']);
     var oldsessionid = getRecordId(domchange['ele_old_parent_id']);
-    var sessionid = getRecordId(domchange['ele_new_parent_id']);
-    //mythis.dragged = ui.draggable;
+    var newsessionid = getRecordId(domchange['ele_new_parent_id']);
     console.log("personid: " + domchange['move_ele_id']);
     var myurl;
     var mydata;
-    if( 's' == getRecordType(domchange['move_ele_id']) ){
+    var recordtype = getRecordType(domchange['move_ele_id']);
+    if( 's' == recordtype ){    //student
       console.log("we have a student - " + personid);
-      myurl = "https://bit2-micmac.c9users.io/studentchangesession/";
+      console.log("action: " + action);
+      if(action == "move") {   
+        myurl = "https://bit2-micmac.c9users.io/studentmovesession/";
+      } else if(action == "copy"){ // copy
+        myurl = "https://bit2-micmac.c9users.io/studentcopysession/";
+      }
       mydata =  { 'student_id'     : personid, 
                   'old_session_id' : oldsessionid,
-                  'new_session_id' : sessionid,
+                  'new_session_id' : newsessionid,
                   'domchange'      : domchange 
                 };
-
-      //data: {session : {'slot_id' : slotid }, 'domchange' : domchange },
-      
-    } else if( 't' == getRecordType(domchange['move_ele_id']) ){
+    } else if( 't' == recordtype ){   //tutor
       console.log("we have a tutor - " + personid);
-      myurl = "https://bit2-micmac.c9users.io/tutorchangesession/";
+      if(action == "move") {
+        myurl = "https://bit2-micmac.c9users.io/tutormovesession/";
+      } else { // copy
+        myurl = "https://bit2-micmac.c9users.io/tutorcopysession/";
+      }
       mydata =  { 'tutor_id'       : personid, 
                   'old_session_id' : oldsessionid,
-                  'new_session_id' : sessionid,
+                  'new_session_id' : newsessionid,
                   'domchange'      : domchange                  
                 };
       
@@ -469,7 +540,8 @@ $(document).ready(function() {
       console.log("error - the moving person is not a tutor or student");
       return;
     }
-
+    console.log("now make the ajax call");
+    console.log("url: " + myurl);
     $.ajax({
         type: "POST",
         url: myurl,
@@ -478,6 +550,7 @@ $(document).ready(function() {
         context: domchange,
 
         success: function(){
+          console.log("ajax call successful");
             moveelement(domchange);
         },
         error: function(xhr){
@@ -492,20 +565,55 @@ $(document).ready(function() {
      });
   }
 
-  //sessionupdateslot( oldslot_id, slot_id, session_id, this, ui );
-  function sessionupdateslot( oldslotid, slotid, sessionid, mythis, ui, domchange ){
-     console.log("calling sessionupdateslot");
-     alert("called sessionupdateslot: sessionid- " + sessionid + " slotid- to " + slotid + " from " + oldslotid );
-     mythis.dragged = ui.draggable;  
-     $.ajax({
+  function addSession(domchange){
+    console.log("calling addSession");
+    console.log(domchange);
+    var newslotid = getRecordId(domchange['ele_new_parent_id']);
+    $.ajax({
         type: "POST",
-        url: "https://bit2-micmac.c9users.io/sessions/" + sessionid,
-        data: {session : {'slot_id' : slotid }, 'domchange' : domchange },
+        url: "https://bit2-micmac.c9users.io/sessions/",
+        data: {session : {'slot_id' : newslotid }, 'domchange' : domchange },
         dataType: "json",
-        context: mythis,
-        success: function(){
-            console.log("done - dragged session " + this.dragged.attr('id') + " to slot " + this.id + " from " + this.dragged.context.parentElement.id );
-            moveelement(domchange);
+        context: domchange,
+        success: function(result){
+            console.log("done - ajax added session to slot " + newslotid );
+            console.log(result);
+            console.log("extract the created session id: " + result.id );
+            var sessionid = result.id;
+            //ele_new_parent_id:"Wod201705291600l001"
+            var slotid = domchange['ele_new_parent_id'];
+            console.log("slotid: " + slotid + " sessionid: " + sessionid);
+            var sessionid_base = slotid.substr(0, slotid.length-sf-1 );
+            var paddedid = padleft(sessionid, sf);
+            console.log("paddedid: " + paddedid);
+            var newsessionid = sessionid_base + "n" + paddedid;
+            console.log("newsessionid: " + newsessionid);
+            domchange['move_ele_id'] = newsessionid;
+            console.log(domchange);
+            addelement(domchange);
+        },
+        error: function(request, textStatus, errorThrown){
+            //$(this).addClass( "processingerror" );
+            console.log("ajax error occured: " + request.status.to_s + " - " + textStatus );
+            alert("ajax error occured: " + request.status.to_s + " - " + textStatus );
+        }
+    });
+  }
+  
+  function removeSession(domchange){
+    console.log("calling removeSession");
+    console.log(domchange);
+    var sessionid = getRecordId(domchange['move_ele_id']);
+    $.ajax({
+        type: "DELETE",
+        url: "https://bit2-micmac.c9users.io/sessions/" + sessionid,
+        data: {'domchange' : domchange },
+        dataType: "json",
+        context: domchange,
+        success: function(result){
+            console.log("done - ajax removed session" );
+            //ele_new_parent_id:"Wod201705291600l001"
+            deleteelement(domchange);
         },
         error: function(request, textStatus, errorThrown){
             //$(this).addClass( "processingerror" );
@@ -515,29 +623,98 @@ $(document).ready(function() {
     });
   }
 
+  function padleft(num, sigfig){
+    var numstr = num.toString();
+    var temp = "";
+    for(var i = sigfig - (numstr.length); i--;){
+      temp = temp + "0";
+    }
+    return temp + numstr;
+  }
+
+  //sessionupdateslot( oldslot_id1, slot_id1, session_id1, this, ui, domchange );
+  function sessionupdateslot( domchange ){
+    console.log("calling sessionupdateslot");
+    console.log(domchange);
+    var sessionid = getRecordId(domchange['move_ele_id']);
+    var oldslotid = getRecordId(domchange['ele_old_parent_id']);
+    var slotid = getRecordId(domchange['ele_new_parent_id']);
+    $.ajax({
+        type: "POST",
+        url: "https://bit2-micmac.c9users.io/sessions/" + sessionid,
+        data: {session : {'slot_id' : slotid }, 'domchange' : domchange },
+        dataType: "json",
+        context: domchange,
+        success: function(){
+            console.log("done - dragged session " + sessionid + " to slot " + slotid + " from " + oldslotid );
+            moveelement(domchange);
+        },
+        error: function(request, textStatus, errorThrown){
+            //$(this).addClass( "processingerror" );
+            console.log("ajax error occured: " + request.status.to_s + " - " + textStatus );
+            alert("ajax error occured: " + request.status.to_s + " - " + textStatus );
+        }
+    });
+  }
+  
+  // Add a new session element to the DOM
+  function addelement(domchange){
+    console.log("addelement called");
+    console.log(domchange);
+    //<div class=session id=<%= cells["id_dom"] + "n" + entry.id.to_s.rjust(@sf, "0") %> >
+    var sessiontemplate = document.getElementById("sessiontemplate");
+    console.log(sessiontemplate);
+    var newsessionele = sessiontemplate.cloneNode(true);
+    console.log(newsessionele);
+    newsessionele.id = domchange['move_ele_id'];
+    var parentele = document.getElementById(domchange['ele_new_parent_id']);
+    parentele.appendChild(newsessionele);
+    newsessionele.classList.remove("hideme");
+    console.log(parentele);
+  }
+
   function moveelement( domchange ){
     //  action:             "move"
     //  ele_new_parent_id:  "Wod201705291630l002"  -- slot
     //  ele_old_parent_id:  "Wod201705291600l001"  -- slot
     //  move_ele_id:        "Wod201705291600n003"  -- session
-    //console.log("called moveelement");
-    //console.dir(domchange);
-    var newid = getRecordId(domchange['ele_new_parent_id']) + 
-                getRecordType(domchange['move_ele_id']) + 
-                getRecordId(domchange['move_ele_id']);
-    //console.log("moveelement - newid: " + newid);
-    var oldid = domchange['move_ele_id'];
-    //console.log("moveelement - oldid: " + oldid);
-    var elemoving = document.getElementById(oldid);
-    var parent_element = document.getElementById(domchange['ele_new_parent_id']);
-    console.log("element type: " + domchange['element_type']);
-    if ('tutor' == domchange['element_type']) {
-      parent_element.insertBefore(elemoving, parent_element.firstChild);
-    }else{
-      parent_element.append(elemoving);
+    console.log("called moveelement");
+    console.dir(domchange);
+    var newparentid = domchange['ele_new_parent_id'];
+    var moveRecordType = getRecordType(domchange['move_ele_id']);
+    var newid = moveRecordType + getRecordId(domchange['move_ele_id']);
+    console.log("***************t: " + moveRecordType);
+    switch(moveRecordType) {
+      case 't': //tutor
+      case 's': //student
+        newid = newparentid + newid;
+        break;
+      case 'n': //session
+        newid = newparentid.substr(0, newparentid.length-sf-1) + newid;
+        break;
     }
-    elemoving.id = newid;
+    var oldid = domchange['move_ele_id'];
+    console.log("moveelement - oldid: " + oldid + " => newid: " + newid);
+    var elemoving = document.getElementById(oldid);
+    if ('copy' == domchange['action']){
+      var eletoplace = elemoving.cloneNode(true);
+    }else if('move' == domchange['action']){
+      eletoplace = elemoving;
+    }
+    console.log("----------eletoplace-------");
+    console.log(eletoplace);
+    var parent_element = document.getElementById(domchange['ele_new_parent_id']);
+    console.log("------ parent_element ---------");
+    console.log(parent_element);
+    if ('t' == moveRecordType) {  // for tutors, prepend
+      parent_element.insertBefore(eletoplace, parent_element.firstChild);
+    }else{  //otherwise, append.
+      parent_element.append(eletoplace);
+    }
+    eletoplace.id = newid;
   }
+
+//--- End of Common Functions used by both Drag & Drop and Context Menu ----
 
 });
 

@@ -37,21 +37,49 @@ class TutrolesController < ApplicationController
     end
   end
 
-  # PATCH/PUT /tutorchangesession.json
-  def tutorchangesession
+  # POST /removetutorfromsession.json
+  def removetutorfromsession
+    logger.debug("removetutorfromsession")
     @tutrole = Tutrole.where(:tutor_id => params[:tutor_id], :session_id => params[:old_session_id]).first
-    logger.debug("tutorchangesession")
-    logger.debug("before_tutrole: " + @tutrole.inspect)
-    logger.debug("new_session_id: " + params[:new_session_id].inspect)
-    @tutrole.session_id = params[:new_session_id]
-    logger.debug("after_tutrole: " + @tutrole.inspect)
+    logger.debug("found tutrole: " + @tutrole.inspect)
+    @tutrole1 = Tutrole.find(@tutrole.id)
+    logger.debug("found tutrole1: " + @tutrole1.inspect)
+    respond_to do |format|
+      if @tutrole1.destroy
+        #format.json { render :show, status: :removed, location: @tutrole1 }
+        format.json { head :no_content }
+      else
+        logger.debug("errors.messages: " + @tutrole1.errors.messages.inspect)
+        format.json { render json: @tutrole1.errors.full_messages, status: :unprocessable_entity }
+      end
+    end
+  end
+
+
+  # Copy a tutor from one session to another. Actional just a new tutrole entry with current
+  # student attached to a new parent.
+  # POST /tutorcopysession.json
+  def tutorcopysession
+    @tutrole = Tutrole.new(:tutor_id => params[:tutor_id], :session_id => params[:new_session_id])
     respond_to do |format|
       if @tutrole.save
-      #if @role.update
+        format.json { render :show, status: :created, location: @role }
+      else
+        logger.debug("errors.messages: " + @tutrole.errors.messages.inspect)
+        format.json { render json: @tutrole.errors.full_messages, status: :unprocessable_entity }
+      end
+    end
+  end
+
+  # PATCH/PUT /tutormovesession.json
+  def tutormovesession
+    @tutrole = Tutrole.where(:tutor_id => params[:tutor_id], :session_id => params[:old_session_id]).first
+    @tutrole.session_id = params[:new_session_id]
+    respond_to do |format|
+      if @tutrole.save
         #format.html { redirect_to @student, notice: 'Student was successfully updated.' }
         format.json { render :show, status: :ok, location: @tutrole }
       else
-        #format.html { render :edit }
         logger.debug("errors.messages: " + @tutrole.errors.messages.inspect)
         format.json { render json: @tutrole.errors.messages, status: :unprocessable_entity }
       end

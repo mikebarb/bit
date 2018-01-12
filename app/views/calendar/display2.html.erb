@@ -4,6 +4,29 @@
   <p>Test</p>
 </div>
 
+<div class=index-tutors id=index-tutors>
+    <% @tutors.each do |tutor| %>
+        <% logger.debug "display (tutor)- " + tutor.inspect %>
+        <div class=tutor id=<%= "t" + tutor.id.to_s.rjust(@sf, "0") %> >
+            <div style=persongroup>
+                <div class="tutorname tutorinline">tutor: <%= tutor.pname %></div>
+                <div class="tutorcomment tutorinline"><%= tutor.comment %></div>
+            </div>
+        </div>
+    <% end %>
+</div>
+<div class=index-students id=indexstudents>
+    <% @students.each do |student| %>
+        <% logger.debug "display (student)- " + student.inspect %>
+        <div class= student id=<%= "s" + student.id.to_s.rjust(@sf, "0") %> >
+            <div style=persongroup>
+                <div class="studentname studentinline">student: <%= student.pname %></div>
+                <div class="studentcomment studentinline"><%= student.comment %></div>
+            </div>
+        </div>
+    <% end %>
+</div>
+
 <span class="context-menu-one btn btn-neutral">right click me</span>
 <% logger.debug "--------- now render @cal ---------------------" %>
 <% logger.debug "display (@cal)- " + @cal.inspect %>
@@ -34,10 +57,10 @@
                  <% entry.tutors.each do |tutor| %>
                    <% logger.debug "display (tutor)- " + tutor.inspect %>
                    <% if tutor then %>
-                     <div class=tutor id=<%= cells["id_dom"] + "t" + tutor.id.to_s.rjust(@sf, "0") %> >
+                     <div class=tutor id=<%= cells["id_dom"] + "n" + entry.id.to_s.rjust(@sf, "0") + "t" + tutor.id.to_s.rjust(@sf, "0") %> >
                        <div style=persongroup>
-                           <div class="tutorname, tutorinline">tutor: <%= tutor.pname %></div>
-                           <div class="tutorcomment, tutorinline">xx-xx<%= tutor.comment %></div>
+                           <div class="tutorname tutorinline">tutor: <%= tutor.pname %></div>
+                           <div class="tutorcomment tutorinline">xx-xx<%= tutor.comment %></div>
                         </div>
                      </div>
                    <% end %>
@@ -48,10 +71,10 @@
                  <% entry.students.each do |student| %>
                    <% logger.debug "display (student)- " + student.inspect %>
                    <% if student then %>
-                     <div class=student id=<%= cells["id_dom"] + "s" + student.id.to_s.rjust(@sf, "0") %> >
+                     <div class=student id=<%= cells["id_dom"] + "n" + entry.id.to_s.rjust(@sf, "0") + "s" + student.id.to_s.rjust(@sf, "0") %> >
                        <div style=persongroup>
-                           <div class="studentname, studentinline">student: <%= student.pname %></div>
-                           <div class="studentcomment, studentinline">yy-yy<%= student.comment %></div>
+                           <div class="studentname studentinline">student: <%= student.pname %></div>
+                           <div class="studentcomment studentinline">yy-yy<%= student.comment %></div>
                         </div>
                      </div>
                    <% end %>
@@ -74,14 +97,26 @@
 
   <nav id="context-menu" class="context-menu">
     <ul class="context-menu__items">
-      <li class="context-menu__item" data-action="cut">
+      <li class="context-menu__item" data-action="move">
         <p>Move</p>
       </li>
       <li class="context-menu__item" data-action="copy">
-        <p>Clone</p>
+        <p>Copy</p>
       </li>
       <li class="context-menu__item" data-action="paste">
         <p>Drop</p>
       </li>
+      <li class="context-menu__item" data-action="remove">
+        <p>Remove</p>
+      </li>
+      <li class="context-menu__item" data-action="addSession">
+        <p>Add Session</p>
+      </li>    
+      <li class="context-menu__item" data-action="removeSession">
+        <p>Remove Session</p>
+      </li>    
     </ul>
   </nav>
+
+    <div class="session hideme" id=sessiontemplate ></div>
+

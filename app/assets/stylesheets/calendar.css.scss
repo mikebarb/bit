@@ -7,41 +7,61 @@
 }
 
 .session {
-  margin: 10;
+  margin: 1px;
   background-color: #f8f;
-  border:2px solid #77d;
   padding-top: 8px;
   font-size: x-small;
   line-height: 8px;
+  border:3px solid #faf;}
+
+.session:hover {
+  border: 3px solid black;
 }
+
 .tutor {
-  margin: 5;
+  margin: 1px;
   color: black;
   background-color: #aaf;
   line-height: 18px;
-  //border:1px solid black;
+  border:3px solid #aaf;
 }
-.tutorcomment {
-  background-color: white;
+
+.tutor:hover {
+  border: 3px solid green;
 }
-.tutorinline {
+
+.tutorname {
   display: inline-block;
   width: 25%;
 }
+
+.tutorcomment {
+  display: inline-block;
+  background-color: white;
+  width: 74%;
+}
+
 .student {
-  margin: 5;
+  margin: 1px;
   color: black;
   background-color: #afa;
   line-height: 18px;
-  //border:1px solid black;
-}
-.studentcomment {
-  background-color: white;
+  border:3px solid #afa;
 }
 
-.studentinline {
+.student:hover {
+  border: 3px solid blue;
+}
+
+.studentname {
   display: inline-block;
   width: 25%;
+}
+
+.studentcomment {
+  display: inline-block;
+  background-color: white;
+  width: 74%;
 }
 
 td {
@@ -70,16 +90,17 @@ table, th, td {
 }
 
 .ui-draggable-dragging {
-  border: 5px solid red;
+  //border: 5px solid red;
 }
 
 .ui-state-highlight {
   border: 5px solid green;
 }
 
-.my-over {
-  border: 2px solid blue;
+.ui-droppable-hover {
+  border: 5px solid red;
 }
+
 
 .updating {
   background-color: amber;
@@ -113,4 +134,8 @@ table, th, td {
 
 .context-menu__item:last-child {
   margin-bottom: 0;
+}
+
+.hideme {
+  display: none;
 }

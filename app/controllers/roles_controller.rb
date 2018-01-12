@@ -21,6 +21,8 @@ class RolesController < ApplicationController
   def edit
   end
 
+
+
   # POST /roles
   # POST /roles.json
   def create
@@ -37,26 +39,65 @@ class RolesController < ApplicationController
     end
   end
 
-  # PATCH/PUT /studentchangesession.json
-  def studentchangesession
+
+
+  # DELETE /roles/1
+  # DELETE /roles/1.json
+  ###def destroy
+  ###  @role.destroy
+  ###  respond_to do |format|
+  ###    format.html { redirect_to roles_url, notice: 'Role was successfully destroyed.' }
+  ###    format.json { head :no_content }
+  ###  end
+  ###end
+  ###    @role = Role.find(params[:id])
+
+ # POST /removestudentfromsession.json
+  def removestudentfromsession
+    logger.debug("removestudentfromsession")
     @role = Role.where(:student_id => params[:student_id], :session_id => params[:old_session_id]).first
-    logger.debug("studentchangesession")
-    logger.debug("before_role: " + @role.inspect)
-    logger.debug("new_session_id: " + params[:new_session_id].inspect)
+    #logger.debug("found role: " + @role.inspect)
+    #myid = @role.id
+    #logger.debug("myroleid: " + myid.inspect)
+    @role1 = Role.find(@role.id)
+    logger.debug("@role1: " + @role1.inspect)
+    @role1.destroy
+    respond_to do |format|
+      format.json { head :no_content }
+      #format.json { render :show, status: :created, location: @role }
+    end
+  end
+
+  # POST /studentcopysession.json
+  def studentcopysession
+    @role = Role.new(:student_id => params[:student_id],
+                     :session_id => params[:new_session_id])
+    logger.debug("new_role: " + @role.inspect)
+    respond_to do |format|
+      if @role.save
+        format.json { render :show, status: :created, location: @role }
+      else
+        logger.debug("errors.messages: " + @role.errors.messages.inspect)
+        format.json { render json: @role.errors.full_messages, status: :unprocessable_entity }
+      end
+    end
+  end
+
+  # PATCH/PUT /studentmovesession.json
+  def studentmovesession
+    @role = Role.where(:student_id => params[:student_id], :session_id => params[:old_session_id]).first
     @role.session_id = params[:new_session_id]
     logger.debug("after_role: " + @role.inspect)
     respond_to do |format|
       if @role.save
-      #if @role.update
-        #format.html { redirect_to @student, notice: 'Student was successfully updated.' }
         format.json { render :show, status: :ok, location: @role }
       else
-        #format.html { render :edit }
         logger.debug("errors.messages: " + @role.errors.messages.inspect)
         format.json { render json: @role.errors.messages, status: :unprocessable_entity }
       end
     end
   end
+
 
   # PATCH/PUT /roles/1
   # PATCH/PUT /roles/1.json
