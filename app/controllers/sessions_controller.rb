@@ -68,10 +68,20 @@ class SessionsController < ApplicationController
   # DELETE /sessions/1
   # DELETE /sessions/1.json
   def destroy
-    @session.destroy
-    respond_to do |format|
-      format.html { redirect_to sessions_url, notice: 'Session was successfully destroyed.' }
-      format.json { head :no_content }
+    if @session.destroy
+      logger.debug "Session destroyed"
+      respond_to do |format|
+        format.html { redirect_to sessions_url, notice: 'Session was successfully destroyed.' }
+        #format.json { head :no_content }
+        format.json { render :show, status: :ok}
+      end
+    else
+      logger.debug "Errors during destroy"
+      logger.debug @session.errors.inspect
+      respond_to do |format|
+        format.html { redirect_to sessions_url, notice: 'Session was NOT destroy.' }
+        format.json { render json: @session.errors, status: :unprocessable_entity  }
+      end
     end
   end
 

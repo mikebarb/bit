@@ -507,6 +507,10 @@ $(document).ready(function() {
     var personid = getRecordId(domchange['move_ele_id']);
     var oldsessionid = getRecordId(domchange['ele_old_parent_id']);
     var newsessionid = getRecordId(domchange['ele_new_parent_id']);
+    if(oldsessionid == newsessionid){
+      //alert("You dropped this item in the same location!!!");
+      return;
+    }
     console.log("personid: " + domchange['move_ele_id']);
     var myurl;
     var mydata;
@@ -617,9 +621,14 @@ $(document).ready(function() {
             deleteelement(domchange);
         },
         error: function(request, textStatus, errorThrown){
-            //$(this).addClass( "processingerror" );
-            console.log("ajax error occured: " + request.status.to_s + " - " + textStatus );
-            alert("ajax error occured: " + request.status.to_s + " - " + textStatus );
+            console.log(request);
+            var temp = request.responseJSON.base;
+            var errorText = "";
+            for(var i=0; i<temp.length; i++){
+              errorText += temp[i] + "\n";
+            }
+            console.log("ajax error occured: " + request.status.to_s + " - " + textStatus  + "\n" + errorText);
+            alert("ajax error occured\n" + request.status.to_s + " - " + textStatus + "\n" + errorText);
         }
     });
   }
@@ -639,15 +648,19 @@ $(document).ready(function() {
     console.log(domchange);
     var sessionid = getRecordId(domchange['move_ele_id']);
     var oldslotid = getRecordId(domchange['ele_old_parent_id']);
-    var slotid = getRecordId(domchange['ele_new_parent_id']);
+    var newslotid = getRecordId(domchange['ele_new_parent_id']);
+    if(oldslotid == newslotid){
+      //alert("You dropped this item in the same location!!");
+      return;
+    }
     $.ajax({
         type: "POST",
         url: "https://bit2-micmac.c9users.io/sessions/" + sessionid,
-        data: {session : {'slot_id' : slotid }, 'domchange' : domchange },
+        data: {session : {'slot_id' : newslotid }, 'domchange' : domchange },
         dataType: "json",
         context: domchange,
         success: function(){
-            console.log("done - dragged session " + sessionid + " to slot " + slotid + " from " + oldslotid );
+            console.log("done - dragged session " + sessionid + " to slot " + newslotid + " from " + oldslotid );
             moveelement(domchange);
         },
         error: function(request, textStatus, errorThrown){
@@ -721,6 +734,7 @@ $(document).ready(function() {
 //--------- Filter by name functions for the tutors and students -----------
 
   $("#personInput").keyup(function filterPeople() {
+      console.log("filterPeople called");
       var filter, eleIndexTutors, eleTutorNames, eleIndexStudents, eleStudentNames, i, eleAncestor;
       filter = document.getElementById("personInput").value.toUpperCase();
       console.log("filter: " + filter);
@@ -785,9 +799,7 @@ function selectshows() {
     console.log(showList[i].checked);
     switch(showList[i].id){
       case "hidetutors":
-        console.log("processing hide tutors");
         var eleThisParent = document.getElementById("index-tutors");
-        console.log(eleThisParent);
         if (showList[i].checked){
           document.getElementById("index-tutors").classList.add("hideme");
         }else{
@@ -795,9 +807,7 @@ function selectshows() {
         }
         break;
       case "hidestudents":
-        console.log("processing hidestudents");
         eleThisParent = document.getElementById("index-students");
-        console.log(eleThisParent);
         if (showList[i].checked){
           document.getElementById("index-students").classList.add("hideme");
         }else{
@@ -805,21 +815,13 @@ function selectshows() {
         }
         break;
       case "hidecomments":
-        console.log("processing hidecomments");
         var eleComments = document.getElementsByClassName("comment");
-        console.log(eleComments);
         if (showList[i].checked){
           for (var j=eleComments.length; j-- ; ){
-            console.log("j: " + j);
-            console.log(eleComments[j].id);
-            console.log(eleComments[j]);
             eleComments[j].classList.add("hideme");
           }
         }else{
           for (var j=eleComments.length; j-- ; ){
-            console.log("j: " + j);
-            console.log(eleComments[j].id);
-            console.log(eleComments[j]);
             eleComments[j].classList.remove("hideme");
           }
         }

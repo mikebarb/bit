@@ -11,4 +11,20 @@ class Session < ActiveRecord::Base
     :allow_destroy => true,
     :reject_if     => :all_blank
   #attr_accessible :slot_id, :student_id, :tutor_id
+  before_destroy :ensure_not_referenced_by_tutors_or_students
+  
+  private
+    def ensure_not_referenced_by_tutors_or_students
+      returnvalue = true
+      unless tutors.empty?
+        errors.add(:base, 'Tutors in this session!')
+        returnvalue = false
+      end
+      unless students.empty?
+        errors.add(:base, 'Students in this session!')
+        returnvalue = false
+      end
+      return returnvalue
+    end
+    
 end
