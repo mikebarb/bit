@@ -8,8 +8,9 @@
 $(document).ready(function() {
   //console.log("documentready");  
   
+  
   // some global variables for this page
-  var sf = 3     // significant figures for dom id components e.g.session ids, etc.
+  var sf = 3;     // significant figures for dom id components e.g.session ids, etc.
 
   // this will put obvious border on mouse entering selectable items
   /*$('.session').mouseenter(function(){
@@ -31,7 +32,7 @@ $(document).ready(function() {
     $(this).css('border','0px solid green');
   });*/
   
-  $("ui-draggable")
+  $("ui-draggable");
   
   // single click will display the comment.
   $('.session').mousedown(function(){
@@ -560,7 +561,7 @@ $(document).ready(function() {
             for (var error in (errors['session_id'])){
               error_message += " : " + errors['session_id'][error];
             }
-            alert("error moving student to another session: " + error_message);
+            alert("error moving student or tutor to another session: " + error_message);
         }
      });
   }
@@ -713,8 +714,116 @@ $(document).ready(function() {
     }
     eletoplace.id = newid;
   }
+  
 
 //--- End of Common Functions used by both Drag & Drop and Context Menu ----
 
+//--------- Filter by name functions for the tutors and students -----------
+
+  $("#personInput").keyup(function filterPeople() {
+      var filter, eleIndexTutors, eleTutorNames, eleIndexStudents, eleStudentNames, i, eleAncestor;
+      filter = document.getElementById("personInput").value.toUpperCase();
+      console.log("filter: " + filter);
+      eleIndexTutors = document.getElementById("index-tutors");
+      console.log(eleIndexTutors);
+      if(! eleIndexTutors.classList.contains("hideme")){
+        eleTutorNames = eleIndexTutors.getElementsByClassName("tutorname");
+        console.log(eleTutorNames);
+        for (i = 0; i < eleTutorNames.length; i++) {
+            var tutorNameText = eleTutorNames[i].innerHTML.substr(7).toUpperCase();
+            console.log("tutorNameText: " + tutorNameText);
+            eleAncestor = findAncestor (eleTutorNames[i], "tutor");
+            console.log(eleAncestor);
+            if (tutorNameText.indexOf(filter) > -1) {
+                eleAncestor.style.display = "";
+                console.log("show");
+            } else {
+                eleAncestor.style.display = "none";
+                console.log("hide");
+            }
+        }
+      }
+      console.log("about to process students");
+      eleIndexStudents = document.getElementById("index-students");
+      console.log(eleIndexStudents);
+      if(! eleIndexStudents.classList.contains("hideme")){
+        eleStudentNames = eleIndexStudents.getElementsByClassName("studentname");
+        console.log(eleStudentNames);
+        for (i = 0; i < eleStudentNames.length; i++) {
+            var studentNameText = eleStudentNames[i].innerHTML.substr(9).toUpperCase();
+            console.log("studentNameText: " + studentNameText);
+            eleAncestor = findAncestor (eleStudentNames[i], "student");
+            console.log(eleAncestor);
+            if (studentNameText.indexOf(filter) > -1) {
+                eleAncestor.style.display = "";
+                console.log("show");
+            } else {
+                eleAncestor.style.display = "none";
+                console.log("hide");
+            }
+        }
+      }
+  });
+  
+  function findAncestor (el, cls) {
+    while ((el = el.parentElement) && !el.classList.contains(cls));
+    return el;
+  }
+
+
+
+//------ End of Filter by name functions for the tutors and students -------
+
 });
 
+function selectshows() {
+  console.log("processing selectShows");
+  var showList =  document.getElementById("selectshows").getElementsByTagName("input");
+  console.log(showList);
+  for(var i = 0; i < showList.length; i++){
+    console.log(showList[i].id);
+    console.log(showList[i].checked);
+    switch(showList[i].id){
+      case "hidetutors":
+        console.log("processing hide tutors");
+        var eleThisParent = document.getElementById("index-tutors");
+        console.log(eleThisParent);
+        if (showList[i].checked){
+          document.getElementById("index-tutors").classList.add("hideme");
+        }else{
+          document.getElementById("index-tutors").classList.remove("hideme");
+        }
+        break;
+      case "hidestudents":
+        console.log("processing hidestudents");
+        eleThisParent = document.getElementById("index-students");
+        console.log(eleThisParent);
+        if (showList[i].checked){
+          document.getElementById("index-students").classList.add("hideme");
+        }else{
+          document.getElementById("index-students").classList.remove("hideme");
+        }
+        break;
+      case "hidecomments":
+        console.log("processing hidecomments");
+        var eleComments = document.getElementsByClassName("comment");
+        console.log(eleComments);
+        if (showList[i].checked){
+          for (var j=eleComments.length; j-- ; ){
+            console.log("j: " + j);
+            console.log(eleComments[j].id);
+            console.log(eleComments[j]);
+            eleComments[j].classList.add("hideme");
+          }
+        }else{
+          for (var j=eleComments.length; j-- ; ){
+            console.log("j: " + j);
+            console.log(eleComments[j].id);
+            console.log(eleComments[j]);
+            eleComments[j].classList.remove("hideme");
+          }
+        }
+        break;
+    }
+  }
+}

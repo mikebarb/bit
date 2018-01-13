@@ -1,30 +1,43 @@
 <h1>Calendar#display2</h1>
 
-<div class="positionable" id=comments>
+<!--<div class="positionable" id=comments>
   <p>Test</p>
+</div>-->
+
+<div id="selectshows">
+    <input id=hidetutors class=selectshow onclick="selectshows()" type="checkbox" > hide tutors
+    <input id=hidestudents class=selectshow onclick="selectshows()" type="checkbox" > hide students
+    <input id=hidecomments class=selectshow onclick="selectshows()" type="checkbox" > hide comments
 </div>
 
-<div class=index-tutors id=index-tutors>
-    <% @tutors.each do |tutor| %>
-        <% logger.debug "display (tutor)- " + tutor.inspect %>
-        <div class=tutor id=<%= "t" + tutor.id.to_s.rjust(@sf, "0") %> >
-            <div style=persongroup>
-                <div class="tutorname tutorinline">tutor: <%= tutor.pname %></div>
-                <div class="tutorcomment tutorinline"><%= tutor.comment %></div>
+<div class=index>
+    <div class="selectbox floating-box">
+        <h2>Select person</h2>
+        <input type="text" id="personInput" placeholder="Shorten list by keying in meaningful characters .." title="Type in characters to reduce name list">
+    </div>
+
+    <div class=index-tutors id=index-tutors>
+        <% @tutors.each do |tutor| %>
+            <% logger.debug "display (tutor)- " + tutor.inspect %>
+            <div class=tutor id=<%= "t" + tutor.id.to_s.rjust(@sf, "0") %> >
+                <div style=persongroup>
+                    <div class="tutorname tutorinline">tutor: <%= tutor.pname %></div>
+                    <div class="tutorcomment tutorinline"><%= tutor.comment %></div>
+                </div>
             </div>
-        </div>
-    <% end %>
-</div>
-<div class=index-students id=indexstudents>
-    <% @students.each do |student| %>
-        <% logger.debug "display (student)- " + student.inspect %>
-        <div class= student id=<%= "s" + student.id.to_s.rjust(@sf, "0") %> >
-            <div style=persongroup>
-                <div class="studentname studentinline">student: <%= student.pname %></div>
-                <div class="studentcomment studentinline"><%= student.comment %></div>
+        <% end %>
+    </div>
+    <div class=index-students id=index-students>
+        <% @students.each do |student| %>
+            <% logger.debug "display (student)- " + student.inspect %>
+            <div class= student id=<%= "s" + student.id.to_s.rjust(@sf, "0") %> >
+                <div style=persongroup>
+                    <div class="studentname studentinline">student: <%= student.pname %></div>
+                    <div class="studentcomment studentinline"><%= student.comment %></div>
+                </div>
             </div>
-        </div>
-    <% end %>
+        <% end %>
+    </div>
 </div>
 
 <span class="context-menu-one btn btn-neutral">right click me</span>
@@ -60,7 +73,7 @@
                      <div class=tutor id=<%= cells["id_dom"] + "n" + entry.id.to_s.rjust(@sf, "0") + "t" + tutor.id.to_s.rjust(@sf, "0") %> >
                        <div style=persongroup>
                            <div class="tutorname tutorinline">tutor: <%= tutor.pname %></div>
-                           <div class="tutorcomment tutorinline">xx-xx<%= tutor.comment %></div>
+                           <div class="tutorcomment comment tutorinline">xx-xx<%= tutor.comment %></div>
                         </div>
                      </div>
                    <% end %>
@@ -74,7 +87,7 @@
                      <div class=student id=<%= cells["id_dom"] + "n" + entry.id.to_s.rjust(@sf, "0") + "s" + student.id.to_s.rjust(@sf, "0") %> >
                        <div style=persongroup>
                            <div class="studentname studentinline">student: <%= student.pname %></div>
-                           <div class="studentcomment studentinline">yy-yy<%= student.comment %></div>
+                           <div class="studentcomment comment studentinline">yy-yy<%= student.comment %></div>
                         </div>
                      </div>
                    <% end %>

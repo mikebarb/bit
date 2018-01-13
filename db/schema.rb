@@ -11,7 +11,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema.define(version: 20180101073905) do
+ActiveRecord::Schema.define(version: 20180112220510) do
 
   create_table "roles", force: true do |t|
     t.integer  "session_id"
@@ -68,6 +68,7 @@ ActiveRecord::Schema.define(version: 20180101073905) do
     t.datetime "updated_at"
   end
 
+  add_index "tutroles", ["session_id", "tutor_id"], name: "index_tutroles_on_session_id_and_tutor_id", unique: true
   add_index "tutroles", ["session_id"], name: "index_tutroles_on_session_id"
   add_index "tutroles", ["tutor_id"], name: "index_tutroles_on_tutor_id"
 
