@@ -92,6 +92,7 @@ $(document).ready(function() {
         console.log(taskItemInContext);
         console.log("element id: " + taskItemInContext.id);
         e.preventDefault();
+        enableMenuItems();
         toggleMenuOn();
         positionMenu(e);
         eleClickedOn = e;
@@ -140,6 +141,61 @@ $(document).ready(function() {
   // for slot, session, tutor and student entries
   function getRecordId(ele_id){
     return ele_id.substr(ele_id.length-sf, sf);
+  }
+
+  function enableMenuItems(){
+    var thisEleId = taskItemInContext.id;    // element clicked on
+    var thisEle = document.getElementById((thisEleId));
+    var recordType = getRecordType(thisEleId);  //student, tutor, session
+    var scmi_copy = false;  //scmi - set comtext menu items.
+    var scmi_move = false;  // to show or not show in menu
+    var scmi_paste = false;  // set the dom display value at end.
+    var scmi_remove = false;
+    var scmi_addSession = false;
+    var scmi_removeSession = false;
+    
+    //  var currentActivity = {};   declared globally within this module
+
+    if(currentActivity.action  == 'move' || 
+       currentActivity.action  == 'copy'){  // something has been copied ready to be pasted
+      scmi_paste = true;
+    }
+
+    switch(recordType){
+      case 's':   //student
+      case 't':   //tutor
+        if(clickInsideElementClassList2(thisEle, ['index'])){
+          // this element in student and tutor list
+          scmi_copy = true;
+          scmi_paste = false;   //nothing can be pasted into the index space
+        }else{  // in the main schedule
+          scmi_copy = scmi_move = scmi_remove = scmi_addSession = true;
+        }
+        break;
+      case 'n':   //session
+          scmi_move = scmi_addSession = true;
+          // if there are no tutors or students in this session, can remove
+          var mytutors = thisEle.getElementsByClassName('tutor'); 
+          var mystudents = thisEle.getElementsByClassName('student');
+          if(!(mytutors || mystudents)){
+            scmi_removeSession = true;
+          }
+          break;
+    }
+    setscmi('context-move', scmi_move);
+    setscmi('context-copy', scmi_copy);
+    setscmi('context-paste', scmi_paste);
+    setscmi('context-remove', scmi_remove);
+    setscmi('context-addSession', scmi_addSession);
+    setscmi('context-removeSession', scmi_removeSession);
+  } 
+  
+  function setscmi(elementId, scmi){
+    if(scmi){
+      document.getElementById(elementId).classList.remove('hideme'); 
+    }else{
+      document.getElementById(elementId).classList.add('hideme'); 
+    }
   }
 
 //***********************************************************************
@@ -268,9 +324,11 @@ $(document).ready(function() {
   }
   
   function clickInsideElementClassList2( el, classNameList ) {
-    for(var i = classNameList.length; i--; ) {
-      if ( el.classList.contains(classNameList[i]) ) {
-        return el;
+    if(el.classList){
+      for(var i = classNameList.length; i--; ) {
+        if ( el.classList.contains(classNameList[i]) ) {
+          return el;
+        }
       }
     }
     while ( (el = el.parentNode) ) {
@@ -397,6 +455,11 @@ $(document).ready(function() {
       drop: function( event, ui ) {
         var dom_change = {};
         dom_change['action'] = "move";
+        var this_move_element = document.getElementById(ui.draggable.attr('id'));
+        //        if(clickInsideElementClassList2(thisEle, ['index'])){
+        if(clickInsideElementClassList2(this_move_element, ['index'])){
+          dom_change['action'] = "copy";          
+        }
         dom_change['move_ele_id'] = ui.draggable.attr('id');
         dom_change['ele_old_parent_id'] = document.getElementById(dom_change['move_ele_id']).parentElement.id;
         dom_change['ele_new_parent_id'] = this.id;
@@ -692,12 +755,12 @@ $(document).ready(function() {
     //  ele_new_parent_id:  "Wod201705291630l002"  -- slot
     //  ele_old_parent_id:  "Wod201705291600l001"  -- slot
     //  move_ele_id:        "Wod201705291600n003"  -- session
-    console.log("called moveelement");
-    console.dir(domchange);
+    //console.log("called moveelement");
+    //console.dir(domchange);
     var newparentid = domchange['ele_new_parent_id'];
     var moveRecordType = getRecordType(domchange['move_ele_id']);
     var newid = moveRecordType + getRecordId(domchange['move_ele_id']);
-    console.log("***************t: " + moveRecordType);
+    //console.log("***************t: " + moveRecordType);
     switch(moveRecordType) {
       case 't': //tutor
       case 's': //student
@@ -708,18 +771,18 @@ $(document).ready(function() {
         break;
     }
     var oldid = domchange['move_ele_id'];
-    console.log("moveelement - oldid: " + oldid + " => newid: " + newid);
+    //console.log("moveelement - oldid: " + oldid + " => newid: " + newid);
     var elemoving = document.getElementById(oldid);
     if ('copy' == domchange['action']){
       var eletoplace = elemoving.cloneNode(true);
     }else if('move' == domchange['action']){
       eletoplace = elemoving;
     }
-    console.log("----------eletoplace-------");
-    console.log(eletoplace);
+    //console.log("----------eletoplace-------");
+    //console.log(eletoplace);
     var parent_element = document.getElementById(domchange['ele_new_parent_id']);
-    console.log("------ parent_element ---------");
-    console.log(parent_element);
+    //console.log("------ parent_element ---------");
+    //console.log(parent_element);
     if ('t' == moveRecordType) {  // for tutors, prepend
       parent_element.insertBefore(eletoplace, parent_element.firstChild);
     }else{  //otherwise, append.
@@ -737,43 +800,43 @@ $(document).ready(function() {
       console.log("filterPeople called");
       var filter, eleIndexTutors, eleTutorNames, eleIndexStudents, eleStudentNames, i, eleAncestor;
       filter = document.getElementById("personInput").value.toUpperCase();
-      console.log("filter: " + filter);
+      //console.log("filter: " + filter);
       eleIndexTutors = document.getElementById("index-tutors");
-      console.log(eleIndexTutors);
+      //console.log(eleIndexTutors);
       if(! eleIndexTutors.classList.contains("hideme")){
         eleTutorNames = eleIndexTutors.getElementsByClassName("tutorname");
-        console.log(eleTutorNames);
+        //console.log(eleTutorNames);
         for (i = 0; i < eleTutorNames.length; i++) {
             var tutorNameText = eleTutorNames[i].innerHTML.substr(7).toUpperCase();
-            console.log("tutorNameText: " + tutorNameText);
+            //console.log("tutorNameText: " + tutorNameText);
             eleAncestor = findAncestor (eleTutorNames[i], "tutor");
-            console.log(eleAncestor);
+            //console.log(eleAncestor);
             if (tutorNameText.indexOf(filter) > -1) {
                 eleAncestor.style.display = "";
-                console.log("show");
+                //console.log("show");
             } else {
                 eleAncestor.style.display = "none";
-                console.log("hide");
+                //console.log("hide");
             }
         }
       }
       console.log("about to process students");
       eleIndexStudents = document.getElementById("index-students");
-      console.log(eleIndexStudents);
+      //console.log(eleIndexStudents);
       if(! eleIndexStudents.classList.contains("hideme")){
         eleStudentNames = eleIndexStudents.getElementsByClassName("studentname");
-        console.log(eleStudentNames);
+        //console.log(eleStudentNames);
         for (i = 0; i < eleStudentNames.length; i++) {
             var studentNameText = eleStudentNames[i].innerHTML.substr(9).toUpperCase();
-            console.log("studentNameText: " + studentNameText);
+            //console.log("studentNameText: " + studentNameText);
             eleAncestor = findAncestor (eleStudentNames[i], "student");
-            console.log(eleAncestor);
+            //console.log(eleAncestor);
             if (studentNameText.indexOf(filter) > -1) {
                 eleAncestor.style.display = "";
-                console.log("show");
+                //console.log("show");
             } else {
                 eleAncestor.style.display = "none";
-                console.log("hide");
+                //console.log("hide");
             }
         }
       }
@@ -791,15 +854,15 @@ $(document).ready(function() {
 });
 
 function selectshows() {
-  console.log("processing selectShows");
+  //console.log("processing selectShows");
   var showList =  document.getElementById("selectshows").getElementsByTagName("input");
-  console.log(showList);
+  //console.log(showList);
   for(var i = 0; i < showList.length; i++){
-    console.log(showList[i].id);
-    console.log(showList[i].checked);
+    //console.log(showList[i].id);
+    //console.log(showList[i].checked);
     switch(showList[i].id){
       case "hidetutors":
-        var eleThisParent = document.getElementById("index-tutors");
+        //var eleThisParent = document.getElementById("index-tutors");
         if (showList[i].checked){
           document.getElementById("index-tutors").classList.add("hideme");
         }else{
@@ -807,7 +870,7 @@ function selectshows() {
         }
         break;
       case "hidestudents":
-        eleThisParent = document.getElementById("index-students");
+        //var eleThisParent = document.getElementById("index-students");
         if (showList[i].checked){
           document.getElementById("index-students").classList.add("hideme");
         }else{
