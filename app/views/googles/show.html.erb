@@ -1,0 +1,34 @@
+<p id="notice"><%= notice %></p>
+
+<p>
+  <strong>User:</strong>
+  <%= @google.user %>
+</p>
+
+<p>
+  <strong>Client:</strong>
+  <%= @google.client_id %>
+</p>
+
+<p>
+  <strong>Access token:</strong>
+  <%= @google.access_token %>
+</p>
+
+<p>
+  <strong>Refresh token:</strong>
+  <%= @google.refresh_token %>
+</p>
+
+<p>
+  <strong>Scope:</strong>
+  <%= @google.scope %>
+</p>
+
+<p>
+  <strong>Expiration Time Milliseconds:</strong>
+  <%= @google.expiration_time_millis %>
+</p>
+
+<%= link_to 'Edit', edit_google_path(@google) %> |
+<%= link_to 'Back', googles_path %>

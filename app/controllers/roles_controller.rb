@@ -75,7 +75,8 @@ class RolesController < ApplicationController
     logger.debug("new_role: " + @role.inspect)
     respond_to do |format|
       if @role.save
-        format.json { render :show, status: :created, location: @role }
+        #format.json { render :show, status: :created, location: @role }
+        format.json { render json: :show, status: :created, location: @role }
       else
         logger.debug("errors.messages: " + @role.errors.messages.inspect)
         format.json { render json: @role.errors.full_messages, status: :unprocessable_entity }

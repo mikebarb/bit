@@ -1,0 +1,13 @@
+<h1>Admin Controller - Load (2) Data from Google Spreadsheet</h1>
+<table>
+    <% @tutors.each do |r| %>
+        <tr>
+            <% r.each do |c| %>
+                <td><%= c %></td>
+            <% end %>
+        </tr>
+    <% end %>
+</table>
+<br>
+
+<%= link_to 'New Google', new_google_path %>

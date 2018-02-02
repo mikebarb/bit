@@ -2,8 +2,9 @@ source 'https://rubygems.org'
 
 
 # Bundle edge Rails instead: gem 'rails', github: 'rails/rails'
-gem 'rails', '4.1.1'
+#gem 'rails', '4.1.1'
 #gem 'rails', '5.0.0.1'
+gem 'rails', '~> 4.2'
 # Use sqlite3 as the database for Active Record
 gem 'sqlite3'
 # Use SCSS for stylesheets
@@ -25,6 +26,7 @@ gem 'jquery-ui-rails'
 gem 'turbolinks'
 # Build JSON APIs with ease. Read more: https://github.com/rails/jbuilder
 gem 'jbuilder', '~> 2.0'
+#gem 'jbuilder'
 # bundle exec rake doc:rails generates the API under doc/api.
 gem 'sdoc', '~> 0.4.0',          group: :doc
 
@@ -43,3 +45,20 @@ gem 'spring',        group: :development
 # Use debugger
 #gem 'debugger', group: [:development, :test]
 
+# support google spreadsheets
+#not google gem 'sheets', '~> 1.2', '>= 1.2.1'
+# see migration doco 
+# https://github.com/google/google-api-ruby-client/blob/master/MIGRATING.md
+#gem 'google-api-client', '0.11', :require => ['google/apis/sheets_v4']
+gem 'googleauth', :require => ['googleauth/stores/file_token_store', 'googleauth']
+#gem 'googleauth', require: 'googleauth'
+gem 'google-api-client', '~> 0.19', require: 'google/apis/sheets_v4'
+#gem 'google-api-client', '0.9', require: 'google/api_client'
+#gem 'sheets-v4'
+
+#gem 'google-api-client', '0.8.2', require: 'google/api_client'
+#gem 'cloudprint'
+#gem 'mime-types', '~> 3.0'
+
+# debugging gem
+gem 'byebug'

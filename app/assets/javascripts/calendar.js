@@ -508,20 +508,20 @@ $(document).ready(function() {
     if( 'n' == itemtype ){ //session
       console.log("we have a session - " + itemid);
       var mytype = 'DELETE';
-      var myurl = "https://bit2-micmac.c9users.io/sessions/" + parseInt(itemid, 10);
+      var myurl = "https://bit3-micmac.c9users.io/sessions/" + parseInt(itemid, 10);
       var mydata =  { 'domchange'      : domchange };
       
     } else if( 't' == itemtype ){
       console.log("we have a tutor - " + itemid);
       mytype = 'POST';
-      myurl = "https://bit2-micmac.c9users.io/removetutorfromsession";
+      myurl = "https://bit3-micmac.c9users.io/removetutorfromsession";
       mydata =  { 'tutor_id'     : itemid, 
                   'old_session_id' : oldparentid,
                   'domchange'      : domchange 
                 };
     } else if( 's' == itemtype ){
       console.log("we have a student- " + itemid);
-      myurl = "https://bit2-micmac.c9users.io/removestudentfromsession";
+      myurl = "https://bit3-micmac.c9users.io/removestudentfromsession";
       console.log("myurl: " + myurl)
       mytype = 'POST';
       mydata =  { 'student_id'     : itemid, 
@@ -582,9 +582,9 @@ $(document).ready(function() {
       console.log("we have a student - " + personid);
       console.log("action: " + action);
       if(action == "move") {   
-        myurl = "https://bit2-micmac.c9users.io/studentmovesession/";
+        myurl = "https://bit3-micmac.c9users.io/studentmovesession/";
       } else if(action == "copy"){ // copy
-        myurl = "https://bit2-micmac.c9users.io/studentcopysession/";
+        myurl = "https://bit3-micmac.c9users.io/studentcopysession/";
       }
       mydata =  { 'student_id'     : personid, 
                   'old_session_id' : oldsessionid,
@@ -594,9 +594,9 @@ $(document).ready(function() {
     } else if( 't' == recordtype ){   //tutor
       console.log("we have a tutor - " + personid);
       if(action == "move") {
-        myurl = "https://bit2-micmac.c9users.io/tutormovesession/";
+        myurl = "https://bit3-micmac.c9users.io/tutormovesession/";
       } else { // copy
-        myurl = "https://bit2-micmac.c9users.io/tutorcopysession/";
+        myurl = "https://bit3-micmac.c9users.io/tutorcopysession/";
       }
       mydata =  { 'tutor_id'       : personid, 
                   'old_session_id' : oldsessionid,
@@ -639,7 +639,7 @@ $(document).ready(function() {
     var newslotid = getRecordId(domchange['ele_new_parent_id']);
     $.ajax({
         type: "POST",
-        url: "https://bit2-micmac.c9users.io/sessions/",
+        url: "https://bit3-micmac.c9users.io/sessions/",
         data: {session : {'slot_id' : newslotid }, 'domchange' : domchange },
         dataType: "json",
         context: domchange,
@@ -674,7 +674,7 @@ $(document).ready(function() {
     var sessionid = getRecordId(domchange['move_ele_id']);
     $.ajax({
         type: "DELETE",
-        url: "https://bit2-micmac.c9users.io/sessions/" + sessionid,
+        url: "https://bit3-micmac.c9users.io/sessions/" + sessionid,
         data: {'domchange' : domchange },
         dataType: "json",
         context: domchange,
@@ -718,7 +718,7 @@ $(document).ready(function() {
     }
     $.ajax({
         type: "POST",
-        url: "https://bit2-micmac.c9users.io/sessions/" + sessionid,
+        url: "https://bit3-micmac.c9users.io/sessions/" + sessionid,
         data: {session : {'slot_id' : newslotid }, 'domchange' : domchange },
         dataType: "json",
         context: domchange,

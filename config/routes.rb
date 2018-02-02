@@ -1,4 +1,14 @@
 Rails.application.routes.draw do
+  match '/oauth2callback',
+    to: Google::Auth::WebUserAuthorizer::CallbackApp,
+    via: :all
+  
+  resources :googles
+
+  get 'admins/load' => 'admins#load', as: :loadgoogle
+  get 'admins/load2' => 'admins#load2', as: :load2google
+  get 'admins/load2c' => 'admins#load2c', as: :load2cgoogle
+
   post 'removetutorfromsession' => 'tutroles#removetutorfromsession', as: :removetutorfromsession
   post 'tutorcopysession' =>       'tutroles#tutorcopysession', as: :tutorcopysession
   post 'tutormovesession' =>       'tutroles#tutormovesession', as: :tutormovesession
@@ -28,7 +38,7 @@ Rails.application.routes.draw do
 
   # You can have the root of your site routed with "root"
   # root 'welcome#index'
-root 'calendar#display'
+  root 'calendar#display'
 
   # Example of regular route:
   #   get 'products/:id' => 'catalog#view'

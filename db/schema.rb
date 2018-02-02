@@ -11,7 +11,18 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema.define(version: 20180112220510) do
+ActiveRecord::Schema.define(version: 20180118235718) do
+
+  create_table "googles", force: true do |t|
+    t.string   "user"
+    t.string   "client_id"
+    t.string   "access_token"
+    t.string   "refresh_token"
+    t.string   "scope"
+    t.datetime "created_at"
+    t.datetime "updated_at"
+    t.integer  "expiration_time_millis"
+  end
 
   create_table "roles", force: true do |t|
     t.integer  "session_id"

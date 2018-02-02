@@ -11,7 +11,7 @@ class CalendarController < ApplicationController
     # row and column [1] will hold the titles for that rolw or column.
 
     @sessinfo      = Session.all
-    logger.debug "calendar display - (sessinfo) " + @sessinfo.inspect
+    #logger.debug "calendar display - (sessinfo) " + @sessinfo.inspect
 
     @slotsinfo     = Slot 
                   .select('id, timeslot, location')         
@@ -21,7 +21,7 @@ class CalendarController < ApplicationController
                   .select('location')
                   .distinct
 
-   logger.debug '@locations- ' + @locations.inspect
+   #logger.debug '@locations- ' + @locations.inspect
 
 
     #column headers will be the days - two step process to get these
@@ -34,7 +34,7 @@ class CalendarController < ApplicationController
       mydate = datetime.timeslot.strftime("%Y-%m-%d")
       @colheaders[mydate] = datetime.timeslot.strftime("%a-%Y-%m-%d")
     end
-    logger.debug "@colheaders: " + @colheaders.inspect
+    #logger.debug "@colheaders: " + @colheaders.inspect
 
     # row headers will be the session times for the day - allready have unique slots               
     @rowheaders = Hash.new()
@@ -42,10 +42,10 @@ class CalendarController < ApplicationController
       mytime = datetime.timeslot.strftime("%H-%M")
       @rowheaders[mytime] = datetime.timeslot.strftime("%I-%M %p")
     end
-    logger.debug "@rowheaders: " + @rowheaders.inspect
+    #logger.debug "@rowheaders: " + @rowheaders.inspect
 
-    logger.debug '@rowheaders.count: ' + @rowheaders.count.inspect
-    logger.debug '@colheaders.count: ' + @colheaders.count.inspect
+    #logger.debug '@rowheaders.count: ' + @rowheaders.count.inspect
+    #logger.debug '@colheaders.count: ' + @colheaders.count.inspect
     
     #@cal1 = Array.new(1 + @rowheaders.count){Array.new(1 + @colheaders.count){Hash.new()}}
     #logger.debug 'cal1: ' + @cal1.inspect
@@ -72,22 +72,22 @@ class CalendarController < ApplicationController
       end
       @colindex[entry] = i
     end
-    logger.debug "colindex- " + @colindex.inspect
-    logger.debug 'cal: ' + @cal.inspect
+    #logger.debug "colindex- " + @colindex.inspect
+    #logger.debug 'cal: ' + @cal.inspect
    
     j = 0
     @rowindex = Hash.new
     @rowheaders.each do |key, value|
-      logger.debug 'rowindex loop - entry: ' + key.inspect + "  " + value.inspect
+      #logger.debug 'rowindex loop - entry: ' + key.inspect + "  " + value.inspect
       j += 1
       @locations.each do |l|
         @cal[l.location][j][0]["value"] = value
       end
       @rowindex[key] = j
     end
-    logger.debug "rowindex- " + @rowindex.inspect
-    logger.debug 'cal: ' + @cal.inspect
-    logger.debug '---------- now do the slots --------------------'
+    #logger.debug "rowindex- " + @rowindex.inspect
+    #logger.debug 'cal: ' + @cal.inspect
+    #logger.debug '---------- now do the slots --------------------'
     # identify valid slots for display
     # first need to split out the location, date and time
     @slotsinfo.each do |myslot|
@@ -100,23 +100,23 @@ class CalendarController < ApplicationController
       @cal[mylocation][@rowindex[mytime]][@colindex[mydate]]["id_dom"] = 
                   myslot.location[0, 3].ljust(3, "-") + myslot.timeslot.strftime("%Y%m%d%H%M")
     end 
-    logger.debug 'cal: ' + @cal.inspect
+    #logger.debug 'cal: ' + @cal.inspect
     
-    logger.debug '---------- now do the sessions --------------------'
+    #logger.debug '---------- now do the sessions --------------------'
     @sessinfo.each do |entry|
-      logger.debug "entry- " + entry.inspect
+      #logger.debug "entry- " + entry.inspect
 
       thisdate = entry.slot.timeslot.strftime("%Y-%m-%d")
       thistime = entry.slot.timeslot.strftime("%H-%M")
       thislocation = entry.slot.location
       
       #thistime = entry.slot.timeslot.strftime("%Y-%m-%d %H:%M")
-      logger.debug "thisdate- " + thisdate.inspect
-      logger.debug "colindex- " + @colindex[thisdate].inspect
+      #logger.debug "thisdate- " + thisdate.inspect
+      #logger.debug "colindex- " + @colindex[thisdate].inspect
       #thislocation = entry.slot.location
-      logger.debug "thistime- " + thistime.inspect
-      logger.debug "rowindex- " + @rowindex[thistime].inspect
-      logger.debug "thislocation- " + thislocation.inspect
+      #logger.debug "thistime- " + thistime.inspect
+      #logger.debug "rowindex- " + @rowindex[thistime].inspect
+      #logger.debug "thislocation- " + thislocation.inspect
 
       unless @cal[thislocation][@rowindex[thistime]][@colindex[thisdate]].key?('values') then  
         @cal[thislocation][@rowindex[thistime]][@colindex[thisdate]]["values"]   = Array.new()
@@ -124,7 +124,7 @@ class CalendarController < ApplicationController
       @cal[thislocation][@rowindex[thistime]][@colindex[thisdate]]["values"]   << entry
 
     end
-    logger.debug '@cal- ' + @cal.inspect
+    #logger.debug '@cal- ' + @cal.inspect
   end
   
   #=============================================================================================

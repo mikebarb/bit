@@ -1,0 +1,35 @@
+<h1>Listing googles</h1>
+
+<table>
+  <thead>
+    <tr>
+      <th>User</th>
+      <th>Client</th>
+      <th>Access token</th>
+      <th>Refresh token</th>
+      <th>Scope</th>
+      <th>Expiration Time Milliseconds</th>
+      <th colspan="3"></th>
+    </tr>
+  </thead>
+
+  <tbody>
+    <% @googles.each do |google| %>
+      <tr>
+        <td><%= google.user %></td>
+        <td><%= google.client_id %></td>
+        <td><%= google.access_token %></td>
+        <td><%= google.refresh_token %></td>
+        <td><%= google.scope %></td>
+        <td><%= google.expiration_time_millis %></td>
+        <td><%= link_to 'Show', google %></td>
+        <td><%= link_to 'Edit', edit_google_path(google) %></td>
+        <td><%= link_to 'Destroy', google, method: :delete, data: { confirm: 'Are you sure?' } %></td>
+      </tr>
+    <% end %>
+  </tbody>
+</table>
+
+<br>
+
+<%= link_to 'New Google', new_google_path %>

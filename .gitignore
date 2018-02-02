@@ -14,3 +14,10 @@
 # Ignore all logfiles and tempfiles.
 /log/*.log
 /tmp
+
+# ingnore file used to load environment variables with secrets
+/config/local_env.yml
+
+# ignore google client secrets
+/client_secrets.json
+/google_tokens
