@@ -3,8 +3,8 @@ class CalendarController < ApplicationController
     @sf = 3   # number of significant figures in dom ids for session,tutor, etc.
     @site = "Kaleen"
     
-    @tutors = Tutor.all
-    @students = Student.all
+    @tutors = Tutor.where.not(status: "inactive")
+    @students = Student.where.not(status: "inactive")
     
     # define a two dimesional array to hold the table info to be displayed.
     # row and column [0] will hold counts of elements populated in that row or column

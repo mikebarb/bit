@@ -9,7 +9,12 @@
       <th>Pname</th>
       <th>Initials</th>
       <th>Sex</th>
+      <th>Subjects</th>
       <th>Comment</th>
+      <th>Status</th>
+      <th>Email</th>
+      <th>Phone</th>
+      
       <th colspan="3"></th>
     </tr>
   </thead>
@@ -23,7 +28,11 @@
         <td><%= tutor.pname %></td>
         <td><%= tutor.initials %></td>
         <td><%= tutor.sex %></td>
+        <td><%= tutor.subjects %></td>
         <td><%= tutor.comment %></td>
+        <td><%= tutor.status %></td>
+        <td><%= tutor.email %></td>
+        <td><%= tutor.phone %></td>        
         <td><%= link_to 'Show', tutor %></td>
         <td><%= link_to 'Edit', edit_tutor_path(tutor) %></td>
         <td><%= link_to 'Destroy', tutor, method: :delete, data: { confirm: 'Are you sure?' } %></td>

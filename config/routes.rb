@@ -5,9 +5,12 @@ Rails.application.routes.draw do
   
   resources :googles
 
-  get 'admins/load' => 'admins#load', as: :loadgoogle
-  get 'admins/load2' => 'admins#load2', as: :load2google
-  get 'admins/load2c' => 'admins#load2c', as: :load2cgoogle
+  get 'admins/load' => 'admins#load', as: :load
+  get 'admins/loadtutors' => 'admins#loadtutors', as: :loadtutors
+  get 'admins/loadstudents' => 'admins#loadstudents', as: :loadstudents
+  get 'admins/loadschedule' => 'admins#loadschedule', as: :loadschedule
+  get 'admins/loadtest' => 'admins#loadtest', as: :loadtest
+
 
   post 'removetutorfromsession' => 'tutroles#removetutorfromsession', as: :removetutorfromsession
   post 'tutorcopysession' =>       'tutroles#tutorcopysession', as: :tutorcopysession

@@ -26,8 +26,28 @@
 </p>
 
 <p>
+  <strong>Subjects:</strong>
+  <%= @tutor.subjects %>
+</p>
+
+<p>
   <strong>Comment:</strong>
   <%= @tutor.comment %>
+</p>
+
+<p>
+  <strong>Status:</strong>
+  <%= @tutor.status %>
+</p>
+
+<p>
+  <strong>Email:</strong>
+  <%= @tutor.email %>
+</p>
+
+<p>
+  <strong>Phone:</strong>
+  <%= @tutor.phone %>
 </p>
 
 <%= link_to 'Edit', edit_tutor_path(@tutor) %> |

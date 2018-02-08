@@ -22,7 +22,11 @@
             <div class=tutor id=<%= "t" + tutor.id.to_s.rjust(@sf, "0") %> >
                 <div style=persongroup>
                     <div class="tutorname tutorinline">tutor: <%= tutor.pname %></div>
-                    <div class="tutorcomment tutorinline"><%= tutor.comment %></div>
+                    <div class="tutorcomment tutorinline">
+                        <%= tutor.subjects %>
+                        <br>
+                        <%= tutor.comment %>
+                    </div>
                 </div>
             </div>
         <% end %>
@@ -33,7 +37,15 @@
             <div class= student id=<%= "s" + student.id.to_s.rjust(@sf, "0") %> >
                 <div style=persongroup>
                     <div class="studentname studentinline">student: <%= student.pname %></div>
-                    <div class="studentcomment studentinline"><%= student.comment %></div>
+                    <div class="studentcomment studentinline">
+                        <%= student.sex == nil ? "" :
+                            student.sex.downcase.include?("female")?
+                            "(F) " : student.sex.downcase.include?("male")?
+                            "(M) " : "" %>
+                        Yr: <%= student.year == nil ? "   " : student.year.rjust(3) %> | <%= student.study %>
+                        <br>
+                        <%= student.comment %>
+                    </div>
                 </div>
             </div>
         <% end %>
@@ -72,8 +84,12 @@
                    <% if tutor then %>
                      <div class=tutor id=<%= cells["id_dom"] + "n" + entry.id.to_s.rjust(@sf, "0") + "t" + tutor.id.to_s.rjust(@sf, "0") %> >
                        <div style=persongroup>
-                           <div class="tutorname tutorinline">tutor: <%= tutor.pname %></div>
-                           <div class="tutorcomment comment tutorinline">xx-xx<%= tutor.comment %></div>
+                            <div class="tutorname tutorinline">tutor: <%= tutor.pname %></div>
+                            <div class="tutorcomment comment tutorinline">
+                                <%= tutor.subjects %>
+                                <br>
+                                <%= tutor.comment %>
+                            </div>
                         </div>
                      </div>
                    <% end %>
@@ -86,8 +102,16 @@
                    <% if student then %>
                      <div class=student id=<%= cells["id_dom"] + "n" + entry.id.to_s.rjust(@sf, "0") + "s" + student.id.to_s.rjust(@sf, "0") %> >
                        <div style=persongroup>
-                           <div class="studentname studentinline">student: <%= student.pname %></div>
-                           <div class="studentcomment comment studentinline">yy-yy<%= student.comment %></div>
+                            <div class="studentname studentinline">student: <%= student.pname %></div>
+                            <div class="studentcomment comment studentinline">
+                                <%= student.sex == nil ? "" :
+                                    student.sex.downcase.include?("female")?
+                                    "(F) " : student.sex.downcase.include?("male")?
+                                    "(M) " : "" %>
+                                Yr: <%= student.year == nil ? "   " : student.year.rjust(3) %> | <%= student.study %>
+                                <br>
+                                <%= student.comment %>
+                            </div>
                         </div>
                      </div>
                    <% end %>

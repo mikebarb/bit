@@ -1,0 +1,42 @@
+<h1>Admin Controller - Load Test</h1>
+  <p> This page is for testing only.</p>
+  <p> Most of the relevant output is in the logs.</p>
+  
+    <%
+        logger.debug "------------- Testing in view ----------"
+        [
+          "Joshua Kerr",
+          "Alexandra (Alex) Cosgrove 12",
+          "Aanya Daga 4 (male)",
+          "Riley Howatson 1 (female)",
+          "Amelia Clark (kindy)",
+          "Elisha Stojanovski K",
+          "Bella Parsonage Phelan 8",
+          "Billy Johnson K (female)"
+        ].each do |a|
+            b = getStudentNameYearSex(a)
+            logger.debug "name: " + a + "\n" + b.inspect
+    %>
+            <div>
+              <div></div><%= a.inspect %></div>
+              <div><%= b.inspect %></div>
+              <div><%= getStudentName(a).inspect %></div>
+              <br>
+            </div>
+    <%
+        end
+    %>
+    
+<table>
+<% @output.each do |row|  %>
+<tr>
+  <% row.each do |col| %>
+    <td><%= col[0] %></td>
+    <td><%= col[1] %></td>
+  <% end %>
+</tr>
+<% end %>
+</table>
+<br>
+
+<%= link_to 'New Google', new_google_path %>

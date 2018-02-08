@@ -11,20 +11,20 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema.define(version: 20180118235718) do
+ActiveRecord::Schema.define(version: 20180205222124) do
 
-  create_table "googles", force: true do |t|
-    t.string   "user"
-    t.string   "client_id"
-    t.string   "access_token"
-    t.string   "refresh_token"
-    t.string   "scope"
+  create_table "googles", force: :cascade do |t|
+    t.string   "user",                   limit: 255
+    t.string   "client_id",              limit: 255
+    t.string   "access_token",           limit: 255
+    t.string   "refresh_token",          limit: 255
+    t.string   "scope",                  limit: 255
     t.datetime "created_at"
     t.datetime "updated_at"
     t.integer  "expiration_time_millis"
   end
 
-  create_table "roles", force: true do |t|
+  create_table "roles", force: :cascade do |t|
     t.integer  "session_id"
     t.integer  "student_id"
     t.datetime "created_at"
@@ -35,44 +35,61 @@ ActiveRecord::Schema.define(version: 20180118235718) do
   add_index "roles", ["session_id"], name: "index_roles_on_session_id"
   add_index "roles", ["student_id"], name: "index_roles_on_student_id"
 
-  create_table "sessions", force: true do |t|
+  create_table "sessions", force: :cascade do |t|
     t.integer  "slot_id"
     t.text     "comments"
     t.datetime "created_at"
     t.datetime "updated_at"
+    t.string   "status"
   end
 
-  create_table "slots", force: true do |t|
+  create_table "slots", force: :cascade do |t|
     t.datetime "timeslot"
-    t.string   "location"
+    t.string   "location",   limit: 255
     t.text     "comment"
     t.datetime "created_at"
     t.datetime "updated_at"
   end
 
-  create_table "students", force: true do |t|
-    t.string   "gname"
-    t.string   "sname"
-    t.string   "pname"
-    t.string   "initials"
-    t.string   "sex"
+  create_table "students", force: :cascade do |t|
+    t.string   "gname",       limit: 255
+    t.string   "sname",       limit: 255
+    t.string   "pname",       limit: 255
+    t.string   "initials",    limit: 255
+    t.string   "sex",         limit: 255
     t.text     "comment"
     t.datetime "created_at"
     t.datetime "updated_at"
+    t.string   "status"
+    t.string   "year"
+    t.string   "study"
+    t.string   "email"
+    t.string   "phone"
+    t.string   "invcode"
+    t.string   "daycode"
+    t.string   "preferences"
   end
 
-  create_table "tutors", force: true do |t|
-    t.string   "gname"
-    t.string   "sname"
-    t.string   "pname"
-    t.string   "initials"
-    t.string   "sex"
+  add_index "students", ["pname"], name: "index_students_on_pname", unique: true
+
+  create_table "tutors", force: :cascade do |t|
+    t.string   "gname",      limit: 255
+    t.string   "sname",      limit: 255
+    t.string   "pname",      limit: 255
+    t.string   "initials",   limit: 255
+    t.string   "sex",        limit: 255
     t.text     "comment"
     t.datetime "created_at"
     t.datetime "updated_at"
+    t.string   "subjects"
+    t.string   "status"
+    t.string   "email"
+    t.string   "phone"
   end
 
-  create_table "tutroles", force: true do |t|
+  add_index "tutors", ["pname"], name: "index_tutors_on_pname", unique: true
+
+  create_table "tutroles", force: :cascade do |t|
     t.integer  "session_id"
     t.integer  "tutor_id"
     t.datetime "created_at"

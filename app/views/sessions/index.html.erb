@@ -4,8 +4,8 @@
   <thead>
     <tr>
       <th>ID</th>
-      <th>Student</th> <th>Name</th> <th>Init</th>
-      <th>Tutor</th> <th>Name</th> <th>Init</th>
+      <th>Student</th>
+      <th>Tutor</th>
       <th>Slot</th> <th>time</th> <th>place</th>
       <th>Comments</th>
       <th colspan="3"></th>
@@ -14,29 +14,32 @@
 
   <tbody>
     <% @sessions.each do |session| %>
-      <% student = session.students.first %>
-      <% tutor = session.tutors.first %>
+      <% students = session.students %>
+      <% tutors = session.tutors %>
       <% if session.slot_id %>
         <% slot = Slot.find(session.slot_id) %>
       <% end %>
       <tr>
         <td><%= session.id %></td>
 
-        <% if student.nil? %>
+        <% if students.nil? %>
           <td></td> <td></td> <td></td>
         <% else %>
-          <% logger.debug "views index for student - " + student.inspect %>
-          <td><%= student.id %></td>
-          <td><%= student.gname + ' ' + student.sname %></td>
-          <td><%= student.initials %></td>
+            <td>
+              <% students.each do |student| %>
+                <%= student.pname %><br>
+              <% end %>
+            </td>
         <% end %>
 
-        <% if tutor.nil? %>
+        <% if tutors.nil? %>
           <td></td> <td></td> <td></td>
         <% else %>
-          <td><%= tutor.id %></td>
-          <td><%= tutor.gname + ' ' + tutor.sname %></td>
-          <td><%= tutor.initials %></td>
+          <td>
+            <% tutors.each do |tutor| %>
+              <%= tutor.pname %><br>
+            <% end %>
+          </td>
         <% end %>
 
         <% if slot.nil? %>

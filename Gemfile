@@ -46,15 +46,8 @@ gem 'spring',        group: :development
 #gem 'debugger', group: [:development, :test]
 
 # support google spreadsheets
-#not google gem 'sheets', '~> 1.2', '>= 1.2.1'
-# see migration doco 
-# https://github.com/google/google-api-ruby-client/blob/master/MIGRATING.md
-#gem 'google-api-client', '0.11', :require => ['google/apis/sheets_v4']
 gem 'googleauth', :require => ['googleauth/stores/file_token_store', 'googleauth']
-#gem 'googleauth', require: 'googleauth'
 gem 'google-api-client', '~> 0.19', require: 'google/apis/sheets_v4'
-#gem 'google-api-client', '0.9', require: 'google/api_client'
-#gem 'sheets-v4'
 
 #gem 'google-api-client', '0.8.2', require: 'google/api_client'
 #gem 'cloudprint'
