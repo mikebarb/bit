@@ -70,6 +70,11 @@ class AdminsController < ApplicationController
         t[7] = "invalid pname - do nothing"
         next
       end
+      if m =pname.match(/(^z+)(.+)$/)
+        pname = m[2]
+        t[1] = pname
+      end
+      
       db_tutor = Tutor.find_by pname: pname
       if(db_tutor)   # already in the database
         flagupdate = 0                  # detect if any fields change
@@ -223,7 +228,6 @@ class AdminsController < ApplicationController
     basecolumncount += 3
     #logger.debug "students: " + @students.inspect
     # Now to update the database
-    #byebug
     loopcount = 0                         # limit output during testing
     @students.each do |t|                 # step through all tutors from the spreadsheet
       pnameyear = t[1]
@@ -391,50 +395,12 @@ class AdminsController < ApplicationController
     myrow.map.with_index do |v, i|
       sites[v[/\w+/]] = {"col_start" => i-1} if v != "" && v != week
     end
-    
-=begin
-    # second get the start of day rows and start of slot rows
-    # from the first column
-    range = "#{sheet_name}!A3:A"
-    Rails.logger.level = 1 
-    response = service.get_spreadsheet_values(spreadsheet_id, range, major_dimension: "COLUMNS")
-    Rails.logger.level = 0 
-    mycol = response.values[0]
-    # pick up the column start of days and slottimes
-    days = Array.new      # array of rows numbers starting the day
-    slottimes = Array.new() # array of row number starting each slot
-                           # index = row number, values = ssdate
-                           # and datetime = datetime of the slot
-    mydate = Date.new   # temp store only during loop processing
-    rowDate = Hash.new()   # held for later use (outside of this loop)
-    mycol.map.with_index do |v, i|
-      # find days
-      if v == week
-        days.push(i)
-      end
-      if m = v.match(/(\d+)\/(\d+)\/(\d+)/)
-        mydate = Date.new(m[3].to_i,m[1].to_i,m[2].to_i)
-        slottimes.push({"row_start" => i,
-                          "ssdate" => v, 
-                          "datetime" =>  mydate.to_time
-                          })
-        rowDate[i] = mydate
-      end
-      if m = v.match(/(\w+)\n(\d+)(\d{2})$/im)
-        dt = DateTime.new(mydate.year, mydate.month, mydate.day,
-                          m[2].to_i, m[3].to_i)
-        slottimes[slottimes.length-1]["datetime"] = dt
-      end
-    end
-    #logger.debug "slottimes: " + slottimes.inspect
-    #logger.debug "sites: " + sites.inspect
-    #logger.debug "days: " + days.inspect
-=end
 
     #this function converts spreadsheet indices to column name
     # examples: e[0] => A; e[30] => AE 
     e=->n{a=?A;n.times{a.next!};a}  
-
+    
+    #---------------------------------------------
     # We now need to work through the sites by day
     # and tutorial slots
     # We will load a spreadsheet site at a time
@@ -462,13 +428,17 @@ class AdminsController < ApplicationController
     # At the beginning of each day, we get the on call and
     # setup info
     sites.each do |si, sv|  # site name, {col_start}
+      #byebug
       mystartcol = e[sv["col_start"]]
       myendcol = e[sv["col_start"] + colsPerSite - 1]
+      myendcoldates = e[sv["col_start"] + 1] 
       # ****************** temp seeting during development
-      # restrict output 
-      range = "#{sheet_name}!#{mystartcol}3:#{myendcol}60"
+      # restrict output for testing and development
+      #range      = "#{sheet_name}!#{mystartcol}3:#{myendcol}60"
+      #rangedates = "#{sheet_name}!#{mystartcol}3:#{mystartcol}60"
       # becomes for production
-      #range = "#{sheet_name}!#{mystartcol}3:#{myendcol}"
+      range = "#{sheet_name}!#{mystartcol}3:#{myendcol}"
+      rangedates = "#{sheet_name}!#{mystartcol}3:#{mystartcol}"
       Rails.logger.level = 1 
       response = service.get_spreadsheet(
         spreadsheet_id,
@@ -476,6 +446,15 @@ class AdminsController < ApplicationController
         fields: "sheets(data.rowData.values" + 
         "(formattedValue,effectiveFormat.backgroundColor))"
       )
+      
+      responsedates = service.get_spreadsheet_values(
+        spreadsheet_id,
+        rangedates,
+        {value_render_option: 'UNFORMATTED_VALUE',
+         date_time_render_option: 'SERIAL_NUMBER'
+        }
+      )
+
       Rails.logger.level = 0
       # Now scan each row read from the spreadsheet in turn
       response.sheets[0].data[0].row_data.map.with_index do |r, ri| # value[], row index
@@ -494,14 +473,15 @@ class AdminsController < ApplicationController
           # store all colours and keep count of how often
           # also, keep location oif first occurance
           if cf != nil
-            col = [cf.red,cf.green,cf.blue]
+            #col = [cf.red,cf.green,cf.blue]
+            col = colourToArray(cf)
             @allColours[col] ? 
               @allColours[col][2] += 1 :
               @allColours[col] = [e[j + sv["col_start"]],3+ri,1]
           end
         }
         # Now start processing the row content
-        c0 = getvalue1(r.values[0])
+        c0 = getvalue(r.values[0])
         if c0 == week     # this is the first row of the day e.g. T3W1
           storecolours.call(1)
           next
@@ -509,7 +489,7 @@ class AdminsController < ApplicationController
         if c0 == "ON CALL"     # we are on "ON CALL" row e.g. T3W1
           storecolours.call(1)
           for i in 1..7 do     # keep everything on row
-            cv = getvalue1(r.values[i])
+            cv = getvalue(r.values[i])
             onCall.push(cv) if cv != ""
           end
           next
@@ -517,23 +497,34 @@ class AdminsController < ApplicationController
         if c0 == "SETUP"     # we are on "ON CALL" row e.g. T3W1
           storecolours.call(1)
           for i in 1..7 do   # keep everything on row
-            cv = getvalue1(r.values[i])
+            cv = getvalue(r.values[i])
             onSetup.push(cv) if cv != ""
           end
           next
         end
         # look for date row - first row for slot e.g 7/18/2016
-        if m = c0.match(/(\d+)\/(\d+)\/(\d+)/)
+        if c0.match(/(\d+)\/(\d+)\/(\d+)/)
+          cf1 = getformat(r.values[1])
+          # If this cell with day/time content is black,
+          # then this slot is not used.
+          # just skip - any onCall or onSetup already found will be
+          # put into the first valid slot.
+          next if colourToStatus(cf1)['colour'].downcase != 'white'
+          # we are now working with a valid slot
           unless requiredSlot.empty?
             @schedule.push(requiredSlot.clone)
             requiredSlot.clear
           end
-          c1 = getvalue1(r.values[1])
+          logger.debug " --------" + si.inspect + "-----------"
+          #now get the matching date from the responsedates array
+          mydateserialnumber = responsedates.values[ri][0]
+          mydate = Date.new(1899, 12, 30) + mydateserialnumber 
+          c1 = getvalue(r.values[1])
           n = c1.match(/(\w+)\s+(\d+)(\d{2})$/im) # MONDAY 330
-          mydate = Date.new(m[3].to_i,m[1].to_i,m[2].to_i)
-          #logger.debug "mydate : " + mydate.inspect +
-          #           "\nnewdate: " + newdate.inspect + 
-          #           "\n------------------------------"
+          logger.debug "checking date: " + c0.inspect + 
+                       " : " + c1.inspect + " : " + n.inspect +
+                       " : " + mydate.inspect
+          #mydate = Date.new(m[3].to_i, m[1].to_i, m[2].to_i)
           dt = DateTime.new(mydate.year, mydate.month, mydate.day,
                           n[2].to_i, n[3].to_i)
           requiredSlot["timeslot"] = dt
@@ -551,15 +542,14 @@ class AdminsController < ApplicationController
           next
         end
         # any other rows are now standard session rows
-        c1 = getvalue1(r.values[1])     # tutor
-        c2 = getvalue1(r.values[2])     # student 1
-        c4 = getvalue1(r.values[4])     # student 2
-        c6 = getvalue1(r.values[6])     # session comment
-        cf1 = getformat1(r.values[1])
-        cf2 = getformat1(r.values[2])
-        cf4 = getformat1(r.values[4])
+        c1 = getvalue(r.values[1])     # tutor
+        c2 = getvalue(r.values[2])     # student 1
+        c4 = getvalue(r.values[4])     # student 2
+        c6 = getvalue(r.values[6])     # session comment
+        cf1 = getformat(r.values[1])
+        cf2 = getformat(r.values[2])
+        cf4 = getformat(r.values[4])
         # store colours for cells of interest
-        #byebug
         [1,2,3,4,5,6].each do |j|
           storecolours.call(j)
         end
@@ -578,15 +568,372 @@ class AdminsController < ApplicationController
         @schedule.push(requiredSlot.clone)
         requiredSlot.clear
       end
-      break       # during dev only - only doing one site
+      #break       # during dev only - only doing one site
     end
-=begin
-    logger.debug "Print out @schedule"
-    @schedule.each do |slot|
-      logger.debug "------------schedule -> slot ---------------"
-      logger.debug slot.inspect
+    # cache the tutors and students for laters processing by the utilities.
+    @tutors = Tutor.all
+    @students = Student.all
+  
+    # Now start the database updates using the info in @schedule
+    # Note:
+    #       my...   = the info extracted from @schedule
+    #       this... = the database record 
+    
+    # slot info
+    @schedule.each do |r|
+      mylocation = r["location"]
+      mytimeslot = r["timeslot"] 
+      thisslot = Slot.where(location: mylocation, timeslot: mytimeslot).first
+      r["slot_updates"] = ""
+      unless thisslot    # none exist
+        thisslot = Slot.new(timeslot: mytimeslot, location: mylocation)
+        if thisslot.save
+          r["slot_updates"] = "slot created"
+        else
+          r["slot_updates"] = "slot creation failed"
+        end
+      else
+        r["slot_updates"] = "slot exists - no change"
+      end
+      # Now load sessions (create or update)
+      # first up is the "On Call"
+      # these will have a session status of "oncall"
+      # ["DAVID O\n| E12 M12 S10 |"]
+      if(mysession = r["onCall"])
+        r["onCallupdates"] = ""
+        mytutornamecontent = findTutorNameComment(mysession, @tutors)
+        # check if there was a tutor found.
+        # If not, then we add any comments to the session comments.
+        sessioncomment = ""
+        if mytutornamecontent[0]["name"] == "" && 
+           mytutornamecontent[0]["comment"].strip != ""
+            sessioncomment = mytutornamecontent[0]["comment"]
+        end
+        if mytutornamecontent[0]["name"] != "" || 
+           sessioncomment != ""
+            # something to put in session so ensure it exists - create if necessary
+          thissession = Session.where(slot_id: thisslot.id, status: "onCall").first
+          unless thissession
+            thissession = Session.new(slot_id: thisslot.id,
+                                    status: "onCall",
+                                    comments: sessioncomment)
+            thissession.save
+          end
+        end
+        # Now load in the tutors - if any
+        mytutornamecontent.each do |te|
+          # need tutor record - know it exists if found here
+          if te['name']
+            # create a tutrole record if not already there
+            thistutor = Tutor.where(pname: te['name']).first # know it exists
+            mytutorcomment = te['comment']
+            # determine if this tutrole already exists
+            thistutrole = Tutrole.where(session_id: thissession.id,
+                                        tutor_id:   thistutor.id
+            ).first
+            if thistutrole      # already there
+              if thistutrole.comment == mytutorcomment
+                r["onCallupdates"] += "|no change|"
+              else
+                if thistutrole.update(comment: mytutorcomment)
+                  r["onCallupdates"] += "|updated tutrole|"
+                else
+                  r["onCallupdates"] += "|updated failed|"
+                end
+              end
+            else                # need to be created
+              thistutrole = Tutrole.new(session_id: thissession.id,
+                                        tutor_id:   thistutor.id,
+                                        comment: mytutorcomment,
+                                        status: "onCall")
+              if thistutrole.save
+                r["onCallupdates"] = "|created|"
+              else
+                r["onCallupdates"] = "|creation failed|"
+              end
+            end
+          end
+        end
+      end
+      # second up is the "Setup"
+      # these will have a session status of "oncall"
+      # ["DAVID O\n| E12 M12 S10 |"]
+      if(mysession = r["onSetup"])
+        r["onSetupupdates"] = ""
+        mytutornamecontent = findTutorNameComment(mysession, @tutors)
+        # check if there was a tutor found.
+        # If not, then we add any comments to the session comments.
+        sessioncomment = ""
+        if mytutornamecontent[0]["name"] == "" && 
+           mytutornamecontent[0]["comment"].strip != ""
+            sessioncomment = mytutornamecontent[0]["comment"]
+        end
+        if mytutornamecontent[0]["name"] != "" || 
+           sessioncomment != ""
+            # something to put in session so ensure it exists - create if necessary
+          thissession = Session.where(slot_id: thisslot.id, status: "onSetup").first
+          unless thissession
+            thissession = Session.new(slot_id: thisslot.id,
+                                    status: "onSetup",
+                                    comments: sessioncomment)
+            thissession.save
+          end
+        end
+        # Now load in the tutors - if any
+        mytutornamecontent.each do |te|
+          # need tutor record - know it exists if found here
+          if te['name']
+            # create a tutrole record if not already there
+            thistutor = Tutor.where(pname: te['name']).first # know it exists
+            mytutorcomment = te['comment']
+            # determine if this tutrole already exists
+            thistutrole = Tutrole.where(session_id: thissession.id,
+                                        tutor_id:   thistutor.id
+            ).first
+            if thistutrole      # already there
+              if thistutrole.comment == mytutorcomment
+                r["onSetupupdates"] += "|no change|"
+              else
+                if thistutrole.update(comment: mytutorcomment)
+                  r["onSetupupdates"] += "|updated tutrole|"
+                else
+                  r["onSetupupdates"] += "|updated failed|"
+                end
+              end
+            else                # need to be created
+              thistutrole = Tutrole.new(session_id: thissession.id,
+                                        tutor_id:   thistutor.id,
+                                        comment: mytutorcomment,
+                                        status: "onSetup")
+              if thistutrole.save
+                r["onSetupupdates"] = "|created|"
+              else
+                r["onSetupupdates"] = "|creation failed|"
+              end
+            end     # if thistutrole
+          end
+        end
+      end         # end onSetup      
+      # third is standard sessions
+      # these will have a session status of that depends on colour
+      # which gets mapped into a status
+      # ["DAVID O\n| E12 M12 S10 |"]
+      # mysessions = 
+      #[{tutor   =>[name, colour], 
+      #  students=>[[name, colour],[name, colour]],
+      #  comment => ""
+      #  }, ...{}... ]
+      #
+      #
+      #{"tutor"=>["ALLYSON B\n| M12 S12 E10 |",
+      #           #<Google::Apis::SheetsV4::Color:0x00000003ef3c80 
+      #           @blue=0.95686275, @green=0.7607843, @red=0.6431373>],
+      # "students"=>[
+      #           ["Mia Askew 4", 
+      #           #<Google::Apis::SheetsV4::Color:0x00000003edeab0 
+      #           @blue=0.972549, @green=0.85490197, @red=0.7882353>],
+      #           ["Emily Lomas 6", 
+      #           #<Google::Apis::SheetsV4::Color:0x00000003eb06d8 
+      #           @blue=0.827451, @green=0.91764706, @red=0.8509804>]],
+      # "comment"=>"Emilija away"
+      #}
+      #
+
+      # first we need to see if there are already sessions
+      # for this tutor in this slot (except Setup & oncall)
+      # Check procedure
+      # 1. Get all sessions from database in this slot
+      # 2. From the database for these sessions, we cache
+      #    a) all the tutroles   (tutors) 
+      #    b) all the roles      (students)
+      #    Tutroles query excludes status "onSetup" & "onCall"
+      #    Note: tutroles hold: sessin_id, tutor_id, status, comment
+      # 3. Loop through each session from the spreadsheet and check
+      #    Note: if tutor in ss, but not found in database, then add
+      #          as a comment; same for students
+      #    a) if tutor or student in the ss for this session has either
+      #       a tutor or student in the database, then that is the 
+      #         session to use, ELSE we create a new session.
+      #       This is then the session we use for the following steps
+      #    b) for my tutor in ss, is there a tutrole with this tutor
+      #       If so, update the tutrole with tutor comments (if changed)
+      #       If not,
+      #              i)  create a session in this slot
+      #              ii) create a tutrole record linking session and tutor
+      #       Note 1: This session is then used for the students.
+      #               If a student is found in a different session in this
+      #               slot, then they are moved into this session.
+      #       Note 2: there could be tutrole records in db that are not in ss.
+      # ---------------------------------------------------------------------
+      # Step 1: get all the sessions in this slot
+      thissessions = Session.where(slot_id: thisslot.id)
+      # Step 2: get all the tutrole records for this slot
+      #alltutroles = Tutrole.where(session_id: thissessions.ids)
+      alltutroles = Tutrole.where(session_id: thissessions.ids).
+                       where.not(status: ['onSetup', 'onCall'])
+      allroles    = Role.where(session_id: thissessions.ids)
+      # Step 3:
+      if(mysessions = r["sessions"])   # this is all the standard
+                                       # ss sessions in this slot
+        mysessions.each do |mysess|    # treat session by session
+          thissession = nil            # ensure all reset
+          mysessioncomment = ""
+          #
+          #   Process students
+          #
+          # Step 3a - check if tutors present
+          # if so, this is the session to hang onto.
+          # Will check later if the students are in the same session.
+          flagtutorpresent = flagstudentpresent = FALSE
+          mytutor = mysess["tutor"] # only process if tutor exists
+                                       # mytutor[0] is ss name string,
+          mytutorcomment = ""
+          if mytutor                             # mytutor[1] is colour
+            mytutornamecontent = findTutorNameComment(mytutor[0], @tutors) 
+            mytutorstatus = colourToStatus(mytutor[1])["tutor"]
+            if mytutornamecontent.empty?  ||  # no database names found for this tutor
+               mytutornamecontent[0]['name'] == ""
+                # put ss name string into session comment
+                mysessioncomment += mytutor[0] 
+            else
+              flagtutorpresent = TRUE
+              thistutor = Tutor.where(pname: mytutornamecontent[0]["name"]).first
+              thistutroles = alltutroles.where(tutor_id: thistutor.id)
+              if thistutroles.empty?   # none there, so create one
+                # Step 4ai: Create a new session
+                thissession = Session.new(slot_id: thisslot.id,
+                                          status: 'standard')
+                thissession.save
+                thistutrole = Tutrole.new(session_id: thissession.id,
+                                          tutor_id:   thistutor.id,
+                                          comment: mytutorcomment,
+                                          status: mytutorstatus)
+                if thistutrole.save
+                  r["tutroleupdates"] = "|created|"
+                else
+                  r["tutroleupdates"] = "|creation failed|"
+                end
+              else  # already exist
+                r["tutroleupdates"] = ""
+                thistutroles.each do |thistutrole1|
+                  # get the session they are in
+                  thissession = Session.find(thistutrole1.session_id)
+                  if thistutrole1.comment == mytutorcomment &&
+                     thistutrole1.status  == mytutorstatus
+                    r["tutroleupdates"] += "|no change|"
+                  else
+                    if thistutrole1.comment != mytutorcomment
+                      thistutrole1.update(comment: mytutorcomment)
+                    end
+                    if thistutrole1.status != mytutorstatus
+                      thistutrole1.update(status: mytutorstatus)
+                    end
+                    if thistutrole1.save
+                      r["tutroleupdates"] += "|updated tutrole|"
+                    else
+                      r["tutroleupdates"] += "|update failed|"
+                    end
+                  end
+                end     # thistutroles.each 
+              end   # if thistutroles.emepty?
+            end
+          end
+          #
+          #   Process students
+          #
+          mystudents = mysess["students"]
+          unless mystudents == nil || mystudents.empty?   # there are students in ss
+            mystudents.each do |mystudent|                # precess each student
+              mystudentcomment = ""
+              mystudentstatus  = colourToStatus(mystudent[1])["student"]
+              mystudentnamecontent = findStudentNameComment(mystudent[0], @students) 
+              if mystudentnamecontent.empty?  ||  # no database names found for this student
+                 mystudentnamecontent[0]['name'] == ""
+                # put ss name string into session comment
+                mysessioncomment += mystudent[0] 
+              else
+                flagstudentpresent = TRUE    # we have students
+                thisstudent = Student.where(pname: mystudentnamecontent[0]["name"]).first
+                logger.debug "thisstudent: " + thisstudent.inspect
+                thisroles = allroles.where(student_id: thisstudent.id)
+                # CHECK if there is already a session from the tutor processing 
+                # Step 4ai: Create a new session ONLY if necessary
+                unless thissession
+                  thissession = Session.new(slot_id: thisslot.id,
+                                            status: 'standard')
+                  thissession.save
+                end
+                if thisroles.empty?   # none there, so create one
+                  thisrole = Role.new(session_id: thissession.id,
+                                      student_id:   thisstudent.id,
+                                      comment: mystudentcomment,
+                                      status: mystudentstatus)
+                  if thisrole.save
+                    r["roleupdates"] = "|created|"
+                  else
+                    r["roleupdates"] = "|creation failed|"
+                  end
+                else  # already exist
+                  r["roleupdates"] = ""
+                  thisroles.each do |thisrole1|
+                    # An additional check for students
+                    # If a student is allocated to a different tutor
+                    # in the db, then we will move them to this tutor
+                    # as per the spreadsheet.
+                    # Note that a student cannot be in a session twice.
+                    if thissession.id != thisrole1.session_id
+                      # move this tutrole
+                      if thisrole1.update(session_id: thissession.id)
+                        r["roleupdates"] += "|role move updated|"
+                      else
+                        r["roleupdates"] += "|role move failed|"
+                      end
+                    end
+                    if thisrole1.comment == mystudentcomment &&
+                       thisrole1.status  == mystudentstatus
+                      r["roleupdates"] += "|no change|"
+                    else
+                      if thisrole1.comment != mystudentcomment
+                        thisrole1.update(comment: mystudentcomment)
+                      end
+                      if thisrole1.status != mystudentstatus
+                        thisrole1.update(status: mystudentstatus)
+                      end
+                      if thisrole1.save
+                        r["roleupdates"] += "|updated tutrole|"
+                      else
+                        r["roleupdates"] += "|update failed|"
+                      end
+                    end
+                  end     # thisroles.each 
+                end   # if thisroles.emepty?
+              end
+            end
+          end
+          # process comments
+          if mysessioncomment != ""    # some session comments exist
+            # if no session exists to place the comments
+            # then we need to build one.
+            unless thissession
+              thissession = Session.new(slot_id: thisslot.id,
+                                        status: 'standard')
+              thissession.save
+            end
+            r["commentupdates"] = ""
+            if mysessioncomment == thissession.comments
+                r["commentupdates"] += "|no change|"
+            else
+              thissession.update(comments: mysessioncomment)
+              if thissession.save
+                r["commentupdates"] += "|updated comment|"
+              else
+                r["commentupdates"] += "|comment update failed|"
+              end             
+            end
+          end
+        end
+      end
     end
-=end
   end
 #---------------------------------------------------------------------------
 #
@@ -601,7 +948,7 @@ class AdminsController < ApplicationController
     service = googleauthorisation(request)
     spreadsheet_id = '10dXs-AT-UiFV1OGv2DOZIVYHEp81QSchFbIKZkrNiC8'
     sheet_name = 'New Sheet Name'
-    range = "#{sheet_name}!A1:B5"
+    range = "#{sheet_name}!A7:C33"
     Rails.logger.level = 1 
     response = service.get_spreadsheet(
       spreadsheet_id,
@@ -614,18 +961,16 @@ class AdminsController < ApplicationController
 
     @output = Array.new()
     rowarray = Array.new()
-    cellcontentarray = Array.new(2)
+    cellcontentarray = Array.new(3)
     response.sheets[0].data[0].row_data.map.with_index do |r, ri| # value[], row index
       # Now start processing the row content
       r.values.map.with_index do |mycell, cellindex|
-        #c0 = getvalue.call(0)
-        #c0 = getvalue1(r.values(0))
-        c0 = getvalue1(mycell)
+        c0 = getvalue(mycell)
         cellcontentarray[0] = c0
         
-        #cf0 = getformat.call(0)
-        cf0 = getformat1(mycell)
+        cf0 = getformat(mycell)
         cellcontentarray[1] = showcolour(cf0)
+        cellcontentarray[2] = cf0
 
         logger.debug "c0: " + c0.inspect
         logger.debug "cf0: " + showcolour(cf0)

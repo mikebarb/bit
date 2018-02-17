@@ -5,15 +5,20 @@
     <tr>
       <th>Session</th>
       <th>Student</th>
+      <th>Status</th>
+      <th>Comment</th>
       <th colspan="3"></th>
     </tr>
   </thead>
 
   <tbody>
-    <% @roles.each do |role| %>
+    <% @roles.each do |role| 
+       byebug %>
       <tr>
         <td><%= role.session.id %></td>
         <td><%= role.student.pname %></td>
+        <td><%= role.status %></td>
+        <td><%= role.comment %></td>
         <td><%= link_to 'Show', role %></td>
         <td><%= link_to 'Edit', edit_role_path(role) %></td>
         <td><%= link_to 'Destroy', role, method: :delete, data: { confirm: 'Are you sure?' } %></td>

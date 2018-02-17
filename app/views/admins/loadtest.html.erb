@@ -26,13 +26,14 @@
     <%
         end
     %>
-    
 <table>
 <% @output.each do |row|  %>
 <tr>
   <% row.each do |col| %>
     <td><%= col[0] %></td>
     <td><%= col[1] %></td>
+    <td><%= colourToStatus(col[2])["tutor"] %></td>
+    <td><%= colourToStatus(col[2])["student"] %></td>
   <% end %>
 </tr>
 <% end %>

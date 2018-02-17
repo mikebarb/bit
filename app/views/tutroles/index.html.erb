@@ -5,6 +5,8 @@
     <tr>
       <th>Session</th>
       <th>Tutor</th>
+      <th>Status</th>
+      <th>Comment</th>
       <th colspan="3"></th>
     </tr>
   </thead>
@@ -14,6 +16,8 @@
       <tr>
         <td><%= tutrole.session %></td>
         <td><%= tutrole.tutor %></td>
+        <td><%= tutrole.status %></td>
+        <td><%= tutrole.comment %></td>
         <td><%= link_to 'Show', tutrole %></td>
         <td><%= link_to 'Edit', edit_tutrole_path(tutrole) %></td>
         <td><%= link_to 'Destroy', tutrole, method: :delete, data: { confirm: 'Are you sure?' } %></td>

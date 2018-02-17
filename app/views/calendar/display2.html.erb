@@ -77,7 +77,6 @@
            <% cells["values"].each do |entry| %>
              <% logger.debug "display (cells values as entries) " + entry.inspect %>
              <div class=session id=<%= cells["id_dom"] + "n" + entry.id.to_s.rjust(@sf, "0") %> >
-
                <% if entry.tutors.respond_to?(:each) then %>
                  <% entry.tutors.each do |tutor| %>
                    <% logger.debug "display (tutor)- " + tutor.inspect %>
@@ -88,7 +87,11 @@
                             <div class="tutorcomment comment tutorinline">
                                 <%= tutor.subjects %>
                                 <br>
+                                <%= tutor.tutroles.where(session_id: entry.id).first.comment %>
+                                <br>
                                 <%= tutor.comment %>
+                                <br>
+                                Status: <%= tutor.tutroles.where(session_id: entry.id).first.status %>
                             </div>
                         </div>
                      </div>
@@ -111,7 +114,8 @@
                                 Yr: <%= student.year == nil ? "   " : student.year.rjust(3) %> | <%= student.study %>
                                 <br>
                                 <%= student.comment %>
-                            </div>
+                                <br>
+                                Status: <%= student.roles.where(session_id: entry.id).first.status %>                            </div>
                         </div>
                      </div>
                    <% end %>

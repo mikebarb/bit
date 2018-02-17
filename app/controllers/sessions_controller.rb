@@ -95,9 +95,9 @@ class SessionsController < ApplicationController
     def session_params
       params.require(:session).permit( :slot_id, :comments, 
                                       :students_attributes => [:id, :pname],
-                                      :roles_attributes => [:id, :student_id, :session_id, :_destroy],
+                                      :roles_attributes => [:id, :student_id, :session_id, :comment, :_destroy],
                                       :tutors_attributes => [:id, :pname],
-                                      :tutroles_attributes => [:id, :tutor_id, :session_id, :_destroy],
+                                      :tutroles_attributes => [:id, :tutor_id, :session_id, :comment, :_destroy],
                                       :domchange => [:action, :ele_new_parent_id, :ele_old_parent_id, :move_ele_id, :element_type]
                                      )
     end

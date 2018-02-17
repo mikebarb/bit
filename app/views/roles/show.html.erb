@@ -10,5 +10,15 @@
   <%= @role.student %>
 </p>
 
+<p>
+  <strong>Status:</strong>
+  <%= @role.status %>
+</p>
+
+<p>
+  <strong>Comment:</strong>
+  <%= @role.comment %>
+</p>
+
 <%= link_to 'Edit', edit_role_path(@role) %> |
 <%= link_to 'Back', roles_path %>

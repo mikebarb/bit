@@ -1,27 +1,62 @@
 <h1>Admin Controller - Load Tutors Data from Google Spreadsheet</h1>
 
     <% @schedule.each do |r| %>
-        <h3><%= r["location"] + r["timeslot"].to_s %></h3>
+        <h3><%= "#{r["location"]} : #{r["timeslot"].to_s} (#{r["slot_updates"].to_s})" %></h3>
         <table>
+        <% if r["onCall"] %>
+            <tr><td>On Call</td>
+                <td>
+                    <%= r["onCall"] %><br>
+                    <% findTutorNameComment(r["onCall"], @tutors).each do |te| %>
+                        <br><%= "#{te['name']} (#{te['comment']}) ---> #{r['onCallupdates']}" %>
+                    <% end %>
+                </td>
+                <td> </td>
+            </tr>
+        <% end %>
+        <% if r["onSetup"] %>
+            <tr><td>On Setup</td>
+                <td><%= r["onSetup"] %>
+                    <% findTutorNameComment(r["onSetup"], @tutors).each do |te| %>
+                        <br><%= "#{te['name']} (#{te['comment']}) ---> #{r['onSetupupdates']}"  %>
+                    <% end %>
+                </td>
+                <td> </td>
+            </tr>
+            
+        <% end %>
+
         <% r["sessions"].each do |s| %>
             <% if s["tutor"] %>
                 <tr><td>tutor</td>
-                <td><%= s["tutor"][0] %></td>
-                <td><%= showcolour(s["tutor"][1]) %></td></tr>
+                <td><%= s["tutor"][0] %>
+                    <% findTutorNameComment(s["tutor"][0], @tutors).each do |te| %>
+                        <br><%= "#{te['name']} (#{te['comment']}) ---> #{r['tutroleupdates']}"  %>
+                    <% end %>
+                </td>
+                <td><%= 
+                        colourToStatus(s["tutor"][1])["tutor"]
+                %></td></tr>
             <% end %>
             <% if s["students"] %>
-                <% if s["students"][0] %>
-                    <tr><td>student</td><td><%= s["students"][0][0] %></td>
-                    <td><%= showcolour(s["students"][0][1]) %></td></tr>
-                <% end %>
-                <% if s["students"][2] %>
-                    <tr><td>student</td><td><%= s["students"][1][0] %></td>
-                    <td><%= showcolour(s["students"][1][1]) %></td></tr>
+                <% s["students"].each do |student| %>
+                    <tr><td>student</td>
+                    <td><%= student[0] %>
+                    <% findStudentNameComment(student[0], @students).each do |se| %>
+                        <br><%= "#{se['name']} (#{se['comment']}) ---> #{r['roleupdates']}"  %>
+                    <% end %>
+                    </td>
+                    <td><%= 
+                            #showcolour(student[1])
+                            colourToStatus(student[1])["student"]
+                    %></td></tr>
                 <% end %>
             <% end %>
             <% if s["comment"] %>
                 <tr><td>comment</td>
-                <td><%= s["comment"] %></td></tr>
+                <td><%= "#{s['comment']} ---> #{r['commentupdates']}" %> </td>
+                <td> </td>
+                </tr>
             <% end %>
             <tr><td>--------------------------</td></tr>
         <% end %>        
@@ -34,6 +69,9 @@
         <th>Red</th>
         <th>Green</th>
         <th>Blue</th>
+        <th>Colour</th>
+        <th>Tutor</th>
+        <th>Student</th>
         <th>first encounter</th>
         <th>qty</th>
 
@@ -44,6 +82,9 @@
             <% key.each do |c| %>
                 <td><%= c %></td>
             <% end %>
+            <td><%= colourToStatus(key)["colour"] %></td>
+            <td><%= colourToStatus(key)["tutor"] %></td>
+            <td><%= colourToStatus(key)["student"] %></td>
             <td><%= value[0].to_s +  value[1].to_s %></td>
             <td><%= value[2].to_s %></td>
 
