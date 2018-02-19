@@ -521,10 +521,6 @@ class AdminsController < ApplicationController
           mydate = Date.new(1899, 12, 30) + mydateserialnumber 
           c1 = getvalue(r.values[1])
           n = c1.match(/(\w+)\s+(\d+)(\d{2})$/im) # MONDAY 330
-          logger.debug "checking date: " + c0.inspect + 
-                       " : " + c1.inspect + " : " + n.inspect +
-                       " : " + mydate.inspect
-          #mydate = Date.new(m[3].to_i, m[1].to_i, m[2].to_i)
           dt = DateTime.new(mydate.year, mydate.month, mydate.day,
                           n[2].to_i, n[3].to_i)
           requiredSlot["timeslot"] = dt
@@ -785,10 +781,14 @@ class AdminsController < ApplicationController
           # if so, this is the session to hang onto.
           # Will check later if the students are in the same session.
           flagtutorpresent = flagstudentpresent = FALSE
+          #
+          #   Process tutor
+          #
           mytutor = mysess["tutor"] # only process if tutor exists
                                        # mytutor[0] is ss name string,
-          mytutorcomment = ""
+          mytutorcomment = ""         # provide full version in comment
           if mytutor                             # mytutor[1] is colour
+            mytutorcomment = mytutor[0]
             mytutornamecontent = findTutorNameComment(mytutor[0], @tutors) 
             mytutorstatus = colourToStatus(mytutor[1])["tutor"]
             if mytutornamecontent.empty?  ||  # no database names found for this tutor
@@ -910,10 +910,35 @@ class AdminsController < ApplicationController
               end
             end
           end
-          # process comments
+          #
+          #   Process comments
+          #
+          if mysess["comment"]
+            mycomments = mysess["comment"] 
+            mysessioncomment += mycomments if mycomments != ""
+          end
+          # process comments - my have been generated elsewhere (failed tutor
+          # and student finds, etc. so still need to be stored away 
           if mysessioncomment != ""    # some session comments exist
             # if no session exists to place the comments
             # then we need to build one.
+            unless thissession
+              # let's see if there is a session with this comment
+              # looking through the sessions for this slot that do
+              # not have a tutor or student
+              # Need the sessin that have no tutor or student - already done
+              allcommentonlysessions = thissessions -
+                  thissessions.joins(:tutors, :students).distinct
+              # now to see if this comment is in one of these
+              allcommentonlysessions.each do |thiscommentsession|
+                if thiscommentsession.comments == mysessioncomment
+                  thissession = thiscommentsession
+                  break
+                end
+              end
+            end
+            # see if we now have identified a session for this comment
+            # create one if necessary
             unless thissession
               thissession = Session.new(slot_id: thisslot.id,
                                         status: 'standard')

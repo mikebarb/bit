@@ -20,6 +20,7 @@ class CalendarController < ApplicationController
     @locations    = Slot
                   .select('location')
                   .distinct
+                  .order('location')
 
    #logger.debug '@locations- ' + @locations.inspect
 
@@ -28,6 +29,7 @@ class CalendarController < ApplicationController
     @datetimes = Slot
                   .select('timeslot')
                   .distinct
+                  .order('timeslot')
                   
     @colheaders = Hash.new()
     @datetimes.each do |datetime|

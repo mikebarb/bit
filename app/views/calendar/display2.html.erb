@@ -121,7 +121,11 @@
                    <% end %>
                  <% end %>
                <% end %>
-               
+
+               <% if entry.comments != nil && entry.comments != "" %>
+                 <div class="sessioncomment comment commentinline">session comment: <%= entry.comments %></div>
+               <% end %>
+
              </div>
            <% end %>
          <% end %>
