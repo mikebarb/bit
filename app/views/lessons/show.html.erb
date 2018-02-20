@@ -9,7 +9,7 @@
   <% students.each do |student| %>
     <p>
       <%= student.id %>
-      <%= ": " + student.gname + ' ' + student.sname + ' (' + student.initials + ')' %>
+      <%= ": " + student.pname  %>
     </p>
   <% end %>
 <% else %>
@@ -23,7 +23,7 @@
   <% tutors.each do |tutor| %>
     <p>
       <%= tutor.id %>
-      <%= ": " + tutor.gname + ' ' + tutor.sname + ' (' + tutor.initials + ')' %>
+      <%= ": " + tutor.pname %>
     </p>
   <% end %>
 <% else %>
@@ -44,7 +44,7 @@
 
 <p>
   <strong>Comments:</strong>
-  <%= @lesson.comments %>
+  <%= @lesson.comments if @lesson.comments %>
 </p>
 
 <%= link_to 'Edit', edit_lesson_path(@lesson) %> |

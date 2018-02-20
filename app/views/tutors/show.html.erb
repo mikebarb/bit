@@ -2,12 +2,12 @@
 
 <p>
   <strong>Gname:</strong>
-  <%= @tutor.gname %>
+  <%= @tutor.gname if @tutor.gname %>
 </p>
 
 <p>
   <strong>Sname:</strong>
-  <%= @tutor.sname %>
+  <%= @tutor.sname if @tutor.sname %>
 </p>
 
 <p>
@@ -17,37 +17,37 @@
 
 <p>
   <strong>Initials:</strong>
-  <%= @tutor.initials %>
+  <%= @tutor.initials if @tutor.initials %>
 </p>
 
 <p>
   <strong>Sex:</strong>
-  <%= @tutor.sex %>
+  <%= @tutor.sex if @tutor.sex %>
 </p>
 
 <p>
   <strong>Subjects:</strong>
-  <%= @tutor.subjects %>
+  <%= @tutor.subjects if @tutor.subjects %>
 </p>
 
 <p>
   <strong>Comment:</strong>
-  <%= @tutor.comment %>
+  <%= @tutor.comment if @tutor.comment %>
 </p>
 
 <p>
   <strong>Status:</strong>
-  <%= @tutor.status %>
+  <%= @tutor.status if @tutor.status %>
 </p>
 
 <p>
   <strong>Email:</strong>
-  <%= @tutor.email %>
+  <%= @tutor.email if @tutor.email %>
 </p>
 
 <p>
   <strong>Phone:</strong>
-  <%= @tutor.phone %>
+  <%= @tutor.phone if @tutor.phone %>
 </p>
 
 <%= link_to 'Edit', edit_tutor_path(@tutor) %> |
