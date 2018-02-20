@@ -1,4 +1,4 @@
-class Session < ActiveRecord::Base
+class Lesson < ActiveRecord::Base
   belongs_to :slot
   has_many :roles
   has_many :students, through: :roles
@@ -17,11 +17,11 @@ class Session < ActiveRecord::Base
     def ensure_not_referenced_by_tutors_or_students
       returnvalue = true
       unless tutors.empty?
-        errors.add(:base, 'Tutors in this session!')
+        errors.add(:base, 'Tutors in this lesson!')
         returnvalue = false
       end
       unless students.empty?
-        errors.add(:base, 'Students in this session!')
+        errors.add(:base, 'Students in this lesson!')
         returnvalue = false
       end
       return returnvalue

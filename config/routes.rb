@@ -12,28 +12,28 @@ Rails.application.routes.draw do
   get 'admins/loadtest' => 'admins#loadtest', as: :loadtest
 
 
-  post 'removetutorfromsession' => 'tutroles#removetutorfromsession', as: :removetutorfromsession
-  post 'tutorcopysession' =>       'tutroles#tutorcopysession', as: :tutorcopysession
-  post 'tutormovesession' =>       'tutroles#tutormovesession', as: :tutormovesession
+  post 'removetutorfromlesson' => 'tutroles#removetutorfromlesson', as: :removetutorfromlesson
+  post 'tutorcopylesson' =>       'tutroles#tutorcopylesson', as: :tutorcopylesson
+  post 'tutormovelesson' =>       'tutroles#tutormovelesson', as: :tutormovelesson
   resources :tutroles
 
-  post 'removestudentfromsession' => 'roles#removestudentfromsession', as: :removestudentfromsession
-  post 'studentcopysession' => 'roles#studentcopysession', as: :studentcopysession
-  post 'studentmovesession' => 'roles#studentmovesession', as: :studentmovesession
+  post 'removestudentfromlesson' => 'roles#removestudentfromlesson', as: :removestudentfromlesson
+  post 'studentcopylesson' => 'roles#studentcopylesson', as: :studentcopylesson
+  post 'studentmovelesson' => 'roles#studentmovelesson', as: :studentmovelesson
   resources :roles
 
   get 'calendar/display'
   get 'calendar/display2' => 'calendar#display2', as: :calendar_display2
 
-  get 'sessions/:id/move' => 'sessions#move', as: :move_session
-  post 'sessions/:id' => 'sessions#update', as: :update_session
-  resources :sessions
+  get 'lessons/:id/move' => 'lessons#move', as: :move_lesson
+  post 'lessons/:id' => 'lessons#update', as: :update_lesson
+  resources :lessons
 
   resources :slots
 
   resources :tutors
 
-  get 'students/:id/showsessions' => 'students#showsessions', as: :show_sessions
+  get 'students/:id/showlessons' => 'students#showlessons', as: :show_lessons
   resources :students
 
   # The priority is based upon order of creation: first created -> highest priority.

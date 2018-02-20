@@ -16,7 +16,7 @@
        <% if cells.key?("values") then %>       
          <% if cells["values"].respond_to?(:each) then %>
            <% cells["values"].each do |entry| %>
-             <div class=session id=<%= entry.sessionid.to_s %> >
+             <div class=lesson id=<%= entry.lessonid.to_s %> >
                <br>
                <div class=tutor id=<%= entry.tutorid.to_s %> >
                  tutor: <%= entry.tutorpname %>

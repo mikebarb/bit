@@ -1,5 +1,5 @@
 class Slot < ActiveRecord::Base
-  has_many :sessions, dependent: :destroy
+  has_many :lessons, dependent: :destroy
 
   validates :timeslot, :location, presence:true
   validates :timeslot, uniqueness: {scope: [:location]}

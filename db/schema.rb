@@ -24,8 +24,16 @@ ActiveRecord::Schema.define(version: 20180215070059) do
     t.integer  "expiration_time_millis"
   end
 
+  create_table "lessons", force: :cascade do |t|
+    t.integer  "slot_id"
+    t.text     "comments"
+    t.datetime "created_at"
+    t.datetime "updated_at"
+    t.string   "status"
+  end
+
   create_table "roles", force: :cascade do |t|
-    t.integer  "session_id"
+    t.integer  "lesson_id"
     t.integer  "student_id"
     t.datetime "created_at"
     t.datetime "updated_at"
@@ -33,17 +41,9 @@ ActiveRecord::Schema.define(version: 20180215070059) do
     t.string   "status"
   end
 
-  add_index "roles", ["session_id", "student_id"], name: "index_roles_on_session_id_and_student_id", unique: true
-  add_index "roles", ["session_id"], name: "index_roles_on_session_id"
+  add_index "roles", ["lesson_id", "student_id"], name: "index_roles_on_lesson_id_and_student_id", unique: true
+  add_index "roles", ["lesson_id"], name: "index_roles_on_lesson_id"
   add_index "roles", ["student_id"], name: "index_roles_on_student_id"
-
-  create_table "sessions", force: :cascade do |t|
-    t.integer  "slot_id"
-    t.text     "comments"
-    t.datetime "created_at"
-    t.datetime "updated_at"
-    t.string   "status"
-  end
 
   create_table "slots", force: :cascade do |t|
     t.datetime "timeslot"
@@ -92,7 +92,7 @@ ActiveRecord::Schema.define(version: 20180215070059) do
   add_index "tutors", ["pname"], name: "index_tutors_on_pname", unique: true
 
   create_table "tutroles", force: :cascade do |t|
-    t.integer  "session_id"
+    t.integer  "lesson_id"
     t.integer  "tutor_id"
     t.datetime "created_at"
     t.datetime "updated_at"
@@ -100,8 +100,8 @@ ActiveRecord::Schema.define(version: 20180215070059) do
     t.string   "status"
   end
 
-  add_index "tutroles", ["session_id", "tutor_id"], name: "index_tutroles_on_session_id_and_tutor_id", unique: true
-  add_index "tutroles", ["session_id"], name: "index_tutroles_on_session_id"
+  add_index "tutroles", ["lesson_id", "tutor_id"], name: "index_tutroles_on_lesson_id_and_tutor_id", unique: true
+  add_index "tutroles", ["lesson_id"], name: "index_tutroles_on_lesson_id"
   add_index "tutroles", ["tutor_id"], name: "index_tutroles_on_tutor_id"
 
 end

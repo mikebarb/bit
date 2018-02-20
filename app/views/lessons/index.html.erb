@@ -1,4 +1,4 @@
-<h1>Listing sessions</h1>
+<h1>Listing lessons</h1>
 
 <table>
   <thead>
@@ -13,14 +13,14 @@
   </thead>
 
   <tbody>
-    <% @sessions.each do |session| %>
-      <% students = session.students %>
-      <% tutors = session.tutors %>
-      <% if session.slot_id %>
-        <% slot = Slot.find(session.slot_id) %>
+    <% @lessons.each do |lesson| %>
+      <% students = lesson.students %>
+      <% tutors = lesson.tutors %>
+      <% if lesson.slot_id %>
+        <% slot = Slot.find(lesson.slot_id) %>
       <% end %>
       <tr>
-        <td><%= session.id %></td>
+        <td><%= lesson.id %></td>
 
         <% if students.nil? %>
           <td></td> <td></td> <td></td>
@@ -45,15 +45,15 @@
         <% if slot.nil? %>
           <td></td> <td></td> <td></td>
         <% else %>
-          <td><%= session.slot_id %></td>
+          <td><%= lesson.slot_id %></td>
           <td><%= slot.timeslot %></td>
           <td><%= slot.location %></td>
         <% end %>
         
-        <td><%= session.comments %></td>
-        <td><%= link_to 'Show', session %></td>
-        <td><%= link_to 'Edit', edit_session_path(session) %></td>
-        <td><%= link_to 'Destroy', session, method: :delete, data: { confirm: 'Are you sure?' } %></td>
+        <td><%= lesson.comments %></td>
+        <td><%= link_to 'Show', lesson %></td>
+        <td><%= link_to 'Edit', edit_lesson_path(lesson) %></td>
+        <td><%= link_to 'Destroy', lesson, method: :delete, data: { confirm: 'Are you sure?' } %></td>
       </tr>
     <% end %>
   </tbody>
@@ -61,4 +61,4 @@
 
 <br>
 
-<%= link_to 'New Session', new_session_path %>
+<%= link_to 'New Lesson', new_lesson_path %>

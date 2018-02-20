@@ -1,10 +1,10 @@
-<%= form_for(setup_session(@session)) do |f| %>
-  <% if @session.errors.any? %>
+<%= form_for(setup_lesson(@lesson)) do |f| %>
+  <% if @lesson.errors.any? %>
     <div id="error_explanation">
-      <h2><%= pluralize(@session.errors.count, "error") %> prohibited this session from being saved:</h2>
+      <h2><%= pluralize(@lesson.errors.count, "error") %> prohibited this lesson from being saved:</h2>
 
       <ul>
-      <% @session.errors.full_messages.each do |message| %>
+      <% @lesson.errors.full_messages.each do |message| %>
         <li><%= message %></li>
       <% end %>
       </ul>

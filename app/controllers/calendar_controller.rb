@@ -1,6 +1,6 @@
 class CalendarController < ApplicationController
   def display2
-    @sf = 3   # number of significant figures in dom ids for session,tutor, etc.
+    @sf = 3   # number of significant figures in dom ids for lesson,tutor, etc.
     @site = "Kaleen"
     
     @tutors = Tutor.where.not(status: "inactive")
@@ -10,7 +10,7 @@ class CalendarController < ApplicationController
     # row and column [0] will hold counts of elements populated in that row or column
     # row and column [1] will hold the titles for that rolw or column.
 
-    @sessinfo      = Session.all
+    @sessinfo      = Lesson.all
     #logger.debug "calendar display - (sessinfo) " + @sessinfo.inspect
 
     @slotsinfo     = Slot 
@@ -38,7 +38,7 @@ class CalendarController < ApplicationController
     end
     #logger.debug "@colheaders: " + @colheaders.inspect
 
-    # row headers will be the session times for the day - allready have unique slots               
+    # row headers will be the lesson times for the day - allready have unique slots               
     @rowheaders = Hash.new()
     @datetimes.each do |datetime|
       mytime = datetime.timeslot.strftime("%H-%M")
@@ -104,7 +104,7 @@ class CalendarController < ApplicationController
     end 
     #logger.debug 'cal: ' + @cal.inspect
     
-    #logger.debug '---------- now do the sessions --------------------'
+    #logger.debug '---------- now do the lessons --------------------'
     @sessinfo.each do |entry|
       #logger.debug "entry- " + entry.inspect
 
@@ -134,13 +134,13 @@ class CalendarController < ApplicationController
   #=============================================================================================
 
   def display
-    @sf = 3   # number of significant figures in dom ids for session,tutor, etc.
+    @sf = 3   # number of significant figures in dom ids for lesson,tutor, etc.
     @hall = "Kaleen"
     # define a two dimesional array to hold the table info to be displayed.
     # row and column [0] will hold counts of elements populated in that row or column
     # row and column [1] will hold the titles for that rolw or column.
 
-    @sessinfo      = Session.all
+    @sessinfo      = Lesson.all
     logger.debug "calendar display - (sessinfo) " + @sessinfo.inspect
 
     @slotsinfo     = Slot 

@@ -37,10 +37,10 @@ class TutrolesController < ApplicationController
     end
   end
 
-  # POST /removetutorfromsession.json
-  def removetutorfromsession
-    logger.debug("removetutorfromsession")
-    @tutrole = Tutrole.where(:tutor_id => params[:tutor_id], :session_id => params[:old_session_id]).first
+  # POST /removetutorfromlesson.json
+  def removetutorfromlesson
+    logger.debug("removetutorfromlesson")
+    @tutrole = Tutrole.where(:tutor_id => params[:tutor_id], :lesson_id => params[:old_lesson_id]).first
     logger.debug("found tutrole: " + @tutrole.inspect)
     @tutrole1 = Tutrole.find(@tutrole.id)
     logger.debug("found tutrole1: " + @tutrole1.inspect)
@@ -56,11 +56,11 @@ class TutrolesController < ApplicationController
   end
 
 
-  # Copy a tutor from one session to another. Actional just a new tutrole entry with current
+  # Copy a tutor from one lesson to another. Actional just a new tutrole entry with current
   # student attached to a new parent.
-  # POST /tutorcopysession.json
-  def tutorcopysession
-    @tutrole = Tutrole.new(:tutor_id => params[:tutor_id], :session_id => params[:new_session_id])
+  # POST /tutorcopylesson.json
+  def tutorcopylesson
+    @tutrole = Tutrole.new(:tutor_id => params[:tutor_id], :lesson_id => params[:new_lesson_id])
     respond_to do |format|
       if @tutrole.save
         format.json { render :show, status: :created, location: @role }
@@ -71,10 +71,10 @@ class TutrolesController < ApplicationController
     end
   end
 
-  # PATCH/PUT /tutormovesession.json
-  def tutormovesession
-    @tutrole = Tutrole.where(:tutor_id => params[:tutor_id], :session_id => params[:old_session_id]).first
-    @tutrole.session_id = params[:new_session_id]
+  # PATCH/PUT /tutormovelesson.json
+  def tutormovelesson
+    @tutrole = Tutrole.where(:tutor_id => params[:tutor_id], :lesson_id => params[:old_lesson_id]).first
+    @tutrole.lesson_id = params[:new_lesson_id]
     respond_to do |format|
       if @tutrole.save
         #format.html { redirect_to @student, notice: 'Student was successfully updated.' }
@@ -118,7 +118,7 @@ class TutrolesController < ApplicationController
 
     # Never trust parameters from the scary internet, only allow the white list through.
     def tutrole_params
-      params.require(:tutrole).permit(:session_id, :tutor_id, :status, :comment, :new_session_id, :old_session_id,
+      params.require(:tutrole).permit(:lesson_id, :tutor_id, :status, :comment, :new_lesson_id, :old_lesson_id,
         :domchange => [:action, :ele_new_parent_id, :ele_old_parent_id, :move_ele_id, :element_type]
       )
     end

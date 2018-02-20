@@ -76,7 +76,7 @@
            <% logger.debug "display (cells values) exist" %>
            <% cells["values"].each do |entry| %>
              <% logger.debug "display (cells values as entries) " + entry.inspect %>
-             <div class=session id=<%= cells["id_dom"] + "n" + entry.id.to_s.rjust(@sf, "0") %> >
+             <div class=lesson id=<%= cells["id_dom"] + "n" + entry.id.to_s.rjust(@sf, "0") %> >
                <% if entry.tutors.respond_to?(:each) then %>
                  <% entry.tutors.each do |tutor| %>
                    <% logger.debug "display (tutor)- " + tutor.inspect %>
@@ -87,11 +87,11 @@
                             <div class="tutorcomment comment tutorinline">
                                 <%= tutor.subjects %>
                                 <br>
-                                <%= tutor.tutroles.where(session_id: entry.id).first.comment %>
+                                <%= tutor.tutroles.where(lesson_id: entry.id).first.comment %>
                                 <br>
                                 <%= tutor.comment %>
                                 <br>
-                                Status: <%= tutor.tutroles.where(session_id: entry.id).first.status %>
+                                Status: <%= tutor.tutroles.where(lesson_id: entry.id).first.status %>
                             </div>
                         </div>
                      </div>
@@ -115,7 +115,7 @@
                                 <br>
                                 <%= student.comment %>
                                 <br>
-                                Status: <%= student.roles.where(session_id: entry.id).first.status %>                            </div>
+                                Status: <%= student.roles.where(lesson_id: entry.id).first.status %>                            </div>
                         </div>
                      </div>
                    <% end %>
@@ -123,7 +123,7 @@
                <% end %>
 
                <% if entry.comments != nil && entry.comments != "" %>
-                 <div class="sessioncomment comment commentinline">session comment: <%= entry.comments %></div>
+                 <div class="lessoncomment comment commentinline">lesson comment: <%= entry.comments %></div>
                <% end %>
 
              </div>
@@ -154,14 +154,14 @@
       <li id="context-remove" class="context-menu__item" data-action="remove">
         <p>Remove</p>
       </li>
-      <li id="context-addSession" class="context-menu__item" data-action="addSession">
-        <p>Add Session</p>
+      <li id="context-addLesson" class="context-menu__item" data-action="addLesson">
+        <p>Add Lesson</p>
       </li>    
-      <li id="context-removeSession" class="context-menu__item" data-action="removeSession">
-        <p>Remove Session</p>
+      <li id="context-removeLesson" class="context-menu__item" data-action="removeLession">
+        <p>Remove Lesson</p>
       </li>    
     </ul>
   </nav>
 
-    <div class="session hideme" id=sessiontemplate ></div>
+    <div class="lesson hideme" id=lessontemplate ></div>
 

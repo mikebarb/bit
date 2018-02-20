@@ -3,7 +3,7 @@
 <table>
   <thead>
     <tr>
-      <th>Session</th>
+      <th>Lesson</th>
       <th>Student</th>
       <th>Status</th>
       <th>Comment</th>
@@ -15,7 +15,7 @@
     <% @roles.each do |role| 
        byebug %>
       <tr>
-        <td><%= role.session.id %></td>
+        <td><%= role.lesson.id %></td>
         <td><%= role.student.pname %></td>
         <td><%= role.status %></td>
         <td><%= role.comment %></td>

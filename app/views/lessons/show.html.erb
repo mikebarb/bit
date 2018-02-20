@@ -1,8 +1,8 @@
 <p id="notice"><%= notice %></p>
 
-<% students = @session.students %>
-<% tutors = @session.tutors %>
-<% slot = Slot.find(@session.slot_id) %>
+<% students = @lesson.students %>
+<% tutors = @lesson.tutors %>
+<% slot = Slot.find(@lesson.slot_id) %>
 
 <strong>Students</strong>
 <% if students.count > 0 %>
@@ -32,7 +32,7 @@
 
 <p>
   <strong>Slot:</strong>
-  <%= @session.slot_id %>
+  <%= @lesson.slot_id %>
 </p>
 
 <p>
@@ -44,9 +44,9 @@
 
 <p>
   <strong>Comments:</strong>
-  <%= @session.comments %>
+  <%= @lesson.comments %>
 </p>
 
-<%= link_to 'Edit', edit_session_path(@session) %> |
-<%= link_to 'Move', move_session_path(@session) %> |
-<%= link_to 'Back', sessions_path %>
+<%= link_to 'Edit', edit_lesson_path(@lesson) %> |
+<%= link_to 'Move', move_lesson_path(@lesson) %> |
+<%= link_to 'Back', lessons_path %>

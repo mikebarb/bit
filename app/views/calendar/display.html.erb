@@ -23,7 +23,7 @@
            <% logger.debug "display (cells values) exist" %>
            <% cells["values"].each do |entry| %>
              <% logger.debug "display (cells values as entries) " + entry.inspect %>
-             <div class=session id=<%= cells["id_dom"] + "n" + entry.id.to_s.rjust(@sf, "0") %> >
+             <div class=lesson id=<%= cells["id_dom"] + "n" + entry.id.to_s.rjust(@sf, "0") %> >
 
                <% if entry.tutors.respond_to?(:each) then %>
                  <% entry.tutors.each do |tutor| %>

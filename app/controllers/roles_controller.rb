@@ -52,10 +52,10 @@ class RolesController < ApplicationController
   ###end
   ###    @role = Role.find(params[:id])
 
- # POST /removestudentfromsession.json
-  def removestudentfromsession
-    logger.debug("removestudentfromsession")
-    @role = Role.where(:student_id => params[:student_id], :session_id => params[:old_session_id]).first
+ # POST /removestudentfromlesson.json
+  def removestudentfromlesson
+    logger.debug("removestudentfromlesson")
+    @role = Role.where(:student_id => params[:student_id], :lesson_id => params[:old_lesson_id]).first
     #logger.debug("found role: " + @role.inspect)
     #myid = @role.id
     #logger.debug("myroleid: " + myid.inspect)
@@ -68,10 +68,10 @@ class RolesController < ApplicationController
     end
   end
 
-  # POST /studentcopysession.json
-  def studentcopysession
+  # POST /studentcopylesson.json
+  def studentcopylesson
     @role = Role.new(:student_id => params[:student_id],
-                     :session_id => params[:new_session_id])
+                     :lesson_id => params[:new_lesson_id])
     logger.debug("new_role: " + @role.inspect)
     respond_to do |format|
       if @role.save
@@ -84,10 +84,10 @@ class RolesController < ApplicationController
     end
   end
 
-  # PATCH/PUT /studentmovesession.json
-  def studentmovesession
-    @role = Role.where(:student_id => params[:student_id], :session_id => params[:old_session_id]).first
-    @role.session_id = params[:new_session_id]
+  # PATCH/PUT /studentmovelesson.json
+  def studentmovelesson
+    @role = Role.where(:student_id => params[:student_id], :lesson_id => params[:old_lesson_id]).first
+    @role.lesson_id = params[:new_lesson_id]
     logger.debug("after_role: " + @role.inspect)
     respond_to do |format|
       if @role.save
@@ -132,7 +132,7 @@ class RolesController < ApplicationController
 
     # Never trust parameters from the scary internet, only allow the white list through.
     def role_params
-      params.require(:role).permit(:session_id, :student_id, :status, :comment, :new_sesson_id, :old_session_id,
+      params.require(:role).permit(:lesson_id, :student_id, :status, :comment, :new_sesson_id, :old_lesson_id,
         :domchange => [:action, :ele_new_parent_id, :ele_old_parent_id, :move_ele_id, :element_type]
       )
     end
