@@ -11,7 +11,10 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema.define(version: 20180221015949) do
+ActiveRecord::Schema.define(version: 20180221015849) do
+
+  # These are extensions that must be enabled in order to support this database
+  enable_extension "plpgsql"
 
   create_table "googles", force: :cascade do |t|
     t.string   "user"
@@ -41,9 +44,9 @@ ActiveRecord::Schema.define(version: 20180221015949) do
     t.string   "status"
   end
 
-  add_index "roles", ["lesson_id", "student_id"], name: "index_roles_on_lesson_id_and_student_id", unique: true
-  add_index "roles", ["lesson_id"], name: "index_roles_on_lesson_id"
-  add_index "roles", ["student_id"], name: "index_roles_on_student_id"
+  add_index "roles", ["lesson_id", "student_id"], name: "index_roles_on_lesson_id_and_student_id", unique: true, using: :btree
+  add_index "roles", ["lesson_id"], name: "index_roles_on_lesson_id", using: :btree
+  add_index "roles", ["student_id"], name: "index_roles_on_student_id", using: :btree
 
   create_table "slots", force: :cascade do |t|
     t.datetime "timeslot"
@@ -72,7 +75,7 @@ ActiveRecord::Schema.define(version: 20180221015949) do
     t.string   "preferences"
   end
 
-  add_index "students", ["pname"], name: "index_students_on_pname", unique: true
+  add_index "students", ["pname"], name: "index_students_on_pname", unique: true, using: :btree
 
   create_table "tutors", force: :cascade do |t|
     t.string   "gname"
@@ -89,7 +92,7 @@ ActiveRecord::Schema.define(version: 20180221015949) do
     t.string   "phone"
   end
 
-  add_index "tutors", ["pname"], name: "index_tutors_on_pname", unique: true
+  add_index "tutors", ["pname"], name: "index_tutors_on_pname", unique: true, using: :btree
 
   create_table "tutroles", force: :cascade do |t|
     t.integer  "lesson_id"
@@ -100,9 +103,9 @@ ActiveRecord::Schema.define(version: 20180221015949) do
     t.string   "status"
   end
 
-  add_index "tutroles", ["lesson_id", "tutor_id"], name: "index_tutroles_on_lesson_id_and_tutor_id", unique: true
-  add_index "tutroles", ["lesson_id"], name: "index_tutroles_on_lesson_id"
-  add_index "tutroles", ["tutor_id"], name: "index_tutroles_on_tutor_id"
+  add_index "tutroles", ["lesson_id", "tutor_id"], name: "index_tutroles_on_lesson_id_and_tutor_id", unique: true, using: :btree
+  add_index "tutroles", ["lesson_id"], name: "index_tutroles_on_lesson_id", using: :btree
+  add_index "tutroles", ["tutor_id"], name: "index_tutroles_on_tutor_id", using: :btree
 
   create_table "users", force: :cascade do |t|
     t.string   "email",                  default: "", null: false
@@ -126,9 +129,9 @@ ActiveRecord::Schema.define(version: 20180221015949) do
     t.datetime "updated_at"
   end
 
-  add_index "users", ["confirmation_token"], name: "index_users_on_confirmation_token", unique: true
-  add_index "users", ["email"], name: "index_users_on_email", unique: true
-  add_index "users", ["reset_password_token"], name: "index_users_on_reset_password_token", unique: true
-  add_index "users", ["unlock_token"], name: "index_users_on_unlock_token", unique: true
+  add_index "users", ["confirmation_token"], name: "index_users_on_confirmation_token", unique: true, using: :btree
+  add_index "users", ["email"], name: "index_users_on_email", unique: true, using: :btree
+  add_index "users", ["reset_password_token"], name: "index_users_on_reset_password_token", unique: true, using: :btree
+  add_index "users", ["unlock_token"], name: "index_users_on_unlock_token", unique: true, using: :btree
 
 end
