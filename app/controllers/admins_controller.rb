@@ -1,5 +1,18 @@
 class AdminsController < ApplicationController
-      include Googleutilities
+  include Googleutilities
+  #skip_before_action :authenticate_user!, only: [:home]
+
+#---------------------------------------------------------------------------
+#
+#   Home Page - no login requird to get to this page
+#               Splash page for first entering the application.
+#
+#---------------------------------------------------------------------------
+  # GET /admins/home
+  # GET /admins/home.json
+  def home
+  end
+
   
 #---------------------------------------------------------------------------
 #

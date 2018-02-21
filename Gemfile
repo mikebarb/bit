@@ -55,3 +55,14 @@ gem 'google-api-client', '~> 0.19', require: 'google/apis/sheets_v4'
 
 # debugging gem
 gem 'byebug'
+
+# Devise gems
+gem 'devise', '3.4.1'
+
+# mailgun support - used by devise in cloud9 as it block smtp
+gem 'mailgun-ruby'
+
+# to maintain certificates at current level
+# then run the “certified-update” executable on the console and
+# this command will make sure that all your certificates are up-to-date.
+gem 'certified', '~> 1.0'

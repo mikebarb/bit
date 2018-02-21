@@ -1,10 +1,12 @@
 Rails.application.routes.draw do
+  devise_for :users
   match '/oauth2callback',
     to: Google::Auth::WebUserAuthorizer::CallbackApp,
     via: :all
   
   resources :googles
 
+  get 'admins/home' => 'admins#home', as: :home
   get 'admins/load' => 'admins#load', as: :load
   get 'admins/loadtutors' => 'admins#loadtutors', as: :loadtutors
   get 'admins/loadstudents' => 'admins#loadstudents', as: :loadstudents
@@ -41,7 +43,7 @@ Rails.application.routes.draw do
 
   # You can have the root of your site routed with "root"
   # root 'welcome#index'
-  root 'calendar#display'
+  root 'admins#home'
 
   # Example of regular route:
   #   get 'products/:id' => 'catalog#view'

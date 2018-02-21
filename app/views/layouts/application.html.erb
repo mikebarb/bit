@@ -5,21 +5,40 @@
   <%= stylesheet_link_tag    'application', media: 'all', 'data-turbolinks-track' => true %>
   <%= javascript_include_tag 'application', 'data-turbolinks-track' => true %>
   <%= csrf_meta_tags %>
-  <nav>
-    <ul>
-      <%= link_to "lessons", lessons_path %>
-      <%= link_to "students", students_path %>
-      <%= link_to "tutors", tutors_path %>
-      <%= link_to "slots", slots_path %>
-      <%= link_to "calendar", calendar_display_path %>
-      <%= link_to "calendar2", calendar_display2_path %>
-      <%= link_to "load", load_path %>
-    </ul>
-  </nav>
 </head>
 <body>
+  <% flash.each do |key, value| %>
+    <div class="alert alert-<%= key %>">
+      <%= value %>
+    </div>
+  <% end %>
+  
+  <% if user_signed_in? %>
+    <nav>
+      <ul>
+        <%= link_to "lessons", lessons_path %>
+        <%= link_to "students", students_path %>
+        <%= link_to "tutors", tutors_path %>
+        <%= link_to "slots", slots_path %>
+        <%= link_to "calendar", calendar_display_path %>
+        <%= link_to "calendar2", calendar_display2_path %>
+        <%= link_to "load", load_path %>
+      </ul>
+    </nav>
+  <% end %>
+  
+  <p class="navbar-text pull-right">
+  <% if user_signed_in? %>
+    Logged in as <strong><%= current_user.email %></strong>.
+    <%= link_to 'Edit profile', edit_user_registration_path, :class => 'navbar-link' %> |
+    <%= link_to "Logout", destroy_user_session_path, method: :delete, :class => 'navbar-link'  %>
+  <% else %>
+    <%= link_to "Sign up", new_user_registration_path, :class => 'navbar-link'  %> |
+    <%= link_to "Login", new_user_session_path, :class => 'navbar-link'  %>
+  <% end %>
+  </p>
 
-<%= yield %>
+  <%= yield %>
 
 </body>
 </html>
