@@ -9,6 +9,8 @@ gem 'rails', '~> 4.2'
 # Use postgres as the database for Active Record
 gem 'pg', '0.18'
 gem 'rails_12factor'
+# Use Puma as the app server
+gem 'puma', '~> 3.0'
 # Use SCSS for stylesheets
 gem 'sass-rails', '~> 4.0.3'
 # Use Uglifier as compressor for JavaScript assets

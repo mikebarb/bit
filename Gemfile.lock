@@ -127,6 +127,7 @@ GEM
     os (0.9.6)
     pg (0.18.0)
     public_suffix (3.0.1)
+    puma (3.11.2)
     rack (1.6.8)
     rack-test (0.6.3)
       rack (>= 1.0)
@@ -230,6 +231,7 @@ DEPENDENCIES
   jquery-ui-rails
   mailgun-ruby
   pg (= 0.18)
+  puma (~> 3.0)
   rails (~> 4.2)
   rails_12factor
   sass-rails (~> 4.0.3)
