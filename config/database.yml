@@ -10,8 +10,18 @@ default: &default
   # http://guides.rubyonrails.org/configuring.html#database-pooling
   #pool: 5
   #timeout: 5000
+  ###adapter: postgresql
+  ###encoding: Unicode
+  ###username: postgres
+  ###password: password
+  ###host: localhost
   adapter: postgresql
-  encoding: Unicode
+  encoding: unicode
+  # For details on connection pooling, see rails configuration guide
+  # http://guides.rubyonrails.org/configuring.html#database-pooling
+  pool: <%= ENV.fetch("RAILS_MAX_THREADS") { 5 } %>
+  # next three lines have been added in manually following the 
+  # instructions in http://blog.thefirehoseproject.com/posts/setting-up-a-cloud9-development-environment/ 
   username: postgres
   password: password
   host: localhost
@@ -28,5 +38,6 @@ test:
   database: db/test
 
 production:
-  <<: *default
-  database: db/production
+  ###<<: *default
+  ###database: db/production
+  url: <%= ENV['DATABASE_URL'] %>

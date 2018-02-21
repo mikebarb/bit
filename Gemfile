@@ -1,6 +1,5 @@
 source 'https://rubygems.org'
 
-
 # Bundle edge Rails instead: gem 'rails', github: 'rails/rails'
 #gem 'rails', '4.1.1'
 #gem 'rails', '5.0.0.1'
@@ -69,3 +68,8 @@ gem 'mailgun-ruby'
 # then run the “certified-update” executable on the console and
 # this command will make sure that all your certificates are up-to-date.
 gem 'certified', '~> 1.0'
+
+# Ruby version 
+# This was 2.3.0p0 locally before moving to version 2.4.1 as per article 
+#https://devcenter.heroku.com/articles/getting-started-with-rails5 
+ruby "2.3.0"
