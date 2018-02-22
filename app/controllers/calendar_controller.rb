@@ -1,6 +1,6 @@
 class CalendarController < ApplicationController
   def display2
-    @sf = 3   # number of significant figures in dom ids for lesson,tutor, etc.
+    @sf = 5   # number of significant figures in dom ids for lesson,tutor, etc.
     @site = "Kaleen"
     
     @tutors = Tutor.where.not(status: "inactive")
