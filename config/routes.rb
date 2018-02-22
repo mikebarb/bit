@@ -16,7 +16,7 @@ Rails.application.routes.draw do
 
   post 'removetutorfromlesson' => 'tutroles#removetutorfromlesson', as: :removetutorfromlesson
   post 'tutorcopylesson' =>       'tutroles#tutorcopylesson', as: :tutorcopylesson
-  post 'calendar/tutormovelesson' =>       'tutroles#tutormovelesson', as: :tutormovelesson
+  post 'tutormovelesson' =>       'tutroles#tutormovelesson', as: :tutormovelesson
   resources :tutroles
 
   post 'removestudentfromlesson' => 'roles#removestudentfromlesson', as: :removestudentfromlesson

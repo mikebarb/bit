@@ -11,7 +11,9 @@ $(document).ready(function() {
   
   // some global variables for this page
   var sf = 5;     // significant figures for dom id components e.g.lesson ids, etc.
-
+  var myhost = window.location.protocol + '//' + window.location.hostname;   // base url for ajax
+  console.log("baseurl: " + myhost);
+  
   // this will put obvious border on mouse entering selectable items
   /*$('.lesson').mouseenter(function(){
      $(this).css('border','3px solid black');
@@ -508,30 +510,29 @@ $(document).ready(function() {
     if( 'n' == itemtype ){ //lesson
       console.log("we have a lesson - " + itemid);
       var mytype = 'DELETE';
-      var myurl = "https://bit3-micmac.c9users.io/lessons/" + parseInt(itemid, 10);
-      //var myurl = "lessons/" + parseInt(itemid, 10);
+      //var myurl = "https://bit3-micmac.c9users.io/lessons/" + parseInt(itemid, 10);
+      var myurl = myhost + "/lessons/" + parseInt(itemid, 10);
       var mydata =  { 'domchange'      : domchange };
-      
     } else if( 't' == itemtype ){
       console.log("we have a tutor - " + itemid);
       mytype = 'POST';
-      myurl = "https://bit3-micmac.c9users.io/removetutorfromlesson";
-      //myurl = "removetutorfromlesson";
+      //myurl = "https://bit3-micmac.c9users.io/removetutorfromlesson";
+      myurl = myhost + "/removetutorfromlesson";
       mydata =  { 'tutor_id'     : itemid, 
                   'old_lesson_id' : oldparentid,
                   'domchange'      : domchange 
                 };
     } else if( 's' == itemtype ){
       console.log("we have a student- " + itemid);
-      myurl = "https://bit3-micmac.c9users.io/removestudentfromlesson";
-      //myurl = "removestudentfromlesson";
-      console.log("myurl: " + myurl);
+      //myurl = "https://bit3-micmac.c9users.io/removestudentfromlesson";
+      myurl = myhost + "/removestudentfromlesson";
       mytype = 'POST';
       mydata =  { 'student_id'     : itemid, 
                   'old_lesson_id' : oldparentid,
                   'domchange'      : domchange 
                 };
     }
+    console.log("myurl: " + myurl)
     $.ajax({
         type: mytype,
         url: myurl,
@@ -586,10 +587,10 @@ $(document).ready(function() {
       console.log("action: " + action);
       if(action == "move") {   
         //myurl = "https://bit3-micmac.c9users.io/studentmovelesson/";
-        myurl = "studentmovelesson/";
+        myurl = myhost + "/studentmovelesson/";
       } else if(action == "copy"){ // copy
         //myurl = "https://bit3-micmac.c9users.io/studentcopylesson/";
-        myurl = "studentcopylesson/";
+        myurl = myhost + "/studentcopylesson/";
       }
       mydata =  { 'student_id'     : personid, 
                   'old_lesson_id' : oldlessonid,
@@ -600,10 +601,10 @@ $(document).ready(function() {
       console.log("we have a tutor - " + personid);
       if(action == "move") {
         //myurl = "https://bit3-micmac.c9users.io/tutormovelesson/";
-        myurl = "tutormovelesson/";
+        myurl = myhost + "/tutormovelesson/";
       } else { // copy
         //myurl = "https://bit3-micmac.c9users.io/tutorcopylesson/";
-        myurl = "tutorcopylesson/";
+        myurl = myhost + "/tutorcopylesson/";
       }
       mydata =  { 'tutor_id'       : personid, 
                   'old_lesson_id' : oldlessonid,
@@ -644,9 +645,11 @@ $(document).ready(function() {
     console.log("calling addLesson");
     console.log(domchange);
     var newslotid = getRecordId(domchange['ele_new_parent_id']);
+    //var myurl = "https://bit3-micmac.c9users.io/lessons/"
+    var myurl = myhost + "/lessons/"
     $.ajax({
         type: "POST",
-        url: "https://bit3-micmac.c9users.io/lessons/",
+        url: myurl,
         data: {lesson : {'slot_id' : newslotid }, 'domchange' : domchange },
         dataType: "json",
         context: domchange,
@@ -679,8 +682,8 @@ $(document).ready(function() {
     console.log("calling removeLesson");
     console.log(domchange);
     var lessonid = getRecordId(domchange['move_ele_id']);
-    var myurl = "https://bit3-micmac.c9users.io/lessons/" + lessonid
-    //var myrul = "lessons/" + lessonid
+    //var myurl = "https://bit3-micmac.c9users.io/lessons/" + lessonid
+    var myurl = myhost + "/lessons/" + lessonid;
     $.ajax({
         type: "DELETE",
         url: myurl,
@@ -726,8 +729,8 @@ $(document).ready(function() {
       //alert("You dropped this item in the same location!!");
       return;
     }
-    var myurl = "https://bit3-micmac.c9users.io/lessons/" + lessonid
-    //var myurl = "lessons/" + lessonid
+    //var myurl = "https://bit3-micmac.c9users.io/lessons/" + lessonid
+    var myurl = myhost + "/lessons/" + lessonid
     $.ajax({
         type: "POST",
         url: myurl,
