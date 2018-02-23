@@ -21,3 +21,6 @@
 # ignore google client secrets
 /client_secrets.json
 /google_tokens
+
+# Ignore application configuration
+/config/application.yml

@@ -75,3 +75,6 @@ gem 'certified', '~> 1.0'
 # This was 2.3.0p0 locally before moving to version 2.4.1 as per article 
 #https://devcenter.heroku.com/articles/getting-started-with-rails5 
 ruby "2.3.0"
+
+# Managing secrets
+gem 'figaro', '~> 1.0'

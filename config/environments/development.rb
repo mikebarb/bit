@@ -18,13 +18,13 @@ Rails.application.configure do
 
   # devise action mailer configuration 
   # - required to properly generate links inside the e-mail views
-  config.action_mailer.default_url_options = { :host => 'https://bit3-micmac.c9users.io' }
+  config.action_mailer.default_url_options = { :host => ENV['DEFAULT_HOST'] }
   config.action_mailer.delivery_method = :mailgun
   config.action_mailer.perform_deliveries = true
   config.action_mailer.mailgun_settings = {
-    :api_key              => 'key-fb63ea6ac6b4e662d8131f9e9becfcb3',
-    :domain               => 'sandbox8e575a70bf914c059e4d49cb8e68bf20.mailgun.org'
-}
+    :api_key              => ENV['MAILGUN_API_KEY'],
+    :domain               => ENV['MAILGUN_DOMAIN']
+  }
 
   # Print deprecation notices to the Rails logger.
   config.active_support.deprecation = :log
