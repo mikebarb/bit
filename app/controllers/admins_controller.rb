@@ -32,9 +32,15 @@ class AdminsController < ApplicationController
 #---------------------------------------------------------------------------
   # GET /admins/loadtutors
   def loadtutors
-    service = googleauthorisation(request)
+    #service = googleauthorisation(request)
+    #byebug
+    returned_authorisation = googleauthorisation(request)
+    if returned_authorisation["authorizationurl"]
+      redirect_to returned_authorisation["authorizationurl"] and return
+    end
+    service = returned_authorisation["service"]
     spreadsheet_id = '1CbtBqeHyYb9jRmROCgItS2eEaYSwzOMpQZdUWLMvjng'
-    logger.debug 'about to read spreadsheet'
+    logger.debug 'about to read spreadsheet - service ' + service.inspect
     startrow = 4
     # first get the 5 columns - Name + initial, subjects, mobile, email, surname
     range = "TUTORS!B#{startrow}:F"
@@ -170,7 +176,13 @@ class AdminsController < ApplicationController
 #---------------------------------------------------------------------------
   # GET /admins/loadstudents
   def loadstudents
-    service = googleauthorisation(request)
+    #service = googleauthorisation(request)
+    #byebug
+    returned_authorisation = googleauthorisation(request)
+    if returned_authorisation["authorizationurl"]
+      redirect_to returned_authorisation["authorizationurl"] and return
+    end
+    service = returned_authorisation["service"]
     spreadsheet_id = '1CbtBqeHyYb9jRmROCgItS2eEaYSwzOMpQZdUWLMvjng'
     logger.debug 'about to read spreadsheet'
     startrow = 3
@@ -389,8 +401,13 @@ class AdminsController < ApplicationController
   def loadschedule
     # log levels are: :debug, :info, :warn, :error, :fatal, and :unknown, corresponding to the log level numbers from 0 up to 5
     #logger.fatal "1.log level" + Rails.logger.level.inspect
-    
-    service = googleauthorisation(request)
+    #service = googleauthorisation(request)
+    #byebug
+    returned_authorisation = googleauthorisation(request)
+    if returned_authorisation["authorizationurl"]
+      redirect_to returned_authorisation["authorizationurl"] and return
+    end
+    service = returned_authorisation["service"]
     spreadsheet_id = '1CbtBqeHyYb9jRmROCgItS2eEaYSwzOMpQZdUWLMvjng'
     sheet_name = 'WEEK 1'
     colsPerSite = 7

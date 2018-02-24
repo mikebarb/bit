@@ -4,8 +4,6 @@ module Googleutilities
     include DatabaseTokenStore
 
     def googleauthorisation(request)
-        # place any code you want executed when concern is invoked.    
-
         # gems for the authorisation libraries are:
         # gem 'googleauth', :require => ['googleauth/stores/file_token_store', 'googleauth']
         token_store = DatabaseTokenStore.new()
@@ -13,24 +11,31 @@ module Googleutilities
         # DatabaseTokenStore resides in /app/controllers/concerns/db_stores.rb
         #token_store = Google::Auth::Stores::DatabaseTokenStore.new()
         token_store = DatabaseTokenStore.new()
+        ###token_store.delete(ENV['CLIENT_ID'])
         myid = Google::Auth::ClientId.new(ENV['CLIENT_ID'],
                                           ENV['CLIENT_SECRET'])
         #myid = Google::Auth::ClientId.from_file('./client_secrets.json')
         scopes = ['https://www.googleapis.com/auth/spreadsheets']
+        #byebug
         myauthorizer = Google::Auth::WebUserAuthorizer.new(myid, scopes, token_store)
         mycredentials = myauthorizer.get_credentials(myid.id, request)
+        return_options = {}
         if mycredentials.nil?
           myoptions = {:user_id => user_id, :request => request}
           myauthorizationurl = myauthorizer.get_authorization_url(myoptions)
-          redirect_to myauthorizationurl and return
+          #redirect_to myauthorizationurl and return
+          return_options["authorizationurl"] = myauthorizationurl
+        else
+          ### logger.info "mycredentials: " + mycredentials.inspect
+          # Initialize the Google API to access spreadsheets
+          # Note: to make this library work, you must have in the gem file (the require:)
+          # gem 'google-api-client', '~> 0.19', require: 'google/apis/sheets_v4'
+          service = Google::Apis::SheetsV4::SheetsService.new
+          service.client_options.application_name = "bit3"
+          service.authorization = mycredentials
+          return_options["service"] = service
         end
-        # Initialize the Google API to access spreadsheets
-        # Note: to make this library work, you must have in the gem file (the require:)
-        # gem 'google-api-client', '~> 0.19', require: 'google/apis/sheets_v4'
-        service = Google::Apis::SheetsV4::SheetsService.new
-        service.client_options.application_name = "bit3"
-        service.authorization = mycredentials
-        service
+        return return_options
     end
 
 #------------------------------------------------------------------------
