@@ -1,5 +1,6 @@
 class AdminsController < ApplicationController
   include Googleutilities
+
   #skip_before_action :authenticate_user!, only: [:home]
 
 #---------------------------------------------------------------------------
