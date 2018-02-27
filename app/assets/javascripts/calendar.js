@@ -26,10 +26,13 @@ var ready = function() {
   console.log("baseurl: " + myhost);
   
   // want to set defaults on some checkboxes on page load
-  document.getElementById("hidetutors").checked = true;
-  document.getElementById("hidestudents").checked = true;
-  selectshows();
-
+  if (document.getElementById("hidetutors") &&
+      document.getElementById("hidestudents")){
+    document.getElementById("hidetutors").checked = true;
+    document.getElementById("hidestudents").checked = true;
+    selectshows();
+  }
+  
   // this will put obvious border on mouse entering selectable items
   /*$('.lesson').mouseenter(function(){
      $(this).css('border','3px solid black');

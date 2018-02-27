@@ -821,13 +821,13 @@ class AdminsController < ApplicationController
       # Step 2: get all the tutrole records for this slot
       #alltutroles = Tutrole.where(lesson_id: thislessons.ids)
       alltutroles = Tutrole.where(lesson_id: thislessons.ids).
-                       where.not(status: ['onSetup', 'onCall'])
+                       where.not(kind: ['onSetup', 'onCall'])
       allroles    = Role.where(lesson_id: thislessons.ids)
       # Step 3:
       if(mylessons = r["lessons"])   # this is all the standard
-                                       # ss lessons in this slot
-        mylessons.each do |mysess|    # treat lesson by lesson
-          thislesson = nil            # ensure all reset
+                                     # ss lessons in this slot
+        mylessons.each do |mysess|   # treat lesson by lesson
+          thislesson = nil           # ensure all reset
           mylessoncomment = ""
           #
           #   Process students
@@ -839,10 +839,11 @@ class AdminsController < ApplicationController
           #
           #   Process tutor
           #
-          mytutor = mysess["tutor"] # only process if tutor exists
-                                       # mytutor[0] is ss name string,
+          mytutor = mysess["tutor"]   # only process if tutor exists
+                                      # mytutor[0] is ss name string,
+                                      # mytutor[1] is colour
           mytutorcomment = ""         # provide full version in comment
-          if mytutor                             # mytutor[1] is colour
+          if mytutor                  
             mytutorcomment = mytutor[0]
             mytutornamecontent = findTutorNameComment(mytutor[0], @tutors) 
             #mytutorstatus = colourToStatus(mytutor[1])["tutor"]
