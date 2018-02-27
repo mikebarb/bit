@@ -6,6 +6,7 @@
       <th>Lesson</th>
       <th>Student</th>
       <th>Status</th>
+      <th>Kind</th>
       <th>Comment</th>
       <th colspan="3"></th>
     </tr>
@@ -18,6 +19,7 @@
         <td><%= role.lesson.id %></td>
         <td><%= role.student.pname %></td>
         <td><%= role.status %></td>
+        <td><%= role.kind %></td>
         <td><%= role.comment %></td>
         <td><%= link_to 'Show', role %></td>
         <td><%= link_to 'Edit', edit_role_path(role) %></td>

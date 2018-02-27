@@ -4,10 +4,19 @@
   <p>Test</p>
 </div>-->
 
+<% listofsites = Array.new
+   @cal.each do |location, calLocation| 
+     listofsites.push(location)
+   end
+%>
+
 <div id="selectshows">
     <input id=hidetutors class=selectshow onclick="selectshows()" type="checkbox" > hide tutors
     <input id=hidestudents class=selectshow onclick="selectshows()" type="checkbox" > hide students
     <input id=hidecomments class=selectshow onclick="selectshows()" type="checkbox" > hide comments
+    <% listofsites.each do |site| %>
+    <input id=<%= 'hide' + site %> class=selectshow onclick="selectshows()" type="checkbox" ><%= 'hide ' + site %> 
+    <% end %>
 </div>
 
 <div class=index>
@@ -58,7 +67,7 @@
 <% @cal.each do |location, calLocation| %>
 <% logger.debug "display (location)- " + location.inspect %>
 <% logger.debug "display (calLocation)- " + calLocation.inspect %>
-<table>
+  <table id=site-<%= location %> >
   <% calLocation.each do |rows| %>
     <% logger.debug "display (rows)- " + rows.inspect %>
     <tr>
@@ -83,8 +92,8 @@
                    <% if tutor then %>
                      <div class=tutor id=<%= cells["id_dom"] + "n" + entry.id.to_s.rjust(@sf, "0") + "t" + tutor.id.to_s.rjust(@sf, "0") %> >
                        <div style=persongroup>
-                            <div class="tutorname tutorinline">tutor: <%= tutor.pname %></div>
-                            <div class="tutorcomment comment tutorinline">
+                            <div class="tutorname tutorinline <%= set_class_status(tutor, entry) %>">tutor: <%= tutor.pname %></div>
+                            <div class="tutorcomment comment tutorinline <%= set_class_kind(tutor, entry) %>">
                                 <%= tutor.subjects %>
                                 <br>
                                 <%= tutor.tutroles.where(lesson_id: entry.id).first.comment %>
@@ -92,6 +101,7 @@
                                 <%= tutor.comment %>
                                 <br>
                                 Status: <%= tutor.tutroles.where(lesson_id: entry.id).first.status %>
+                                Kind: <%= tutor.tutroles.where(lesson_id: entry.id).first.kind %>
                             </div>
                         </div>
                      </div>
@@ -105,8 +115,8 @@
                    <% if student then %>
                      <div class=student id=<%= cells["id_dom"] + "n" + entry.id.to_s.rjust(@sf, "0") + "s" + student.id.to_s.rjust(@sf, "0") %> >
                        <div style=persongroup>
-                            <div class="studentname studentinline">student: <%= student.pname %></div>
-                            <div class="studentcomment comment studentinline">
+                            <div class="studentname studentinline <%= set_class_status(student, entry) %>">student: <%= student.pname %></div>
+                            <div class="studentcomment comment studentinline <%= set_class_kind(student, entry) %>">
                                 <%= student.sex == nil ? "" :
                                     student.sex.downcase.include?("female")?
                                     "(F) " : student.sex.downcase.include?("male")?
@@ -115,7 +125,9 @@
                                 <br>
                                 <%= student.comment %>
                                 <br>
-                                Status: <%= student.roles.where(lesson_id: entry.id).first.status %>                            </div>
+                                Status: <%= student.roles.where(lesson_id: entry.id).first.status %>                          
+                                Kind: <%= student.roles.where(lesson_id: entry.id).first.kind %>
+                            </div>
                         </div>
                      </div>
                    <% end %>
@@ -136,7 +148,7 @@
     <% end %>
     </tr>
   <% end %>
-</table>
+  </table>
 <br>
 <% end %>
 

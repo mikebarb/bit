@@ -12,18 +12,26 @@
   padding-top: 8px;
   font-size: x-small;
   line-height: 8px;
-  border:3px solid #faf;}
+  border:5px solid #faf;}
 
 .lesson:hover {
-  border: 3px solid black;
+  border: 5px solid black;
 }
+
+.lessoncomment {
+  display: inline-block;
+  margin: 3px;
+  /* background-color: white; */
+  width: 74%;
+}
+
 
 .tutor {
   margin: 1px;
   color: black;
   background-color: #aaf;
   line-height: 18px;
-  border:3px solid #aaf;
+  border:5px solid #aaf;
 }
 
 .tutorinline, .studentinline{
@@ -31,7 +39,7 @@
 }
 
 .tutor:hover {
-  border: 3px solid green;
+  border: 5px solid green;
 }
 
 .tutorname {
@@ -41,7 +49,7 @@
 
 .tutorcomment {
   display: inline-block;
-  background-color: white;
+  /* background-color: white; */
   width: 74%;
 }
 
@@ -50,11 +58,11 @@
   color: black;
   background-color: #afa;
   line-height: 18px;
-  border:3px solid #afa;
+  border:5px solid #afa;
 }
 
 .student:hover {
-  border: 3px solid blue;
+  border: 5px solid blue;
 }
 
 .studentname {
@@ -64,7 +72,7 @@
 
 .studentcomment {
   display: inline-block;
-  background-color: white;
+  /* background-color: white; */
   width: 74%;
 }
 
@@ -153,3 +161,156 @@ table, th, td {
   border: 1px solid #ddd;
   margin-bottom: 0px;
 }
+
+// Tutors & Students backgroune colours
+
+// Background defaults to white if no settings in database
+.t-kind-standard {
+  background-color: #ffffff;   //white  
+}
+.t-status-BFL {
+  background-color: #ffffff;   //white  
+}
+.s-kind-standard {
+  background-color: #ffffff;   //white  
+}
+.s-status-standard {
+  background-color: #ffffff;   //white  
+}
+
+// colours for tutors
+.t-kind-BFL {
+  background-color: #ffff00;   //yellow  
+}
+
+.t-status-BFL {
+  background-color: #ffff00;   //yellow  
+}
+
+// colours for students
+.t-kind-away-action {
+  background-color: #ff0000;   //red  
+}
+
+.t-status-undealtAbsent {
+  background-color: #ff0000;   //red 
+}
+
+.t-kind-known-steps-remaining {
+  background-color: #ff9900;   //orange  
+}
+
+.t-kind-needsAttention {
+  background-color: #ff00ff;   //magneta  
+}
+
+.t-kind-breakRoutine-relief {
+  background-color: #00ff00;   //cyan 
+}
+
+.t-kind-bewareIssue {
+  background-color: #9900ff;   //purple 
+}
+
+.t-status-dealtAbsent {
+  background-color: #666666;   //grey 
+}
+
+.t-kind-awayAction {
+  background-color: #CC0000;   //dark rec
+}
+.t-status-absent {
+  background-color: #CC0000;   //dark red
+}
+
+.t-kind-onCall {
+  background-color: #00FFFF;   //ligt blue
+}
+
+.t-kind-onSetup {
+  background-color: #EAD1DC;   //ligt magneta 3
+}
+
+// colours for students
+.s-kind-BFL {
+  background-color: #ffff00;   //yellow  
+}
+
+.s-kind-free {
+  background-color: #00ff00;   //green  
+}
+
+.s-kind-1stpaid {
+  background-color: #B6D7A8;   //light green 2  
+}
+
+.s-status-undealtAbsent {
+  background-color: #FF0000;   //red  
+}
+
+.s-kind-known-steps-remaining {
+  background-color: #FF9900;   //orange  
+}
+
+.s-kind-plannedAbsence-needsAttention {
+  background-color: #FF00FF;   //magneta  
+}
+
+.s-kind-breakRoutine-courtisyOrShifted {
+  background-color: #00FFFF;   //cyan  
+}
+
+.s-kind-bewareIssue {
+  background-color: #9900FF;   //purple  
+}
+
+.s-status-dealtAbsent {
+  background-color: #666666;   // grey  
+}
+
+.s-status-absent {
+  background-color: #666666;   // grey  
+}
+
+.s-kind-fortnightly {
+  background-color: #A2C4C9;   //light cyan 2  
+}
+
+.s-kind-awayAction {
+  background-color: #C00000;   //dark red  
+}
+
+.s-kind-Gungahlin {
+  background-color: #C9DAF8;   //light green 3  
+}
+
+.s-kind-Kaleen {
+  background-color: #D9D2E9;   //light purple 3  
+}
+
+.s-kind-Woden {
+  background-color: #D9D9D9;   //light grey 1  
+}
+
+.s-kind-Kambah {
+  background-color: #FFF2CC;   //light yellow 3  
+}
+
+// Notes
+.s-kind-notes {
+  background-color: #FCE5CD;   //light orange 3  
+}
+.t-kind-notes {
+  background-color: #FCE5CD;   //light orange 3  
+}
+.t-kind-tutorNote {
+  background-color: #999999;   //light orange 3  
+}
+.s-kind-tutorNote {
+  background-color: #999999;   //light orange 3  
+}
+
+
+
+
+

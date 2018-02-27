@@ -659,20 +659,32 @@ class AdminsController < ApplicationController
                                         tutor_id:   thistutor.id
             ).first
             if thistutrole      # already there
-              if thistutrole.comment == mytutorcomment
+              if thistutrole.comment == mytutorcomment &&
+                 thistutrole.status  == "" &&
+                 thistutrole.kind    == "onCall"
                 r["onCallupdates"] += "|no change|"
               else
-                if thistutrole.update(comment: mytutorcomment)
+                if thistutrole.comment != mytutorcomment
+                  thistutrole.update(comment: mytutorcomment)
+                end
+                if thistutrole.status != ""
+                  thistutrole.update(status: "")
+                end
+                if thistutrole.kind != "onSetup"
+                  thistutrole.update(kind: "onSetup")
+                end
+                if thistutrole.save
                   r["onCallupdates"] += "|updated tutrole|"
                 else
-                  r["onCallupdates"] += "|updated failed|"
+                  r["onCallupdates"] += "|update failed|"
                 end
               end
             else                # need to be created
               thistutrole = Tutrole.new(lesson_id: thislesson.id,
                                         tutor_id:   thistutor.id,
                                         comment: mytutorcomment,
-                                        status: "onCall")
+                                        status: "",
+                                        kind: "onCall")
               if thistutrole.save
                 r["onCallupdates"] = "|created|"
               else
@@ -718,20 +730,32 @@ class AdminsController < ApplicationController
                                         tutor_id:   thistutor.id
             ).first
             if thistutrole      # already there
-              if thistutrole.comment == mytutorcomment
+              if thistutrole.comment == mytutorcomment &&
+                 thistutrole.status  == "" &&
+                 thistutrole.kind  == "onSetup"
                 r["onSetupupdates"] += "|no change|"
               else
-                if thistutrole.update(comment: mytutorcomment)
+                if thistutrole.comment != mytutorcomment
+                  thistutrole.update(comment: mytutorcomment)
+                end
+                if thistutrole.status != ""
+                  thistutrole.update(status: "")
+                end
+                if thistutrole.kind != "onSetup"
+                  thistutrole.update(kind: "onSetup")
+                end
+                if thistutrole.save
                   r["onSetupupdates"] += "|updated tutrole|"
                 else
-                  r["onSetupupdates"] += "|updated failed|"
+                  r["onSetupupdates"] += "|update failed|"
                 end
               end
             else                # need to be created
               thistutrole = Tutrole.new(lesson_id: thislesson.id,
                                         tutor_id:   thistutor.id,
                                         comment: mytutorcomment,
-                                        status: "onSetup")
+                                        status: "",
+                                        kind: "onSetup")
               if thistutrole.save
                 r["onSetupupdates"] = "|created|"
               else
@@ -821,7 +845,9 @@ class AdminsController < ApplicationController
           if mytutor                             # mytutor[1] is colour
             mytutorcomment = mytutor[0]
             mytutornamecontent = findTutorNameComment(mytutor[0], @tutors) 
-            mytutorstatus = colourToStatus(mytutor[1])["tutor"]
+            #mytutorstatus = colourToStatus(mytutor[1])["tutor"]
+            mytutorstatus = colourToStatus(mytutor[1])["tutor-status"]
+            mytutorkind   = colourToStatus(mytutor[1])["tutor-kind"]
             if mytutornamecontent.empty?  ||  # no database names found for this tutor
                mytutornamecontent[0]['name'] == ""
                 # put ss name string into lesson comment
@@ -838,7 +864,8 @@ class AdminsController < ApplicationController
                 thistutrole = Tutrole.new(lesson_id: thislesson.id,
                                           tutor_id:   thistutor.id,
                                           comment: mytutorcomment,
-                                          status: mytutorstatus)
+                                          status: mytutorstatus,
+                                          kind: mytutorkind)
                 if thistutrole.save
                   r["tutroleupdates"] = "|created|"
                 else
@@ -850,7 +877,8 @@ class AdminsController < ApplicationController
                   # get the lesson they are in
                   thislesson = Lesson.find(thistutrole1.lesson_id)
                   if thistutrole1.comment == mytutorcomment &&
-                     thistutrole1.status  == mytutorstatus
+                     thistutrole1.status  == mytutorstatus &&
+                     thistutrole1.kind  == mytutorkind
                     r["tutroleupdates"] += "|no change|"
                   else
                     if thistutrole1.comment != mytutorcomment
@@ -858,6 +886,9 @@ class AdminsController < ApplicationController
                     end
                     if thistutrole1.status != mytutorstatus
                       thistutrole1.update(status: mytutorstatus)
+                    end
+                    if thistutrole1.kind != mytutorkind
+                      thistutrole1.update(status: mytutorkind)
                     end
                     if thistutrole1.save
                       r["tutroleupdates"] += "|updated tutrole|"
@@ -876,7 +907,8 @@ class AdminsController < ApplicationController
           unless mystudents == nil || mystudents.empty?   # there are students in ss
             mystudents.each do |mystudent|                # precess each student
               mystudentcomment = ""
-              mystudentstatus  = colourToStatus(mystudent[1])["student"]
+              mystudentstatus  = colourToStatus(mystudent[1])["student-status"]
+              mystudentkind    = colourToStatus(mystudent[1])["student-kind"]
               mystudentnamecontent = findStudentNameComment(mystudent[0], @students) 
               if mystudentnamecontent.empty?  ||  # no database names found for this student
                  mystudentnamecontent[0]['name'] == ""
@@ -898,7 +930,8 @@ class AdminsController < ApplicationController
                   thisrole = Role.new(lesson_id: thislesson.id,
                                       student_id:   thisstudent.id,
                                       comment: mystudentcomment,
-                                      status: mystudentstatus)
+                                      status: mystudentstatus,
+                                      kind: mystudentkind)
                   if thisrole.save
                     r["roleupdates"] = "|created|"
                   else
@@ -921,7 +954,8 @@ class AdminsController < ApplicationController
                       end
                     end
                     if thisrole1.comment == mystudentcomment &&
-                       thisrole1.status  == mystudentstatus
+                       thisrole1.status  == mystudentstatus &&
+                       thisrole1.kind    == mystudentkind
                       r["roleupdates"] += "|no change|"
                     else
                       if thisrole1.comment != mystudentcomment
@@ -930,8 +964,11 @@ class AdminsController < ApplicationController
                       if thisrole1.status != mystudentstatus
                         thisrole1.update(status: mystudentstatus)
                       end
+                      if thisrole1.kind != mystudentkind
+                        thisrole1.update(status: mystudentkind)
+                      end
                       if thisrole1.save
-                        r["roleupdates"] += "|updated tutrole|"
+                        r["roleupdates"] += "|updated role|"
                       else
                         r["roleupdates"] += "|update failed|"
                       end

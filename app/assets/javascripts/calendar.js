@@ -5,15 +5,31 @@
 
 /* global $ */
 
-$(document).ready(function() {
+/*
+# need to make this work effectively with turbolinks
+# make a function and call later with
+### var ready = function(){
+### ...
+### };
+### $(document).ready(ready);
+### $(document).on('turbolinks:load', ready);
+
+# $(document).ready(function() {   # original setup without turbolinks.$()
+*/
+
+var ready = function() {
   //console.log("documentready");  
-  
   
   // some global variables for this page
   var sf = 5;     // significant figures for dom id components e.g.lesson ids, etc.
   var myhost = window.location.protocol + '//' + window.location.hostname;   // base url for ajax
   console.log("baseurl: " + myhost);
   
+  // want to set defaults on some checkboxes on page load
+  document.getElementById("hidetutors").checked = true;
+  document.getElementById("hidestudents").checked = true;
+  selectshows();
+
   // this will put obvious border on mouse entering selectable items
   /*$('.lesson').mouseenter(function(){
      $(this).css('border','3px solid black');
@@ -866,11 +882,11 @@ $(document).ready(function() {
 
 //------ End of Filter by name functions for the tutors and students -------
 
-});
+};
 
 function selectshows() {
   //console.log("processing selectShows");
-  var showList =  document.getElementById("selectshows").getElementsByTagName("input");
+  var showList = document.getElementById("selectshows").getElementsByTagName("input");
   //console.log(showList);
   for(var i = 0; i < showList.length; i++){
     //console.log(showList[i].id);
@@ -904,6 +920,25 @@ function selectshows() {
           }
         }
         break;
+      default:
+        var thispattern = /hide(.*)/;
+        console.log("showList[i].id: " + showList[i].id);
+        var m = thispattern.exec(showList[i].id);
+        if( m ){
+          console.log("m: " + m[1]);
+          var siteid = 'site-' + m[1];
+          console.log("siteid: " + siteid);          
+          if (showList[i].checked){
+            document.getElementById(siteid).classList.add("hideme");
+          }else{
+            document.getElementById(siteid).classList.remove("hideme");
+          }
+        }
     }
+    
   }
 }
+
+$(document).ready(ready);
+$(document).on('turbolinks:load', ready);
+

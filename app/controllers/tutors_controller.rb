@@ -69,6 +69,8 @@ class TutorsController < ApplicationController
 
     # Never trust parameters from the scary internet, only allow the white list through.
     def tutor_params
-      params.require(:tutor).permit(:gname, :sname, :pname, :initials, :sex, :subjects, :comment, :status, :email, :phone)
+      params.require(:tutor).permit(:gname, :sname, :pname, :initials, :sex,
+                                    :subjects, :comment, :status, :kind, 
+                                    :email, :phone)
     end
 end

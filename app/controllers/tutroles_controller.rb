@@ -119,7 +119,7 @@ class TutrolesController < ApplicationController
 
     # Never trust parameters from the scary internet, only allow the white list through.
     def tutrole_params
-      params.require(:tutrole).permit(:lesson_id, :tutor_id, :new_lesson_id, :old_lesson_id,
+      params.require(:tutrole).permit(:lesson_id, :tutor_id, :new_lesson_id, :old_lesson_id, :status, :kind,
         :domchange => [:action, :ele_new_parent_id, :ele_old_parent_id, :move_ele_id, :element_type]
       )
     end

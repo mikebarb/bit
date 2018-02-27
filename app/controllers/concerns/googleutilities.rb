@@ -175,124 +175,219 @@ module Googleutilities
     [
       [ [1.0, 1.0, 0.0], {  "tutor"   => "BFL",
                             "student" => "N/A",
-                            "colour"  => "Yellow" }
+                            "colour"  => "Yellow", 
+                            "student-status" => "absent",
+                            "student-kind" => "BFL",
+                            "tutor-status" => "",
+                            "tutor-kind" => "BFL" }
       ],  
       [ [0.0, 1.0, 0.0], {  "tutor"   => "N/A",
                             "student" => "1stFree",
-                            "colour"  => "Green" }
+                            "colour"  => "Green", 
+                            "student-status" => "",
+                            "student-kind" => "free",
+                            "tutor-status" => "",
+                            "tutor-kind" => "" }
       ],  
       [ [0.7137255, 0.84313726, 0.65882355], {
                             "tutor"   => "Dickson Tutor",
                             "student" => "1stPaid",
-                            "colour"  => "Light Green 2" }
+                            "colour"  => "Light Green 2", 
+                            "student-status" => "",
+                            "student-kind" => "1stPaid",
+                            "tutor-status" => "",
+                            "tutor-kind" => "" }
       ],  
       [ [1.0, 0.0, 0.0], {  "student" => "undealtAbsent",
                             "tutor"   => "undealtAbsent",
-                            "colour"  => "Red" }
+                            "colour"  => "Red", 
+                            "student-status" => "undealtAbsent",
+                            "student-kind" => "",
+                            "tutor-status" => "undealtAbsent",
+                            "tutor-kind" => "away-action" }
       ],  
       [ [1.0, 0.6, 0.0], {  "tutor"   => "Know steps remaining",
                             "student" => "Know steps remaining",
-                            "colour"  => "Orange" }
+                            "colour"  => "Orange", 
+                            "student-status" => "",
+                            "student-kind" => "Know steps remaining",
+                            "tutor-status" => "",
+                            "tutor-kind" => "Know steps remaining" }
       ],  
       [ [1.0, 0.0, 1.0], {  "tutor"   => "Needs Attention",
                             "student" => "Needs Attention",
-                            "colour"  => "Pink" }
+                            "colour"  => "Pink / Magneta", 
+                            "student-status" => "absent",
+                            "student-kind" => "plannedAbsence-needsAttention",
+                            "tutor-status" => "",
+                            "tutor-kind" => "Needs Attention" }
       ],  
       [ [0.0, 1.0, 1.0], {  "tutor"   => "breakRoutine",
                             "student" => "breakRoutne",
-                            "colour"  => "Cyan" }
+                            "colour"  => "Cyan", 
+                            "student-status" => "",
+                            "student-kind" => "breakRoutine-courtisyOrShifted",
+                            "tutor-status" => "",
+                            "tutor-kind" => "breakRoutine-relief" }
       ],  
       [ [0.6, 0.0, 1.0], {  "tutor"   => "bewareIssue",
                             "student" => "bewareIssue",
-                            "colour"  => "Purple" }
+                            "colour"  => "Purple", 
+                            "student-status" => "",
+                            "student-kind" => "bewareIssue",
+                            "tutor-status" => "",
+                            "tutor-kind" => "bewareIssue" }
       ],  
       [ [0.4, 0.4, 0.4], {  "tutor"   => "dealtAbsent",
                             "student" => "dealtAbsent",
-                            "colour"  => "Gray" }
+                            "colour"  => "Gray", 
+                            "student-status" => "dealtAbsent",
+                            "student-kind" => "",
+                            "tutor-status" => "dealtAbsent",
+                            "tutor-kind" => "" }
       ],  
       [ [0.63529414, 0.76862746, 0.7882353], {
                             "tutor"   => "fortnightly",
                             "student" => "fortnightly",
-                            "colour"  => "Light-cyan 2" }
+                            "colour"  => "Light-cyan 2", 
+                            "student-status" => "",
+                            "student-kind" => "fortnightly",
+                            "tutor-status" => "",
+                            "tutor-kind" => "" }
       ],  
       [ [0.8, 0.0, 0.0], {  "tutor"   => "red",
                             "student" => "red",
-                            "colour"  => "Dark Red" }
+                            "colour"  => "Dark Red", 
+                            "student-status" => "absent",
+                            "student-kind" => "awayAction",
+                            "tutor-status" => "absent",
+                            "tutor-kind" => "awayAction" }
       ],
       [ [0.42745098, 0.61960787, 0.92156863], {
                             "tutor"   => "T3W1",
                             "student" => "T3W1",
-                            "colour"  => "Light Cornflower Blue1" }
+                            "colour"  => "Light Cornflower Blue1", 
+                            "student-status" => "T3W1",
+                            "student-kind" => "T3W1",
+                            "tutor-status" => "T3W1",
+                            "tutor-kind" => "T3W1" }
       ],  
       [ [0.8352941, 0.6509804, 0.7411765], {
                             "tutor"   => "On Call",
                             "student" => "On Call",
-                            "colour"  => "Light Magneta 2" }
+                            "colour"  => "Light Magneta 2", 
+                            "student-status" => "",
+                            "student-kind" => "",
+                            "tutor-status" => "",
+                            "tutor-kind" => "onCall" }
       ],  
       [ [ 0.91764706, 0.81960785, 0.8627451], {
                             "tutor"   => "Setup",
                             "student" => "Setup",
-                            "colour"  => "Light Magneta 3" }
+                            "colour"  => "Light Magneta 3", 
+                            "student-status" => "",
+                            "student-kind" => "",
+                            "tutor-status" => "",
+                            "tutor-kind" => "onSetup" }
       ],  
       [ [0.7882353, 0.85490197, 0.972549], {
                             "tutor"   => "Gungahlin Student",
                             "student" => "Gungahlin Student",
-                            "colour"  => "Light Green 3" }
+                            "colour"  => "Light Green 3", 
+                            "student-status" => "",
+                            "student-kind" => "Gungahlin",
+                            "tutor-status" => "",
+                            "tutor-kind" => "Gungahlin" }
       ],  
       [ [0.8509804, 0.8235294, 0.9137255], {
                             "tutor"   => "Kaleen Student",
                             "student" => "Kaleen Student",
-                            "colour"  => "Light Purple 3" }
+                            "colour"  => "Light Purple 3", 
+                            "student-status" => "",
+                            "student-kind" => "Kaleen",
+                            "tutor-status" => "",
+                            "tutor-kind" => "Kaleen" }
       ],  
       [ [0.8509804, 0.91764706, 0.827451], {
                             "tutor"   => "Dickson Student",
                             "student" => "Dickson Student",
-                            "colour"  => "Light Green 3" }
+                            "colour"  => "Light Green 3", 
+                            "student-status" => "",
+                            "student-kind" => "Dickson",
+                            "tutor-status" => "",
+                            "tutor-kind" => "Dickson" }
       ],
       [ [0.8509804, 0.8509804, 0.8509804], {
                             "tutor"   => "Woden Student",
                             "student" => "Woden Student",
-                            "colour"  => "Light Grey 1" }
+                            "colour"  => "Light Grey 1", 
+                            "student-status" => "",
+                            "student-kind" => "Woden",
+                            "tutor-status" => "",
+                            "tutor-kind" => "Woden" }
       ],  
       [ [1.0, 0.9490196, 0.8], {
-                            "tutor"   => "Kambah Student",
+                            "tutor"   => "Kambah Tutor",
                             "student" => "Kambah Student",
-                            "colour"  => "Light Yellow 3" }
+                            "colour"  => "Light Yellow 3", 
+                            "student-status" => "",
+                            "student-kind" => "Kambah",
+                            "tutor-status" => "",
+                            "tutor-kind" => "Kambah" }
       ],  
       [ [0.9882353, 0.8980392, 0.8039216], {
                             "tutor"   => "Notes",
                             "student" => "Notes",
-                            "colour"  => "Light Orange 3" }
+                            "colour"  => "Light Orange 3", 
+                            "student-status" => "absent",
+                            "student-kind" => "notes",
+                            "tutor-status" => "absent",
+                            "tutor-kind" => "notes" }
       ],  
       [ [1.0, 1.0, 1.0], {
                             "tutor"   => "Blank cell",
                             "student" => "Blank cell",
-                            "colour"  => "White" }
+                            "colour"  => "White", 
+                            "student-status" => "",
+                            "student-kind" => "whiteCell",
+                            "tutor-status" => "",
+                            "tutor-kind" => "whiteCell" }
       ], 
       [ [0.6431373, 0.7607843, 0.95686275], {
                             "tutor"   => "Gungahlin Tutor",
-                            "student" => "Gungahlin Tutor",
-                            "colour"  => "Light Cornflower Blue 2" }
+                            "student" => "Gungahlin Student",
+                            "colour"  => "Light Cornflower Blue 2", 
+                            "student-status" => "",
+                            "student-kind" => "Gungahlin",
+                            "tutor-status" => "",
+                            "tutor-kind" => "Gungahlin" }
       ],  
       [ [0.6, 0.6, 0.6], {
                             "tutor"   => "Tutor note",
                             "student" => "Tutor note",
-                            "colour"  => "Dark Grey 2" }
+                            "colour"  => "Dark Grey 2", 
+                            "student-status" => "",
+                            "student-kind" => "Tutor note",
+                            "tutor-status" => "",
+                            "tutor-kind" => "Tutor note" }
       ],
       [ [0.7058824, 0.654902, 0.8392157], {
                             "tutor"   => "Kaleen Tutor",
-                            "student" => "Kaleen Tutor",
-                            "colour"  => "Light Purple 2" }
+                            "student" => "Kaleen Student",
+                            "colour"  => "Light Purple 2", 
+                            "student-status" => "",
+                            "student-kind" => "Kaleen",
+                            "tutor-status" => "",
+                            "tutor-kind" => "Kaleen" }
       ],
       [ [0.7176471, 0.7176471, 0.7176471], {
                             "tutor"   => "Woden Tutor",
                             "student" => "Woden Tutor",
-                            "colour"  => "Dark Grey 1" }
-      ],
-      [ [1.0, 0.8980392, 0.6], {
-                            "tutor"   => "Kambah Tutor",
-                            "student" => "Kambah Tutor",
-                            "colour"  => "Light Yellow 2" }
+                            "colour"  => "Dark Grey 1", 
+                            "student-status" => "",
+                            "student-kind" => "Woden",
+                            "tutor-status" => "",
+                            "tutor-kind" => "Woden" }
       ]
     ]
   end

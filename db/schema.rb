@@ -11,7 +11,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema.define(version: 20180223104815) do
+ActiveRecord::Schema.define(version: 20180226082548) do
 
   # These are extensions that must be enabled in order to support this database
   enable_extension "plpgsql"
@@ -31,10 +31,13 @@ ActiveRecord::Schema.define(version: 20180223104815) do
     t.datetime "updated_at"
     t.text     "comment"
     t.string   "status"
+    t.string   "kind"
   end
 
+  add_index "roles", ["kind"], name: "index_roles_on_kind", using: :btree
   add_index "roles", ["lesson_id", "student_id"], name: "index_roles_on_lesson_id_and_student_id", unique: true, using: :btree
   add_index "roles", ["lesson_id"], name: "index_roles_on_lesson_id", using: :btree
+  add_index "roles", ["status"], name: "index_roles_on_status", using: :btree
   add_index "roles", ["student_id"], name: "index_roles_on_student_id", using: :btree
 
   create_table "slots", force: :cascade do |t|
@@ -97,10 +100,13 @@ ActiveRecord::Schema.define(version: 20180223104815) do
     t.datetime "updated_at"
     t.text     "comment"
     t.string   "status"
+    t.string   "kind"
   end
 
+  add_index "tutroles", ["kind"], name: "index_tutroles_on_kind", using: :btree
   add_index "tutroles", ["lesson_id", "tutor_id"], name: "index_tutroles_on_lesson_id_and_tutor_id", unique: true, using: :btree
   add_index "tutroles", ["lesson_id"], name: "index_tutroles_on_lesson_id", using: :btree
+  add_index "tutroles", ["status"], name: "index_tutroles_on_status", using: :btree
   add_index "tutroles", ["tutor_id"], name: "index_tutroles_on_tutor_id", using: :btree
 
   create_table "users", force: :cascade do |t|
