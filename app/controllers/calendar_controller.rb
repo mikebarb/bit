@@ -9,34 +9,52 @@ class CalendarController < ApplicationController
     # define a two dimesional array to hold the table info to be displayed.
     # row and column [0] will hold counts of elements populated in that row or column
     # row and column [1] will hold the titles for that rolw or column.
+    mystartdate = current_user.daystart
+    myenddate = current_user.daystart + current_user.daydur.days
+    @sessinfo      = Lesson
+                   .joins(:slot)
+                   .where("slots.timeslot >= :start_date AND
+                           slots.timeslot < :end_date",
+                          {start_date: mystartdate,
+                           end_date: myenddate
+                          })                   
 
-    @sessinfo      = Lesson.all
-    #logger.debug "calendar display - (sessinfo) " + @sessinfo.inspect
 
     @slotsinfo     = Slot 
-                  .select('id, timeslot, location')         
+                   .select('id, timeslot, location')
+                   .where("timeslot >= :start_date AND
+                          timeslot < :end_date",
+                          {start_date: mystartdate,
+                           end_date: myenddate
+                          })
               
     # locations - there will be separate tables for each location
     @locations    = Slot
                   .select('location')
                   .distinct
                   .order('location')
-
-   #logger.debug '@locations- ' + @locations.inspect
-
-
+                  .where("timeslot >= :start_date AND
+                          timeslot < :end_date",
+                          {start_date: mystartdate,
+                           end_date: myenddate
+                          })
+                  
     #column headers will be the days - two step process to get these
     @datetimes = Slot
                   .select('timeslot')
                   .distinct
                   .order('timeslot')
+                  .where("timeslot >= :start_date AND
+                          timeslot < :end_date",
+                          {start_date: mystartdate,
+                           end_date: myenddate
+                          })
                   
     @colheaders = Hash.new()
     @datetimes.each do |datetime|
       mydate = datetime.timeslot.strftime("%Y-%m-%d")
       @colheaders[mydate] = datetime.timeslot.strftime("%a-%Y-%m-%d")
     end
-    #logger.debug "@colheaders: " + @colheaders.inspect
 
     # row headers will be the lesson times for the day - allready have unique slots               
     @rowheaders = Hash.new()
@@ -44,52 +62,32 @@ class CalendarController < ApplicationController
       mytime = datetime.timeslot.strftime("%H-%M")
       @rowheaders[mytime] = datetime.timeslot.strftime("%I-%M %p")
     end
-    #logger.debug "@rowheaders: " + @rowheaders.inspect
 
-    #logger.debug '@rowheaders.count: ' + @rowheaders.count.inspect
-    #logger.debug '@colheaders.count: ' + @colheaders.count.inspect
-    
-    #@cal1 = Array.new(1 + @rowheaders.count){Array.new(1 + @colheaders.count){Hash.new()}}
-    #logger.debug 'cal1: ' + @cal1.inspect
-    
     @cal = Hash.new()
     @locations.each do |l|
       @cal[l.location] = Array.new(1 + @rowheaders.count){Array.new(1 + @colheaders.count){Hash.new()}}
       @cal[l.location][0][0]["value"] = l.location    # put in the site name.
     end
-    #logger.debug 'cal: ' + @cal.inspect
-
-
 
     i = 0
     @colindex = Hash.new
     @colheaders.keys.each do |entry|
-      #logger.debug 'entry: ' + entry.inspect
       i += 1
       @locations.each do |l|
-        #logger.debug 'in colheaders loop => l: ' + l.location.inspect
-        #@cal1[0][i]["value"] = @colheaders[entry]
-        #logger.debug 'in colheaders loop => @cal[l.location]: ' + @cal[l.location].inspect
         @cal[l.location][0][i]["value"] = @colheaders[entry]
       end
       @colindex[entry] = i
     end
-    #logger.debug "colindex- " + @colindex.inspect
-    #logger.debug 'cal: ' + @cal.inspect
-   
+
     j = 0
     @rowindex = Hash.new
     @rowheaders.each do |key, value|
-      #logger.debug 'rowindex loop - entry: ' + key.inspect + "  " + value.inspect
       j += 1
       @locations.each do |l|
         @cal[l.location][j][0]["value"] = value
       end
       @rowindex[key] = j
     end
-    #logger.debug "rowindex- " + @rowindex.inspect
-    #logger.debug 'cal: ' + @cal.inspect
-    #logger.debug '---------- now do the slots --------------------'
     # identify valid slots for display
     # first need to split out the location, date and time
     @slotsinfo.each do |myslot|
@@ -102,31 +100,16 @@ class CalendarController < ApplicationController
       @cal[mylocation][@rowindex[mytime]][@colindex[mydate]]["id_dom"] = 
                   myslot.location[0, 3].ljust(3, "-") + myslot.timeslot.strftime("%Y%m%d%H%M")
     end 
-    #logger.debug 'cal: ' + @cal.inspect
-    
-    #logger.debug '---------- now do the lessons --------------------'
-    @sessinfo.each do |entry|
-      #logger.debug "entry- " + entry.inspect
 
+    @sessinfo.each do |entry|
       thisdate = entry.slot.timeslot.strftime("%Y-%m-%d")
       thistime = entry.slot.timeslot.strftime("%H-%M")
       thislocation = entry.slot.location
-      
-      #thistime = entry.slot.timeslot.strftime("%Y-%m-%d %H:%M")
-      #logger.debug "thisdate- " + thisdate.inspect
-      #logger.debug "colindex- " + @colindex[thisdate].inspect
-      #thislocation = entry.slot.location
-      #logger.debug "thistime- " + thistime.inspect
-      #logger.debug "rowindex- " + @rowindex[thistime].inspect
-      #logger.debug "thislocation- " + thislocation.inspect
-
       unless @cal[thislocation][@rowindex[thistime]][@colindex[thisdate]].key?('values') then  
         @cal[thislocation][@rowindex[thistime]][@colindex[thisdate]]["values"]   = Array.new()
       end
       @cal[thislocation][@rowindex[thistime]][@colindex[thisdate]]["values"]   << entry
-
     end
-    #logger.debug '@cal- ' + @cal.inspect
   end
   
   #=============================================================================================

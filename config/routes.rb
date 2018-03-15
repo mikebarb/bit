@@ -1,5 +1,14 @@
 Rails.application.routes.draw do
-  devise_for :users
+  devise_for :users, controllers: {registrations: 'registrations' } 
+  devise_scope :user do
+    get 'users/preferences/' => 'registrations#edit_preferences',   as: :edit_user_preferences
+    put 'users/preferences/' => 'registrations#update_preferences', as: :user_preferences
+
+    get 'users/index_roles/' => 'registrations#index_roles',        as: :index_user_roles
+    get 'users/roles/:id'       => 'registrations#edit_roles',         as: :edit_user_roles
+    put 'users/roles/'       => 'registrations#update_roles',       as: :user_roles
+  end
+  
   match '/oauth2callback',
     to: Google::Auth::WebUserAuthorizer::CallbackApp,
     via: :all

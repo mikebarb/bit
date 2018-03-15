@@ -176,14 +176,14 @@ module Googleutilities
       [ [1.0, 1.0, 0.0], {  "tutor"   => "BFL",
                             "student" => "N/A",
                             "colour"  => "Yellow", 
-                            "student-status" => "absent",
+                            "student-status" => "absent - 255,255,0",
                             "student-kind" => "BFL",
                             "tutor-status" => "",
                             "tutor-kind" => "BFL" }
       ],  
       [ [0.0, 1.0, 0.0], {  "tutor"   => "N/A",
                             "student" => "1stFree",
-                            "colour"  => "Green", 
+                            "colour"  => "Green - 0,255,0", 
                             "student-status" => "",
                             "student-kind" => "free",
                             "tutor-status" => "",
@@ -210,9 +210,9 @@ module Googleutilities
                             "student" => "Know steps remaining",
                             "colour"  => "Orange", 
                             "student-status" => "",
-                            "student-kind" => "Know steps remaining",
+                            "student-kind" => "known-steps-remaining",
                             "tutor-status" => "",
-                            "tutor-kind" => "Know steps remaining" }
+                            "tutor-kind" => "known-steps-remaining" }
       ],  
       [ [1.0, 0.0, 1.0], {  "tutor"   => "Needs Attention",
                             "student" => "Needs Attention",
@@ -220,7 +220,7 @@ module Googleutilities
                             "student-status" => "absent",
                             "student-kind" => "plannedAbsence-needsAttention",
                             "tutor-status" => "",
-                            "tutor-kind" => "Needs Attention" }
+                            "tutor-kind" => "needsAttention" }
       ],  
       [ [0.0, 1.0, 1.0], {  "tutor"   => "breakRoutine",
                             "student" => "breakRoutne",
@@ -275,7 +275,7 @@ module Googleutilities
       [ [0.8352941, 0.6509804, 0.7411765], {
                             "tutor"   => "On Call",
                             "student" => "On Call",
-                            "colour"  => "Light Magneta 2", 
+                            "colour"  => "Light Blue", 
                             "student-status" => "",
                             "student-kind" => "",
                             "tutor-status" => "",
@@ -367,9 +367,9 @@ module Googleutilities
                             "student" => "Tutor note",
                             "colour"  => "Dark Grey 2", 
                             "student-status" => "",
-                            "student-kind" => "Tutor note",
+                            "student-kind" => "tutorNote",
                             "tutor-status" => "",
-                            "tutor-kind" => "Tutor note" }
+                            "tutor-kind" => "tutorNote" }
       ],
       [ [0.7058824, 0.654902, 0.8392157], {
                             "tutor"   => "Kaleen Tutor",

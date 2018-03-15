@@ -1,0 +1,18 @@
+<h2>Edit User Roles</h2>
+
+<%= form_for @user, url: user_roles_path, html: {method: :put} do |f| %>
+  <div class="field">
+    <%= f.label :email %><br />
+    <%= f.email_field :email, autofocus: true %>
+  </div>
+
+  <div class="field">
+    <%= f.label :role %><br>
+    <%= f.text_field :role %>
+  </div> 
+
+  <div class="actions">
+    <%= f.submit "Update" %>
+  </div>
+<% end %>
+

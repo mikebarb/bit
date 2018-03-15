@@ -4,4 +4,21 @@ class User < ActiveRecord::Base
   devise :database_authenticatable, :registerable,
          :recoverable, :rememberable, :trackable, :validatable,
          :confirmable, :lockable
+         
+  before_create :set_defaults
+  
+  private
+
+    def set_defaults
+      #self.role ||= 'student'
+      #byebug
+      if self.email =~ /bigimprovementstutoring/i 
+        self.role = 'admin'
+      elsif Tutor.find_by( email: self.email.downcase)
+        self.role = 'tutor'
+      elsif Student.find_by( email: self.email.downcase)
+        self.role = 'student'
+      end
+    end
+
 end

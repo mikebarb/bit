@@ -1,0 +1,33 @@
+<h2>Edit Preferences</h2>
+
+<%= form_for @user, url: user_preferences_path, html: {method: :put} do |f| %>
+  <div class="field">
+    <%= f.label :email %><br />
+    <%= f.email_field :email, autofocus: true %>
+  </div>
+
+  <div class="field">
+    <%= f.label "Date of first day to display" %><br>
+    <%= f.date_field :daystart %>
+  </div> 
+
+  <div class="field">
+    <%= f.label "Number of days to display" %><br>
+    <%= f.number_field :daydur %>
+  </div> 
+  
+  <div class="field">
+    <%= f.label "Google Spreadsheet URL" %><br>
+    <%= f.url_field :ssurl %>
+  </div> 
+
+  <div class="field">
+    <%= f.label "Google spreadsheet TAB name" %><br>
+    <%= f.text_field :sstab %>
+  </div> 
+
+  <div class="actions">
+    <%= f.submit "Update" %>
+  </div>
+<% end %>
+

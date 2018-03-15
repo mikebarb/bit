@@ -413,9 +413,10 @@ class AdminsController < ApplicationController
     colsPerSite = 7
     # first get sites from the first row
     range = "#{sheet_name}!A3:AI3"
+    holdRailsLoggerLever = Rails.logger.level
     Rails.logger.level = 1 
     response = service.get_spreadsheet_values(spreadsheet_id, range)
-    Rails.logger.level = 0 
+    Rails.logger.level = holdRailsLoggerLever 
     # extract the key for this week e.g. T3W1
     myrow = response.values[0]
     week = myrow[0]   # this key is used over and over
@@ -462,7 +463,7 @@ class AdminsController < ApplicationController
       #byebug
       mystartcol = e[sv["col_start"]]
       myendcol = e[sv["col_start"] + colsPerSite - 1]
-      myendcoldates = e[sv["col_start"] + 1] 
+      #myendcoldates = e[sv["col_start"] + 1] 
       # ****************** temp seeting during development
       # restrict output for testing and development
       #range      = "#{sheet_name}!#{mystartcol}3:#{myendcol}60"
@@ -485,10 +486,10 @@ class AdminsController < ApplicationController
          date_time_render_option: 'SERIAL_NUMBER'
         }
       )
-
-      Rails.logger.level = 0
+      
+      Rails.logger.level = holdRailsLoggerLever
       # Now scan each row read from the spreadsheet in turn
-      response.sheets[0].data[0].row_data.map.with_index do |r, ri| # value[], row index
+      response.sheets[0].data[0].row_data.map.with_index do |r, ri| #value[], row index
         # To analyse all the colours used in the spreadsheet,
         # we store all background colours from relevant cells.
         # Show them at the end to see if some are not what they
@@ -546,7 +547,7 @@ class AdminsController < ApplicationController
             @schedule.push(requiredSlot.clone)
             requiredSlot.clear
           end
-          logger.debug " --------" + si.inspect + "-----------"
+          #logger.debug " --------" + si.inspect + "-----------"
           #now get the matching date from the responsedates array
           mydateserialnumber = responsedates.values[ri][0]
           mydate = Date.new(1899, 12, 30) + mydateserialnumber 
@@ -819,16 +820,17 @@ class AdminsController < ApplicationController
       # Step 1: get all the lessons in this slot
       thislessons = Lesson.where(slot_id: thisslot.id)
       # Step 2: get all the tutrole records for this slot
-      #alltutroles = Tutrole.where(lesson_id: thislessons.ids)
+      #         and all the role records for this slot
       alltutroles = Tutrole.where(lesson_id: thislessons.ids).
                        where.not(kind: ['onSetup', 'onCall'])
       allroles    = Role.where(lesson_id: thislessons.ids)
       # Step 3:
       if(mylessons = r["lessons"])   # this is all the standard
                                      # ss lessons in this slot
-        mylessons.each do |mysess|   # treat lesson by lesson
+        mylessons.each do |mysess|   # treat lesson by lesson from ss
           thislesson = nil           # ensure all reset
           mylessoncomment = ""
+          mylessonstatus = "standard"
           #
           #   Process students
           #
@@ -843,12 +845,14 @@ class AdminsController < ApplicationController
                                       # mytutor[0] is ss name string,
                                       # mytutor[1] is colour
           mytutorcomment = ""         # provide full version in comment
-          if mytutor                  
+          if mytutor               
             mytutorcomment = mytutor[0]
             mytutornamecontent = findTutorNameComment(mytutor[0], @tutors) 
-            #mytutorstatus = colourToStatus(mytutor[1])["tutor"]
             mytutorstatus = colourToStatus(mytutor[1])["tutor-status"]
             mytutorkind   = colourToStatus(mytutor[1])["tutor-kind"]
+            if mytutorkind == 'BFL'
+              mylessonstatus = 'on_BFL'
+            end
             if mytutornamecontent.empty?  ||  # no database names found for this tutor
                mytutornamecontent[0]['name'] == ""
                 # put ss name string into lesson comment
@@ -860,7 +864,7 @@ class AdminsController < ApplicationController
               if thistutroles.empty?   # none there, so create one
                 # Step 4ai: Create a new lesson
                 thislesson = Lesson.new(slot_id: thisslot.id,
-                                          status: 'standard')
+                                          status: mylessonstatus)
                 thislesson.save
                 thistutrole = Tutrole.new(lesson_id: thislesson.id,
                                           tutor_id:   thistutor.id,
@@ -877,6 +881,10 @@ class AdminsController < ApplicationController
                 thistutroles.each do |thistutrole1|
                   # get the lesson they are in
                   thislesson = Lesson.find(thistutrole1.lesson_id)
+                  if thislesson[:status] != mylessonstatus
+                    thislesson[:status] = mylessonstatus
+                    thislesson.save
+                  end
                   if thistutrole1.comment == mytutorcomment &&
                      thistutrole1.status  == mytutorstatus &&
                      thistutrole1.kind  == mytutorkind
@@ -924,7 +932,7 @@ class AdminsController < ApplicationController
                 # Step 4ai: Create a new lesson ONLY if necessary
                 unless thislesson
                   thislesson = Lesson.new(slot_id: thisslot.id,
-                                            status: 'standard')
+                                            status: mylessonstatus)
                   thislesson.save
                 end
                 if thisroles.empty?   # none there, so create one
@@ -1043,6 +1051,7 @@ class AdminsController < ApplicationController
     spreadsheet_id = '10dXs-AT-UiFV1OGv2DOZIVYHEp81QSchFbIKZkrNiC8'
     sheet_name = 'New Sheet Name'
     range = "#{sheet_name}!A7:C33"
+    holdRailsLoggerLever = Rails.logger.level
     Rails.logger.level = 1 
     response = service.get_spreadsheet(
       spreadsheet_id,
@@ -1050,7 +1059,7 @@ class AdminsController < ApplicationController
       fields: "sheets(data.rowData.values" + 
       "(formattedValue,effectiveFormat.backgroundColor))"
     )
-    Rails.logger.level = 0
+    Rails.logger.level = holdRailsLoggerLever
     # Now scan each row read from the spreadsheet in turn
 
     @output = Array.new()

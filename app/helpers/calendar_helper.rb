@@ -36,5 +36,16 @@ module CalendarHelper
     end
     result
   end
-  
+
+  # Sort the values in display2 (cell of lessons/sessions) by status and then by tutor name
+  # as some lessons have no tutor, this returns the tutor name if available.
+  # This can then be used as the second attribute in the sort.
+  def valueOrder(obj)
+    if obj.tutors.exists?
+      obj.tutors.first.pname
+    else
+      "_"
+    end
+  end
+
 end
