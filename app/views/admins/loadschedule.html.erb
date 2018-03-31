@@ -31,7 +31,7 @@
                 <tr><td>tutor</td>
                 <td><%= s["tutor"][0] %>
                     <% findTutorNameComment(s["tutor"][0], @tutors).each do |te| %>
-                        <br><%= "#{te['name']} (#{te['comment']}) ---> #{r['tutroleupdates']}"  %>
+                        <br><%= "#{te['name']} (#{te['comment']}) ---> #{s["tutor"][2]}"  %>
                     <% end %>
                 </td>
                 <td><%= 
@@ -43,7 +43,7 @@
                     <tr><td>student</td>
                     <td><%= student[0] %>
                     <% findStudentNameComment(student[0], @students).each do |se| %>
-                        <br><%= "#{se['name']} (#{se['comment']}) ---> #{r['roleupdates']}"  %>
+                        <br><%= "#{se['name']} (#{se['comment']}) ---> #{student[2]}"  %>
                     <% end %>
                     </td>
                     <td><%= 

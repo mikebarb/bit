@@ -47,6 +47,16 @@ class RegistrationsController < Devise::RegistrationsController
         flagupdate = 1
         updatetext = updatetext + " - sstab"  
       end
+      if @user.history_back != update_preferences_params[:history_back]
+        @user.history_back = update_preferences_params[:history_back]
+        flagupdate = 1
+        updatetext = updatetext + " - history_back"  
+      end
+      if @user.history_forward != update_preferences_params[:history_forward]
+        @user.history_forward = update_preferences_params[:history_forward]
+        flagupdate = 1
+        updatetext = updatetext + " - history_forward"  
+      end
       logger.debug "flagupdate: " + flagupdate.inspect + " user_preferences: " + @user.inspect
       if flagupdate == 1                   # something changed - need to save
         if @user.save
@@ -126,11 +136,13 @@ class RegistrationsController < Devise::RegistrationsController
   end
 
   def update_preferences_params
-    params.require(:user).permit(:email, :daystart, :daydur, :ssurl, :sstab)
+    params.require(:user).permit(:email, :daystart, :daydur, :ssurl, :sstab,
+                                 :history_back, :history_forward)
   end
 
   def sign_up_params
-    params.require(:user).permit(:email, :password, :password_confirmation, :role)
+    params.require(:user).permit(:email, :password, :password_confirmation,
+                                 :role)
   end
   
   def account_update_params

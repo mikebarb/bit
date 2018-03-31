@@ -26,11 +26,13 @@ Rails.application.routes.draw do
   post 'removetutorfromlesson' => 'tutroles#removetutorfromlesson', as: :removetutorfromlesson
   post 'tutorcopylesson' =>       'tutroles#tutorcopylesson', as: :tutorcopylesson
   post 'tutormovelesson' =>       'tutroles#tutormovelesson', as: :tutormovelesson
+  post 'tutorupdateskc' =>           'tutroles#tutorupdateskc', as: :tutorupdateskc
   resources :tutroles
 
   post 'removestudentfromlesson' => 'roles#removestudentfromlesson', as: :removestudentfromlesson
   post 'studentcopylesson' => 'roles#studentcopylesson', as: :studentcopylesson
   post 'studentmovelesson' => 'roles#studentmovelesson', as: :studentmovelesson
+  post 'studentupdateskc' =>           'roles#studentupdateskc', as: :studentupdateskc
   resources :roles
 
   get 'calendar/display'
@@ -38,13 +40,18 @@ Rails.application.routes.draw do
 
   get 'lessons/:id/move' => 'lessons#move', as: :move_lesson
   post 'lessons/:id' => 'lessons#update', as: :update_lesson
+  post 'lessonupdateskc' =>           'lessons#lessonupdateskc', as: :lessonupdateskc
   resources :lessons
 
   resources :slots
 
+  get 'tutors/history/:id' => 'tutors#history', as: :tutor_history
+  get 'tutors/history' => 'tutors#allhistory', as: :tutors_history
   resources :tutors
 
-  get 'students/:id/showlessons' => 'students#showlessons', as: :show_lessons
+  get 'students/history/:id' => 'students#history', as: :student_history
+  get 'students/history' => 'students#allhistory', as: :students_history
+  #get 'students/:id/showlessons' => 'students#showlessons', as: :show_lessons
   resources :students
 
   # The priority is based upon order of creation: first created -> highest priority.

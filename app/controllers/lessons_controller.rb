@@ -35,7 +35,8 @@ class LessonsController < ApplicationController
   def create
     @lesson = Lesson.new(lesson_params)
     logger.debug "lesson created - " + @lesson.inspect
-
+    # default to standard lesson
+    #@lesson.status = "standard"
     respond_to do |format|
       if @lesson.save
         format.html { redirect_to @lesson, notice: 'Lesson was successfully created.' }
@@ -45,6 +46,35 @@ class LessonsController < ApplicationController
         format.html { render :new }
         format.js {}
         format.json { render json: @lesson.errors, status: :unprocessable_entity }
+      end
+    end
+  end
+
+  # PATCH/PUT /lessonupdateskc.json
+  # ajax updates skc = status comment (kind not valid for sessions)
+  def lessonupdateskc
+    @lesson = Lesson.find(params[:lesson_id])
+    logger.debug "@lesson: " + @lesson.inspect
+    flagupdate = false
+    if params[:status]
+      if @lesson.status != params[:status]
+        @lesson.status = params[:status]
+        flagupdate = true
+      end
+    end
+    if params[:comments]
+      if @lesson.comments != params[:comments]
+        @lesson.comments = params[:comments]
+        flagupdate = true
+      end
+    end
+    respond_to do |format|
+      if @lesson.save
+        #format.html { redirect_to @student, notice: 'Student was successfully updated.' }
+        format.json { render :show, status: :ok, location: @lesson }
+      else
+        logger.debug("errors.messages: " + @lesson.errors.messages.inspect)
+        format.json { render json: @lesson.errors.messages, status: :unprocessable_entity }
       end
     end
   end
@@ -93,12 +123,13 @@ class LessonsController < ApplicationController
 
     # Never trust parameters from the scary internet, only allow the white list through.
     def lesson_params
-      params.require(:lesson).permit( :slot_id, :comments, 
+      params.require(:lesson).permit( :slot_id, :comments, :status,
                                       :students_attributes => [:id, :pname],
                                       :roles_attributes => [:id, :student_id, :lesson_id, :comment, :_destroy],
                                       :tutors_attributes => [:id, :pname],
                                       :tutroles_attributes => [:id, :tutor_id, :lesson_id, :comment, :_destroy],
-                                      :domchange => [:action, :ele_new_parent_id, :ele_old_parent_id, :move_ele_id, :element_type]
+                                      :domchange => [:action, :ele_new_parent_id, :ele_old_parent_id,
+                                                    :move_ele_id, :element_type, :status, :new_value]
                                      )
     end
 end

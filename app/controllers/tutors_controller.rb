@@ -1,5 +1,7 @@
 class TutorsController < ApplicationController
-  before_action :set_tutor, only: [:show, :edit, :update, :destroy]
+  include Historyutilities
+  
+  before_action :set_tutor, only: [:show, :edit, :update, :destroy, :history]
 
   # GET /tutors
   # GET /tutors.json
@@ -10,6 +12,22 @@ class TutorsController < ApplicationController
   # GET /tutors/1
   # GET /tutors/1.json
   def show
+  end
+
+  # GET /tutors/history
+  # GET /tutors/history.json
+  def allhistory
+    @tutors_history = Array.new
+    tutors = Tutor.all.order("pname")
+    tutors.each do |thistutor|
+      @tutors_history.push(tutor_history(thistutor.id))
+    end
+  end
+
+  # GET /tutors/history/1
+  # GET /tutors/history/1.json
+  def history
+    @tutor_history =  tutor_history(params[:id])
   end
 
   # GET /tutors/new
@@ -54,10 +72,19 @@ class TutorsController < ApplicationController
   # DELETE /tutors/1
   # DELETE /tutors/1.json
   def destroy
-    @tutor.destroy
-    respond_to do |format|
-      format.html { redirect_to tutors_url, notice: 'Tutor was successfully destroyed.' }
-      format.json { head :no_content }
+    if @tutor.destroy
+      respond_to do |format|
+        format.html { redirect_to tutors_url, notice: 'Tutor was successfully destroyed.' }
+        format.json { head :no_content }
+      end
+    else
+      respond_to do |format|
+        format.html { redirect_to tutors_url, 
+          notice: "#{@tutor.errors.messages[:base].reduce { |memo, m| memo + m } }" +
+                  " Tutor was NOT destroyed." 
+        }
+        format.json { render json: @tutor.errors, status: :unprocessable_entity }
+      end
     end
   end
 

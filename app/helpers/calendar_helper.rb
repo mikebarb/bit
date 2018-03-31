@@ -14,6 +14,13 @@ module CalendarHelper
       else
         result = 't-status-standard'  
       end
+    elsif person.class == Lesson
+      status = entry.status
+      if status != nil && status != ''
+        result = 'n-status-' + status
+      else
+        result = 'n-status-standard'  
+      end
     end
     result
   end
@@ -42,9 +49,17 @@ module CalendarHelper
   # This can then be used as the second attribute in the sort.
   def valueOrder(obj)
     if obj.tutors.exists?
-      obj.tutors.first.pname
+      obj.tutors.sort_by {|t| t.pname }.first.pname
     else
       "_"
+    end
+  end
+
+  def valueOrderStatus(obj)
+    if obj.status != nil
+      obj.status
+    else
+      ""
     end
   end
 

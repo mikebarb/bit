@@ -33,13 +33,13 @@ class AdminsController < ApplicationController
   # GET /admins/loadtutors
   def loadtutors
     #service = googleauthorisation(request)
-    #byebug
     returned_authorisation = googleauthorisation(request)
     if returned_authorisation["authorizationurl"]
       redirect_to returned_authorisation["authorizationurl"] and return
     end
     service = returned_authorisation["service"]
-    spreadsheet_id = '1CbtBqeHyYb9jRmROCgItS2eEaYSwzOMpQZdUWLMvjng'
+    spreadsheet_id = current_user[:ssurl].match(/spreadsheets\/d\/(.*?)\//)[1]
+    #spreadsheet_id = '1CbtBqeHyYb9jRmROCgItS2eEaYSwzOMpQZdUWLMvjng'
     logger.debug 'about to read spreadsheet - service ' + service.inspect
     startrow = 4
     # first get the 5 columns - Name + initial, subjects, mobile, email, surname
@@ -91,7 +91,7 @@ class AdminsController < ApplicationController
         next
       end
       if m =pname.match(/(^z+)(.+)$/)
-        pname = m[2]
+        pname = m[2].strip
         t[1] = pname
       end
       
@@ -177,13 +177,13 @@ class AdminsController < ApplicationController
   # GET /admins/loadstudents
   def loadstudents
     #service = googleauthorisation(request)
-    #byebug
     returned_authorisation = googleauthorisation(request)
     if returned_authorisation["authorizationurl"]
       redirect_to returned_authorisation["authorizationurl"] and return
     end
     service = returned_authorisation["service"]
-    spreadsheet_id = '1CbtBqeHyYb9jRmROCgItS2eEaYSwzOMpQZdUWLMvjng'
+    #spreadsheet_id = '1CbtBqeHyYb9jRmROCgItS2eEaYSwzOMpQZdUWLMvjng'
+    spreadsheet_id = current_user[:ssurl].match(/spreadsheets\/d\/(.*?)\//)[1]
     logger.debug 'about to read spreadsheet'
     startrow = 3
     # first get the 3 columns - Student's Name + Year, Focus, study percentages
@@ -255,33 +255,21 @@ class AdminsController < ApplicationController
     #logger.debug "students: " + @students.inspect
     # Now to update the database
     loopcount = 0                         # limit output during testing
-    @students.each do |t|                 # step through all tutors from the spreadsheet
+    @students.each do |t|                 # step through all ss students
       pnameyear = t[1]
       logger.debug "pnameyear: " + pnameyear.inspect
       if pnameyear == ""  || pnameyear == nil
         t[10] = "invalid pnameyear - do nothing"
         next
       end
-      pnameyear[/^zz/] == nil ? status = "active" : status = "inactive"
+      #pnameyear[/^zz/] == nil ? status = "active" : status = "inactive"
       name_year_sex = getStudentNameYearSex(pnameyear)
       pname = name_year_sex[0]
       year = name_year_sex[1]
       sex = name_year_sex[2]
-=begin
-      sex = nil
-      pnameyear = pnameyear.strip
-      pname, temp, year = pnameyear.rpartition(/ /)
-      if year.include?("male")
-        if year.include?("female")
-          sex = "female"
-        else
-          sex = "male"
-        end
-        pnametemp = pname.strip
-        pname, temp, year = pnametemp.rpartition(/ /)
-      end
-=end
-      logger.debug "pname: " + pname + " : " + year + " : " + sex.inspect
+      status = name_year_sex[3]
+      logger.debug "pname: " + pname + " : " + year + " : " +
+                   sex.inspect + " : " + status
       # day code
       # use term 3 code unless a term 4 code, then take term 4
       t[9] == "" || t[9] == nil ? usedaycode = t[7] : usedaycode = t[9]
@@ -346,16 +334,16 @@ class AdminsController < ApplicationController
         if flagupdate == 1                   # something changed - need to save
           if db_student.save
             logger.debug "db_student saved changes successfully"
-            t[10] = "updated" + updatetext  
+            t[10] = "updated #{db_student.id} " + updatetext   
           else
             logger.debug "db_student saving failed - " + @db_student.errors
-            t[10] = "failed to create"
+            t[10] = "failed to update"
           end
         else
             t[10] = "no changes"
         end
       else
-        # This tutor is not in the database - so need to add it.
+        # This Student is not in the database - so need to add it.
         #
         # first get the 4 columns - 1. Student's Name + Year, 2. Focus,
         #                           3. study percentages, 4. email
@@ -370,15 +358,12 @@ class AdminsController < ApplicationController
                               preferences: t[5],
                               invcode: t[6],
                               daycode: usedaycode,
-                              status: "active"
+                              status: status
                             )
-        if pname =~ /^zz/                   # the way they show inactive tutors
-          @db_student.status = "inactive"
-        end
         logger.debug "new - db_student: " + @db_student.inspect
         if @db_student.save
           logger.debug "db_student saved successfully"
-          t[10] = "created"  
+          t[10] = "created #{@db_student.id}"  
         else
           logger.debug "db_student saving failed - " + @db_student.errors.inspect
           t[10] = "failed to create"
@@ -402,21 +387,22 @@ class AdminsController < ApplicationController
     # log levels are: :debug, :info, :warn, :error, :fatal, and :unknown, corresponding to the log level numbers from 0 up to 5
     #logger.fatal "1.log level" + Rails.logger.level.inspect
     #service = googleauthorisation(request)
-    #byebug
     returned_authorisation = googleauthorisation(request)
     if returned_authorisation["authorizationurl"]
       redirect_to returned_authorisation["authorizationurl"] and return
     end
     service = returned_authorisation["service"]
-    spreadsheet_id = '1CbtBqeHyYb9jRmROCgItS2eEaYSwzOMpQZdUWLMvjng'
-    sheet_name = 'WEEK 1'
+    #spreadsheet_id = '1CbtBqeHyYb9jRmROCgItS2eEaYSwzOMpQZdUWLMvjng'
+    #sheet_name = 'WEEK 1'
+    spreadsheet_id = current_user[:ssurl].match(/spreadsheets\/d\/(.*?)\//)[1]
+    sheet_name = current_user[:sstab]
     colsPerSite = 7
     # first get sites from the first row
     range = "#{sheet_name}!A3:AI3"
-    holdRailsLoggerLever = Rails.logger.level
+    holdRailsLoggerLevel = Rails.logger.level
     Rails.logger.level = 1 
     response = service.get_spreadsheet_values(spreadsheet_id, range)
-    Rails.logger.level = holdRailsLoggerLever 
+    Rails.logger.level = holdRailsLoggerLevel 
     # extract the key for this week e.g. T3W1
     myrow = response.values[0]
     week = myrow[0]   # this key is used over and over
@@ -443,7 +429,7 @@ class AdminsController < ApplicationController
     #slottimes # array of row number starting each slot
                # index = row number, values = ssdate
                # and datetime = datetime of the slot
-    # This array holds all the info required for updating 
+    # @schedule array holds all the info required for updating 
     # the database and displaying the results
     @schedule = Array.new()
     #These arrays and hashes are used within the sites loop
@@ -452,7 +438,10 @@ class AdminsController < ApplicationController
     onSetup = Array.new()
     requiredSlot = Hash.new()
     thisLesson = Hash.new()
+    flagProcessingLessons = false  # need to detect date to start
     # @allColours is used in the view
+    # It is used to show all colors used in the google schedule
+    # Analysis tool.
     @allColours = Hash.new()
     # work through our sites, reading spreadsheet for each
     # and extract the slots, lessons, tutors and students
@@ -460,7 +449,6 @@ class AdminsController < ApplicationController
     # At the beginning of each day, we get the on call and
     # setup info
     sites.each do |si, sv|  # site name, {col_start}
-      #byebug
       mystartcol = e[sv["col_start"]]
       myendcol = e[sv["col_start"] + colsPerSite - 1]
       #myendcoldates = e[sv["col_start"] + 1] 
@@ -487,9 +475,13 @@ class AdminsController < ApplicationController
         }
       )
       
-      Rails.logger.level = holdRailsLoggerLever
+      Rails.logger.level = holdRailsLoggerLevel
       # Now scan each row read from the spreadsheet in turn
-      response.sheets[0].data[0].row_data.map.with_index do |r, ri| #value[], row index
+      response.sheets[0].data[0].row_data.map.with_index do |r, ri|
+        # r = value[] - contains info for ss cell - content & colour,
+        # ri = row index
+        #
+        # FOR ANALYSIS ONLY - not for loading database
         # To analyse all the colours used in the spreadsheet,
         # we store all background colours from relevant cells.
         # Show them at the end to see if some are not what they
@@ -503,7 +495,7 @@ class AdminsController < ApplicationController
             end
           end
           # store all colours and keep count of how often
-          # also, keep location oif first occurance
+          # also, keep location of first occurance
           if cf != nil
             #col = [cf.red,cf.green,cf.blue]
             col = colourToArray(cf)
@@ -514,13 +506,13 @@ class AdminsController < ApplicationController
         }
         # Now start processing the row content
         c0 = getvalue(r.values[0])
-        if c0 == week     # this is the first row of the day e.g. T3W1
+        if c0 == week     # e.g. T3W1 - first row of the day 
           storecolours.call(1)
           next
         end
-        if c0 == "ON CALL"     # we are on "ON CALL" row e.g. T3W1
+        if c0 == "ON CALL"     # we are on "ON CALL" row
           storecolours.call(1)
-          for i in 1..7 do     # keep everything on row
+          for i in 1..7 do     # keep everything on this row
             cv = getvalue(r.values[i])
             onCall.push(cv) if cv != ""
           end
@@ -541,28 +533,37 @@ class AdminsController < ApplicationController
           # then this slot is not used.
           # just skip - any onCall or onSetup already found will be
           # put into the first valid slot.
-          next if colourToStatus(cf1)['colour'].downcase != 'white'
+          if colourToStatus(cf1)['colour'].downcase != 'white'
+            flagProcessingLessons = false
+            next
+          else
+            flagProcessingLessons = true
+          end
           # we are now working with a valid slot
           unless requiredSlot.empty?
             @schedule.push(requiredSlot.clone)
             requiredSlot.clear
           end
-          #logger.debug " --------" + si.inspect + "-----------"
           #now get the matching date from the responsedates array
           mydateserialnumber = responsedates.values[ri][0]
           mydate = Date.new(1899, 12, 30) + mydateserialnumber 
           c1 = getvalue(r.values[1])
           n = c1.match(/(\w+)\s+(\d+)(\d{2})$/im) # MONDAY 330
+          # Note: add 12 to hours as these are afternoon sessions.
+          dt1 = DateTime.new(mydate.year, mydate.month, mydate.day,
+                          1, 1)
+          dt2 = DateTime.new(2000, 1, 1,
+                          n[2].to_i + 12, n[3].to_i)
           dt = DateTime.new(mydate.year, mydate.month, mydate.day,
-                          n[2].to_i, n[3].to_i)
-          requiredSlot["timeslot"] = dt
+                          n[2].to_i + 12, n[3].to_i)
+          requiredSlot["timeslot"] = dt     # adjust from am to pm.
           requiredSlot["location"] = si
           # Now that we have a slot created, check if this has been
-          # the first oe for the day. i.e. there are on call and setup events
+          # the first one for the day. i.e. there are on call and setup events
           # If so, we make them into a lesson and add them  to the slot.
           # Delete them when done.
           if(!onCall.empty? || !onSetup.empty?)
-            requiredSlot["onCall"] = onCall.clone unless onCall.empty?
+            requiredSlot["onCall"]  = onCall.clone unless onCall.empty?
             requiredSlot["onSetup"] = onSetup.clone unless onSetup.empty?
             onCall.clear
             onSetup.clear
@@ -570,6 +571,11 @@ class AdminsController < ApplicationController
           next
         end
         # any other rows are now standard lesson rows
+        # If no date row yet detected or
+        # this is not a valid slot (black background on date row)
+        # we ignore
+        next if flagProcessingLessons == false
+        # Now do normal lession processing.
         c1 = getvalue(r.values[1])     # tutor
         c2 = getvalue(r.values[2])     # student 1
         c4 = getvalue(r.values[4])     # student 2
@@ -588,10 +594,11 @@ class AdminsController < ApplicationController
           thisLesson["students"].push([c4,cf4]) if c4 != ""
         end
         thisLesson["comment"] = c6 if c6 != ""
-        requiredSlot["lessons"] = Array.new() unless requiredSlot["lessons"] 
+        requiredSlot["lessons"] = Array.new() unless requiredSlot["lessons"]
         requiredSlot["lessons"].push(thisLesson.clone) unless thisLesson.empty?
         thisLesson.clear
       end
+      # at end of last loop - need to keep if valid slot
       unless requiredSlot.empty?
         @schedule.push(requiredSlot.clone)
         requiredSlot.clear
@@ -609,10 +616,15 @@ class AdminsController < ApplicationController
     
     # slot info
     @schedule.each do |r|
+      # These are initialise on a row by row basis
+      r["slot_updates"] = ""
+      r["onCallupdates"] = ""
+      r["onSetupupdates"] = ""
+      r["commentupdates"] = ""
+      # Process the slot
       mylocation = r["location"]
       mytimeslot = r["timeslot"] 
       thisslot = Slot.where(location: mylocation, timeslot: mytimeslot).first
-      r["slot_updates"] = ""
       unless thisslot    # none exist
         thisslot = Slot.new(timeslot: mytimeslot, location: mylocation)
         if thisslot.save
@@ -628,24 +640,32 @@ class AdminsController < ApplicationController
       # these will have a lesson status of "oncall"
       # ["DAVID O\n| E12 M12 S10 |"]
       if(mylesson = r["onCall"])
-        r["onCallupdates"] = ""
         mytutornamecontent = findTutorNameComment(mylesson, @tutors)
         # check if there was a tutor found.
         # If not, then we add any comments to the lesson comments.
         lessoncomment = ""
-        if mytutornamecontent[0]["name"] == "" && 
-           mytutornamecontent[0]["comment"].strip != ""
-            lessoncomment = mytutornamecontent[0]["comment"]
+        if mytutornamecontent[0] == nil
+          lessoncomment = mylesson[0]
+        elsif mytutornamecontent[0]["name"] == "" && 
+              mytutornamecontent[0]["comment"].strip != ""
+          lessoncomment = mytutornamecontent[0]["comment"]
         end
-        if mytutornamecontent[0]["name"] != "" || 
-           lessoncomment != ""
-            # something to put in lesson so ensure it exists - create if necessary
+        if lessoncomment != "" ||
+           (
+             mytutornamecontent[0] != nil &&
+             mytutornamecontent[0]["name"] != ""
+           )
+          # something to put in lesson so ensure it exists - create if necessary
           thislesson = Lesson.where(slot_id: thisslot.id, status: "onCall").first
           unless thislesson
             thislesson = Lesson.new(slot_id: thisslot.id,
                                     status: "onCall",
                                     comments: lessoncomment)
-            thislesson.save
+            if thislesson.save
+              r["onCallupdates"] += "|lesson created #{thislesson.id}|"
+            else
+              r["onCallupdates"] += "|lesson creation failed|"
+            end
           end
         end
         # Now load in the tutors - if any
@@ -687,9 +707,9 @@ class AdminsController < ApplicationController
                                         status: "",
                                         kind: "onCall")
               if thistutrole.save
-                r["onCallupdates"] = "|created|"
+                r["onCallupdates"] += "|tutrole created #{thistutrole.id}|"
               else
-                r["onCallupdates"] = "|creation failed|"
+                r["onCallupdates"] += "|tutrole creation failed|"
               end
             end
           end
@@ -699,7 +719,6 @@ class AdminsController < ApplicationController
       # these will have a lesson status of "oncall"
       # ["DAVID O\n| E12 M12 S10 |"]
       if(mylesson = r["onSetup"])
-        r["onSetupupdates"] = ""
         mytutornamecontent = findTutorNameComment(mylesson, @tutors)
         # check if there was a tutor found.
         # If not, then we add any comments to the lesson comments.
@@ -716,7 +735,11 @@ class AdminsController < ApplicationController
             thislesson = Lesson.new(slot_id: thisslot.id,
                                     status: "onSetup",
                                     comments: lessoncomment)
-            thislesson.save
+            if thislesson.save
+                r["onSetupupdates"] += "|created lession #{thislesson.id}|"
+            else
+                r["onSetupupdates"] += "|create lession failed|"
+            end
           end
         end
         # Now load in the tutors - if any
@@ -734,7 +757,7 @@ class AdminsController < ApplicationController
               if thistutrole.comment == mytutorcomment &&
                  thistutrole.status  == "" &&
                  thistutrole.kind  == "onSetup"
-                r["onSetupupdates"] += "|no change|"
+                r["onSetupupdates"] += "|no change #{thistutrole.id}|"
               else
                 if thistutrole.comment != mytutorcomment
                   thistutrole.update(comment: mytutorcomment)
@@ -746,7 +769,7 @@ class AdminsController < ApplicationController
                   thistutrole.update(kind: "onSetup")
                 end
                 if thistutrole.save
-                  r["onSetupupdates"] += "|updated tutrole|"
+                  r["onSetupupdates"] += "|updated tutrole #{thistutrole.id}|"
                 else
                   r["onSetupupdates"] += "|update failed|"
                 end
@@ -758,9 +781,9 @@ class AdminsController < ApplicationController
                                         status: "",
                                         kind: "onSetup")
               if thistutrole.save
-                r["onSetupupdates"] = "|created|"
+                r["onSetupupdates"] += "|tutrole created #{thistutrole.id}|"
               else
-                r["onSetupupdates"] = "|creation failed|"
+                r["onSetupupdates"] += "|tutrole creation failed|"
               end
             end     # if thistutrole
           end
@@ -828,11 +851,13 @@ class AdminsController < ApplicationController
       if(mylessons = r["lessons"])   # this is all the standard
                                      # ss lessons in this slot
         mylessons.each do |mysess|   # treat lesson by lesson from ss
+                                     # process each ss lesson row
           thislesson = nil           # ensure all reset
           mylessoncomment = ""
-          mylessonstatus = "standard"
+          mylessonstatus = "standard"  # default unless over-ridden
           #
-          #   Process students
+          #   Process Tutors, then students, then comments
+          #   A sesson can have only comments without tutors & students
           #
           # Step 3a - check if tutors present
           # if so, this is the lesson to hang onto.
@@ -844,7 +869,9 @@ class AdminsController < ApplicationController
           mytutor = mysess["tutor"]   # only process if tutor exists
                                       # mytutor[0] is ss name string,
                                       # mytutor[1] is colour
+                                      # mytutor[2] will record the view feedback
           mytutorcomment = ""         # provide full version in comment
+          tutroleupdates = ""         # feedback for display in view
           if mytutor               
             mytutorcomment = mytutor[0]
             mytutornamecontent = findTutorNameComment(mytutor[0], @tutors) 
@@ -855,58 +882,72 @@ class AdminsController < ApplicationController
             end
             if mytutornamecontent.empty?  ||  # no database names found for this tutor
                mytutornamecontent[0]['name'] == ""
-                # put ss name string into lesson comment
-                mylessoncomment += mytutor[0] 
+                 # put ss name cell content into lesson comment
+                 mylessoncomment += mytutor[0] 
             else
               flagtutorpresent = TRUE
+              # We have this tutor
+              # Find all the tutroles this tutor - this will link
+              # to all the lessons this tutor is in.
+              # thisslot is the slot we are current populating
               thistutor = Tutor.where(pname: mytutornamecontent[0]["name"]).first
               thistutroles = alltutroles.where(tutor_id: thistutor.id)
               if thistutroles.empty?   # none there, so create one
-                # Step 4ai: Create a new lesson
+                # Step 4ai: Create a new lesson containing
                 thislesson = Lesson.new(slot_id: thisslot.id,
-                                          status: mylessonstatus)
-                thislesson.save
+                                        status: mylessonstatus)
+                if thislesson.save
+                  tutroleupdates += "|lesson created #{thislesson.id}|"
+                else
+                  tutroleupdates += "|lesson creation failed"
+                end
                 thistutrole = Tutrole.new(lesson_id: thislesson.id,
                                           tutor_id:   thistutor.id,
                                           comment: mytutorcomment,
                                           status: mytutorstatus,
                                           kind: mytutorkind)
                 if thistutrole.save
-                  r["tutroleupdates"] = "|created|"
+                  tutroleupdates += "|tutrole created #{thistutrole.id}|"
                 else
-                  r["tutroleupdates"] = "|creation failed|"
+                  tutroleupdates += "|tutrole creation failed|"
                 end
               else  # already exist
-                r["tutroleupdates"] = ""
                 thistutroles.each do |thistutrole1|
                   # get the lesson they are in
                   thislesson = Lesson.find(thistutrole1.lesson_id)
                   if thislesson[:status] != mylessonstatus
                     thislesson[:status] = mylessonstatus
-                    thislesson.save
+                    if thislesson.save
+                      tutroleupdates += "|updated lesson status #{thislesson.id}|"
+                    else                      
+                      tutroleupdates += "|lesson status update failed|"
+                    end
                   end
                   if thistutrole1.comment == mytutorcomment &&
                      thistutrole1.status  == mytutorstatus &&
                      thistutrole1.kind  == mytutorkind
-                    r["tutroleupdates"] += "|no change|"
+                    tutroleupdates += "|no change #{thistutrole1.id}|"
                   else
                     if thistutrole1.comment != mytutorcomment
-                      thistutrole1.update(comment: mytutorcomment)
-                    end
+                      #thistutrole1.update(comment: mytutorcomment)
+                      thistutrole1.comment = mytutorcomment                end
                     if thistutrole1.status != mytutorstatus
-                      thistutrole1.update(status: mytutorstatus)
+                      #thistutrole1.update(status: mytutorstatus)
+                      thistutrole1.status = mytutorstatus
                     end
                     if thistutrole1.kind != mytutorkind
-                      thistutrole1.update(status: mytutorkind)
+                      #thistutrole1.update(status: mytutorkind)
+                      thistutrole1.status = mytutorkind
                     end
                     if thistutrole1.save
-                      r["tutroleupdates"] += "|updated tutrole|"
+                      tutroleupdates += "|updated tutrole #{thistutrole1.id}|"
                     else
-                      r["tutroleupdates"] += "|update failed|"
+                      tutroleupdates += "|update failed|"
                     end
                   end
                 end     # thistutroles.each 
               end   # if thistutroles.emepty?
+              mytutor[2] = tutroleupdates
             end
           end
           #
@@ -915,6 +956,7 @@ class AdminsController < ApplicationController
           mystudents = mysess["students"]
           unless mystudents == nil || mystudents.empty?   # there are students in ss
             mystudents.each do |mystudent|                # precess each student
+              roleupdates = ""          # records changes to display in view
               mystudentcomment = ""
               mystudentstatus  = colourToStatus(mystudent[1])["student-status"]
               mystudentkind    = colourToStatus(mystudent[1])["student-kind"]
@@ -926,14 +968,18 @@ class AdminsController < ApplicationController
               else
                 flagstudentpresent = TRUE    # we have students
                 thisstudent = Student.where(pname: mystudentnamecontent[0]["name"]).first
-                logger.debug "thisstudent: " + thisstudent.inspect
+                #logger.debug "thisstudent: " + thisstudent.inspect
                 thisroles = allroles.where(student_id: thisstudent.id)
                 # CHECK if there is already a lesson from the tutor processing 
                 # Step 4ai: Create a new lesson ONLY if necessary
                 unless thislesson
                   thislesson = Lesson.new(slot_id: thisslot.id,
-                                            status: mylessonstatus)
-                  thislesson.save
+                                          status: mylessonstatus)
+                  if thislesson.save
+                    roleupdates += "|created lesson #{thislesson.id}|"
+                  else
+                    roleupdates += "|lesson creation failed|"
+                  end
                 end
                 if thisroles.empty?   # none there, so create one
                   thisrole = Role.new(lesson_id: thislesson.id,
@@ -942,12 +988,11 @@ class AdminsController < ApplicationController
                                       status: mystudentstatus,
                                       kind: mystudentkind)
                   if thisrole.save
-                    r["roleupdates"] = "|created|"
+                    roleupdates += "|role created #{thisrole.id}|"
                   else
-                    r["roleupdates"] = "|creation failed|"
+                    roleupdates += "|role creation failed|"
                   end
                 else  # already exist
-                  r["roleupdates"] = ""
                   thisroles.each do |thisrole1|
                     # An additional check for students
                     # If a student is allocated to a different tutor
@@ -955,43 +1000,50 @@ class AdminsController < ApplicationController
                     # as per the spreadsheet.
                     # Note that a student cannot be in a lesson twice.
                     if thislesson.id != thisrole1.lesson_id
-                      # move this tutrole
+                      # move this student - update the role
+                      # student can only be in one lesson for a given slot.
                       if thisrole1.update(lesson_id: thislesson.id)
-                        r["roleupdates"] += "|role move updated|"
+                        roleupdates += "|role move updated #{thisrole1.id}|"
                       else
-                        r["roleupdates"] += "|role move failed|"
+                        roleupdates += "|role move failed|"
                       end
                     end
                     if thisrole1.comment == mystudentcomment &&
                        thisrole1.status  == mystudentstatus &&
                        thisrole1.kind    == mystudentkind
-                      r["roleupdates"] += "|no change|"
+                      roleupdates += "|no change #{thisrole1.id}|"
                     else
                       if thisrole1.comment != mystudentcomment
-                        thisrole1.update(comment: mystudentcomment)
+                        #thisrole1.update(comment: mystudentcomment)
+                        thisrole1.comment = mystudentcomment
                       end
                       if thisrole1.status != mystudentstatus
-                        thisrole1.update(status: mystudentstatus)
+                        #thisrole1.update(status: mystudentstatus)
+                        thisrole1.status = mystudentstatus
                       end
                       if thisrole1.kind != mystudentkind
-                        thisrole1.update(status: mystudentkind)
+                        #thisrole1.update(status: mystudentkind)
+                        thisrole1.kind = mystudentkind
                       end
                       if thisrole1.save
-                        r["roleupdates"] += "|updated role|"
+                        #r["roleupdates"] += "|role updated #{thisrole1.id}|"
+                        roleupdates += "|role updated #{thisrole1.id}|"
                       else
-                        r["roleupdates"] += "|update failed|"
+                        #r["roleupdates"] += "|role update failed #{thisrole1.id}|"
+                        roleupdates += "|role update failed #{thisrole1.id}|"
                       end
                     end
                   end     # thisroles.each 
                 end   # if thisroles.emepty?
               end
+              mystudent[2]= roleupdates
             end
           end
           #
           #   Process comments
           #
           if mysess["comment"]
-            mycomments = mysess["comment"] 
+            mycomments = mysess["comment"].strip
             mylessoncomment += mycomments if mycomments != ""
           end
           # process comments - my have been generated elsewhere (failed tutor
@@ -999,11 +1051,12 @@ class AdminsController < ApplicationController
           if mylessoncomment != ""    # some lesson comments exist
             # if no lesson exists to place the comments
             # then we need to build one.
+            #byebug
             unless thislesson
               # let's see if there is a lesson with this comment
               # looking through the lessons for this slot that do
               # not have a tutor or student
-              # Need the sessin that have no tutor or student - already done
+              # Need the sesson that have no tutor or student - already done
               allcommentonlylessons = thislessons -
                   thislessons.joins(:tutors, :students).distinct
               # now to see if this comment is in one of these
@@ -1016,20 +1069,24 @@ class AdminsController < ApplicationController
             end
             # see if we now have identified a lesson for this comment
             # create one if necessary
+            #r["commentupdates"] = ""
             unless thislesson
               thislesson = Lesson.new(slot_id: thisslot.id,
                                         status: 'standard')
-              thislesson.save
+              if thislesson.save
+                r["commentupdates"] += "|created session for comments #{thislesson.id}|"
+              else
+                r["commentupdates"] += "|created session for comments failed|"
+              end
             end
-            r["commentupdates"] = ""
             if mylessoncomment == thislesson.comments
-                r["commentupdates"] += "|no change|"
+                r["commentupdates"] += "|no change #{thislesson.id}|"
             else
               thislesson.update(comments: mylessoncomment)
               if thislesson.save
-                r["commentupdates"] += "|updated comment|"
+                r["commentupdates"] += "|updated lesson comment #{thislesson.id}|"
               else
-                r["commentupdates"] += "|comment update failed|"
+                r["commentupdates"] += "|lesson comment update failed #{thislesson.id}|"
               end             
             end
           end
@@ -1059,7 +1116,7 @@ class AdminsController < ApplicationController
       fields: "sheets(data.rowData.values" + 
       "(formattedValue,effectiveFormat.backgroundColor))"
     )
-    Rails.logger.level = holdRailsLoggerLever
+    Rails.logger.level = holdRailsLoggerLevel
     # Now scan each row read from the spreadsheet in turn
 
     @output = Array.new()

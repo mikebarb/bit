@@ -1,0 +1,34 @@
+<%= @studenthistory["student"].pname %>
+<table>
+  <thead>
+    <tr>
+      <th>ID</th>
+      <th>Type</th>
+      <th>Day & Time</th>
+      <th>Location</th>
+      <th>Tutors</th>
+      <th>Students</th>
+    </tr>
+  </thead>
+
+  <tbody>
+    <% @studenthistory["lessons"].each do |r| %>
+    <tr>
+      <td><%= r[0] %></td>
+      <td><%= r[1] %></td>
+      <td><%= r[2].strftime("%a %l:%M %p %d/%m/%Y") %></td>
+      <td><%= r[3] %></td>
+      <td>
+        <% r[4].each do |t| %>
+          <%= t %><br>
+        <% end %>
+      </td>
+      <td>
+        <% r[5].each do |s| %>
+          <%= s %><br>
+        <% end %>
+      </td>
+    </tr>
+    <% end %>
+  </tbody>
+</table>

@@ -86,6 +86,42 @@ class TutrolesController < ApplicationController
     end
   end
 
+  # PATCH/PUT /tutorupdateskc.json
+  # ajax updates skc = status kind comment
+  def tutorupdateskc
+    @tutrole = Tutrole.where(:tutor_id => params[:tutor_id], 
+                             :lesson_id => params[:lesson_id]).first
+    flagupdate = false
+    if params[:status]
+      if @tutrole.status != params[:status]
+        @tutrole.status = params[:status]
+        flagupdate = true
+      end
+    end
+    if params[:kind]
+      if @tutrole.kind != params[:kind]
+        @tutrole.kind = params[:kind]
+        flagupdate = true
+      end
+    end
+    if params[:comment]
+      if @tutrole.comment != params[:comment]
+        @tutrole.comment = params[:comment]
+        flagupdate = true
+      end
+    end
+    respond_to do |format|
+      if @tutrole.save
+        #format.html { redirect_to @tutor, notice: 'Tutor was successfully updated.' }
+        format.json { render :show, status: :ok, location: @tutrole }
+      else
+        logger.debug("errors.messages: " + @tutrole.errors.messages.inspect)
+        format.json { render json: @tutrole.errors.messages, status: :unprocessable_entity }
+      end
+    end
+  end
+
+
   # PATCH/PUT /tutroles/1
   # PATCH/PUT /tutroles/1.json
   def update
@@ -119,8 +155,11 @@ class TutrolesController < ApplicationController
 
     # Never trust parameters from the scary internet, only allow the white list through.
     def tutrole_params
-      params.require(:tutrole).permit(:lesson_id, :tutor_id, :new_lesson_id, :old_lesson_id, :status, :kind,
-        :domchange => [:action, :ele_new_parent_id, :ele_old_parent_id, :move_ele_id, :element_type]
+      params.require(:tutrole).permit(:lesson_id, :tutor_id, :new_lesson_id,
+                     :old_lesson_id, :status, :kind, :comment,
+                     :domchange => [:action, :ele_new_parent_id, 
+                                    :ele_old_parent_id, :move_ele_id, 
+                                    :element_type, :new_value]
       )
     end
 end

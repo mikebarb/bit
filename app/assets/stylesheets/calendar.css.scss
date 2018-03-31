@@ -51,6 +51,7 @@
   display: inline-block;
   /* background-color: white; */
   width: 74%;
+  padding-left: 1%;
 }
 
 .student {
@@ -74,6 +75,19 @@
   display: inline-block;
   /* background-color: white; */
   width: 74%;
+}
+
+#edit-comment-button {
+    background-color: #4CAF50; /* Green */
+    border: none;
+    color: white;
+    padding: 15px 32px;
+    text-align: center;
+    text-decoration: none;
+    display: inline-block;
+    font-size: 10px;
+    margin: 2px 2px;
+    cursor: pointer; 
 }
 
 td {
@@ -140,6 +154,36 @@ table, th, td {
 }
 
 .context-menu__item {
+  display: block;
+  margin-bottom: 1px;
+}
+
+.context-menu__item:last-child {
+  margin-bottom: 0;
+}
+
+.tertiary-menu {
+  display: none;
+  position: absolute;
+  z-index: 10;
+  //padding: 12px 0;
+  width: 240px;
+  background-color: #fff;
+  border: solid 1px #dfdfdf;
+  box-shadow: 1px 1px 2px #cfcfcf;
+}
+
+.tertiary-menu--active {
+  display: block;
+}
+
+.tertiary-menu__items {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+.tertiary-menu__item {
   display: block;
   margin-bottom: 1px;
 }

@@ -54,10 +54,16 @@ class SlotsController < ApplicationController
   # DELETE /slots/1
   # DELETE /slots/1.json
   def destroy
-    @slot.destroy
-    respond_to do |format|
-      format.html { redirect_to slots_url, notice: 'Slot was successfully destroyed.' }
-      format.json { head :no_content }
+    if @slot.destroy
+      respond_to do |format|
+        format.html { redirect_to slots_url, notice: 'Slot was successfully destroyed.' }
+        format.json { head :no_content }
+      end
+    else
+      respond_to do |format|
+        format.html { redirect_to slots_url, notice: 'Slot was NOT destroyed.' }
+        format.json { render json: @slot.errors, status: :unprocessable_entity }
+      end
     end
   end
 

@@ -26,6 +26,17 @@
     <%= f.text_field :sstab %>
   </div> 
 
+  <h3>History - days to display</h3>
+  <div class="field">
+    <%= f.label "Number of days to display before today" %><br>
+    <%= f.number_field :history_back %>
+  </div> 
+
+  <div class="field">
+    <%= f.label "Number of days to display after today" %><br>
+    <%= f.number_field :history_forward %>
+  </div> 
+
   <div class="actions">
     <%= f.submit "Update" %>
   </div>

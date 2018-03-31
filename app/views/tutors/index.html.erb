@@ -1,5 +1,5 @@
 <h1>Listing tutors</h1>
-
+<%= link_to "all tutor history", tutors_history_path %>
 <table>
   <thead>
     <tr>
@@ -15,7 +15,7 @@
       <th>Email</th>
       <th>Phone</th>
       
-      <th colspan="3"></th>
+      <th colspan="4"></th>
     </tr>
   </thead>
 
@@ -33,6 +33,7 @@
         <td><%= tutor.status %></td>
         <td><%= tutor.email %></td>
         <td><%= tutor.phone %></td>        
+        <td><%= link_to 'History', tutor_history_path(tutor) %></td>
         <td><%= link_to 'Show', tutor %></td>
         <td><%= link_to 'Edit', edit_tutor_path(tutor) %></td>
         <td><%= link_to 'Destroy', tutor, method: :delete, data: { confirm: 'Are you sure?' } %></td>
@@ -42,5 +43,6 @@
 </table>
 
 <br>
+
 
 <%= link_to 'New Tutor', new_tutor_path %>

@@ -1,0 +1,7 @@
+<p id="notice"><%= notice %></p>
+
+<h1> Tutor History </h1>
+<p>History between <%= @tutorhistory["startdate"].strftime("%a %d/%m/%Y") %>
+   and <%= @tutorhistory["enddate"].strftime("%a %d/%m/%Y") %> </p>
+
+<%= render "history" %>

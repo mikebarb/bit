@@ -2,11 +2,13 @@
 module Googleutilities
     extend ActiveSupport::Concern
     include DatabaseTokenStore
+    
+    # link for Google authoriztion pages
 
     def googleauthorisation(request)
         # gems for the authorisation libraries are:
         # gem 'googleauth', :require => ['googleauth/stores/file_token_store', 'googleauth']
-        token_store = DatabaseTokenStore.new()
+        #token_store = DatabaseTokenStore.new()
         user_id = 'mike'
         # DatabaseTokenStore resides in /app/controllers/concerns/db_stores.rb
         #token_store = Google::Auth::Stores::DatabaseTokenStore.new()
@@ -16,7 +18,6 @@ module Googleutilities
                                           ENV['CLIENT_SECRET'])
         #myid = Google::Auth::ClientId.from_file('./client_secrets.json')
         scopes = ['https://www.googleapis.com/auth/spreadsheets']
-        #byebug
         myauthorizer = Google::Auth::WebUserAuthorizer.new(myid, scopes, token_store)
         mycredentials = myauthorizer.get_credentials(myid.id, request)
         return_options = {}
@@ -26,7 +27,6 @@ module Googleutilities
           #redirect_to myauthorizationurl and return
           return_options["authorizationurl"] = myauthorizationurl
         else
-          ### logger.info "mycredentials: " + mycredentials.inspect
           # Initialize the Google API to access spreadsheets
           # Note: to make this library work, you must have in the gem file (the require:)
           # gem 'google-api-client', '~> 0.19', require: 'google/apis/sheets_v4'
@@ -79,8 +79,10 @@ module Googleutilities
     
   end
 
+  # Find the student in the database
+  # If not found, then then the name is blank
+  # textArray = text field from ss cell for this student.
   def findStudentNameComment(textArray, db_records)
-    #byebug
     thisStudentName = getStudentName(textArray)
     #check if this student is in the database
     thisStudent = @students.where(pname: thisStudentName)
@@ -91,7 +93,6 @@ module Googleutilities
       return [{"name" => thisStudentName,
                "comment" => "#{textArray}"}]
     end      
-    #findTutorNameComment(textArray, db_records)
   end
 #------------------------------------------------------------------------
 #
@@ -131,7 +132,6 @@ module Googleutilities
       else    # no number so must be kindy or missing grade
           # search for 'k' or 'kindy' with or without brackets around it.
           # had trouble matching Joshua Kerr
-          #byebug
           #? is there a male or female at the end with or without brackets
           mysex = ""
           if m = sname.match(/(.+)\s\(?(male|female)\)?$/i)     #at end with leading space
@@ -150,7 +150,18 @@ module Googleutilities
             myyear = ""
           end              
       end
-      [myname, myyear, mysex]
+      # inactive name can begin with z, zz, zzz, zzz , zzX, zzX ,zzx , 
+      # Now reduce name to correct name
+      status = "active"
+      if m = myname.match(/^(z+)(.+)$/)   # begins with lowercase z
+        tname = m[2].strip
+        if m = tname.match(/^([xX])(.+)$/)   # followed by an x or X
+          tname = m[2].strip
+        end
+        myname = tname
+        status = "inactive"
+      end
+      [myname, myyear, mysex, status]
   end
   
   def getStudentName(name)
@@ -495,7 +506,7 @@ module Googleutilities
   
   
 #------------------------------------------------------------------------
-# Helper routnes to get values and formats form a spreadsheet cell
+# Helper routnes to get values and formats from a spreadsheet cell
 #
 # Key routines are:
 # => getvalue(cell)

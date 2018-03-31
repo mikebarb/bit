@@ -99,6 +99,42 @@ class RolesController < ApplicationController
   end
 
 
+  # PATCH/PUT /studentupdateskc.json
+  # ajax updates skc = status kind comment
+  def studentupdateskc
+    @role = Role.where(:student_id => params[:student_id], 
+                             :lesson_id => params[:lesson_id]).first
+    flagupdate = false
+    if params[:status]
+      if @role.status != params[:status]
+        @role.status = params[:status]
+        flagupdate = true
+      end
+    end
+    if params[:kind]
+      if @role.kind != params[:kind]
+        @role.kind = params[:kind]
+        flagupdate = true
+      end
+    end
+    if params[:comment]
+      if @role.comment != params[:comment]
+        @role.comment = params[:comment]
+        flagupdate = true
+      end
+    end
+    respond_to do |format|
+      if @role.save
+        #format.html { redirect_to @student, notice: 'Student was successfully updated.' }
+        format.json { render :show, status: :ok, location: @role }
+      else
+        logger.debug("errors.messages: " + @role.errors.messages.inspect)
+        format.json { render json: @role.errors.messages, status: :unprocessable_entity }
+      end
+    end
+  end
+
+
   # PATCH/PUT /roles/1
   # PATCH/PUT /roles/1.json
   def update

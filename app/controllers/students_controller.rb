@@ -1,4 +1,5 @@
 class StudentsController < ApplicationController
+  include Historyutilities
   before_action :set_student, only: [:show, :showsessions, :edit, :update, :destroy]
 
   # GET /students
@@ -10,6 +11,22 @@ class StudentsController < ApplicationController
   # GET /students/1
   # GET /students/1.json
   def show
+  end
+  
+  # GET /students/history
+  # GET /students/history.json
+  def allhistory
+    @students_history = Array.new
+    students = Student.all.order("pname")
+    students.each do |thisstudent|
+      @students_history.push(student_history(thisstudent.id))
+    end
+  end
+
+  # GET /tutors/history/1
+  # GET /tutors/history/1.json
+  def history
+    @student_history =  student_history(params[:id])
   end
   
   # GET /studentsessions/1
@@ -62,10 +79,19 @@ class StudentsController < ApplicationController
   # DELETE /students/1
   # DELETE /students/1.json
   def destroy
-    @student.destroy
-    respond_to do |format|
-      format.html { redirect_to students_url, notice: 'Student was successfully destroyed.' }
-      format.json { head :no_content }
+    if @student.destroy
+      respond_to do |format|
+        format.html { redirect_to students_url, notice: 'Student was successfully destroyed.' }
+        format.json { head :no_content }
+      end
+    else
+      respond_to do |format|
+        format.html { redirect_to students_url, 
+          notice: "#{@student.errors.messages[:base].reduce { |memo, m| memo + m } }" +
+                  " Student was NOT destroyed." 
+        }
+        format.json { render json: @student.errors, status: :unprocessable_entity }
+      end
     end
   end
 

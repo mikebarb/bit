@@ -1,0 +1,13 @@
+<p id="notice"><%= notice %></p>
+
+<h1> History of all Tutors </h1>
+<% if @tutors_history[0] %>
+  <p>History between <%= @tutors_history[0]["startdate"].strftime("%a %d/%m/%Y") %>
+     and <%= @tutors_history[0]["enddate"].strftime("%a %d/%m/%Y") %> </p>
+<% end %>
+<% #byebug %>
+<% @tutors_history.each do |tutorhistory| %>
+  <% @tutorhistory = tutorhistory %>
+  <%= render "history" %>
+  <br>
+<% end %>

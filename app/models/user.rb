@@ -10,9 +10,8 @@ class User < ActiveRecord::Base
   private
 
     def set_defaults
-      #self.role ||= 'student'
-      #byebug
-      if self.email =~ /bigimprovementstutoring/i 
+      if self.email =~ /bigimprovementstutoring/i ||
+         self.email =~ /mikebarb.net/i
         self.role = 'admin'
       elsif Tutor.find_by( email: self.email.downcase)
         self.role = 'tutor'
