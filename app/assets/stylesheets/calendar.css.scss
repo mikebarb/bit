@@ -25,6 +25,25 @@
   width: 74%;
 }
 
+.n-status-onCall {
+  background-color: aqua;
+  border-color: blue;
+}
+
+.n-status-onSetup {
+  background-color: aquamarine;
+  border-color: green;
+}
+
+.n-status-on_BFL {
+  background-color: lemonchiffon;
+  border-color: yellow;
+}
+
+.n-status-standard {
+  background-color: lavenderblush;
+  border-color: hotpink;
+}
 
 .tutor {
   margin: 1px;
@@ -132,6 +151,55 @@ table, th, td {
   background-color: amber;
 }
 
+.history {
+  margin: 1px;
+  color: black;
+  background-color: brown;
+  line-height: 18px;
+  border:5px solid red;
+  padding: 15px;
+  width: 400px;
+}
+
+  .ui-resizable-e {
+    cursor: e-resize;
+    width: 7px;
+    right: -5px;
+    top: 0;
+    height: 100%;
+  }
+
+  .history h4 {
+    float: left;
+    width: 45%;
+    margin-top: 0;
+  }
+  
+  .history #closehistory {
+     float: right;
+     width: 20px;
+     height: 20px;
+     cursor: pointer;
+     z-index: 200;
+  }
+  
+  .history #closehistory:hover {
+    background-color: white;
+  }
+  
+  .history svg {
+    height: 100%;
+    width: 100%;
+  }
+
+  .history table {
+    width: 100%;
+    height: 100%;
+    table-layout: fixed;
+    clear: both;
+    background-color: AliceBlue;
+  }
+
 .context-menu {
   display: none;
   position: absolute;
@@ -223,15 +291,48 @@ table, th, td {
 }
 
 // colours for tutors
+// colours taken from:
+// https://www.whoishostingthis.com/resources/css-colors/
+
+
+// tutor status
+.t-status-BFL {
+  background-color: yellow;  
+}
+
+.t-status-deal {
+  background-color: fuchsia;   // a highlighter pink 
+}
+
+.t-status-dealt {
+  background-color: plum;    
+}
+
+.t-status-scheduled {
+  background-color: mediumturquoise;   
+}
+
+.t-status-notified {
+  background-color: mediumaquamarine;   
+}
+
+.t-status-confirmed {
+  background-color: palegreen;   
+}
+
+.t-status-confirmed {
+  background-color: palegreen;   
+}
+
+.t-status-attended {
+  background-color: yellowgreen;   
+}
+
+//============================================
 .t-kind-BFL {
   background-color: #ffff00;   //yellow  
 }
 
-.t-status-BFL {
-  background-color: #ffff00;   //yellow  
-}
-
-// colours for students
 .t-kind-away-action {
   background-color: #ff0000;   //red  
 }

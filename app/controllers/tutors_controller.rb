@@ -28,6 +28,12 @@ class TutorsController < ApplicationController
   # GET /tutors/history/1.json
   def history
     @tutor_history =  tutor_history(params[:id])
+    respond_to do |format|
+      format.html
+      # helpful reference for jbuilder is
+      # https://devblast.com/b/jbuilder
+      format.json { render :history, status: :ok }
+    end
   end
 
   # GET /tutors/new

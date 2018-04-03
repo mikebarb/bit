@@ -32,7 +32,6 @@ var ready = function() {
   var tertiaryMenuActive = "tertiary-menu--active";
   var contextMenuItemClassName = "context-menu__item";
   var tertiaryMenuItemClassName = "tertiary-menu__choice";
-  //var menu = document.querySelector("#context-menu");
   var menu;
   var menuState = 0;
   var tmenu;            // tertiary menu with context menu parent
@@ -81,10 +80,12 @@ var ready = function() {
         e.preventDefault();
         enableMenuItems();
         toggleMenuOn();
-        clickPosition = getPosition(e);
-        positionMenu(clickPosition);
-        positionTMenu(clickPosition);
-        eleClickedOn = e;
+        clickPosition = getPosition(e);  // global variable
+        //positionMenu(clickPosition, menu);
+        //positionMenu(clickPosition, tmenu);
+        positionMenu(menu);
+        positionMenu(tmenu);
+        eleClickedOn = e;                 // global variable
         console.log("----------event clicked on-----------");
         console.log(eleClickedOn);
       } else {
@@ -173,7 +174,7 @@ var ready = function() {
     var scmi_setStatus = false;
     var scmi_setKind = false;
     var scmi_editComment = false;
-    
+    var scmi_history = false;
     
     //  var currentActivity = {};   declared globally within this module
 
@@ -192,6 +193,7 @@ var ready = function() {
         }else{  // in the main schedule
           scmi_copy = scmi_move = scmi_remove = scmi_addLesson = true;
           scmi_setStatus = scmi_setKind = scmi_editComment = true;
+          scmi_history = true;
         }
         break;
       case 'n':   //lesson
@@ -218,6 +220,7 @@ var ready = function() {
     setscmi('context-setStatus', scmi_setStatus);
     setscmi('context-setKind', scmi_setKind);
     setscmi('context-editComment', scmi_editComment);
+    setscmi('context-history', scmi_history);
   }
   
   function setscmi(elementId, scmi){
@@ -361,6 +364,18 @@ var ready = function() {
         document.getElementById('edit-comment-elementid').innerHTML = thisEleId;
         enableTertiaryMenu(thisEle, thisAction, currentActivity);
         break;
+      case "history":
+        // Edit Comment has been selected on an element.
+        // It will open up a text field to key in your updates.
+        // This will update the relevant comment.
+        currentActivity['action'] = thisAction;
+        currentActivity['move_ele_id'] =  thisEleId;
+        console.log("case = history");
+        thisEleId = taskItemInContext.id;
+        thisEle = document.getElementById(thisEleId);
+        currentActivity['ele_old_parent_id'] = clickInsideElementClassList2(thisEle, ['slot']).id;
+        getHistory(currentActivity);        
+        break;
       }
       console.log("--- completed context menu actioner ---");
       console.log("--- currentActivity ---");
@@ -388,6 +403,7 @@ var ready = function() {
     var stmi_tutor_kind_oncall      = false;
     var stmi_tutor_kind_onsetup     = false;
     var stmi_tutor_kind_bfl         = false;
+    var stmi_tutor_kind_standard    = false;
     var stmi_tutor_kind_deal        = false;
     var stmi_tutor_kind_called      = false;
     var stmi_tutor_kind_away        = false;
@@ -403,6 +419,7 @@ var ready = function() {
     var stmi_lesson_status_oncall   = false;
     var stmi_lesson_status_onsetup  = false;
     var stmi_lesson_status_standard = false;
+    var stmi_lesson_status_onbfl    = false;
 
     var stmi_edit_comment           = false;
     
@@ -426,6 +443,7 @@ var ready = function() {
             stmi_tutor_kind_oncall      = true;
             stmi_tutor_kind_onsetup     = true;
             stmi_tutor_kind_bfl         = true;
+            stmi_tutor_kind_standard    = true;
             stmi_tutor_kind_deal        = true;
             stmi_tutor_kind_called      = true;
             stmi_tutor_kind_away        = true;
@@ -467,6 +485,7 @@ var ready = function() {
             stmi_lesson_status_oncall   = true;
             stmi_lesson_status_onsetup  = true;
             stmi_lesson_status_standard = true;
+            stmi_lesson_status_onbfl    = true;
             break;
           case 'editComment':   // show the text edit box & populate
             console.debug("etmAction is editComment");
@@ -486,6 +505,7 @@ var ready = function() {
     setscmi('tutor-kind-oncall', stmi_tutor_kind_oncall);
     setscmi('tutor-kind-onsetup', stmi_tutor_kind_onsetup);
     setscmi('tutor-kind-bfl', stmi_tutor_kind_bfl);
+    setscmi('tutor-kind-standard', stmi_tutor_kind_standard);
     setscmi('tutor-kind-deal', stmi_tutor_kind_deal);
     setscmi('tutor-kind-called', stmi_tutor_kind_called);
     setscmi('tutor-kind-away', stmi_tutor_kind_away);
@@ -501,6 +521,7 @@ var ready = function() {
     setscmi('lesson-status-oncall', stmi_lesson_status_oncall);
     setscmi('lesson-status-onsetup', stmi_lesson_status_onsetup);
     setscmi('lesson-status-standard', stmi_lesson_status_standard);
+    setscmi('lesson-status-on_BFL', stmi_lesson_status_onbfl);
 
     setscmi('edit-comment', stmi_edit_comment);
     
@@ -639,65 +660,148 @@ var ready = function() {
   }
 
   // Put menu in correct position - where the click event was triggered.
-  function positionMenu(clickPosition) {
-    //var clickCoords = getPosition(e);
+  // can be called using menu, tmenu or historydisplay
+  // clickPosition is a global variable.
+  //function positionMenu(clickPosition, thismenu) {
+  function positionMenu(thismenu) {
     var clickCoords = clickPosition;
     var clickCoordsX = clickCoords.x;
     var clickCoordsY = clickCoords.y;
     
-    var menuWidth = menu.offsetWidth + 4;
-    var menuHeight = menu.offsetHeight + 4;
+    var menuWidth = thismenu.offsetWidth + 4;
+    var menuHeight = thismenu.offsetHeight + 4;
     var windowWidth = window.innerWidth;
     // This relates to window height which fails when document is higher than window
     //var windowHeight = window.innerHeight;
     // Hopefully this will be better!!!!
     var windowHeight = document.documentElement.scrollHeight;
-    
+    thismenu.style.position="absolute";
     if ( (windowWidth - clickCoordsX) < menuWidth ) {
-      menu.style.left = windowWidth - menuWidth + "px";
+      thismenu.style.left = windowWidth - menuWidth + "px";
     } else {
-      menu.style.left = clickCoordsX + "px";
+      thismenu.style.left = clickCoordsX + "px";
     }
     
     if ( (windowHeight - clickCoordsY) < menuHeight ) {
-      menu.style.top = windowHeight - menuHeight + "px";
+      thismenu.style.top = windowHeight - menuHeight + "px";
     } else {
-      menu.style.top = clickCoordsY + "px";
+      thismenu.style.top = clickCoordsY + "px";
     }
-    console.log(menu);
-  }
-
-  // Put menu in correct position - where the click event was triggered.
-  function positionTMenu(clickPosition) {
-    //var clickCoords = getPosition(e);
-    var clickCoords = clickPosition;
-    var clickCoordsX = clickCoords.x;
-    var clickCoordsY = clickCoords.y;
-    
-    var tmenuWidth = tmenu.offsetWidth + 4;
-    var tmenuHeight = tmenu.offsetHeight + 4;
-    var windowWidth = window.innerWidth;
-    // This relates to window height which fails when document is higher than window
-    //var windowHeight = window.innerHeight;
-    // Hopefully this will be better!!!!
-    var windowHeight = document.documentElement.scrollHeight;
-    
-    if ( (windowWidth - clickCoordsX) < tmenuWidth ) {
-      tmenu.style.left = windowWidth - tmenuWidth + "px";
-    } else {
-      tmenu.style.left = clickCoordsX + "px";
-    }
-    
-    if ( (windowHeight - clickCoordsY) < tmenuHeight ) {
-      tmenu.style.top = windowHeight - tmenuHeight + "px";
-    } else {
-      tmenu.style.top = clickCoordsY + "px";
-    }
-    console.log(tmenu);
+    console.log(thismenu);
   }
 
 //------------------------ End of Context Menu -----------------------------
 
+
+//----------------- Get history of Tutor or Student ------------------------
+  //This function is called to get a student or tutor history
+  //Does ajax to get the student or tutor history
+  function getHistory(domchange){
+    console.log("getHistory called");
+    console.log(domchange);
+    // domchange['action']      = thisChoice;
+    // domchange['move_ele_id'] = thisEleId;
+    var recordtype = getRecordType(domchange['move_ele_id']);  // s or t
+    var personid = getRecordId(domchange['move_ele_id']);      // record id
+    var persontype, myurl;
+    var mydata = {'domchange' : domchange};
+    console.log("move_ele_id: " + domchange['move_ele_id']);
+    console.log("personid: " + personid);
+
+    if( 's' == recordtype ){    // student
+      persontype = 'student';
+      console.log("we have a student - " + personid);
+      myurl = myhost + "/students/history/" + personid;   // skc = status, kind, comment
+    } else if( 't' == recordtype ){   // tutor
+      persontype = 'tutor';
+      console.log("we have a tutor - " + personid);
+      myurl = myhost + "/tutors/history/" + personid;   // skc = status, kind, comment
+    } else {
+      console.log("error - request is not a tutor or student");
+      return;
+    }
+    console.log("now make the ajax call");
+    console.log("url: " + myurl);
+    $.ajax({
+        type: "GET",
+        url: myurl,
+        data: mydata,
+        dataType: "json",
+        context: domchange,
+
+        success: function(data, textStatus, xhr){
+          console.log("ajax call successful");
+          showhistory(data);
+        },
+        error: function(xhr){
+            //$(this).addClass( "processingerror" );
+            var errors = $.parseJSON(xhr.responseText);
+            var error_message = "";
+            for (var error in (errors['person_id'])){
+              error_message += " : " + errors['person_id'][error];
+            }
+            alert('error fetching history for ' + 
+                   persontype + ': ' + error_message);
+        }
+     });
+  }
+
+
+  function showhistory(historydata){
+    var template_ele = document.getElementById("history-template");
+    var this_ele = template_ele.cloneNode(true);
+    this_ele.id = 'history-' + historydata['role'] + historydata['id'];
+    this_ele.innerHTML = historyToHtml(historydata);
+    template_ele.after(this_ele);
+    var historyDisplay = this_ele;
+    positionMenu(historyDisplay);
+    jQuery("#" + this_ele.id).resizable({handles: "e"});
+    this_ele.classList.remove('hideme');
+  }
+
+  // As this history element is added after the page load,
+  // the click event is not attached.
+  // Event delegation addresses this issue. Disccussed in:
+  // https://learn.jquery.com/events/event-delegation/
+  jQuery(".histories").on('click', '#closehistory' , function() {
+    console.log("closing history clicked");
+    console.log(jQuery(this));
+    jQuery(this).parent("div").remove();
+  });
+
+  // convert historydata to a HTML segment
+  function historyToHtml(hd){
+    var role = hd['role'];
+    var htmlsegment = "<h4>" + role + ': ' + hd['pname'] + "</h4>";
+    htmlsegment += '<div id="closehistory"><svg height="300" width="300"><line x1="1" y1="1" x2="15" y2="15" style="stroke:#000; stroke-width:4" /><line x1="15" y1="1" x2="1" y2="15" style="stroke:#000; stroke-width:4" /></svg></div>';
+    htmlsegment += "<table>";
+    hd['lessons'].forEach( function(lesson){
+      htmlsegment += "<tr>";
+        htmlsegment += "<td>" + lesson['kind'] + "</td>";
+        htmlsegment += "<td>" + lesson['daytime'] + "</td>";
+        htmlsegment += "<td>" + lesson['site'] + "</td>";
+
+        if(role == 'student'){
+          htmlsegment += "<td>";
+            lesson['tutors'].forEach( function(tutor){
+              htmlsegment += tutor.tutor + "<br>";
+            });
+          htmlsegment += "</td>";
+        }
+
+        if(role == 'tutor'){
+          htmlsegment += "<td>";
+            lesson['students'].forEach( function(student){
+              htmlsegment += student.student + "<br>";
+            });
+          htmlsegment += "</td>";
+        }
+        
+      htmlsegment += "</tr>";
+    });
+    htmlsegment += "</table>";
+    return htmlsegment;
+  }
 
 
 //--------------- Update Tutor or Student Status or Kind -------------------
@@ -977,7 +1081,11 @@ var ready = function() {
     }    
 
   }
-
+  // ------------------------- Draggable History -----------------------------   
+  // Draggable history container
+    $(".histories").on('mouseover', '.history', function(){
+      $(this).draggable();
+    });
 
 //------------------------ Drag and Drop -----------------------------------
 // This is the drag and drop code

@@ -165,6 +165,9 @@
       <li id="context-editComment" class="context-menu__item" data-action="editComment">
         <p>Edit Comment</p>
       </li>    
+      <li id="context-history" class="context-menu__item" data-action="history">
+        <p>History</p>
+      </li>    
     </ul>
   </nav>
   
@@ -197,6 +200,9 @@
       </li>
       <li id="tutor-kind-bfl" class="tertiary-menu__choice" data-choice="tutor-kind-BFL">
         <p>tutor-kind: BFL</p>
+      </li>
+      <li id="tutor-kind-standard" class="tertiary-menu__choice" data-choice="tutor-kind-standard">
+        <p>tutor-kind: Standard</p>
       </li>
       </li>
       <li id="tutor-kind-deal" class="tertiary-menu__choice" data-choice="tutor-kind-deal">
@@ -232,6 +238,9 @@
       <li id="lesson-status-onsetup" class="tertiary-menu__choice" data-choice="lesson-status-onSetup">
         <p>lesson-status: onSetup</p>
       </li>
+      <li id="lesson-status-on_BFL" class="tertiary-menu__choice" data-choice="lesson-status-on_BFL">
+        <p>lesson-status: on BFL</p>
+      </li>
       <li id="lesson-status-standard" class="tertiary-menu__choice" data-choice="lesson-status-standard">
         <p>lesson-status: standard</p>
       </li>
@@ -244,7 +253,12 @@
     </ul>
   </nav>
 
-    <div class="lesson hideme" id=lessontemplate >
-        <div class="lessoncomment comment commentinline">status: standard</div>
-    </div>
+  <div class="lesson hideme" id=lessontemplate >
+    <div class="lessoncomment comment commentinline">status: standard</div>
+  </div>
+
+  <div id="histories" class="histories"  >
+    <div id="history-template" class="history ui-widget-content hideme"></div>
+  </div>
+
 

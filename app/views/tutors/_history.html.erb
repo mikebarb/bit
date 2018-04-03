@@ -1,4 +1,4 @@
-<%= @tutorhistory["tutor"].pname %>
+<%= @tutor_history["tutor"].pname %>
 <table>
   <thead>
     <tr>
@@ -12,7 +12,7 @@
   </thead>
 
   <tbody>
-    <% @tutorhistory["lessons"].each do |r| %>
+    <% @tutor_history["lessons"].each do |r| %>
     <tr>
       <td><%= r[0] %></td>
       <td><%= r[1] %></td>
