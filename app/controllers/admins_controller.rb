@@ -41,45 +41,79 @@ class AdminsController < ApplicationController
     spreadsheet_id = current_user[:ssurl].match(/spreadsheets\/d\/(.*?)\//)[1]
     #spreadsheet_id = '1CbtBqeHyYb9jRmROCgItS2eEaYSwzOMpQZdUWLMvjng'
     logger.debug 'about to read spreadsheet - service ' + service.inspect
-    startrow = 4
-    # first get the 5 columns - Name + initial, subjects, mobile, email, surname
-    range = "TUTORS!B#{startrow}:F"
+    # Need some new code to cater for variation in the spreadsheet columns.
+    # Will build an array with 'column names' = 'column numbers'
+    # This can then be used to identify columns by name rather than numbers.
+    #
+    #this function converts spreadsheet indices to column name
+    # examples: e[0] => A; e[30] => AE 
+    e=->n{a=?A;n.times{a.next!};a}  
+    columnmap = Hash.new  # {'column name' => 'column number'}
+    range = "TUTORS!A3:LU3"
     response = service.get_spreadsheet_values(spreadsheet_id, range)
-    @tutors = Array.new(response.values.length){Array.new(9)}
-    #logger.debug "tutors: " + @tutors.inspect
-    basecolumncount = 1
-    rowcount = 0			   
-    response.values.each do |r|
-        #logger.debug "============ row #{rowcount} ================"
-        #logger.debug "row: " + r.inspect
-        colcount = 0
-        @tutors[rowcount][0] = rowcount + startrow
-        r.each do |c|
-          #logger.debug "============ cell value for column #{colcount} ================"
-    	    #logger.debug "cell value: " + c.inspect
-    	    @tutors[rowcount][basecolumncount + colcount] = c
+    headerrow = response.values[0]
+    logger.debug "response: " + headerrow.inspect
+    headerrow.each_with_index do |value, index| 
+      columnmap[value] = index
+    end
+    logger.debug "columnmap: " + columnmap.inspect
+    #readcolumns = Array.new
+
+    #  pname:     t[1],
+    #  subjects:  t[2],
+    #  phone:     t[3],
+    #  email:     t[4],
+    #  sname:     t[5],
+    #  comment:   t[6],
+    #  status:    "active"
+
+    readcolumns = [   'NAME + INITIAL',
+                      'SUBJECTS',
+                      'MOBILE',
+                      'EMAIL',
+                      'SURNAME',
+                      'NOTES'
+                  ]
+    colerrors = ""
+    readcolumns.each_with_index do |k, index|
+      unless columnmap[k] 
+        colerrors += k + ':'
+      end  
+    end
+    # ensure we can read all the required spreadsheet column
+    # if not, terminate and provide a user message
+    unless colerrors.length == 0   # anything put into error string
+      colerrors = "Load Tutors - not all columns are findable: " + colerrors
+      redirect_to load_path, notice: colerrors
+      return
+    end
+    # have everything we need, load the tutors from the spreadsheet
+    # placing info into @tutors.
+    startrow = 4            # row where the loaded data starts    
+    flagFirstPass = 1
+    readcolumns.each_with_index do |k, index|
+        columnid = e[columnmap[k]]
+        range = "TUTORS!#{columnid}#{startrow}:#{columnid}"
+        response = service.get_spreadsheet_values(spreadsheet_id, range)
+        if flagFirstPass == 1
+          @tutors = Array.new(response.values.length){Array.new(9)}
+          for rowcount in 0..response.values.count-1 
+      	    @tutors[rowcount][0] = rowcount + startrow
+          end
+          flagFirstPass = 0
+        end
+        #rowcount = 0
+        #response.values.each do |r|
+        #for rowcount in 0..response.values.count 
+        response.values.each_with_index do |c, rowindex|
+    	    @tutors[rowindex ][index + 1] = c[0]
     	          #bc = v.effective_format.background_color
     	          #logger.debug  "background color: red=" + bc.red.to_s +
     	          #              " green=" + bc.green.to_s +
     		        #              " blue=" + bc.blue.to_s
-    		  colcount = colcount + 1
-        end
-        rowcount = rowcount + 1
+        end 
     end
-    basecolumncount = basecolumncount + 5
-    #now get the comments field
-    range = "TUTORS!EC#{startrow}:EC"
-    response = service.get_spreadsheet_values(spreadsheet_id, range)
-    rowcount = 0
-    response.values.each do |r|
-        colcount = 0
-        r.each do |c|
-    	    @tutors[rowcount][basecolumncount + colcount] = c
-    		  colcount = colcount + 1
-        end
-        rowcount = rowcount + 1
-    end
-    basecolumncount = basecolumncount + 1
+
     #logger.debug "tutors: " + @tutors.inspect
     # Now to update the database
     loopcount = 0
@@ -377,6 +411,151 @@ class AdminsController < ApplicationController
     end
   end
 
+
+
+
+#---------------------------------------------------------------------------
+#
+#   Load Students    ---    second version
+#   Goggle spreadsheet changed dramatically in  Term 2 2017
+#   Dropped out a number of fields -ow only has three columns
+#
+#---------------------------------------------------------------------------
+  # GET /admins/loadstudents2
+  def loadstudents2
+    #service = googleauthorisation(request)
+    returned_authorisation = googleauthorisation(request)
+    if returned_authorisation["authorizationurl"]
+      redirect_to returned_authorisation["authorizationurl"] and return
+    end
+    service = returned_authorisation["service"]
+    #spreadsheet_id = '1CbtBqeHyYb9jRmROCgItS2eEaYSwzOMpQZdUWLMvjng'
+    spreadsheet_id = current_user[:ssurl].match(/spreadsheets\/d\/(.*?)\//)[1]
+    logger.debug 'about to read spreadsheet'
+    startrow = 3
+    # first get the 3 columns - Student's Name + Year, Focus, study percentages
+    #This is now all that we get
+    range = "STUDENTS!A#{startrow}:C"
+    response = service.get_spreadsheet_values(spreadsheet_id, range)
+    @students = Array.new(response.values.length){Array.new(11)}
+    #logger.debug "students: " + @students.inspect
+    basecolumncount = 1    #index for loading array - 0 contains spreadsheet row number
+    rowcount = 0			   
+    response.values.each do |r|
+        #logger.debug "============ row #{rowcount} ================"
+        #logger.debug "row: " + r.inspect
+        colcount = 0
+        @students[rowcount][0] = rowcount + startrow
+        r.each do |c|
+          #logger.debug "============ cell value for column #{colcount} ================"
+    	    #logger.debug "cell value: " + c.inspect
+    	    @students[rowcount][basecolumncount + colcount] = c
+    		  colcount = colcount + 1
+        end
+        rowcount = rowcount + 1
+    end
+    #logger.debug "students: " + @students.inspect
+
+    # Now to update the database
+    loopcount = 0                         # limit output during testing
+    @students.each do |t|                 # step through all ss students
+      pnameyear = t[1]
+      logger.debug "pnameyear: " + pnameyear.inspect
+      if pnameyear == ""  || pnameyear == nil
+        t[10] = "invalid pnameyear - do nothing"
+        next
+      end
+      #pnameyear[/^zz/] == nil ? status = "active" : status = "inactive"
+      name_year_sex = getStudentNameYearSex(pnameyear)
+      pname = name_year_sex[0]
+      year = name_year_sex[1]
+      sex = name_year_sex[2]
+      status = name_year_sex[3]
+      logger.debug "pname: " + pname + " : " + year + " : " +
+                   sex.inspect + " : " + status
+
+      # check if alrady an entry in the database
+      # if so, update it. else create a new record.
+      db_student = Student.find_by pname: pname
+      if(db_student)   # already in the database
+        flagupdate = 0                  # detect if any fields change
+        updatetext = ""
+        # first get the 4 columns - 1. Student's Name + Year, 2. Focus,
+        #                           3. study percentages, 4. email
+        # now get the 5. perferences and 6. invcode
+        # now get the 7. daycode, 8. term 4, 9. daycode
+        if db_student.year != year
+          db_student.year = year
+          flagupdate = 1
+          updatetext = updatetext + " - year"  
+        end
+        if sex
+          if db_student.sex != sex
+            db_student.sex = sex
+            flagupdate = 1
+            updatetext = updatetext + " - sex"
+          end
+        end
+        if db_student.comment != t[2]
+          db_student.comment = t[2]
+          flagupdate = 1
+          updatetext = updatetext + " - comment"  
+        end
+        if db_student.study != t[3]
+          db_student.study = t[3]
+          flagupdate = 1
+          updatetext = updatetext + " - study percentages"  
+        end
+        if db_student.status != status
+          db_student.status = status
+          flagupdate = 1
+          updatetext = updatetext + " - status"  
+        end
+        logger.debug "flagupdate: " + flagupdate.inspect + " db_student: " + db_student.inspect
+        if flagupdate == 1                   # something changed - need to save
+          if db_student.save
+            logger.debug "db_student saved changes successfully"
+            t[10] = "updated #{db_student.id} " + updatetext   
+          else
+            logger.debug "db_student saving failed - " + @db_student.errors
+            t[10] = "failed to update"
+          end
+        else
+            t[10] = "no changes"
+        end
+      else
+        # This Student is not in the database - so need to add it.
+        #
+        # first get the 4 columns - 1. Student's Name + Year, 2. Focus,
+        #                           3. study percentages, 4. email
+        # now get the 5. perferences and 6. invcode
+        # now get the 7. daycode, 8. term 4, 9. daycode
+        @db_student = Student.new(
+                              pname: pname,
+                              year: year,
+                              comment: t[2],
+                              study: t[3],
+                              status: status
+                            )
+        logger.debug "new - db_student: " + @db_student.inspect
+        if @db_student.save
+          logger.debug "db_student saved successfully"
+          t[10] = "created #{@db_student.id}"  
+        else
+          logger.debug "db_student saving failed - " + @db_student.errors.inspect
+          t[10] = "failed to create"
+        end
+      end
+      #exit
+      if loopcount > 2
+        #break
+      end
+      loopcount += 1
+    end
+  end
+
+
+
 #---------------------------------------------------------------------------
 #
 #   Load Schedule
@@ -398,7 +577,7 @@ class AdminsController < ApplicationController
     sheet_name = current_user[:sstab]
     colsPerSite = 7
     # first get sites from the first row
-    range = "#{sheet_name}!A3:AI3"
+    range = "#{sheet_name}!A3:AP3"
     holdRailsLoggerLevel = Rails.logger.level
     Rails.logger.level = 1 
     response = service.get_spreadsheet_values(spreadsheet_id, range)
@@ -546,16 +725,39 @@ class AdminsController < ApplicationController
           end
           #now get the matching date from the responsedates array
           mydateserialnumber = responsedates.values[ri][0]
-          mydate = Date.new(1899, 12, 30) + mydateserialnumber 
-          c1 = getvalue(r.values[1])
-          n = c1.match(/(\w+)\s+(\d+)(\d{2})$/im) # MONDAY 330
-          # Note: add 12 to hours as these are afternoon sessions.
-          dt1 = DateTime.new(mydate.year, mydate.month, mydate.day,
+          
+          begin
+            #byebug
+            mydate = Date.new(1899, 12, 30) + mydateserialnumber 
+            c1 = getvalue(r.values[1])
+            n = c1.match(/(\w+)\s+(\d+)\:*(\d{2})/im) # MONDAY 330 xxxxxxx
+            # Note: add 12 to hours as these are afternoon sessions.
+            # Check for ligimate dates
+            myhour = n[2].to_i
+            mymin  = n[3].to_i
+            dt1 = DateTime.new(mydate.year, mydate.month, mydate.day,
                           1, 1)
-          dt2 = DateTime.new(2000, 1, 1,
-                          n[2].to_i + 12, n[3].to_i)
-          dt = DateTime.new(mydate.year, mydate.month, mydate.day,
-                          n[2].to_i + 12, n[3].to_i)
+            dt2 = DateTime.new(2000, 1, 1,
+                               myhour + 12, mymin)
+            dt = DateTime.new(mydate.year, mydate.month, mydate.day,
+                              myhour + 12, mymin)
+          rescue 
+
+            errorSite = si
+            errorRow = ri + 3
+            myerror = "Load Schedule - data processing error: " +
+                      " found in site: " + errorSite +
+                      " c0: " + c0.inspect +
+                      " c1: " + c1.inspect +
+                      " mydateserialnumber: " + mydateserialnumber.inspect +
+                      " error message: " + $!.inspect
+            logger.debug myerror
+            #byebug
+            flash[:notice] = myerror
+            render action: :load
+            return
+            exit
+          end
           requiredSlot["timeslot"] = dt     # adjust from am to pm.
           requiredSlot["location"] = si
           # Now that we have a slot created, check if this has been
@@ -640,6 +842,7 @@ class AdminsController < ApplicationController
       # these will have a lesson status of "oncall"
       # ["DAVID O\n| E12 M12 S10 |"]
       if(mylesson = r["onCall"])
+        logger.debug "mylesson - r onCall: " + mylesson.inspect
         mytutornamecontent = findTutorNameComment(mylesson, @tutors)
         # check if there was a tutor found.
         # If not, then we add any comments to the lesson comments.
@@ -670,12 +873,14 @@ class AdminsController < ApplicationController
         end
         # Now load in the tutors - if any
         mytutornamecontent.each do |te|
+          logger.debug "mytutornameconent - te: " + te.inspect
           # need tutor record - know it exists if found here
           if te['name']
             # create a tutrole record if not already there
             thistutor = Tutor.where(pname: te['name']).first # know it exists
             mytutorcomment = te['comment']
             # determine if this tutrole already exists
+            #byebug
             thistutrole = Tutrole.where(lesson_id: thislesson.id,
                                         tutor_id:   thistutor.id
             ).first

@@ -765,7 +765,6 @@ var ready = function() {
   // https://learn.jquery.com/events/event-delegation/
   jQuery(".histories").on('click', '#closehistory' , function() {
     console.log("closing history clicked");
-    console.log(jQuery(this));
     jQuery(this).parent("div").remove();
   });
 

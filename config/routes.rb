@@ -19,6 +19,7 @@ Rails.application.routes.draw do
   get 'admins/load' => 'admins#load', as: :load
   get 'admins/loadtutors' => 'admins#loadtutors', as: :loadtutors
   get 'admins/loadstudents' => 'admins#loadstudents', as: :loadstudents
+  get 'admins/loadstudents2' => 'admins#loadstudents2', as: :loadstudents2
   get 'admins/loadschedule' => 'admins#loadschedule', as: :loadschedule
   get 'admins/loadtest' => 'admins#loadtest', as: :loadtest
 

@@ -51,7 +51,8 @@ module Googleutilities
     db_records.each do |r|
         mc = r.pname
         if m = this_string.match(/(#{mc})/)
-          found.push(m[1])
+          # found.push(m[1])   ## had spaces sometimes 
+          found.push(mc)
         end
     end
     found

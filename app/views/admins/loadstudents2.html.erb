@@ -1,7 +1,6 @@
-<h1>Admin Controller - Load Tutors Data from Google Spreadsheet</h1>
-<% if @tutors %>
+<h1>Admin Controller - Load Students (version 2) Data from Google Spreadsheet</h1>
 <table>
-    <% @tutors.each do |r| %>
+    <% @students.each do |r| %>
         <tr>
             <% r.each do |c| %>
                 <td><%= c %></td>
@@ -9,7 +8,6 @@
         </tr>
     <% end %>
 </table>
-<% end %>
 <br>
 
 <%= link_to 'New Google', new_google_path %>
