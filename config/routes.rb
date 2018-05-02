@@ -22,7 +22,10 @@ Rails.application.routes.draw do
   get 'admins/loadstudents2' => 'admins#loadstudents2', as: :loadstudents2
   get 'admins/loadschedule' => 'admins#loadschedule', as: :loadschedule
   get 'admins/loadtest' => 'admins#loadtest', as: :loadtest
-
+  get 'admins/copydaysedit' => 'admins#copydaysedit', as: :copydaysedit
+  get 'admins/copydays' => 'admins#copydays', as: :copydays
+  get 'admins/deletedaysedit' => 'admins#deletedaysedit', as: :deletedaysedit
+  get 'admins/deletedays' => 'admins#deletedays', as: :deletedays
 
   post 'removetutorfromlesson' => 'tutroles#removetutorfromlesson', as: :removetutorfromlesson
   post 'tutorcopylesson' =>       'tutroles#tutorcopylesson', as: :tutorcopylesson

@@ -70,85 +70,80 @@ class AdminsController < ApplicationController
     @cal.each do |site, sitevalue| 
       # Now work through the slots for this site and day
       siteName = siteDate = ""    # control scope
-      sitevalue.each_with_index do |bankslots, bankslotindex|
-        if bankslotindex == 0 
-          siteName = bankslots[0]['value']
-          siteDate = siteDateBankFrom = bankslots[1]['value']
-          siteDateBankTo = bankslots[2]['value']
-          n = siteDate.match(/(\d+.*)/)
-          siteDate = n[1]
-          @results.push "processing #{siteName} #{siteDateBankFrom} to #{siteDateBankTo}"
+      sitevalue.each_with_index do |slots, slotindex|
+        if slotindex == 0 
+          siteName = slots[0]['value']
+          siteDate = slots[1]['value']
+          @results.push "processing #{siteName} #{siteDate}"
         else
-          bankslots.each_with_index do |slot, slotindex|
-            if slotindex == 0
-              next        # simply holds the slot time - will get from found slot
-            end
-            thisslotid = slot['slotid']
-            # if not a valid slot, go to next iteration.
-            if thisslotid == nil
-              next
-            end
-            @results.push "Slotid: #{thisslotid}"
-            thisslot = Slot.find(thisslotid)
-            @results.push "Check slot " + thisslot.inspect 
-            # Now to look at each lession in each slot
-            if slot['values'].respond_to?(:each) then
-              slot['values'].each do |lesson|
-                logger.debug "lesson: " + lesson.inspect
-                @results.push "Check lesson " + lesson.inspect 
-                # Now find all the tutors in this lesson
-                if lesson.tutors.respond_to?(:each) then
-                  lesson.tutors.sort_by {|obj| obj.pname }.each do |tutor|
-                    tutroles = tutor.tutroles.where(lesson_id: lesson.id)
-                    tutroles.each do |tutrole|
-                      if tutrole.destroy
-                        @results.push "Removed tutrole #{tutor.pname} " + 
-                                      tutrole.inspect 
-                      else
-                        @results.push "FAILED removing tutrole #{tutor.pname} " +
-                                      tutrole.inspect + 
-                                      "ERROR: " + tutrole.errors.messages.inspect
-                      end
-                    end
-                  end
-                end
-  
-                # Now find all the students in this lesson
-                if lesson.students.respond_to?(:each) then
-                  lesson.students.sort_by {|obj| obj.pname }.each do |student|
-                    roles = student.roles.where(lesson_id: lesson.id)
-                    roles.each do |role|
-                      if role.destroy
-                        @results.push "Removed role #{student.pname} " + role.inspect
-                      else
-                        @results.push "FAILED removing role #{student.pname} " +
-                                      role.inspect + 
-                                      "ERROR: " + role.errors.messages.inspect
-                      end
-                    end
-                  end
-                end
-                # Now remove the lesson the tutors and students were in
-                #byebug
-                mylesson = Lesson.find(lesson.id)
-                if mylesson.destroy
-                  @results.push "Removed lesson " + 
-                                    mylesson.inspect 
-                else
-                  @results.push "FAILED removing lesson " + mylesson.inspect + 
-                                "ERROR: " + mylesson.errors.messages.inspect
-                end
-              end    # looping lessons
-            end
-            # Now remove the slot the lessons were in.
-            if thisslot.destroy
-              @results.push "Removed slot " + thisslot.inspect 
-            else
-              @results.push "FAILED removing slot " + thisslot.inspect + 
-                                "ERROR: " + thisslot.errors.messages.inspect
-            end
+          mytimeslot = Time.parse(siteDate + ' ' + 
+                                  slots[0]['value'].tr("-", ":"))
+          myslotid = slots[1]['slotid']
+          # go to the next iteration if there is no slot defined.
+          if myslotid == nil
+            next
           end
-        end
+          #logger.debug "myslotid: " + myslotid.inspect
+          @results.push "Slotid: #{myslotid}" 
+          myslot = Slot.find(myslotid)
+          @results.push "Check slot " + myslot.inspect 
+          # Now to look at each lession in each slot
+          if slots[1]['values'].respond_to?(:each) then
+            slots[1]['values'].each do |lesson|
+              logger.debug "lesson: " + lesson.inspect
+              @results.push "Check lesson " + lesson.inspect 
+              # Now find all the tutors in this lesson
+              if lesson.tutors.respond_to?(:each) then
+                lesson.tutors.sort_by {|obj| obj.pname }.each do |tutor|
+                  tutroles = tutor.tutroles.where(lesson_id: lesson.id)
+                  tutroles.each do |tutrole|
+                    if tutrole.destroy
+                      @results.push "Removed tutrole #{tutor.pname} " + 
+                                    tutrole.inspect 
+                    else
+                      @results.push "FAILED removing tutrole #{tutor.pname} " +
+                                    tutrole.inspect + 
+                                    "ERROR: " + tutrole.errors.messages.inspect
+                    end
+                  end
+                end
+              end
+
+              # Now find all the students in this lesson
+              if lesson.students.respond_to?(:each) then
+                lesson.students.sort_by {|obj| obj.pname }.each do |student|
+                  roles = student.roles.where(lesson_id: lesson.id)
+                  roles.each do |role|
+                    if role.destroy
+                      @results.push "Removed role #{student.pname} " + role.inspect
+                    else
+                      @results.push "FAILED removing role #{student.pname} " +
+                                    role.inspect + 
+                                    "ERROR: " + role.errors.messages.inspect
+                    end
+                  end
+                end
+              end
+              # Now remove the lesson the tutors and students were in
+              #byebug
+              mylesson = Lesson.find(lesson.id)
+              if mylesson.destroy
+                @results.push "Removed lesson " + 
+                                  mylesson.inspect 
+              else
+                @results.push "FAILED removing lesson " + mylesson.inspect + 
+                              "ERROR: " + mylesson.errors.messages.inspect
+              end
+            end    # looping lessons
+          end
+          # Now remove the slot the lessons were in.
+          if myslot.destroy
+            @results.push "Removed slot " + myslot.inspect 
+          else
+            @results.push "FAILED removing slot " + myslot.inspect + 
+                              "ERROR: " + myslot.errors.messages.inspect
+          end
+        end        
       end
     end
   end

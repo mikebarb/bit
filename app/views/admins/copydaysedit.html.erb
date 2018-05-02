@@ -1,0 +1,42 @@
+<h1>Admin Controller - Copy days in the scheduler</h1>
+<br>
+    <ul>
+      <%= link_to "loadtutors", loadtutors_path %>
+      <%= link_to "loadstudents", loadstudents_path %>
+      <%= link_to "loadstudents2", loadstudents2_path %>
+      <%= link_to "loadschedule", loadschedule_path %>
+      <%= link_to "loadtest", loadtest_path %>
+      <%= link_to "load", load_path %>
+      <%= link_to "copydays", copydaysedit_path %>
+    </ul>
+    
+    <%
+    # Love this very straight forward tutorial on forms
+    # https://www.theodinproject.com/courses/ruby-on-rails/lessons/form-basics
+    %>
+    
+    <% #byebug %>
+    
+    <%= form_tag("copydays", method: "get") do %>
+      <%= label_tag("copy[from]", "Date to copy from:") %>
+      <% if params["from"].nil? %>
+        <%= date_field_tag("copy[from]") %>
+      <% else %>
+        <%= date_field_tag("copy[from]", params["from"]) %>
+      <% end %>      
+      <%= label_tag("copy[to]", "Date to copy to:") %>
+      <% if params["to"].nil? %>
+        <%= date_field_tag("copy[to]") %>
+      <% else %>
+        <%= date_field_tag("copy[to]", params["to"]) %>
+      <% end %>      
+      <%= label_tag("copy[num_days]", "Number of days to copy:") %>
+      <% if params["num_days"].nil? %>
+        <%= number_field_tag("copy[num_days]", '1', min:1) %>
+      <% else %>
+        <%= number_field_tag("copy[num_days]", params["num_days"]) %>
+      <% end %>      
+      <%= submit_tag("Copy") %>
+    <% end %>
+    
+
