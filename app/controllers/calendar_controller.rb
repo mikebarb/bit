@@ -4,8 +4,12 @@ class CalendarController < ApplicationController
     @sf = 5   # number of significant figures in dom ids for lesson,tutor, etc.
     #@site = "Kaleen"
 
-    @tutors = Tutor.where.not(status: "inactive")
-    @students = Student.where.not(status: "inactive")
+    @tutors = Tutor
+              .where.not(status: "inactive")
+              .order('pname')
+    @students = Student
+                .where.not(status: "inactive")
+                .order('pname')
 
     mystartdate = current_user.daystart
     myenddate = current_user.daystart + current_user.daydur.days

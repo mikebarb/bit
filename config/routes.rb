@@ -51,11 +51,13 @@ Rails.application.routes.draw do
 
   get 'tutors/history/:id' => 'tutors#history', as: :tutor_history
   get 'tutors/history' => 'tutors#allhistory', as: :tutors_history
+  post 'tutordetailupdateskc' => 'tutors#tutordetailupdateskc', as: :tutors_tutordetailupdateskc
   resources :tutors
 
   get 'students/history/:id' => 'students#history', as: :student_history
   get 'students/history' => 'students#allhistory', as: :students_history
   #get 'students/:id/showlessons' => 'students#showlessons', as: :show_lessons
+  post 'studentdetailupdateskc' => 'students#studentdetailupdateskc', as: :students_studentdetailupdateskc
   resources :students
 
   # The priority is based upon order of creation: first created -> highest priority.

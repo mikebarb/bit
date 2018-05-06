@@ -89,6 +89,7 @@ class TutrolesController < ApplicationController
   # PATCH/PUT /tutorupdateskc.json
   # ajax updates skc = status kind comment
   def tutorupdateskc
+    byebug
     @tutrole = Tutrole.where(:tutor_id => params[:tutor_id], 
                              :lesson_id => params[:lesson_id]).first
     flagupdate = false

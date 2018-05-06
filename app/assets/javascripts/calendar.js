@@ -107,14 +107,16 @@ var ready = function() {
         e.preventDefault();
         menuItemActioner( clickEleIsAction );
       } else if (clickEleIsChoice) {     // clicked in tertiary menu
-        if (clickEleIsChoice.id == 'edit-comment') {   // clicked in edit box
+        if (clickEleIsChoice.id == 'edit-comment' ||   // clicked in edit box
+            clickEleIsChoice.id == 'edit-subject') {  
           console.log("in the edit text box"); 
           // determine if clicked on edit-comment update button
           var thisTarget = e.target;
-          if (thisTarget.id == 'edit-comment-button' ){  // do comment update
+          if (thisTarget.id == 'edit-comment-button' ||
+              thisTarget.id == 'edit-subject-button' ){  // do comment update
             console.log("edit-comment-button is clicked");
             //call action here.
-            editCommentActioner();
+            editCommentSubjectActioner(thisTarget.id);
             toggleTMenuOff();
             
           } //else just editing - do nothing special (default actions)
@@ -175,11 +177,12 @@ var ready = function() {
     var scmi_setKind = false;
     var scmi_editComment = false;
     var scmi_history = false;
+    var scmi_editSubject = false;
     
     //  var currentActivity = {};   declared globally within this module
 
-    if(currentActivity.action  == 'move' || 
-       currentActivity.action  == 'copy'){  // something has been copied ready to be pasted
+    if(currentActivity.action  == 'move' || // something has been copied,
+       currentActivity.action  == 'copy'){  // ready to be pasted
       scmi_paste = true;
     }
 
@@ -190,6 +193,8 @@ var ready = function() {
           // this element in student and tutor list
           scmi_copy = true;
           scmi_paste = false;   //nothing can be pasted into the index space
+          scmi_editComment = true;
+          scmi_editSubject = true;
         }else{  // in the main schedule
           scmi_copy = scmi_move = scmi_remove = scmi_addLesson = true;
           scmi_setStatus = scmi_setKind = scmi_editComment = true;
@@ -220,6 +225,7 @@ var ready = function() {
     setscmi('context-setStatus', scmi_setStatus);
     setscmi('context-setKind', scmi_setKind);
     setscmi('context-editComment', scmi_editComment);
+    setscmi('context-editSubject', scmi_editSubject);
     setscmi('context-history', scmi_history);
   }
   
@@ -350,18 +356,57 @@ var ready = function() {
         console.log("case = editComment");
         thisEleId = taskItemInContext.id;
         thisEle = document.getElementById(thisEleId);
+        var personContext = '';
+        if(clickInsideElementClassList2(thisEle, ['index'])){
+          personContext = 'index';
+        } else {
+          personContext = 'lesson';
+        }
         currentActivity['ele_old_parent_id'] = clickInsideElementClassList2(thisEle, ['slot']).id;
         var recordType = getRecordType(thisEleId);  //student, tutor, lesson
         var thisComment;
         if(recordType == 't') {   // tutor
-          thisComment = thisEle.getElementsByClassName('tutrolecomment')[0].innerHTML;
+          if(personContext == 'index') {    // index
+            thisComment = thisEle.getElementsByClassName('tutorcommentdetail')[0].innerHTML;
+          } else {                          // lesson
+            thisComment = thisEle.getElementsByClassName('tutrolecomment')[0].innerHTML;
+          }
         } else if(recordType == 's') {   // student
-          thisComment = thisEle.getElementsByClassName('rolecomment')[0].innerHTML;
+          if(personContext == 'index'){     // index
+            thisComment = thisEle.getElementsByClassName('studentcommentdetail')[0].innerHTML;
+          } else {                          // lesson
+            thisComment = thisEle.getElementsByClassName('rolecomment')[0].innerHTML;
+          }
         } else if(recordType == 'n') {   // session
           thisComment = thisEle.getElementsByClassName('lessoncommenttext')[0].innerHTML;
         }
-        document.getElementById('edit-comment-text').innerHTML = thisComment;
+        document.getElementById('edit-comment-text').value = thisComment;
         document.getElementById('edit-comment-elementid').innerHTML = thisEleId;
+        enableTertiaryMenu(thisEle, thisAction, currentActivity);
+        break;
+      case "editSubject":
+        // Edit Subject has been selected on an element.
+        // It will open up a text field to key in your updates.
+        // This will update the relevant subject.
+        // The editing dialogue is the same one as for editing
+        // comments.
+        currentActivity['action'] = thisAction;
+        currentActivity['move_ele_id'] =  thisEleId;
+        console.log("case = editSubject");
+        thisEleId = taskItemInContext.id;
+        thisEle = document.getElementById(thisEleId);
+        //currentActivity['ele_old_parent_id'] = clickInsideElementClassList2(thisEle, ['slot']).id;
+        recordType = getRecordType(thisEleId);  //student, tutor, lesson
+        if(recordType == 't') {   // tutor
+          var thisSubject = thisEle.getElementsByClassName('tutorsubjects')[0].innerHTML;
+        } else if(recordType == 's') {   // student
+          thisSubject = thisEle.getElementsByClassName('studentsubjects')[0].innerHTML;
+          var res = thisSubject.split("|");
+          thisSubject = res[1];
+          thisSubject = thisSubject.slice( 1 ); // remove space inserted by display format
+        } 
+        document.getElementById('edit-subject-text').value = thisSubject;
+        document.getElementById('edit-subject-elementid').innerHTML = thisEleId;
         enableTertiaryMenu(thisEle, thisAction, currentActivity);
         break;
       case "history":
@@ -422,6 +467,7 @@ var ready = function() {
     var stmi_lesson_status_onbfl    = false;
 
     var stmi_edit_comment           = false;
+    var stmi_edit_subject           = false;
     
     // First, identify type of element being actioned e.g. tutor, lesson, etc..
     switch(recordType){
@@ -452,6 +498,10 @@ var ready = function() {
             console.debug("etmAction is editComment");
             stmi_edit_comment           = true;
             break;
+          case 'editSubject':   // show the text edit box & populate
+            console.debug("etmAction is editSubject");
+            stmi_edit_subject           = true;
+            break;
         }     // switch(etmAction)
         break;
       case 's':   // student
@@ -473,6 +523,10 @@ var ready = function() {
           case 'editComment':   // show the text edit box & populate
             console.debug("etmAction is editComment");
             stmi_edit_comment           = true;
+            break;
+          case 'editSubject':   // show the text edit box & populate
+            console.debug("etmAction is editSubject");
+            stmi_edit_subject           = true;
             break;
         }     // switch(etmAction)
         break;
@@ -524,6 +578,7 @@ var ready = function() {
     setscmi('lesson-status-on_BFL', stmi_lesson_status_onbfl);
 
     setscmi('edit-comment', stmi_edit_comment);
+    setscmi('edit-subject', stmi_edit_subject);
     
     toggleMenuOff();
     toggleTMenuOn();
@@ -543,19 +598,29 @@ var ready = function() {
     personupdatestatuskindcomment( currentActivity );
   }
   
-  function editCommentActioner(){
-    console.log("--------------- editCommentActioner ---------------------");
+  function editCommentSubjectActioner(editButton){
+    console.log("--------------- editCommentSubjectActioner ---------------------");
     //toggleTMenuOff();
-    var thisComment = document.getElementById('edit-comment-text').value;
+    // thisTarget.id == 'edit-comment-button'
+    // thisTarget.id == 'edit-subject-button'
+    if (editButton == 'edit-comment-button'){
+      var thisComment = document.getElementById('edit-comment-text').value;
+      var thisEleId = document.getElementById('edit-comment-elementid').innerHTML;
+      currentActivity['action'] = '-comment-edit';
+    } else {   // edit-subject-button
+      thisComment = document.getElementById('edit-subject-text').value;
+      document.getElementById('edit-subject-text').value = '';
+      //document.getElementById('edit-subject-text').value = '';
+      thisEleId = document.getElementById('edit-subject-elementid').innerHTML;
+      currentActivity['action'] = '-subject-edit';
+    }
     currentActivity['new_value'] = thisComment;
-    var thisEleId = document.getElementById('edit-comment-elementid').innerHTML;
-    //var recordId = getRecordId(thisEleId);
-    //var thisEle = document.getElementById('thisEleId');
+    //var thisEle = document.getElementById(thisEleId);
     var recordType = getRecordType(thisEleId);  //student, tutor, lesson
     if (recordType == 't'){
-      currentActivity['action'] = 'tutor-comment-edit';
+      currentActivity['action'] = 'tutor' + currentActivity['action'];
     }else if (recordType == 's'){
-      currentActivity['action'] = 'student-comment-edit';
+      currentActivity['action'] = 'student' + currentActivity['action'];
     }else if (recordType == 'n'){
       currentActivity['action'] = 'lesson-comment-edit';
     }
@@ -755,7 +820,7 @@ var ready = function() {
     template_ele.after(this_ele);
     var historyDisplay = this_ele;
     positionMenu(historyDisplay);
-    jQuery("#" + this_ele.id).resizable({handles: "e"});
+    $("#" + this_ele.id).resizable({handles: "e"});
     this_ele.classList.remove('hideme');
   }
 
@@ -763,9 +828,9 @@ var ready = function() {
   // the click event is not attached.
   // Event delegation addresses this issue. Disccussed in:
   // https://learn.jquery.com/events/event-delegation/
-  jQuery(".histories").on('click', '#closehistory' , function() {
+  $(".histories").on('click', '#closehistory' , function() {
     console.log("closing history clicked");
-    jQuery(this).parent("div").remove();
+    $(this).parent("div").remove();
   });
 
   // convert historydata to a HTML segment
@@ -803,9 +868,10 @@ var ready = function() {
   }
 
 
-//--------------- Update Tutor or Student Status or Kind -------------------
+//----- Update Tutor, Student or Lesson -> Status, Kind or Comment ----------
   //This function is called to update a student or tutor record
-  // with either status or kind. Called from the tertiary context menu.
+  // with one of status, kind or comment. 
+  // Called from the tertiary context menu.
   //Does ajax to update the student or tutor record
   function personupdatestatuskindcomment( domchange ){
     // domchange['action']      = thisChoice;
@@ -816,15 +882,23 @@ var ready = function() {
     console.log("action: " + action);
     var recordtype = getRecordType(domchange['move_ele_id']);  // s or t
     var personid = getRecordId(domchange['move_ele_id']);      // record id
-    var lessonid = getLessonIdFromTutorStudent(domchange['move_ele_id']);
+    // Need to determine the context - index or lession
+    var thisEle = document.getElementById(domchange['move_ele_id']);
+    var lessonid;
+    var personContext = '';
+    if(clickInsideElementClassList2(thisEle, ['index'])){
+      personContext = 'index';
+    } else {
+      personContext = 'lesson';
+      mydata['lesson_id'] = lessonid;
+      lessonid = getLessonIdFromTutorStudent(domchange['move_ele_id']);
+    }
     var persontype, myurl;
     var workaction, t, updatefield, updatevalue;
     var mydata = {'domchange' : domchange};
-    mydata['lesson_id'] = lessonid;
     console.log("move_ele_id: " + domchange['move_ele_id']);
     console.log("personid: " + personid);
     console.log("lessonid: " + lessonid);
-    
     if( 's' == recordtype ){    // student
       persontype = 'student';
       console.log("we have a student - " + personid);
@@ -841,13 +915,23 @@ var ready = function() {
       updatefield = updatefield.replace('-', '');
       updatevalue =  workaction;
       // comment field is slightly different.
-      if (updatefield == 'comment'){    
+      if (updatefield == 'comment' ||
+          updatefield == 'subject'){    
         updatevalue = domchange['new_value'];
       }
       domchange["new_value"] = updatevalue;
+      // translate from browser name to db name
+      // subject -> study
+      if (updatefield == 'subject') {
+        updatefield = 'study';
+      } 
       mydata[updatefield] = updatevalue;
       mydata['student_id'] = personid;
-      myurl = myhost + "/studentupdateskc";   // skc = status, kind, comment
+      if ( personContext == 'lesson') {
+        myurl = myhost + "/studentupdateskc";   // skc = status, kind, comment
+      } else {        // index
+        myurl = myhost + "/studentdetailupdateskc";   // +subject
+      }
     } else if( 't' == recordtype ){   // tutor
       persontype = 'tutor';
       console.log("we have a tutor - " + personid);
@@ -864,13 +948,23 @@ var ready = function() {
       updatefield = updatefield.replace('-', '');
       updatevalue =  workaction;
       // comment field is slightly different.
-      if (updatefield == 'comment'){    
+      if (updatefield == 'comment' ||
+          updatefield == 'subject'){    
         updatevalue = domchange['new_value'];
       }
       domchange["new_value"] = updatevalue;
+      // translate from browser name to db name
+      // subject -> subjects
+      if (updatefield == 'subject') {
+        updatefield = 'subjects';
+      } 
       mydata[updatefield] = updatevalue;
       mydata['tutor_id'] = personid;
-      myurl = myhost + "/tutorupdateskc";   // skc = status, kind, comment
+      if ( personContext == 'lesson') {
+        myurl = myhost + "/tutorupdateskc";   // skc = status, kind, comment
+      } else {        // index
+        myurl = myhost + "/tutordetailupdateskc";   // + subject
+      }
     } else if( 'n' == recordtype ){   // lesson
       persontype = 'lesson';
       console.log("we have a lesson - " + personid);
@@ -903,7 +997,7 @@ var ready = function() {
     console.log("now make the ajax call");
     console.log("url: " + myurl);
     $.ajax({
-        type: "POST",
+        type: 'POST',
         url: myurl,
         data: mydata,
         dataType: "json",
@@ -926,6 +1020,8 @@ var ready = function() {
      });
   }
 
+  // This updates the dom model with the changes applied
+  // to the database.
   function updatestatuskindelement(domchange){
     console.log("------------- updatestatuskindelement ------------------");
     console.log(domchange);
@@ -937,12 +1033,40 @@ var ready = function() {
     updateaction = updateaction.replace(scmType, '');
     scmType = scmType.replace('-', '');
     var scmValue =  updateaction;
-    var this_ele = document.getElementById(domchange["move_ele_id"]);
     var recordtype = getRecordType(domchange["move_ele_id"]);  // s or t
-    //var comment_eles = this_ele.getElementsByClassName("comment");
-    //var comment_ele = comment_eles[0];
-    var comment_ele = this_ele.getElementsByClassName("comment")[0];
-    var statusinfoele = comment_ele.getElementsByClassName("statusinfo")[0];
+    var this_ele = document.getElementById(domchange["move_ele_id"]);
+
+    if(clickInsideElementClassList2(this_ele, ['index'])){ // index context
+      var personContext = 'index';
+      if (scmType == 'comment') {
+        if (recordtype == 't') {        // tutor
+          var comment_ele = this_ele.getElementsByClassName("tutorcommentdetail")[0];
+        }else if (recordtype == 's'){   // student
+          comment_ele = this_ele.getElementsByClassName("studentcommentdetail")[0];
+        }
+        //var comment_text_new = domchange["new_value"];
+      } else if (scmType == 'subject') {
+        if (recordtype == 't') {        // tutor
+          var subject_ele = this_ele.getElementsByClassName("tutorsubjects")[0];
+          var subject_text_new = domchange["new_value"];
+        }else if (recordtype == 's'){   // student
+          // student subject consist of added sex (optional) + year 
+          subject_ele = this_ele.getElementsByClassName("studentsubjects")[0];
+          var subject_text_old = subject_ele.innerHTML;
+          var res = subject_text_old.split("|");
+          subject_text_new = res[0] + "| " + domchange["new_value"];
+        }
+      }
+    } else {   // lesson context
+      personContext = 'lesson';
+      if (scmType == 'comment') {
+        comment_ele = this_ele.getElementsByClassName("comment")[0];
+        //comment_text_new = domchange["new_value"];
+      }
+      // some variables are only valid in this context
+      var statusinfoele = comment_ele.getElementsByClassName("statusinfo")[0];
+    }
+
     var foundClass = false;    
     var searchForClass, these_classes, kindtext, statusinfo, statustext;
     var comment_text_eles;
@@ -990,10 +1114,40 @@ var ready = function() {
         statustext = /Status: \w*/.exec(statusinfo);
         statusinfo = statusinfo.replace(statustext, 'Status: ' + scmValue + ' ');
         statusinfoele.innerHTML = statusinfo;
-      } else if (scmType == 'comment') {  // update the tutrole comment
-        // Now to update the comment with tutrole comment
-        comment_text_eles = comment_ele.getElementsByClassName("tutrolecomment");
-        comment_text_eles[0].innerHTML = domchange["new_value"];
+      } else if (scmType == 'comment') {  // update the comment
+        if (personContext == 'index') {
+          // Update the tutor detail comment, then update all the sheet with this commment 
+          // update comment in the index area (top of page)
+          //comment_text_eles = comment_ele.getElementsByClassName("tutorcommentdetail");
+          comment_ele.innerHTML = domchange["new_value"];
+          // now the rest of the sheet
+          var tutor_lesson_eles = document.getElementsByClassName("f" + domchange["move_ele_id"]);
+          //tutor_lesson_eles.forEach(function(lele) { // lesson element
+          for (let i = 0; i < tutor_lesson_eles.length; i++) {
+            console.log(tutor_lesson_eles[i]);
+            comment_text_eles = tutor_lesson_eles[i].getElementsByClassName("tutorcommentdetail");
+            comment_text_eles[0].innerHTML = domchange["new_value"];
+          }
+        } else {    // lesson
+          // Now to update the comment with tutrole comment
+          comment_text_eles = comment_ele.getElementsByClassName("tutrolecomment");
+          comment_text_eles[0].innerHTML = domchange["new_value"];
+        }
+      } else if (scmType == 'subject') {  // update the tutor subject
+        if (personContext == 'index') { 
+          // Update the tutor subject, then update all the sheet with this commment 
+          // update subject in the index area (top of page)
+          //var subject_text_eles = subject_ele.getElementsByClassName("tutorsubjects");
+          //subject_text_eles[0].innerHTML = subject_text_new;
+          subject_ele.innerHTML = subject_text_new;
+          // now the rest of the sheet
+          tutor_lesson_eles = document.getElementsByClassName("f" + domchange["move_ele_id"]);
+          for (let i = 0; i < tutor_lesson_eles.length; i++) {
+            console.log(tutor_lesson_eles[i]);
+            subject_text_eles = tutor_lesson_eles[i].getElementsByClassName("tutorsubjects");
+            subject_text_eles[0].innerHTML = subject_text_new;
+          }
+        }
       }
     }
 
@@ -1041,9 +1195,38 @@ var ready = function() {
         statusinfo = statusinfo.replace(statustext, 'Status: ' + scmValue + ' ');
         statusinfoele.innerHTML = statusinfo;
       } else if (scmType == 'comment') {  // update the role comment
-        // Now to update the comment with tutrole comment
-        comment_text_eles = comment_ele.getElementsByClassName("rolecomment");
-        comment_text_eles[0].innerHTML = domchange["new_value"];
+        if (personContext == 'index') {
+          // Update the student detail comment, then update all the sheet with this commment 
+          // update comment in the index area (top of page)
+          //comment_text_eles = comment_ele.getElementsByClassName("studentcommentdetail");
+          comment_ele.innerHTML = domchange["new_value"];
+          // now the rest of the sheet
+          var student_lesson_eles = document.getElementsByClassName("f" + domchange["move_ele_id"]);
+          for (let i = 0; i < student_lesson_eles.length; i++) {
+            console.log(student_lesson_eles[i]);
+            comment_text_eles = student_lesson_eles[i].getElementsByClassName("studentcommentdetail");
+            comment_text_eles[0].innerHTML = domchange["new_value"];
+          }
+        } else {    // lesson
+          // Now to update the comment with tutrole comment
+          comment_text_eles = comment_ele.getElementsByClassName("rolecomment");
+          comment_text_eles[0].innerHTML = domchange["new_value"];
+        }
+      } else if (scmType == 'subject') {  // update the tutor subject
+        if (personContext == 'index') { 
+          // Update the student subject, then update all the sheet with this commment 
+          // update subject in the index area (top of page)
+          //var subject_text_eles = subject_ele.getElementsByClassName("studentsubjects");
+          //subject_text_eles[0].innerHTML = " " + subject_text_new;
+          subject_ele.innerHTML = subject_text_new;
+          // now the rest of the sheet
+          student_lesson_eles = document.getElementsByClassName("f" + domchange["move_ele_id"]);
+          for (let i = 0; i < student_lesson_eles.length; i++) {
+            console.log(student_lesson_eles[i]);
+            var subject_text_eles = student_lesson_eles[i].getElementsByClassName("studentsubjects");
+            subject_text_eles[0].innerHTML = subject_text_new;
+          }
+        }
       }
     }    
     
