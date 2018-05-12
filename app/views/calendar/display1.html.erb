@@ -1,4 +1,4 @@
-<h1>Calendar#display2</h1>
+<h1>Calendar#display1</h1>
 
 <!--<div class="positionable" id=comments>
   <p>Test</p>
@@ -85,7 +85,7 @@
           <% cells["values"].sort_by {|obj| [valueOrderStatus(obj),valueOrder(obj)] }.each do |entry| %>
             <div class="lesson <%= set_class_status(entry, entry) %>" id=<%= cells["id_dom"] + "n" + entry.id.to_s.rjust(@sf, "0") %> >
                
-              <div class="grouptutors2">
+              <div class="grouptutors">
                 <% if entry.tutors.respond_to?(:each) then %>
                   <% entry.tutors.sort_by {|obj| obj.pname }.each do |tutor| %>
                     <% if tutor then %>
@@ -106,7 +106,7 @@
                 <% end %>
               </div>
               
-              <div class="groupstudents2">
+              <div class="groupstudents">
                 <% if entry.students.respond_to?(:each) then %>
                   <% entry.students.each do |student| %>
                     <% if student then %>

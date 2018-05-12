@@ -53,6 +53,12 @@
   border:5px solid #aaf;
 }
 
+.inlinetutorstudents {
+  display: inline-block;
+  width: 49%;
+  vertical-align: top;
+}
+
 .tutorinline, .studentinline{
   vertical-align: top;
 }
@@ -61,17 +67,45 @@
   border: 5px solid green;
 }
 
-.tutorname {
+.grouptutors {
   display: inline-block;
-  width: 25%;
+  width: 49%;
+  vertical-align: top;
 }
 
-.tutorcomment {
+.grouptutors2 {
+  vertical-align: top;
+}
+
+.groupstudents {
   display: inline-block;
+  width: 49%;
+  vertical-align: top;
+}
+.groupstudents2 {
+  vertical-align: top;
+}
+
+
+.tutorname {
+  //display: inline-block;
+  width: 100%;
+}
+
+//.grouptutors .tutorname {
+//  display: in-line block;
+//}
+
+.tutorcomment {
+  //display: inline-block;
   /* background-color: white; */
-  width: 74%;
+  width: 100%%;
   padding-left: 1%;
 }
+//.grouptutors .tutorcomment {
+//  width: 100%;
+//  padding-left: 1%;
+//}
 
 .student {
   margin: 1px;
@@ -86,15 +120,23 @@
 }
 
 .studentname {
-  display: inline-block;
-  width: 25%;
+  //display: inline-block;
+  width: 100%;
 }
+//.groupstudents .studentname {
+//  display: none;
+//  width: 100%;
+//}
 
 .studentcomment {
-  display: inline-block;
+  //display: inline-block;
   /* background-color: white; */
-  width: 74%;
+  width: 100%;
 }
+//.groupstudents .studentcomment {
+//  display: none;
+//  width: 100%;
+//}
 
 #edit-comment-button {
     background-color: #4CAF50; /* Green */
@@ -113,11 +155,17 @@ td {
   vertical-align: top;
 }
 table {
+  table-layout:fixed;
   width: 100%; 
 }
 table, th, td {
   border: 1px solid black;
 }
+
+.firsttablecolumn {
+  width: 100px;
+}
+
 .positionable {
   position: absolute;
   display: block;

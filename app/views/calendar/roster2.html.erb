@@ -1,4 +1,4 @@
-<h1>Calendar#display2</h1>
+<h1>Calendar#display3 - site rosters</h1>
 
 <!--<div class="positionable" id=comments>
   <p>Test</p>
@@ -11,143 +11,104 @@
 %>
 
 <div id="selectshows">
-    <input id=hidetutors class=selectshow onclick="selectshows()" type="checkbox" > hide tutors
-    <input id=hidestudents class=selectshow onclick="selectshows()" type="checkbox" > hide students
     <input id=hidecomments class=selectshow onclick="selectshows()" type="checkbox" > hide comments
     <% listofsites.each do |site| %>
     <input id=<%= 'hide' + site %> class=selectshow onclick="selectshows()" type="checkbox" ><%= 'hide ' + site %> 
     <% end %>
 </div>
 
-<div class=index>
-    <div class="selectbox floating-box">
-        <h2>Select person</h2>
-        <input type="text" id="personInput" placeholder="Shorten list by keying in meaningful characters .." title="Type in characters to reduce name list">
-    </div>
-
-    <div class=index-tutors id=index-tutors>
-        <% @tutors.each do |tutor| %>
-            <div class=tutor id=<%= "t" + tutor.id.to_s.rjust(@sf, "0") %> >
-                <div style=persongroup>
-                    <div class="tutorname tutorinline">tutor: <%= tutor.pname %></div>
-                    <div class="tutorcomment comment tutorinline">
-                      <div class="tutorsubjects"><%= tutor.subjects %></div>
-                      <div class="tutorcommentdetail"><%= tutor.comment %></div>
-                    </div>
-                </div>
-            </div>
-        <% end %>
-    </div>
-    <div class=index-students id=index-students>
-        <% @students.each do |student| %>
-            <div class= student id=<%= "s" + student.id.to_s.rjust(@sf, "0") %> >
-                <div style=persongroup>
-                    <div class="studentname studentinline">student: <%= student.pname %></div>
-                    <div class="studentcomment comment studentinline">
-
-                      <div class="studentsubjects"><%= student.sex == nil ? "" :
-                        student.sex.downcase.include?("female")?
-                          "(F) " : student.sex.downcase.include?("male")?
-                          "(M) " : "" 
-                        %> Yr: <%= student.year == nil ? "   " : student.year.rjust(3) %> | <%= student.study %></div>
-                      <br>
-                      <div class="studentcommentdetail"><%= student.comment %></div>
-                    </div>
-                </div>
-            </div>
-        <% end %>
-    </div>
-</div>
-
-<% logger.debug "-------------- displayed index completed -----------------------------" %>
-
 <% @cal.each do |location, calLocation| %>
-  <% firsttablecolumn = true %>
+<%     firsttablecolumn = true %>
   <table id=site-<%= location %> >
-  <% calLocation.each do |rows| %>
-    <tr>
-    <% rows.each do |cells| %>
-      <% if cells.key?("slotid") then %>
-        <td class="cell slot" id=<%= cells["id_dom"] + "l" + cells["slotid"].rjust(@sf, "0") %>  >
-      <% elsif cells.key?("value") then %>
-        <% if firsttablecolumn == true then
-          firsttablecolumn = false %>
-          <td class="cell firsttablecolumn" %>
-        <% else %>
-          <td class="cell" %>
-        <% end %>
-      <% else %>
-         <td class="cell no-slot" %>
-      <% end %> 
-      <% if cells.key?("values") then %>       
-        <% if cells["values"].respond_to?(:each) then %>
-          <% logger.debug "cells: " + cells["values"].inspect %>
-          <% cells["values"].sort_by {|obj| [valueOrderStatus(obj),valueOrder(obj)] }.each do |entry| %>
-            <div class="lesson <%= set_class_status(entry, entry) %>" id=<%= cells["id_dom"] + "n" + entry.id.to_s.rjust(@sf, "0") %> >
-               
-              <div class="grouptutors2">
-                <% if entry.tutors.respond_to?(:each) then %>
-                  <% entry.tutors.sort_by {|obj| obj.pname }.each do |tutor| %>
-                    <% if tutor then %>
-                      <div class="tutor <%= "ft" + tutor.id.to_s.rjust(@sf, "0") %>" id=<%= cells["id_dom"] + "n" + entry.id.to_s.rjust(@sf, "0") + "t" + tutor.id.to_s.rjust(@sf, "0") %> >
-                        <div style=persongroup>
-                          <div class="tutorname tutorinline <%= set_class_status(tutor, entry) %>">tutor: <%= tutor.pname %></div>
-                          <div class="tutorcomment comment tutorinline <%= set_class_kind(tutor, entry) %>">
-                            <% thistutrole = entry.tutroles.where(tutor_id: tutor.id).first %>
-                            <div class="tutorsubjects"><%= tutor.subjects %></div>
-                            <div class="tutrolecomment"><%= thistutrole.comment %></div>
-                            <div class="tutorcommentdetail"><%= tutor.comment %></div>
-                            <div class="statusinfo">Status: <%= thistutrole.status %> Kind: <%= thistutrole.kind %> </div>
-                          </div>
-                        </div>
-                      </div>
-                    <% end %>
-                  <% end %>
-                <% end %>
-              </div>
-              
-              <div class="groupstudents2">
-                <% if entry.students.respond_to?(:each) then %>
-                  <% entry.students.each do |student| %>
-                    <% if student then %>
-                      <div class="student <%= "fs" + student.id.to_s.rjust(@sf, "0") %>" id=<%= cells["id_dom"] + "n" + entry.id.to_s.rjust(@sf, "0") + "s" + student.id.to_s.rjust(@sf, "0") %> >
-                        <div style=persongroup>
-                          <div class="studentname studentinline <%= set_class_status(student, entry) %>">student: <%= student.pname %></div>
-                          <div class="studentcomment comment studentinline <%= set_class_kind(student, entry) %>">
-                            <% thisrole = entry.roles.where(student_id: student.id).first %>
-                            <div class="studentsubjects"><%= student.sex == nil ? "" :
-                                student.sex.downcase.include?("female")?
-                                "(F) " : student.sex.downcase.include?("male")?
-                                "(M) " : "" 
-                                %> Yr: <%= student.year == nil ? "   " : student.year.rjust(3) %> | <%= student.study %></div>
-                            <div class="rolecomment"><%= thisrole.comment %></div>
-                            <div class="studentcommentdetail"><%= student.comment %></div>
-                            <div class="statusinfo">Status: <%= thisrole.status %> Kind: <%= thisrole.kind %></div>
-                          </div>
-                        </div>
-                      </div>
-                    <% end %>
-                  <% end %>
-                <% end %>
-              </div>
-
-              <div class="lessoncomment comment commentinline">
-                <div class="lessoncommenttext"><% if entry.comments != nil && entry.comments != "" %><%= entry.comments %><% end %></div>
-                <div class="lessonstatusinfo"><% if entry.status != nil && entry.status != "" %>Status: <%= entry.status %> <% end %></div>
-              </div>
-               
-            </div>
+    <% calLocation.each do |rows| %>
+      <tr>
+      <% rows.each do |cells| %> 
+        <% if cells.key?("slotid") then %>
+          <td class="cell slot" id=<%= cells["id_dom"] + "l" + cells["slotid"].rjust(@sf, "0") %>  >
+        <% elsif cells.key?("value") then %>
+          <% if firsttablecolumn == true then
+               firsttablecolumn = false %>
+            <td class="cell firsttablecolumn" %>
+          <% else %>
+            <td class="cell" %>
           <% end %>
+        <% else %>
+          <td class="cell no-slot" %>
+        <% end %> 
+        <% if cells.key?("values") then %>       
+          <% if cells["values"].respond_to?(:each) then %>
+            <% cells["values"].sort_by {|obj| [valueOrderStatus(obj),valueOrder(obj)] }.each do |entry| %>
+              <div class="lesson <%= set_class_status(entry, entry) %>" id=<%= cells["id_dom"] + "n" + entry.id.to_s.rjust(@sf, "0") %> >
+
+                <div class="grouptutors">
+                  <% if entry.tutors.respond_to?(:each) then %>
+                    <% entry.tutors.sort_by {|obj| obj.pname }.each do |tutor| %>
+                      <% if tutor then %>
+                        <% if @tutorstatusforroster.include?(tutor.tutroles.where(lesson_id: entry.id).first.status) %>
+                          <div class="tutor <%= "ft" + tutor.id.to_s.rjust(@sf, "0") %>" id=<%= cells["id_dom"] + "n" + entry.id.to_s.rjust(@sf, "0") + "t" + tutor.id.to_s.rjust(@sf, "0") %> >
+                            <div style=persongroup>
+                              <div class="tutorname tutorinline <%= set_class_status(tutor, entry) %>">tutor: <%= tutor.pname %></div>
+                              <div class="tutorcomment comment tutorinline <%= set_class_kind(tutor, entry) %>">
+                                <% thistutrole = entry.tutroles.where(tutor_id: tutor.id).first %>
+                                <div class="tutorsubjects"><%= tutor.subjects %></div>
+                                <div class="tutrolecomment"><%= thistutrole.comment %></div>
+                                <div class="tutorcommentdetail"><%= tutor.comment %></div>
+                                <div class="statusinfo">Status: <%= thistutrole.status %> Kind: <%= thistutrole.kind %> </div>
+                              </div>
+                            </div>
+                          </div>
+                        <% end %>
+                      <% end %>                     
+                    <% end %>
+                  <% end %>
+                </div>
+                 
+                <div class="groupstudents">
+                  <% if entry.students.respond_to?(:each) then %>
+                    <% entry.students.each do |student| %>
+                      <% if student then %>
+                      <% #byebug %>
+                        <% if @studentstatusforroster.include?(student.roles.where(lesson_id: entry.id).first.status) %>
+                          <div class="student <%= "fs" + student.id.to_s.rjust(@sf, "0") %>" id=<%= cells["id_dom"] + "n" + entry.id.to_s.rjust(@sf, "0") + "s" + student.id.to_s.rjust(@sf, "0") %> >
+                            <div style=persongroup>
+                              <div class="studentname studentinline <%= set_class_status(student, entry) %>">student: <%= student.pname %></div>
+                              <div class="studentcomment comment studentinline <%= set_class_kind(student, entry) %>">
+                                <% thisrole = entry.roles.where(student_id: student.id).first %>
+                                <div class="studentsubjects"><%= student.sex == nil ? "" :
+                                     student.sex.downcase.include?("female")?
+                                     "(F) " : student.sex.downcase.include?("male")?
+                                     "(M) " : "" 
+                                     %> Yr: <%= student.year == nil ? "   " : student.year.rjust(3) %> | <%= student.study %></div>
+                                <div class="rolecomment"><%= thisrole.comment %></div>
+                                <div class="studentcommentdetail"><%= student.comment %></div>
+                                <div class="statusinfo">Status: <%= thisrole.status %> Kind: <%= thisrole.kind %></div>
+                              </div>
+                            </div>
+                          </div>
+                        <% end %>
+                      <% end %>
+                    <% end %>
+                  <% end %>
+
+                </div>
+
+                <div class="lessoncomment comment commentinline">
+                  <div class="lessoncommenttext"><% if entry.comments != nil && entry.comments != "" %><%= entry.comments %><% end %></div>
+                  <div class="lessonstatusinfo"><% if entry.status != nil && entry.status != "" %>Status: <%= entry.status %> <% end %></div>
+                </div>
+                 
+              </div>
+            <% end %>
+          <% end %>
+        <% elsif cells.key?("value") then %>     
+          <%= cells["value"].to_s %>
         <% end %>
-      <% elsif cells.key?("value") then %>     
-        <%= cells["value"].to_s %>
+        </td>
       <% end %>
-      </td>
+      </tr>
     <% end %>
-    </tr>
-  <% end %>
   </table>
-<br>
+  <br>
 <% end %>
 
   <nav id="context-menu" class="context-menu">

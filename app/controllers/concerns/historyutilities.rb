@@ -32,7 +32,9 @@ module Historyutilities
                                             obj.slot.timeslot,
                                             obj.slot.location,
                                             obj.tutors.map {|t| t.pname },
-                                            obj.students.map{|s| s.pname }
+                                            obj.students.map{|s| s.pname },
+                                            obj.tutroles.where(tutor_id: tutor_id).first.status == nil ?
+                                              "" : obj.tutroles.where(tutor_id: tutor_id).first.status
                                             ] }
     @tutorhistory
   end
@@ -63,7 +65,9 @@ module Historyutilities
                                             obj.slot.timeslot,
                                             obj.slot.location,
                                             obj.tutors.map {|t| t.pname },
-                                            obj.students.map{|s| s.pname }
+                                            obj.students.map{|s| s.pname },
+                                            obj.roles.where(student_id: student_id).first.status == nil ?
+                                              "" : obj.roles.where(student_id: student_id).first.status
                                             ] }
     @studenthistory
   end

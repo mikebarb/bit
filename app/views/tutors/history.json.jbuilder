@@ -14,4 +14,5 @@
         json.students lesson[5] do |t|
             json.student t
         end
+        json.status lesson[6]
     end

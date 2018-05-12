@@ -6,18 +6,20 @@
 /* global $ */
 
 // Note: this is called with turbolinks at bottom of page.
+// Written as a callable function to provide this flexibility.
+// Found that we need to be careful this does not get called twice
+// e.g. from from both tuboload and page load - causes double triggers.
 var ready = function() {
   // some global variables for this page
   var sf = 5;     // significant figures for dom id components e.g.lesson ids, etc.
   var myhost = window.location.protocol + '//' + window.location.hostname;   // base url for ajax
-  //console.log("baseurl: " + myhost);
-  
+
   // want to set defaults on some checkboxes on page load
   if (document.getElementById("hidetutors") &&
       document.getElementById("hidestudents")){
     document.getElementById("hidetutors").checked = true;
     document.getElementById("hidestudents").checked = true;
-    selectshows();
+    selectshows();  // call the functions that invokes the checkbox values.
   }
   
   $("ui-draggable");
@@ -25,7 +27,14 @@ var ready = function() {
 //------------------------ Context Menu -----------------------------
 // This is the context menu for the lesson,
 // tutor and student elements.
+// It is the first context menu to be displayed when you right click on an
+// element.
+// When some context menu item are selected, a tertiary menu is opened
+// enabling further options to be selected.
 
+
+  // the order of this class list is important - searches are done from 
+  // finest to broadest when looking for relevant elements(divs).
   var taskItemClassList = ['slot', 'lesson', 'tutor', 'student'];
   var taskItemInContext;  
   var contextMenuActive = "context-menu--active";
@@ -41,6 +50,8 @@ var ready = function() {
   var currentActivity = {};
   var stackActivity = [];
 
+  // This opertions provide visual feedback when you are moving over
+  // menu items.
   $('.context-menu__item').mouseenter(function(){
     $(this).css('background-color','lime');
   });
@@ -57,6 +68,7 @@ var ready = function() {
 
 
   // Initialise our application's code.
+  // Made modular so that you have more control over initialising them. 
   function init() {
     contextListener();
     clickListener();
@@ -66,28 +78,30 @@ var ready = function() {
   }
 
   // Listens for contextmenu events.
+  // Add the listeners for the main menu items.
+  // contextmenu is an integrated javascript library function.
+  // We detect the element right clicked on and position the context
+  // menu adjacent to it.
   function contextListener() {
     document.addEventListener( "contextmenu", function(e) {
-      console.log("== contextmenu Listener ==");
-      console.log(e.currentTarget);
+      //console.log("== contextmenu Listener ==");
+      //console.log(e.currentTarget);
       menu = document.querySelector("#context-menu");
       tmenu = document.querySelector("#tertiary-menu");
       taskItemInContext = clickInsideElementClassList( e, taskItemClassList);
       if ( taskItemInContext ) {
-        console.log("-----taskItemInContext-----should be the element of interest");
-        console.log(taskItemInContext);
-        console.log("element id: " + taskItemInContext.id);
+        //console.log("-----taskItemInContext-----should be the element of interest");
+        //console.log(taskItemInContext);
+        //console.log("element id: " + taskItemInContext.id);
         e.preventDefault();
         enableMenuItems();
         toggleMenuOn();
         clickPosition = getPosition(e);  // global variable
-        //positionMenu(clickPosition, menu);
-        //positionMenu(clickPosition, tmenu);
         positionMenu(menu);
         positionMenu(tmenu);
         eleClickedOn = e;                 // global variable
-        console.log("----------event clicked on-----------");
-        console.log(eleClickedOn);
+        //console.log("----------event clicked on-----------");
+        //console.log(eleClickedOn);
       } else {
         taskItemInContext = null;
         toggleMenuOff();
@@ -96,35 +110,38 @@ var ready = function() {
   }
 
   //Listens for click events on context menu items element.
+  // On selection an item on the context menu, an appropriate action is triggered.
+  // 
   function clickListener() {
     document.addEventListener( "click", function(e) {
       console.log("== clickListener ==");
       console.log(e.currentTarget);
+      // determine if clicked inside main context menu or tertiary context menu.
       var clickEleIsAction = clickInsideElementClassList( e, [contextMenuItemClassName]);
       var clickEleIsChoice = clickInsideElementClassList( e, [tertiaryMenuItemClassName]);
   
       if ( clickEleIsAction ) {      // clicked in main context menu
         e.preventDefault();
-        menuItemActioner( clickEleIsAction );
-      } else if (clickEleIsChoice) {     // clicked in tertiary menu
-        if (clickEleIsChoice.id == 'edit-comment' ||   // clicked in edit box
+        menuItemActioner( clickEleIsAction );   // call main menu item actioner.
+      } else if (clickEleIsChoice) {     // clicked in tertiary menu or text edits
+        if (clickEleIsChoice.id == 'edit-comment' ||   // clicked in an edit box
             clickEleIsChoice.id == 'edit-subject') {  
-          console.log("in the edit text box"); 
+          //console.log("in one of the edit text boxes"); 
           // determine if clicked on edit-comment update button
           var thisTarget = e.target;
           if (thisTarget.id == 'edit-comment-button' ||
               thisTarget.id == 'edit-subject-button' ){  // do comment update
-            console.log("edit-comment-button is clicked");
-            //call action here.
+            //console.log("edit-comment-button or edit-subject-button is clicked");
+            //call this function to update the text for comments or subjects.
+            // This has quite a range.
             editCommentSubjectActioner(thisTarget.id);
             toggleTMenuOff();
-            
           } //else just editing - do nothing special (default actions)
         } else {   // clicked in tertialy menu action values
           e.preventDefault();
-          menuChoiceActioner( clickEleIsChoice );
+          menuChoiceActioner( clickEleIsChoice );    // process tertiary menu actions.
         }
-      } else {
+      } else {    // clicked anywhere else
         var button = e.which || e.button;
         if ( button === 1 ) {
           toggleMenuOff();
@@ -135,6 +152,7 @@ var ready = function() {
   }
 
   // Listens for keyup events on escape key.
+  // Simply removes the menus.
   function keyupListener() {
     window.onkeyup = function(e) {
       if ( e.keyCode === 27 ) {
@@ -163,6 +181,14 @@ var ready = function() {
     return ele_id.substr(ele_id.length-sf-1-sf, sf);
   }
 
+  // As these are context sensitive menus, we need to determine what actions
+  // are displayed.
+  // Basically, all items are in the browser page. They are simply shown or
+  // hidden depending on what element is right clicked on.
+  // Elements identified are tutor, students, lessons and slots.
+  // Also, selecting tutors and students in the top of the page (index area) 
+  // causes different actions to selecting them in the scheduling section (lesson).
+  // Names are choosen to be self explanatory - hopefully.
   function enableMenuItems(){
     var thisEleId = taskItemInContext.id;    // element clicked on
     var thisEle = document.getElementById((thisEleId));
@@ -181,27 +207,28 @@ var ready = function() {
     
     //  var currentActivity = {};   declared globally within this module
 
+    // You can only paste if a source for copy or move has been identified.
     if(currentActivity.action  == 'move' || // something has been copied,
        currentActivity.action  == 'copy'){  // ready to be pasted
       scmi_paste = true;
     }
 
-    switch(recordType){
+    switch(recordType){     // student, tutor, lesson.
       case 's':   //student
       case 't':   //tutor
-        if(clickInsideElementClassList2(thisEle, ['index'])){
+        if(clickInsideElementClassList2(thisEle, ['index'])){   // index area
           // this element in student and tutor list
           scmi_copy = true;
           scmi_paste = false;   //nothing can be pasted into the index space
           scmi_editComment = true;
           scmi_editSubject = true;
-        }else{  // in the main schedule
+        }else{  // in the main schedule area (lesson)
           scmi_copy = scmi_move = scmi_remove = scmi_addLesson = true;
           scmi_setStatus = scmi_setKind = scmi_editComment = true;
           scmi_history = true;
         }
         break;
-      case 'n':   //lesson
+      case 'n':   //lesson which is always in the main scheduling area.
           scmi_move = scmi_addLesson = scmi_setStatus = true;
           // if there are no tutors or students in this lesson, can remove
           var mytutors = thisEle.getElementsByClassName('tutor'); 
@@ -212,10 +239,12 @@ var ready = function() {
           }
           scmi_editComment = true;
           break;
-      case 'l':   //slot
+      case 'l':   //slot which is always in the main scheduling area.
           scmi_addLesson = true;
           break;
     }
+    
+    // Here we simply hide or show the menu items based on above settings.
     setscmi('context-move', scmi_move);
     setscmi('context-copy', scmi_copy);
     setscmi('context-paste', scmi_paste);
@@ -239,8 +268,11 @@ var ready = function() {
 
 //***********************************************************************
 // Perform the actions invoked by the context menu items.                *
-// Some actions will invoke a third level menu.                          *
+// Some actions will invoke a second level (tertialy) menu.              *
 //***********************************************************************
+  // action is the element clicked on in the menu.
+  // The menu element clicked on has an attribute "data-action" that 
+  // describes the required action.
   function menuItemActioner( action ) {
     //dom_change['action'] = "move";
     //dom_change['move_ele_id'] = ui.draggable.attr('id');
@@ -248,90 +280,141 @@ var ready = function() {
     //dom_change['ele_new_parent_id'] = this.id;
     //dom_change['element_type'] = "lesson";
     toggleMenuOff();
-    console.log("-------------- menu item action passed object ---------------");
-    console.log(action);
+    //console.log("-------------- menu item action passed object ---------------");
+    //console.log(action);
     var thisAction =  action.getAttribute("data-action");
+    // taskItemInContext is a global variable set when context menu first invoked.
     var thisEleId = taskItemInContext.id;    // element 'right clicked' on
     var thisEle = document.getElementById((thisEleId));
-    console.log("thisAction: " + thisAction);
-    switch( thisAction ) {
+    //console.log("thisAction: " + thisAction);
+    // 'thisAction' are basically the context menu selectable items.
+    // However, not all of these cases were available in the menu for any given
+    // element that was right clicked on.
+    // Note that for cut, move and paste, compatability is kept between menu 
+    // selection and drag and drop.
+    
+    // There are some operations that happen for ALMOST every action.
+    // The exception is if there has already been a copy or paste - then 
+    // info from that action is held over -> stored in currentActivity.
+    // To complete this current activity, you need a paste.
+    // Otherwise, a current activity is cleared when the action is completed.
+    if((thisAction == "paste")) {   // been a cut or move initiated so can do a paste
+      // do not set currentActivity 
+      // That way, when we do checks in "paste" action, currentActivity will
+      // be empty if a move or copy has not been selected.
+    } else {
+      // but for all other actions, we need to set action, element_id and 
+      // the old (pre-manimpulation) parent of the element being manipulated.
+      // i.e. tutor and student -> nearest session as old parent
+      //      session           -> nearest slot as old parent
+      currentActivity['action'] = thisAction;
+      currentActivity['move_ele_id'] =  thisEleId;
+      thisEle = document.getElementById(thisEleId)
+      //currentActivity['ele_old_parent_id'] = document.getElementById(thisEleId).parentElement.id;
+      switch ( getRecordType(thisEleId) ) {
+        case 's':   //student
+        case 't':   //tutor
+          currentActivity['ele_old_parent_id'] = clickInsideElementClassList2(thisEle, ['lesson']).id;
+          break;
+        case 'n':   //lesson
+          currentActivity['ele_old_parent_id'] = clickInsideElementClassList2(thisEle, ['slot']).id;
+          break;
+      }
+    }
+
+    switch( thisAction ) {     
       case "copy":
       case "move":
-        console.log("copy or cut");
-        currentActivity['action'] = thisAction;
-        currentActivity['move_ele_id'] =  thisEleId;
-        currentActivity['ele_old_parent_id'] = document.getElementById(thisEleId).parentElement.id;
-        console.log("finished the move/copy case processing");
-        console.log(currentActivity);
+        //console.log("copy or cut");
+        //**done** currentActivity['action'] = thisAction;
+        //**done** currentActivity['move_ele_id'] =  thisEleId;
+        //**done** currentActivity['ele_old_parent_id'] = document.getElementById(thisEleId).parentElement.id;
+        //console.log("finished the move/copy case processing");
+        //console.log(currentActivity);
+        // Nothing else to do, need a paste before any action can be taken!!!
         break;
       case "paste":
-        console.log("paste");
+        //console.log("paste");
         //Note, we need the action for the move/copy, not paste.
-        // On dropping, need to move up parent tree till find the appropriate parent
-        console.log(currentActivity);
-        if( currentActivity ) {   // been a cut or move initiated
+        // On dropping, need to move up parent tree of the destination element
+        // till find the appropriate parent
+        //console.log(currentActivity);
+        if( currentActivity ) {   // been a cut or move initiated so can do a paste
+          // based on the type of element we are moving
+          // Note, currentActiviey['move_ele_id'] is the element right clicked on when
+          // copy or move was selected - held over in this variable.
           switch ( getRecordType(currentActivity['move_ele_id']) ) {
             case 's':   //student
             case 't':   //tutor
               // find the 'lesson' element in the tree working upwards
+              // as thisEle is the dom location we are moving this element to.
               currentActivity['ele_new_parent_id'] = clickInsideElementClassList2(thisEle, ['lesson']).id;
+              //******************************************************
+              // Need the database changes and manipulation called here
+              //******************************************************
+              personupdateslesson( currentActivity );
+              //----- contained in currentActivity ------------(example)
+              //  move_ele_id: "Wod201705301600s002",
+              //  ele_old_parent_id: "Wod201705301600n001", 
+              //  element_type: "student"
+              //  ele_new_parent_id: "Wod201705291630n003"
+              //----------required in ajax (domchange)---------------------------------
               break;
             case 'n':   //lesson
               // find the 'slot' element in the tree working upwards
+              // as thisEle is the dom location we are moving this element to.
               currentActivity['ele_new_parent_id'] = clickInsideElementClassList2(thisEle, ['slot']).id;
+              lessonupdateslot( currentActivity );
               break;
           }
-          //******************************************************
-          // Need the database changes and manipulation called here
-          //******************************************************
-          personupdateslesson( currentActivity );
-          //----- contained in currentActivity
-          //  move_ele_id: "Wod201705301600s002",
-          //  ele_old_parent_id: "Wod201705301600n001", 
-          //  element_type: "student"
-          //  ele_new_parent_id: "Wod201705291630n003"
-          //----------required in ajax (domchange)---------------------------------
-          currentActivity = {};
-        }
+          currentActivity = {};     // clear when done - can't paste twice.
+        }  // end of if currentActivity
+        // Of course, if there is no currentActivity on a paste, then ignore.
         break;
       case "remove":
         // This removed the selected element
         // Actually deletes the mapping record for tutor and student
-        // Will delete the lesson record for a lesson if empty.
-        currentActivity['action'] = thisAction;
-        thisEleId = taskItemInContext.id;
-        currentActivity['move_ele_id'] =  thisEleId;
-        currentActivity['ele_old_parent_id'] = document.getElementById(thisEleId).parentElement.id;
+        //**done** currentActivity['action'] = thisAction;
+        //**done** currentActivity['move_ele_id'] =  thisEleId;
+        //**done** currentActivity['ele_old_parent_id'] = document.getElementById(thisEleId).parentElement.id;
+        //?? already done above ?? thisEleId = taskItemInContext.id;
         deleteentry(currentActivity);
         break;
       case "addLesson":
         // This will add a new lesson within the slot holding the element clicked.
         // Will add a new lesson record with this slot value.
-        currentActivity['action'] = thisAction;
-        thisEleId = taskItemInContext.id;
-        thisEle = document.getElementById(thisEleId);
+        //**done** currentActivity['action'] = thisAction;
+        //**done** currentActivity['move_ele_id'] =  thisEleId;
+        //**done** currentActivity['ele_old_parent_id'] = document.getElementById(thisEleId).parentElement.id;
+        //?? already done above ?? thisEleId = taskItemInContext.id;
+        //?? already done above ?? thisEle = document.getElementById(thisEleId);
         currentActivity['ele_new_parent_id'] = clickInsideElementClassList2(thisEle, ['slot']).id;
         addLesson(currentActivity);
         break;
       case "removeLesson":
         // This will remove a lesson clicked on.
-        currentActivity['action'] = thisAction;
-        currentActivity['move_ele_id'] =  thisEleId;
-        console.log("case = removeLesson");
-        thisEleId = taskItemInContext.id;
-        thisEle = document.getElementById(thisEleId);
+        // Will delete the lesson record for a lesson only if empty 
+        // i.e. not tutors or students.
+        //**done** currentActivity['action'] = thisAction;
+        //**done** currentActivity['move_ele_id'] =  thisEleId;
+        //**done** currentActivity['ele_old_parent_id'] = document.getElementById(thisEleId).parentElement.id;
+        //?? already done above ?? thisEleId = taskItemInContext.id;
+        //?? already done above ?? thisEle = document.getElementById(thisEleId);
+        // This is needed as no matter what element was clicked on, we still need
+        // to find the nearest slot - prevous setting could have been tutor 
+        // finding lesson as parent.
         currentActivity['ele_old_parent_id'] = clickInsideElementClassList2(thisEle, ['slot']).id;
         removeLesson(currentActivity);
         break;
       case "setStatus":
         // Set Status has been selected on an element.
-        // It will open up another menu to select the status requried.
+        // It will open up another menu to select the status required.
         // This will set the status of this item (tutor, student, lesson).
-        currentActivity['action'] = thisAction;
-        currentActivity['move_ele_id'] =  thisEleId;
-        console.log("case = setStatus");
-        thisEleId = taskItemInContext.id;
-        thisEle = document.getElementById(thisEleId);
+        //**done** currentActivity['action'] = thisAction;
+        //**done** currentActivity['move_ele_id'] =  thisEleId;
+        //**done** currentActivity['ele_old_parent_id'] = document.getElementById(thisEleId).parentElement.id;
+        //?? already done above ?? thisEleId = taskItemInContext.id;
+        //?? already done above ?? thisEle = document.getElementById(thisEleId);
         //currentActivity['ele_old_parent_id'] = clickInsideElementClassList2(thisEle, ['slot']).id;
         enableTertiaryMenu(thisEle, thisAction, currentActivity);
         break;
@@ -339,11 +422,11 @@ var ready = function() {
         // Set Kind has been selected on an element.
         // It will open up another menu to select the status requried.
         // This will set the status of this item (tutor, student, lesson).
-        currentActivity['action'] = thisAction;
-        currentActivity['move_ele_id'] =  thisEleId;
-        console.log("case = setKind");
-        thisEleId = taskItemInContext.id;
-        thisEle = document.getElementById(thisEleId);
+        //**done** currentActivity['action'] = thisAction;
+        //**done** currentActivity['move_ele_id'] =  thisEleId;
+        //**done** currentActivity['ele_old_parent_id'] = document.getElementById(thisEleId).parentElement.id;
+        //?? already done above ?? thisEleId = taskItemInContext.id;
+        //?? already done above ?? thisEle = document.getElementById(thisEleId);
         //currentActivity['ele_old_parent_id'] = clickInsideElementClassList2(thisEle, ['slot']).id;
         enableTertiaryMenu(thisEle, thisAction, currentActivity);
         break;
@@ -351,20 +434,23 @@ var ready = function() {
         // Edit Comment has been selected on an element.
         // It will open up a text field to key in your updates.
         // This will update the relevant comment.
-        currentActivity['action'] = thisAction;
-        currentActivity['move_ele_id'] =  thisEleId;
-        console.log("case = editComment");
-        thisEleId = taskItemInContext.id;
-        thisEle = document.getElementById(thisEleId);
+        //**done** currentActivity['action'] = thisAction;
+        //**done** currentActivity['move_ele_id'] =  thisEleId;
+        //?? already done above ?? thisEleId = taskItemInContext.id;
+        //?? already done above ?? thisEle = document.getElementById(thisEleId);
         var personContext = '';
         if(clickInsideElementClassList2(thisEle, ['index'])){
           personContext = 'index';
         } else {
           personContext = 'lesson';
         }
-        currentActivity['ele_old_parent_id'] = clickInsideElementClassList2(thisEle, ['slot']).id;
+        // ???? is the following line needed ???????????
+        //currentActivity['ele_old_parent_id'] = clickInsideElementClassList2(thisEle, ['slot']).id;
+        
         var recordType = getRecordType(thisEleId);  //student, tutor, lesson
         var thisComment;
+        // We need to get the comment text which is to be edited.
+        // This has to be obtained from the appropriate location in the html doc.
         if(recordType == 't') {   // tutor
           if(personContext == 'index') {    // index
             thisComment = thisEle.getElementsByClassName('tutorcommentdetail')[0].innerHTML;
@@ -380,6 +466,8 @@ var ready = function() {
         } else if(recordType == 'n') {   // session
           thisComment = thisEle.getElementsByClassName('lessoncommenttext')[0].innerHTML;
         }
+        // Now that we have the text, we need to place it into the text eniting 
+        // field in the browser doc and then show it in the tertiary menu.
         document.getElementById('edit-comment-text').value = thisComment;
         document.getElementById('edit-comment-elementid').innerHTML = thisEleId;
         enableTertiaryMenu(thisEle, thisAction, currentActivity);
@@ -390,12 +478,15 @@ var ready = function() {
         // This will update the relevant subject.
         // The editing dialogue is the same one as for editing
         // comments.
-        currentActivity['action'] = thisAction;
-        currentActivity['move_ele_id'] =  thisEleId;
-        console.log("case = editSubject");
-        thisEleId = taskItemInContext.id;
-        thisEle = document.getElementById(thisEleId);
+        //**done** currentActivity['action'] = thisAction;
+        //**done** currentActivity['move_ele_id'] =  thisEleId;
+        //?? already done above ?? thisEleId = taskItemInContext.id;
+        //?? already done above ?? thisEle = document.getElementById(thisEleId);
         //currentActivity['ele_old_parent_id'] = clickInsideElementClassList2(thisEle, ['slot']).id;
+        // We need to get the subject text which is to be edited.
+        // This has to be obtained from the appropriate location in the html doc.
+        // The subject text for student is combined with other stuff - so 
+        // needs to be split out. Tutor is clean.
         recordType = getRecordType(thisEleId);  //student, tutor, lesson
         if(recordType == 't') {   // tutor
           var thisSubject = thisEle.getElementsByClassName('tutorsubjects')[0].innerHTML;
@@ -405,6 +496,8 @@ var ready = function() {
           thisSubject = res[1];
           thisSubject = thisSubject.slice( 1 ); // remove space inserted by display format
         } 
+        // Now that we have the text, we need to place it into the text eniting 
+        // field in the browser doc and then show it in the tertiary menu.
         document.getElementById('edit-subject-text').value = thisSubject;
         document.getElementById('edit-subject-elementid').innerHTML = thisEleId;
         enableTertiaryMenu(thisEle, thisAction, currentActivity);
@@ -413,32 +506,37 @@ var ready = function() {
         // Edit Comment has been selected on an element.
         // It will open up a text field to key in your updates.
         // This will update the relevant comment.
-        currentActivity['action'] = thisAction;
-        currentActivity['move_ele_id'] =  thisEleId;
-        console.log("case = history");
-        thisEleId = taskItemInContext.id;
-        thisEle = document.getElementById(thisEleId);
-        currentActivity['ele_old_parent_id'] = clickInsideElementClassList2(thisEle, ['slot']).id;
+        //**done** currentActivity['action'] = thisAction;
+        //**done** currentActivity['move_ele_id'] =  thisEleId;
+        //?? already done above ?? thisEleId = taskItemInContext.id;
+        //?? already done above ?? thisEle = document.getElementById(thisEleId);
+        // ???? is the following line needed ???????????
+        //currentActivity['ele_old_parent_id'] = clickInsideElementClassList2(thisEle, ['slot']).id;
         getHistory(currentActivity);        
         break;
       }
-      console.log("--- completed context menu actioner ---");
-      console.log("--- currentActivity ---");
-      console.log(currentActivity);
+      //console.log("--- completed context menu actioner ---");
+      //console.log("--- currentActivity ---");
+      //console.log(currentActivity);
   }
   
+  // This determines what is displayed in the tertiary menu.
+  // It is context sensitive so depends on what element is
+  // right clicked on.
   function enableTertiaryMenu(etmEle, etmAction, currentActivity){
+    // etmEle = original element right clicked on.
+    // etmAction = action selected within the primary context menu.
     // currentActivity['action'];
     // currentActivity['move_ele_id'];
-    // currentActivity['ele_old_parent_id'];
+    // currentActivity['ele_old_parent_id'];  ?? rarely required.
     console.log("--------------- enableTertiaryMenu ---------------");
     // Need to add another context menu with selection choices
-    // based on actioon and move_ele_id
+    // based on action and move_ele_id
     // etmAction = action of the first context menu e.g set tutor status
     // etm = element tertiary menu
     var etmEleId = etmEle.id; // element clicked on e.g. tutor, student, lesson
     var recordType = getRecordType(etmEleId);  //student, tutor, lesson
-    var stmi_tutor_status_deal      = false;   // stmi - set tertiary menu item
+    var stmi_tutor_status_deal      = false;   // stmi = set tertiary menu item
     var stmi_tutor_status_dealt     = false;
     var stmi_tutor_status_scheduled = false;
     var stmi_tutor_status_notified  = false;
@@ -456,8 +554,8 @@ var ready = function() {
     var stmi_student_status_deal    = false;
     var stmi_student_status_dealt   = false;
     var stmi_student_status_attended = false;
-    var stmi_student_kind_free      = false;
 
+    var stmi_student_kind_free      = false;
     var stmi_student_kind_first     = false;
     var stmi_student_kind_standard  = false;
 
@@ -513,10 +611,10 @@ var ready = function() {
             stmi_student_status_deal    = true;
             stmi_student_status_dealt   = true;
             stmi_student_status_attended = true;
-            stmi_student_kind_free      = true;            
             break;
           case 'setKind':   // student set Kind options
             console.debug("etmAction is setKind");
+            stmi_student_kind_free      = true;            
             stmi_student_kind_first     = true;
             stmi_student_kind_standard  = true;
             break;
@@ -567,8 +665,8 @@ var ready = function() {
     setscmi('student-status-deal', stmi_student_status_deal);
     setscmi('student-status-dealt', stmi_student_status_dealt);
     setscmi('student-status-attended', stmi_student_status_attended);
-    setscmi('student-kind-free', stmi_student_kind_free);            
 
+    setscmi('student-kind-free', stmi_student_kind_free);            
     setscmi('student-kind-first', stmi_student_kind_first);
     setscmi('student-kind-standard', stmi_student_kind_standard);
 
@@ -585,24 +683,39 @@ var ready = function() {
 
   }
 
+  // This function actions the choices made in the tertiay menu.
+  // Only limited items exist here, but they are sensitive to
+  // what was selected in the primary context menu.
+  // This gets used for 'Set Status', 'Set Kind' & 'Edit Comment'
+  // For these elements, only need 
+  // - element right clicked on
+  // - action to be taken.
+  // personupdatestatuskindcomment() does the smart stuff.
   function menuChoiceActioner( choice ){
-    console.log("--------------- menuChoiceActioner ---------------------");
+    // choice = the tertiary menu item selected (dom element)
+    //console.log("--------------- menuChoiceActioner ---------------------");
     toggleTMenuOff();
-    console.log(choice);
+    //console.log(choice);
     var thisChoice =  choice.getAttribute("data-choice");
     var thisEleId = taskItemInContext.id;    // element 'right clicked' on
-    console.log("choice: " + thisChoice);
-    console.log("thisEleId: " + thisEleId);
+    //console.log("choice: " + thisChoice);
+    //console.log("thisEleId: " + thisEleId);
     currentActivity['action'] = thisChoice;
     currentActivity['move_ele_id'] = thisEleId;
     personupdatestatuskindcomment( currentActivity );
   }
   
+  // This actions the text editing results following the person editing
+  // the text and pressing update.
   function editCommentSubjectActioner(editButton){
     console.log("--------------- editCommentSubjectActioner ---------------------");
     //toggleTMenuOff();
-    // thisTarget.id == 'edit-comment-button'
-    // thisTarget.id == 'edit-subject-button'
+    // thisTarget.id is one of two options:
+    // - 'edit-comment-button'
+    // - 'edit-subject-button'
+    
+    // First step is to get required details from text edit box 
+    // - updated commment + id of the comment field to be updated.
     if (editButton == 'edit-comment-button'){
       var thisComment = document.getElementById('edit-comment-text').value;
       var thisEleId = document.getElementById('edit-comment-elementid').innerHTML;
@@ -614,6 +727,8 @@ var ready = function() {
       thisEleId = document.getElementById('edit-subject-elementid').innerHTML;
       currentActivity['action'] = '-subject-edit';
     }
+    // Now set up ready for the db update and dom changes.
+    currentActivity['move_ele_id'] = thisEleId;
     currentActivity['new_value'] = thisComment;
     //var thisEle = document.getElementById(thisEleId);
     var recordType = getRecordType(thisEleId);  //student, tutor, lesson
@@ -624,7 +739,7 @@ var ready = function() {
     }else if (recordType == 'n'){
       currentActivity['action'] = 'lesson-comment-edit';
     }
-    currentActivity['move_ele_id'] = thisEleId;
+    // now update the database, then the dom.
     personupdatestatuskindcomment( currentActivity );
   }
   
@@ -839,9 +954,10 @@ var ready = function() {
     var htmlsegment = "<h4>" + role + ': ' + hd['pname'] + "</h4>";
     htmlsegment += '<div id="closehistory"><svg height="300" width="300"><line x1="1" y1="1" x2="15" y2="15" style="stroke:#000; stroke-width:4" /><line x1="15" y1="1" x2="1" y2="15" style="stroke:#000; stroke-width:4" /></svg></div>';
     htmlsegment += "<table>";
+    htmlsegment += "<tr><td>Kind</td><td>Status</td><td>Day Time</td><td>Site</td><td>With</td></tr>";
     hd['lessons'].forEach( function(lesson){
-      htmlsegment += "<tr>";
         htmlsegment += "<td>" + lesson['kind'] + "</td>";
+        htmlsegment += "<td>" + lesson['status'] + "</td>";
         htmlsegment += "<td>" + lesson['daytime'] + "</td>";
         htmlsegment += "<td>" + lesson['site'] + "</td>";
 
@@ -878,6 +994,7 @@ var ready = function() {
     // domchange['move_ele_id'] = thisEleId;
     console.log("personupdatestatuskindcomment called");
     console.log(domchange);
+    var mydata = {'domchange' : domchange};
     var action = domchange['action'];   //update status or kind with value
     console.log("action: " + action);
     var recordtype = getRecordType(domchange['move_ele_id']);  // s or t
@@ -890,12 +1007,11 @@ var ready = function() {
       personContext = 'index';
     } else {
       personContext = 'lesson';
-      mydata['lesson_id'] = lessonid;
       lessonid = getLessonIdFromTutorStudent(domchange['move_ele_id']);
+      mydata['lesson_id'] = lessonid;
     }
     var persontype, myurl;
     var workaction, t, updatefield, updatevalue;
-    var mydata = {'domchange' : domchange};
     console.log("move_ele_id: " + domchange['move_ele_id']);
     console.log("personid: " + personid);
     console.log("lessonid: " + lessonid);
@@ -1059,12 +1175,9 @@ var ready = function() {
       }
     } else {   // lesson context
       personContext = 'lesson';
-      if (scmType == 'comment') {
-        comment_ele = this_ele.getElementsByClassName("comment")[0];
-        //comment_text_new = domchange["new_value"];
-      }
+      comment_ele = this_ele.getElementsByClassName("comment")[0];
       // some variables are only valid in this context
-      var statusinfoele = comment_ele.getElementsByClassName("statusinfo")[0];
+      var statusinfoele = this_ele.getElementsByClassName("statusinfo")[0];
     }
 
     var foundClass = false;    
@@ -1327,12 +1440,19 @@ var ready = function() {
         var dom_change = {};
         dom_change['action'] = "move";
         var this_move_element = document.getElementById(ui.draggable.attr('id'));
-        //        if(clickInsideElementClassList2(thisEle, ['index'])){
         if(clickInsideElementClassList2(this_move_element, ['index'])){
           dom_change['action'] = "copy";          
         }
         dom_change['move_ele_id'] = ui.draggable.attr('id');
-        dom_change['ele_old_parent_id'] = document.getElementById(dom_change['move_ele_id']).parentElement.id;
+        //**done** currentActivity['ele_old_parent_id'] = document.getElementById(thisEleId).parentElement.id;
+        //** old version ** dom_change['ele_old_parent_id'] = document.getElementById(dom_change['move_ele_id']).parentElement.id;
+        //currentActivity['ele_old_parent_id'] = clickInsideElementClassList2(thisEle, ['lesson']).id;
+        //currentActivity['ele_old_parent_id'] = clickInsideElementClassList2(thisEle, ['slot']).id;
+        
+        // Before this update = to handle layout change in page - adding class 'grouptutors'
+        //dom_change['ele_old_parent_id'] = document.getElementById(dom_change['move_ele_id']).parentElement.id;
+        dom_change['ele_old_parent_id'] = clickInsideElementClassList2(document.getElementById(dom_change['move_ele_id']), ['lesson']).id;
+        
         dom_change['ele_new_parent_id'] = this.id;
         var type = getRecordType(dom_change['move_ele_id']);
         if(type == 's'){
@@ -1657,6 +1777,7 @@ var ready = function() {
     var oldid = domchange['move_ele_id'];
     //console.log("moveelement - oldid: " + oldid + " => newid: " + newid);
     var elemoving = document.getElementById(oldid);
+    var directparentclassname = elemoving.parentElement.className;
     if ('copy' == domchange['action']){
       var eletoplace = elemoving.cloneNode(true);
     }else if('move' == domchange['action']){
@@ -1664,16 +1785,175 @@ var ready = function() {
     }
     //console.log("----------eletoplace-------");
     //console.log(eletoplace);
+    // note thjis parent_element is one of lesson or slot.
+    // The actual parent to insert into may be a subset
+    // e.e. tutor is actually attached to grouptutors!
     var parent_element = document.getElementById(domchange['ele_new_parent_id']);
     //console.log("------ parent_element ---------");
     //console.log(parent_element);
-    if ('t' == moveRecordType) {  // for tutors, prepend
-      parent_element.insertBefore(eletoplace, parent_element.firstChild);
-    }else{  //otherwise, append.
-      parent_element.append(eletoplace);
+    switch(moveRecordType) {
+      case 't': //tutor
+        // get the parent where tutors reside for this lesson.
+        //var tutorsparent = parent_element.getElementsByClassName('grouptutors')[0];
+        // This caters for differenct class names used for css styling
+        // could be grouptutors, grouptutors1 etc. but only one class name for this element.
+        var tutorsparent = parent_element.getElementsByClassName(directparentclassname)[0];
+        // we really should insert them in correct alphabetical order
+        console.log("Show all the tutors for this target node");
+        var movetutorname = eletoplace.getElementsByClassName('tutorname')[0].innerHTML;
+        var mytutors = tutorsparent.getElementsByClassName('tutor');
+        if (mytutors) {    // have tutors
+          var flagInserted = false;
+          var mytutor;
+          console.log (" we have tutors");
+          for (let i = 0; i < mytutors.length; i++){
+            mytutor = mytutors[i];
+            var mytutorname = mytutor.getElementsByClassName('tutorname')[0].innerHTML;
+            console.log(mytutorname);
+            if (mytutorname.toLowerCase() > movetutorname.toLowerCase()){
+              tutorsparent.insertBefore(eletoplace, mytutor);
+              flagInserted = true;
+              break;
+            }
+          }
+          if(flagInserted == false) {
+            tutorsparent.append(eletoplace);
+          }
+        } else {  // no tutors, just add.
+          console.log ("no tutors");
+          tutorsparent.insertBefore(eletoplace, tutorsparent.firstChild);
+        }
+        break;
+      case 's': //student
+        // get the parent where students reside for this lesson.
+        // insert them in correct alphabetical order
+        //var studentsparent = parent_element.getElementsByClassName('groupstudents')[0];
+        // This caters for differenct class names used for css styling
+        // could be groupstudents, groupstudents1 etc. but only one class name for this element.
+        var studentsparent = parent_element.getElementsByClassName(directparentclassname)[0];
+        var movestudentname = eletoplace.getElementsByClassName('studentname')[0].innerHTML;
+        var mystudents = studentsparent.getElementsByClassName('student');
+        if (mystudents) {    // have tutors
+          flagInserted = false;
+          var mystudent;
+          for (let i = 0; i < mystudents.length; i++){
+            mystudent = mystudents[i];
+            var mystudentname = mystudent.getElementsByClassName('studentname')[0].innerHTML;
+            if (mystudentname.toLowerCase() > movestudentname.toLowerCase()){
+              studentsparent.insertBefore(eletoplace, mystudent);
+              flagInserted = true;
+              break;
+            }
+          }
+          if(flagInserted == false) {
+            studentsparent.append(eletoplace);
+          }
+        } else {  // no students in this lesson, just add.
+          tutorsparent.insertBefore(eletoplace, tutorsparent.firstChild);
+        }
+        break;
+      case 'n': //lesson
+        // lesson is a direct child of slot 
+        // so parent_element is correct parent.
+        // insert lesson in the correct order.
+        // order by status, then by name of first tutor.
+        // Tutors are already in alphabetical order.
+        var lessonsparent = parent_element;
+        var movelessonstatus = eletoplace.getElementsByClassName('lessonstatusinfo')[0].innerHTML.toLowerCase().trim();
+        var movelessontutorname = eletoplace.getElementsByClassName('tutor')[0];
+        if (movelessontutorname) {
+          movelessontutorname = movelessontutorname.getElementsByClassName('tutorname')[0].innerHTML.toLowerCase().trim();
+        } else {
+          movelessontutorname = '';
+        }
+        var mylessons = lessonsparent.getElementsByClassName('lesson');
+        if (mylessons) {    // have tutors
+          flagInserted = false;
+          var mylesson;
+          for (let i = 0; i < mylessons.length; i++){
+            mylesson = mylessons[i];
+            var mylessonstatus = mylesson.getElementsByClassName('lessonstatusinfo')[0].innerHTML.toLowerCase().trim();
+            var mylessontutorname = mylesson.getElementsByClassName('tutor')[0];
+            if (mylessontutorname) {
+              mylessontutorname = mylessontutorname.getElementsByClassName('tutorname')[0].innerHTML.toLowerCase().trim();
+            } else {
+              mylessontutorname = '';
+            }
+
+            //if (mylessonstatus > movelessonstatus){
+            console.log (movelessonstatus + " " + movelessontutorname + " " + mylessonstatus + " " + mylessontutorname)
+            var sortresult = lessonsortorder(movelessonstatus, movelessontutorname, mylessonstatus, mylessontutorname );
+            console.log ("sortresult: " + sortresult);
+            if (sortresult > -1){
+              lessonsparent.insertBefore(eletoplace, mylesson);
+              flagInserted = true;
+              break;
+            }
+          }
+          if(flagInserted == false) {
+            lessonsparent.append(eletoplace);
+          }
+        } else {  // no lessons in this slot, just add.
+          lessonsparent.append(eletoplace);
+          //lessonsparent.insertBefore(eletoplace, tutorsparent.firstChild);
+        }
+        //parent_element.append(eletoplace);
+        break;
     }
+    // once successfully processed - update the id
     eletoplace.id = newid;
+
   }
+  
+  // provides the sort order for lessons within the slot
+  // Becomes complicated as teh order is different with postgreql
+  // and javascript with stringcomparisions.
+
+  function lessonsortorder(a_status, a_name, b_status, b_name){
+    // item1 = [lesson_status, tutor_name]
+    // the following statuses must be first on the page
+    var baseorder = ['status: oncall', 'status: onsetup', 'status: on_bfl'];
+    // all following statuses are in alphabetical order
+    // If the session status is the same, then that set
+    // are order by alphabetical order of tutor namme of 
+    // the first tutor in the session.
+    // The tutors within a session are in alphabetical order
+    // return -1, 0 or 1
+
+    if(a_status == b_status) {
+      // compare names only
+      if (a_name == b_name) {
+        return 0; 
+      } else if (a_name > b_name) {
+        return -1;
+      } else {
+        return 1;
+      }
+    }
+    var aindex = baseorder.indexOf(a_status);
+    var bindex = baseorder.indexOf(b_status);
+    
+    if ((aindex > -1) && (bindex > -1)) {
+      console.log ("a_status: " + a_status + " aindex: " + aindex + "b_status: " + b_status + " bindex: " + bindex);
+      return (aindex > bindex  ? -1 : 1 ); 
+    } 
+    if (aindex > -1) {
+      console.log ("a_status: " + a_status + " aindex: " + aindex);
+      return 1; 
+    } 
+    if (bindex > -1) {
+      console.log ("b_status: " + b_status + " bindex: " + bindex);
+      return -1; 
+    }
+    // if get to here, do normal alphabetical order check on status
+    // remember we have already checked for equal status.
+    console.log ("a_status: " + a_status + " b_status: " + b_status);
+    return (a_status > b_status ? 1 : -1 );
+
+  }
+
+  
+  
   
 
 //--- End of Common Functions used by both Drag & Drop and Context Menu ----

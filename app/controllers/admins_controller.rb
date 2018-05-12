@@ -74,10 +74,14 @@ class AdminsController < ApplicationController
         if bankslotindex == 0 
           siteName = bankslots[0]['value']
           siteDate = siteDateBankFrom = bankslots[1]['value']
-          siteDateBankTo = bankslots[2]['value']
           n = siteDate.match(/(\d+.*)/)
           siteDate = n[1]
-          @results.push "processing #{siteName} #{siteDateBankFrom} to #{siteDateBankTo}"
+          if bankslots[2] == nil
+            @results.push "processing #{siteName} #{siteDateBankFrom}"
+          else
+            siteDateBankTo = bankslots[2]['value']
+            @results.push "processing #{siteName} #{siteDateBankFrom} to #{siteDateBankTo}"
+          end
         else
           bankslots.each_with_index do |slot, slotindex|
             if slotindex == 0
@@ -211,10 +215,14 @@ class AdminsController < ApplicationController
         if bankslotindex == 0 
           siteName = bankslots[0]['value']
           siteDate = siteDateBankFrom = bankslots[1]['value']
-          siteDateBankTo = bankslots[2]['value']
           n = siteDate.match(/(\d+.*)/)
           siteDate = n[1]
-          @results.push "processing #{siteName} #{siteDateBankFrom} to #{siteDateBankTo}"
+          if bankslots[2] == nil
+            @results.push "processing #{siteName} #{siteDateBankFrom}"
+          else
+            siteDateBankTo = bankslots[2]['value']
+            @results.push "processing #{siteName} #{siteDateBankFrom} to #{siteDateBankTo}"
+          end
         else
           bankslots.each_with_index do |slot, slotindex|
             if slotindex == 0

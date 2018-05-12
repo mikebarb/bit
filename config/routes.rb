@@ -40,7 +40,10 @@ Rails.application.routes.draw do
   resources :roles
 
   get 'calendar/display'
+  get 'calendar/display1' => 'calendar#display1', as: :calendar_display1
   get 'calendar/display2' => 'calendar#display2', as: :calendar_display2
+  get 'calendar/roster1' => 'calendar#roster1', as: :calendar_roster1
+  get 'calendar/roster2' => 'calendar#roster2', as: :calendar_roster2
 
   get 'lessons/:id/move' => 'lessons#move', as: :move_lesson
   post 'lessons/:id' => 'lessons#update', as: :update_lesson

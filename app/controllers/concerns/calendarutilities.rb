@@ -13,14 +13,24 @@ module Calendarutilities
     # define a two dimesional array to hold the table info to be displayed.
     # row and column [0] will hold counts of elements populated in that row or column
     # row and column [1] will hold the titles for that rolw or column.
-    @sessinfo      = Lesson
+    # tip: 'joins' does lazy load, 'include' minimises sql calls
+
+                   #.joins(:slot)
+
+                   #.includes(:slot)
+                   #.references(:slot)
+                   
+                   #.eager_load(:slot)
+
+    @sessinfo1      = Lesson
                    .joins(:slot)
                    .where("slots.timeslot >= :start_date AND
                            slots.timeslot < :end_date",
                           {start_date: mystartdate,
                            end_date: myenddate
-                          })                   
+                          })
 
+    @sessinfo = @sessinfo1.eager_load(:slot, :tutroles, :tutors, :roles, :students)
 
     @slotsinfo     = Slot 
                    .select('id, timeslot, location')
@@ -69,11 +79,12 @@ module Calendarutilities
     @locations.each do |l|
       @cal[l.location] = Array.new(1 + @rowheaders.count){Array.new(1 + @colheaders.count){Hash.new()}}
       @cal[l.location][0][0]["value"] = l.location    # put in the site name.
+      @cal[l.location][0][0]["days"] = Hash.new(0)       # put in days that have sessions.
     end
 
     i = 0
     @colindex = Hash.new
-    @colheaders.keys.each do |entry|
+    @colheaders.keys.each do |entry|        # lesson times
       i += 1
       @locations.each do |l|
         @cal[l.location][0][i]["value"] = @colheaders[entry]
@@ -83,7 +94,7 @@ module Calendarutilities
 
     j = 0
     @rowindex = Hash.new
-    @rowheaders.sort_by { |key1, value1| key1 }.each do |key, value|
+    @rowheaders.sort_by { |key1, value1| key1 }.each do |key, value|   # lesson day
       j += 1
       @locations.each do |l|
         @cal[l.location][j][0]["value"] = value
@@ -111,6 +122,7 @@ module Calendarutilities
         @cal[thislocation][@rowindex[thistime]][@colindex[thisdate]]["values"]   = Array.new()
       end
       @cal[thislocation][@rowindex[thistime]][@colindex[thisdate]]["values"]   << entry
+      @cal[thislocation][0][0]["days"][entry.slot.timeslot.strftime("%a-%Y-%m-%d")] += 1    # put in days that have sessions.
     end
     
     return @cal
