@@ -19,6 +19,18 @@
     <% end %>
 </div>
 
+<div id="selectSetStatus">
+    <input id=enableQuickStatus type="checkbox" > enable quick setting of status to
+    <select name="quickStatus" id="quickStatusValue">
+      <option value="Attended">Attended</option>
+      <option value="Confirmed">Confirmed</option>
+      <option value="Notified">Notified</option>
+      <option value="Dealt">Dealt</option>
+      <option value="Deal">Deal</option>
+    </select>
+</div>
+
+
 <div class=index>
     <div class="selectbox floating-box">
         <h2>Select person</h2>
@@ -269,13 +281,20 @@
       <li id="edit-subject" class="tertiary-menu__choice" data-choice="edit-subject">
           <textarea id="edit-subject-text">Test Only.</textarea>
           <button id="edit-subject-button">Update</button>
-          <div id="edit-subject-elementid" class="hideme"></div>
+          <div id="edit-subject-elementid" class="hideme">
+            
+          </div>
       </li>
     </ul>
   </nav>
 
-  <div class="lesson hideme" id=lessontemplate >
-    <div class="lessoncomment comment commentinline">status: standard</div>
+  <div class="lesson" id=lessontemplate >
+    <div class="grouptutors"></div>
+    <div class="groupstudents"></div>
+    <div class="lessoncomment comment commentinline">
+      <div class="lessoncommenttext"></div>
+      <div class="lessonstatusinfo">Status: standard </div>
+  </div>
   </div>
 
   <div id="histories" class="histories"  >

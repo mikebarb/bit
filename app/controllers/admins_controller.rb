@@ -133,7 +133,6 @@ class AdminsController < ApplicationController
                   end
                 end
                 # Now remove the lesson the tutors and students were in
-                #byebug
                 mylesson = Lesson.find(lesson.id)
                 if mylesson.destroy
                   @results.push "Removed lesson " + 
@@ -233,7 +232,6 @@ class AdminsController < ApplicationController
             if thisslotid == nil
               next
             end
-            #byebug
             @results.push "Slotid: #{thisslotid}"
             thisslot = Slot.find(thisslotid)
             mytimeslotTo = thisslot.timeslot + adddays.to_i * 86400
@@ -997,7 +995,6 @@ class AdminsController < ApplicationController
           mydateserialnumber = responsedates.values[ri][0]
           
           begin
-            #byebug
             mydate = Date.new(1899, 12, 30) + mydateserialnumber 
             c1 = getvalue(r.values[1])
             n = c1.match(/(\w+)\s+(\d+)\:*(\d{2})/im) # MONDAY 330 xxxxxxx
@@ -1022,7 +1019,6 @@ class AdminsController < ApplicationController
                       " mydateserialnumber: " + mydateserialnumber.inspect +
                       " error message: " + $!.inspect
             logger.debug myerror
-            #byebug
             flash[:notice] = myerror
             render action: :load
             return
@@ -1149,7 +1145,6 @@ class AdminsController < ApplicationController
             thistutor = Tutor.where(pname: te['name']).first # know it exists
             mytutorcomment = te['comment']
             # determine if this tutrole already exists
-            #byebug
             thistutrole = Tutrole.where(lesson_id: thislesson.id,
                                         tutor_id:   thistutor.id
             ).first
@@ -1525,7 +1520,6 @@ class AdminsController < ApplicationController
           if mylessoncomment != ""    # some lesson comments exist
             # if no lesson exists to place the comments
             # then we need to build one.
-            #byebug
             unless thislesson
               # let's see if there is a lesson with this comment
               # looking through the lessons for this slot that do
@@ -1576,13 +1570,18 @@ class AdminsController < ApplicationController
 #   Look at the test spreadsheet
 #
 #---------------------------------------------------------------------------
-  # GET /admins/loadschedule
+  # GET /admins/loadtest
   def loadtest
-    service = googleauthorisation(request)
+    returned_authorisation = googleauthorisation(request)
+    if returned_authorisation["authorizationurl"]
+      redirect_to returned_authorisation["authorizationurl"] and return
+    end
+    service = returned_authorisation["service"]
+    #service = googleauthorisation(request)
     spreadsheet_id = '10dXs-AT-UiFV1OGv2DOZIVYHEp81QSchFbIKZkrNiC8'
     sheet_name = 'New Sheet Name'
     range = "#{sheet_name}!A7:C33"
-    holdRailsLoggerLever = Rails.logger.level
+    holdRailsLoggerLevel = Rails.logger.level
     Rails.logger.level = 1 
     response = service.get_spreadsheet(
       spreadsheet_id,
@@ -1639,6 +1638,854 @@ class AdminsController < ApplicationController
     end
   end
   
+#---------------------------------------------------------------------------
+#
+#   Load Test 2
+#
+#   This is simply to allow some testing
+#   Create a new spreadsheet from scratch
+#
+#---------------------------------------------------------------------------
+  # GET /admins/loadtest2
+  def loadtest2
+    returned_authorisation = googleauthorisation(request)
+    if returned_authorisation["authorizationurl"]
+      redirect_to returned_authorisation["authorizationurl"] and return
+    end
+    service = returned_authorisation["service"]
+#-----------------------------------------------------------------
+# Crezte a new spreadsheet -works and tested
+    #request_body = Google::Apis::SheetsV4::Spreadsheet.new
+    #response = service.create_spreadsheet(request_body)
+    #ss = response
+    #spreadsheet_id = ss.spreadsheet_id
+#-----------------------------------------------------------------
+
+
+#-----------------------------------------------------------------
+# Use an existing previously created spreadsheet
+# Only need the id to make use of this.
+    spreadsheet_id = '1VHNfTl0Qxok1ZgBD2Rwby-dqxihgSspA0InqS5dTXNI'
+#-----------------------------------------------------------------
+    sheet_name = "Sheet1"
+
+# ************ update spreadsheet title  ************************
+# https://developers.google.com/sheets/api/reference/rest/v4/spreadsheets/batchUpdate 
+    spreadsheet_title = "Testing Updates from BIT Server"
+    request_body = Google::Apis::SheetsV4::BatchUpdateSpreadsheetRequest.new
+    myussp = {"properties": {"title": spreadsheet_title}, "fields": "*" }
+    request_body.requests = [{"update_spreadsheet_properties": myussp }]
+    result = service.batch_update_spreadsheet(spreadsheet_id, request_body, {})
+
+
+
+
+# ************ delete all cells (rows) in a sheet ****************************
+# https://www.rubydoc.info/github/google/google-api-ruby-client/Google/Apis/SheetsV4/Request#delete_range-instance_method 
+  	gridrange =  {
+    	          sheet_id: 0,
+    	          start_row_index: 0,
+#    	          end_row_index: 1,
+    	          start_column_index: 0,
+#    	          end_column_index: 2
+    	        }
+    requests = []
+    requests.push(
+      {
+        delete_range:{
+                        range: gridrange,
+                        shift_dimension: "ROWS"
+                     }
+      }
+    )
+    body = {requests: requests}
+    result = service.batch_update_spreadsheet(spreadsheet_id, body, {})
+
+# ************ update values using update_spreadsheet_value ****************************
+# doco: https://www.rubydoc.info/github/google/google-api-ruby-client/Google%2FApis%2FSheetsV4%2FSheetsService%3Aupdate_spreadsheet_value 
+    range = "#{sheet_name}!A1:B1"
+    request_body = Google::Apis::SheetsV4::ValueRange.new
+    request_body.values = [["update_spreadsheet_value","test data - this row will get a background colour"]]
+    request_body.major_dimension = "ROWS"
+    result = service.update_spreadsheet_value(spreadsheet_id, range, request_body, 
+                                              {value_input_option: 'USER_ENTERED'})
+    logger.debug "update_spreadsheet_value completed"
+
+# ************ update values using update_spreadsheet_value ****************************
+    range = "#{sheet_name}!A2:B3"
+        mydata = [
+      {
+        range: range,
+        majorDimension: 'ROWS',
+        values: [
+                 ["spreadsheet_values_batchUpdate", "test data"],
+                 ["spreadsheet_values_batchUpdate", "third row"]
+                ]
+      }
+    ]
+    request_body = Google::Apis::SheetsV4::BatchUpdateValuesRequest.new
+    request_body.value_input_option = 'USER_ENTERED'
+    request_body.data = mydata
+    result = service.batch_update_values(spreadsheet_id, request_body, {})
+
+# ******** update background colours using batch_update_spreadsheet ********
+  	gridrange =  {
+    	          sheet_id: 0,
+    	          start_row_index: 0,
+    	          end_row_index: 1,
+    	          start_column_index: 0,
+    	          end_column_index: 2
+    	        }
+    requests = []
+    requests.push(
+      {
+        repeat_cell: {
+  	      range: gridrange,
+          cell:
+            {
+    	        user_entered_format:
+    	        {
+    		        text_format: {bold: true},
+    		        background_color:
+    		        {
+    			        red: 0.0,
+    			        green: 1.0,
+    			        blue: 0.0
+    		        }
+    	        }
+  	        },
+          fields: "user_entered_format(background_color, text_format.bold)"
+        }
+      }
+    )
+    body = {requests: requests}
+    result = service.batch_update_spreadsheet(spreadsheet_id, body, {})
+
+# ******** autorezise columns using batch_update_spreadsheet ********
+# https://developers.google.com/sheets/api/samples/rowcolumn 
+    requests = []
+    requests.push(
+      {
+        auto_resize_dimensions: {
+          dimensions:
+            {
+    	        dimension: "COLUMNS",
+    	        sheet_id: 0,
+              end_index: 2,
+    	        start_index: 0
+  	        },
+        }
+      }
+    )
+    body = {requests: requests}
+    result = service.batch_update_spreadsheet(spreadsheet_id, body, {})
+
+# ******** adjust columns width using batch_update_spreadsheet ********
+# https://developers.google.com/sheets/api/samples/rowcolumn 
+    requests = []
+    requests.push(
+      {
+        update_dimension_properties: {
+          range:
+            {
+    	        dimension: "COLUMNS",
+    	        sheet_id: 0,
+              end_index: 2,
+    	        start_index: 0
+  	        },
+  	        properties: {
+  	          pixel_size: 160
+  	        },
+  	        fields: "pixelSize"
+        }
+      }
+    )
+    body = {requests: requests}
+    result = service.batch_update_spreadsheet(spreadsheet_id, body, {})
+
+  end
+
+#---------------------------------------------------------------------------
+#
+#   googleroster
+#
+#   This is simply to allow some testing
+#   Create a new spreadsheet from scratch
+#
+#---------------------------------------------------------------------------
+# Some key doco
+# https://www.rubydoc.info/github/google/google-api-ruby-client/Google/Apis/SheetsV4
+# https://developers.google.com/sheets/api/reference/rest/v4/spreadsheets/request
+
+
+  # GET /admins/googleroster
+  def googleroster
+    returned_authorisation = googleauthorisation(request)
+    if returned_authorisation["authorizationurl"]
+      redirect_to returned_authorisation["authorizationurl"] and return
+    end
+    service = returned_authorisation["service"]
+#-----------------------------------------------------------------
+# Create a new spreadsheet -works and tested
+    #request_body = Google::Apis::SheetsV4::Spreadsheet.new
+    #response = service.create_spreadsheet(request_body)
+    #ss = response
+    #spreadsheet_id = ss.spreadsheet_id
+#-----------------------------------------------------------------
+
+#-----------------------------------------------------------------
+# Use an existing previously created spreadsheet
+# Only need the id to make use of this.
+    spreadsheet_id = '1VHNfTl0Qxok1ZgBD2Rwby-dqxihgSspA0InqS5dTXNI'
+#-----------------------------------------------------------------
+
+    # Get URL of spreadsheet
+    response = service.get_spreadsheet(spreadsheet_id)
+    @spreadsheet_url = response.spreadsheet_url
+
+    # Sheet we are working on.
+    sheet_name = "Sheet1"
+    sheet_id = 0
+
+    #this function converts spreadsheet indices to column name
+    # examples: e[0] => A; e[30] => AE 
+    e =->n{a=?A;n.times{a.next!};a}  
+
+# ************ update spreadsheet title  ************************
+# https://developers.google.com/sheets/api/reference/rest/v4/spreadsheets/batchUpdate
+    spreadsheet_title = "Google Roster" 
+    request_body = Google::Apis::SheetsV4::BatchUpdateSpreadsheetRequest.new
+    myussp = {"properties": {"title": spreadsheet_title}, "fields": "*" }
+    request_body.requests = [{"update_spreadsheet_properties": myussp }]
+    result = service.batch_update_spreadsheet(spreadsheet_id, request_body, {})
+
+# ************ delete all cells (rows) in a sheet ****************************
+# https://www.rubydoc.info/github/google/google-api-ruby-client/Google/Apis/SheetsV4/Request#delete_range-instance_method 
+    googleClearSheet = lambda{
+      requests = [{ delete_range:{
+        range: {sheet_id: sheet_id, start_row_index: 0, start_column_index: 0 },
+        shift_dimension: "ROWS"}}]
+      body = {requests: requests}
+      result = service.batch_update_spreadsheet(spreadsheet_id, body, {})
+    }
+    
+
+# ******** set vertical alignment using batch_update_spreadsheet ********
+    # googleVertAlignAll.call(palign "TOP | MIDDLE | BOTTOM")
+    googleVertAlignAll = lambda{ |palign|
+      requests = [{repeat_cell: {
+                  	  range: {sheet_id: sheet_id,
+                  	          start_row_index: 0,
+                  	          start_column_index: 0
+                  	  },
+                      cell: {user_entered_format: {vertical_alignment: palign} },
+                      fields: "user_entered_format(vertical_alignment)"
+                    }
+      }]
+      body = {requests: requests}
+      result = service.batch_update_spreadsheet(spreadsheet_id, body, {})
+    }
+
+# ****************** calls batch_update_spreadsheet ******************
+    # googlebatchdataitem.call(passed_items [googlebackgroundcolouritem, ...])
+    googleBatchUpdate = lambda{|passeditems|
+      if passeditems.count > 0
+        body = {requests: passeditems}
+        result = service.batch_update_spreadsheet(spreadsheet_id, body, {})
+      end
+    }
+
+# ******** update background colours using batch_update_spreadsheet ********
+    # googleBGColourItem.call(rowStart, colStart, numberOfRows, numberOfCols,
+    #                          colour[red_value, geen_value, blue_value])
+    googleBGColourItem = lambda{|rs, cs, nr, nc, pcolour|
+      {repeat_cell: {
+    	  range: {sheet_id: sheet_id,
+    	          start_row_index: rs - 1,
+    	          end_row_index: rs - 1 + nr,
+    	          start_column_index: cs - 1,
+    	          end_column_index: cs - 1 + nc},
+        cell:{user_entered_format:
+        	     {background_color: {red: pcolour[0], green: pcolour[1], blue: pcolour[2]}}},
+                fields: "user_entered_format(background_color)"}}}
+                
+# ******** set vertical alignment using batch_update_spreadsheet ********
+    # googleVertAlign.call(rowStart, colStart, numberOfRows, numberOfCols,
+    #                          palign "TOP | MIDDLE | BOTTOM")
+    googleVertAlign = lambda{|rs, cs, nr, nc, palign|
+      result = {repeat_cell: {
+                  	  range: {sheet_id: sheet_id,
+                  	          start_row_index: rs - 1,
+                  	          start_column_index: cs - 1 },
+                      cell:{user_entered_format: {vertical_alignment: palign} },
+                      fields: "user_entered_format(vertical_alignment)"
+                    }
+      }
+      if nr != nil then
+        result[:repeat_cell][:range][:end_row_index] = rs - 1 + nr 
+      end
+      if nc != nil then
+        result[:repeat_cell][:range][:end_column_index] = cs - 1 + nc 
+      end
+      return result
+    }
+
+# ******** set wrap text using batch_update_spreadsheet ********
+    # googleWrapText.call(rowStart, colStart, numberOfRows, numberOfCols,
+    #                          wrap "OVERFLOW_CELL | LEGACY_WRAP | CLIP | WRAP")
+    googleWrapText = lambda{|rs, cs, nr, nc, pwrap|
+      result = {repeat_cell: {
+                  	  range: {sheet_id: sheet_id,
+                  	          start_row_index: rs - 1,
+                  	          start_column_index: cs - 1 },
+                      cell:{user_entered_format: {wrap_strategy: pwrap} },
+                      fields: "user_entered_format(wrap_strategy)"
+                    }
+      }
+      if nr != nil then
+        result[:repeat_cell][:range][:end_row_index] = rs - 1 + nr 
+      end
+      if nc != nil then
+        result[:repeat_cell][:range][:end_column_index] = cs - 1 + nc 
+      end
+      return result
+    }
+
+# ******** update borders using batch_update_spreadsheet ********
+# https://developers.google.com/sheets/api/samples/formatting
+    # googleborder.call(rowStart, colStart, numberOfRows, numberOfCols,
+    #                          {left: color, right: .., top: .., bottom: ..})
+    googleborder = lambda{|rs, cs, nr, nc, pcolour, passedStyle |
+      {
+        update_borders: {
+    	      range:  { sheet_id: sheet_id,
+          	          start_row_index: rs - 1,
+          	          end_row_index: rs - 1 + nr,
+          	          start_column_index: cs - 1,
+          	          end_column_index: cs - 1 + nc },
+            top:    { style: passedStyle,
+        	            color: {red: pcolour[0], green: pcolour[1], blue: pcolour[2]} },
+            left:   { style: passedStyle,
+        	            color: {red: pcolour[0], green: pcolour[1], blue: pcolour[2]} },
+            right:  { style: passedStyle,
+        	            color: {red: pcolour[0], green: pcolour[1], blue: pcolour[2]} },
+            bottom: { style: passedStyle,
+        	            color: {red: pcolour[0], green: pcolour[1], blue: pcolour[2]} }
+        }
+      }
+    }
+
+# ******** adjust columns width using batch_update_spreadsheet ********
+# https://developers.google.com/sheets/api/samples/rowcolumn 
+
+    # googlecolwidthitem.call(colStart, numberOfCols,
+    #                          width_pixels)
+    googleColWidthItem = lambda{|cs, nc, passedpw|
+      {
+        update_dimension_properties: {
+          range: { dimension: "COLUMNS",
+    	             sheet_id: sheet_id,
+    	             start_index: cs - 1,
+                   end_index: cs - 1 + nc },
+  	      properties: { pixel_size: 160 },
+  	      fields: "pixelSize"
+        }
+      }
+    }
+
+# ******** autoresize columns using batch_update_spreadsheet ********
+# https://developers.google.com/sheets/api/samples/rowcolumn 
+
+    # googlecolautowidthitem.call(colStart, numberOfCols)
+    googleColAutowidthItem = lambda{|cs, nc|
+      {
+        auto_resize_dimensions: { dimensions: { dimension: "COLUMNS",
+                                      	        sheet_id: sheet_id,
+                                      	        start_index: cs - 1,
+                                                end_index: cs - 1 + nc }
+                                }
+      }
+    }
+
+# ************ update values using update_spreadsheet_value ****************************
+# doco: https://www.rubydoc.info/github/google/google-api-ruby-client/Google%2FApis%2FSheetsV4%2FSheetsService%3Aupdate_spreadsheet_value 
+# call using
+
+#   googlevalues.call(rowStartIndex, columnStartIndex, numberOfRows, numberOfColumns, values[[]])
+# Indexes start at 1 for both rows and columns
+    googleValues = lambda{|rs, cs, nr, nc, values| 
+    range = "#{sheet_name}!" + e[cs - 1] + rs.to_s + ":" +
+                               e[cs + nc - 1] + (rs + nr).to_s
+    request_body = Google::Apis::SheetsV4::ValueRange.new
+    request_body.values = values
+    request_body.major_dimension = "ROWS"
+    service.update_spreadsheet_value(spreadsheet_id, range, request_body, 
+                                              {value_input_option: 'USER_ENTERED'})
+    }
+    
+# ************ update values using batch_update_values ****************************
+    # googlebatchdataitem.call(rowStart, colStart, numberOfRows, numberOfCols,
+    #                          values[[]])
+    googleBatchDataItem = lambda{|rs, cs, nr, nc, values|
+      range = "#{sheet_name}!" + e[cs - 1] + rs.to_s + ":" +
+                               e[cs + nc - 1] + (rs + nr).to_s
+      {
+        range: range,
+        majorDimension: 'ROWS',
+        values: values
+      }
+    }
+
+    # googlebatchdataitem.call(spreadsheet_id, 
+    #                          passed in batch data [gppg;ebatcjdataote, ...])
+    googleBatchDataUpdate = lambda{|ss_id, dataitems |
+      if dataitems.count > 0
+        request_body = Google::Apis::SheetsV4::BatchUpdateValuesRequest.new
+        request_body.value_input_option = 'USER_ENTERED'
+        request_body.data = dataitems
+        service.batch_update_values(ss_id, request_body, {})
+      end
+    }
+
+# ************ text format run using batch_update_values ****************************
+    # googlebatchTextFormatRunItem.call(rowStart, colStart, numberOfRows, numberOfCols,
+    #                          values[[]])
+    googleTextFormatRun = lambda{|rs, cs|
+      result = {
+                  update_cells: {
+                  	  start: {sheet_id: sheet_id,
+                  	          row_index: rs - 1,
+                  	          column_index: cs - 1
+                  	  },
+                      rows: [ 
+                              { values: {
+                                          user_entered_value: "This is a test string",
+                                          user_entered_format: {
+                                            text_format: {
+                                              bold: true
+                                            }
+                                          }
+                                }
+                              }
+                            ],
+                      fields: 'userEnteredValue, userEnteredFormat.textFormat.bold'
+                      }
+                }
+    }
+                                  
+                                  
+=begin                                  
+                                  text_format_run: {
+                                    start_index: 1,
+                                    format: {
+                                      text_format: {
+                                        #foreground_color: {
+                                        #  object(Color)
+                                        #},
+                                        #font_family: string,
+                                        #font_size: number,
+                                        bold: TRUE,
+                                        #italic: boolean,
+                                        #strikethrough: boolean,
+                                        #underline: boolean,
+                                      }
+                                    }
+                                  }
+                                }
+                              },
+                              {
+                                text_format_run: {
+                                  start_index: 5,
+                                  format: {
+                                    text_format: {
+                                      #foreground_color: {
+                                      #  object(Color)
+                                      #},
+                                      #font_family: string,
+                                      #font_size: number,
+                                      bold: FALSE,
+                                      #italic: boolean,
+                                      #strikethrough: boolean,
+                                      #underline: boolean,
+                                    }
+                                  }
+                                }
+                              }
+                            ]
+                      },
+                      
+                      fields: "textFormatRun.textFormat(bold)"
+                      #fields: "textFormatRuns.textFormatRun.textFormat.bold"
+                      #fields: "user_entered_format(wrap_strategy)"
+                  }
+                }
+    }
+=end
+
+#---------------------------------
+#      sheet_properties:
+#      {
+#        "sheetId": number,
+#        "title": string,
+#        "index": number,
+#        "sheetType": enum(SheetType),
+#        "gridProperties": {
+#          object(GridProperties)
+#        },
+#        "hidden": boolean,
+#        "tabColor": {
+#          object(Color)
+#        },
+#        "rightToLeft": boolean
+#      }
+
+#---------------------------------
+#      grid_data: 
+#      {
+#        "startRow": number,
+#        "startColumn": number,
+#        "rowData": [
+#          {
+#            object(RowData)
+#          }
+#        ],
+#        "rowMetadata": [
+#          {
+#            object(DimensionProperties)
+#          }
+#        ],
+#        "columnMetadata": [
+#          {
+#            object(DimensionProperties)
+#          }
+#        ]
+#      }
+
+#---------------------------------
+#      row_data: 
+#      {
+#        "values": [
+#          {
+#            object(CellData)
+#          }
+#        ]
+#      }
+
+#---------------------------------
+#      requests: 
+#      {...(Note: one of at a time!)
+#         "repeat_cell": {
+#            object(RepeatCellRequest)
+#          },
+#       ....
+#       }
+
+#---------------------------------
+#      repeat_cell: 
+#      {
+#        "range": {
+#          object(GridRange)
+#        },
+#        "cell": {
+#          object(CellData)
+#        },
+#        "fields": string
+#      }
+
+#---------------------------------
+#      cell_data: 
+#      {
+#        "userEnteredValue": {
+#          object(ExtendedValue)
+#        },
+#        "effectiveValue": {
+#          object(ExtendedValue)
+#        },
+#        "formattedValue": string,
+#        "userEnteredFormat": {
+#          object(CellFormat)
+#        },
+#        "effectiveFormat": {
+#          object(CellFormat)
+#        },
+#        "hyperlink": string,
+#        "note": string,
+#        "textFormatRuns": [
+#          {
+#            object(TextFormatRun)
+#          }
+#        ],
+#        "dataValidation": {
+#          object(DataValidationRule)
+#        },
+#        "pivotTable": {
+#          object(PivotTable)
+#        }
+#      }
+
+#---------------------------------
+#      text_format_run: 
+#      {
+#        "startIndex": number,
+#        "format": {
+#          object(TextFormat)
+#        }
+#      }
+
+#---------------------------------
+#    text_format: 
+#    {
+#      "foregroundColor": {
+#        object(Color)
+#      },
+#      "fontFamily": string,
+#      "fontSize": number,
+#      "bold": boolean,
+#      "italic": boolean,
+#      "strikethrough": boolean,
+#      "underline": boolean,
+#    }
+
+    # googlebatchdataitem.call(spreadsheet_id, 
+    #                          passed in batch data [gppg;ebatcjdataote, ...])
+    googleBatchDataUpdate = lambda{|ss_id, dataitems |
+      if dataitems.count > 0
+        request_body = Google::Apis::SheetsV4::BatchUpdateValuesRequest.new
+        request_body.value_input_option = 'USER_ENTERED'
+        request_body.data = dataitems
+        service.batch_update_values(ss_id, request_body, {})
+      end
+    }
+
+
+
+#--------------------- Test Data -------------------------------
+#=begin
+# Clear the sheet
+    googleClearSheet.call
+    
+# Some test formatting
+    batchitems = []
+
+    batchitems.push(googleBGColourItem.call(1,1,1,2,[0,1,0]))
+    batchitems.push(googleBGColourItem.call(6,1,1,2,[1,0,0]))
+    batchitems.push(googleBGColourItem.call(7,1,1,2,[0,0,1]))
+
+    batchitems.push(googleborder.call(2,1,2,2, [0,0,0], "SOLID_THICK"))
+    
+    batchitems.push(googleVertAlign.call(2,1,2,2, "TOP"))
+
+    batchitems.push(googleWrapText.call(2,1,2,2, "WRAP"))
+
+    batchitems.push(googleColWidthItem.call(1,3,160))
+    
+    googleBatchUpdate.call(batchitems)    
+
+# Some test cellvalues - individual update
+    myvalues = [["xxxupdate_spreadsheet_value","test data - this row will get a background colour"]]
+    googleValues.call(1, 1, 1, 2, myvalues)
+
+# Some test value data - batch update
+    mydata = []
+    mydata.push(googleBatchDataItem.call(2,1,2,2,
+      [
+       ["spreadsheet_values_batchUpdate", "test data"],
+       ["spreadsheet_values_batchUpdate", "third row"]
+      ])
+    )
+    mydata.push(googleBatchDataItem.call(6,1,2,2,
+      [
+       ["spreadsheet_values_batchUpdate2", "test data"],
+       ["spreadsheet_values_batchUpdate2", "seventh row"]
+      ])
+    )
+    googleBatchDataUpdate.call(spreadsheet_id, mydata)
+
+    #Note: need to do values first so autoformat works.
+    batchitems = []  # reset
+    batchitems.push(googleColAutowidthItem.call(1, 1))
+    googleBatchUpdate.call(batchitems)    
+
+    
+    batchitems.push(googleTextFormatRun.call(10,2))
+    
+    googleBatchUpdate.call(batchitems)    
+#=end
+
+# let does some processing - writing rosters to google sheets.
+=begin
+    @sf = 5   # number of significant figures in dom ids for lesson,tutor, etc.
+
+    mystartdate = current_user.daystart
+    myenddate = current_user.daystart + current_user.daydur.days
+    
+    #*****************************************************************
+    # Set these to control what is displayed in the roster
+    
+    @tutorstatusforroster   = ["scheduled", "dealt", "confirmed", "attended"]
+    @studentstatusforroster = ["scheduled", "dealt", "attended"]
+    
+    #*****************************************************************
+    
+    # call the library in controllers/concerns/calendarutilities.rb
+    @cal = calendar_read_display2(@sf, mystartdate, myenddate)
+
+    # Clear the sheet
+    googleClearSheet.call
+    #googleVertAlignAll.call("TOP")
+    myformat = []
+    myformat.push(googleVertAlign.call(1, 1, nil, nil, "TOP"))
+    myformat.push(googleWrapText.call(1, 1, nil, nil, "WRAP"))
+    myformat.push(googleColWidthItem.call(1,100,260))
+#    myformat.push(googleColWidthItem.call(1,3,20))
+
+    googleBatchUpdate.call(myformat)    
+
+    
+    # will increment to 1 on stepping into loops => 1..n
+    # Note: both rows and column indexes spreadsheets start at 1
+    # Following counters used to track loactions in the spreadsheet
+    baseSiteRow  = 1 
+    baseSlotRowInSite = 1
+    baseLessonRowInSlot = 0
+    currentTutorRowInLesson = 0
+    currentStudentRowInLesson = 0
+    maxPersonRowInAnySlot = 0
+    maxPersonRowInAnySlot = 0
+    currentCol = 1
+    currentRow = 1
+
+    baseSiteRow  = 1                        # first site 
+    @cal.each do |location, calLocation|    # step through sites
+      mydata   = []                           # google batch data writter at end of processing a site
+      myformat = []
+      #<table id=site-<%= location %> >
+      baseSlotRowInSite = 0                   # first slot
+      currentRow = baseSlotRowInSite + baseSiteRow
+      calLocation.each do |rows|          # step through slots containing multiple days (fist row is actually a header row!)
+        #<tr>
+        maxPersonRowInAnySlot = 0           # initialised to 1 to step a row even if no tutor or student found.
+        currentCol = 1
+        rows.each do |cells|              # step through each day (first column is head column - for time slots!)
+          if cells.key?("values") then      # lessons for this day in this slot      
+            if cells["values"].respond_to?(:each) then    # check we have lessons?
+              baseLessonRowInSlot = 0       # index of first lesson in this slot for this day
+              cells["values"].sort_by {|obj| [valueOrderStatus(obj),valueOrder(obj)] }.each do |entry| # step thru sorted lessons
+
+              currentTutorRowInLesson = 0
+              if entry.tutors.respond_to?(:each) then
+                entry.tutors.sort_by {|obj| obj.pname }.each do |tutor|
+                  if tutor then
+                    logger.debug "tutor: " + tutor.pname
+                    thistutrole = tutor.tutroles.where(lesson_id: entry.id).first
+                    #logger.debug "thistutrole: " + thistutrole.inspect
+                    if @tutorstatusforroster.include?(thistutrole.status) then       # tutors of interest
+                      logger.debug "*************processing tutor: " + tutor.pname
+                      logger.debug "currentTutorRowInLesson + baseLessonRowInSlot + baseSlotRowInSite: " +
+                                    currentTutorRowInLesson.to_s + ", " + baseLessonRowInSlot.to_s + ", " + baseSlotRowInSite.to_s
+                      currentRow = currentTutorRowInLesson + baseLessonRowInSlot + baseSlotRowInSite + baseSiteRow
+                      #<div class="tutorname tutorinline <%= set_class_status(tutor, entry) %>">tutor: <%= tutor.pname %></div>
+                      logger.debug "DataItem parameters: " + currentRow.to_s + ", " + currentCol.to_s + ", 1, 1, " + tutor.pname 
+                      tutorData = tutor.pname
+                      # tutor.subjects
+                      # thistutrole.comment
+                      # tutor.comment
+                      # Status: thistutrole.status Kind: thistutrole.kind
+                      mydata.push(googleBatchDataItem.call(currentRow, currentCol, 1, 1, [[tutorData]]))
+                      myformat.push(googleBGColourItem.call(currentRow, currentCol, 1, 1, [1,0,0]))
+                      currentTutorRowInLesson += 1
+                    end       # tutors of interest
+                  end
+                  #break
+                end
+                # keep track of the largest count of tutors or students in lesson.
+                maxPersonRowInAnySlot = maxPersonRowInAnySlot > currentTutorRowInLesson + baseLessonRowInSlot ?
+                                    maxPersonRowInAnySlot : currentTutorRowInLesson + baseLessonRowInSlot
+              end
+
+              currentStudentRowInLesson = 0
+              if entry.students.respond_to?(:each) then
+                entry.students.each do |student|
+                  if student then
+                    logger.debug "student: " + student.pname
+                    thisrole = student.roles.where(lesson_id: entry.id).first
+                    #logger.debug "thisrole: " + thisrole.inspect
+                    if @studentstatusforroster.include?(thisrole.status) then    # students of interest
+                      logger.debug "*************processing student: " + student.pname
+                      logger.debug "currentStudentRowInLesson + baseLessonRowInSlot + baseSlotRowInSite: " +
+                                    currentStudentRowInLesson.to_s + ", " + baseLessonRowInSlot.to_s + ", " + baseSlotRowInSite.to_s
+                      currentRow = currentStudentRowInLesson + baseLessonRowInSlot + baseSlotRowInSite + baseSiteRow
+                      #<div class="studentname studentinline <%= set_class_status(student, entry) %>">student: <%= student.pname %></div>
+                      logger.debug "DataItem parameters: " + currentRow.to_s + ", " + currentCol.to_s + ", 1, 1, " + student.pname 
+                      studentData = student.pname
+                      studentSex = student.sex == nil ? "" :
+                           (student.sex.downcase.include?("female") ? "(F) " : (student.sex.downcase.include?("male") ? "(M) " : ""))
+                      studentSubjects = " Yr: " + (student.year == nil ? "   " : student.year.rjust(3)) + " | " +  student.study
+                      studentData += "\n" + studentSex + studentSubjects
+                      # thisrole.comment
+                      # student.comment
+                      studentData += "\n" + student.comment
+                      # Status: thisrole.status Kind: thisrole.kind
+                      mydata.push(googleBatchDataItem.call(currentRow, currentCol + 1, 1, 1, [[studentData]]))
+                      myformat.push(googleBGColourItem.call(currentRow, currentCol + 1, 1, 1, [0,1,0]))
+                      currentStudentRowInLesson += 1
+                    end           # students of interest
+                  end
+                end
+                # keep track of the largest count of tutors or students in lesson.
+                maxPersonRowInAnySlot = maxPersonRowInAnySlot > currentTutorRowInLesson + baseLessonRowInSlot ?
+                                        maxPersonRowInAnySlot : currentTutorRowInLesson + baseLessonRowInSlot
+              end
+
+              #<div class="lessoncommenttext"><% if entry.comments != nil && entry.comments != "" %><%= entry.comments %><% end %></div>
+              #<div class="lessonstatusinfo"><% if entry.status != nil && entry.status != "" %>Status: <%= entry.status %> <% end %></div>
+
+              maxPersonRowInLesson = currentTutorRowInLesson > currentStudentRowInLesson ? 
+                                     currentTutorRowInLesson : currentStudentRowInLesson 
+
+              # put a border around this lesson if there were lessons with people
+              logger.debug "maxPersonRowInLesson: " + maxPersonRowInLesson.to_s
+              if maxPersonRowInLesson > 0 then
+                borderRowStart = baseLessonRowInSlot + baseSlotRowInSite + baseSiteRow
+                borderColStart = currentCol
+                borderRows = maxPersonRowInLesson
+                borderCols = 2
+                logger.debug "border parameters: " + borderRowStart.to_s + ", " + borderColStart.to_s + ", "+ borderRows.to_s + ", " + borderCols.to_s
+                myformat.push(googleborder.call(borderRowStart, borderColStart, borderRows, borderCols, [0, 0, 0], "SOLID_THICK"))
+                myformat.push(googleWrapText.call(borderRowStart, borderColStart, borderRows, borderCols, "WRAP"))
+              end
+              baseLessonRowInSlot += maxPersonRowInLesson
+              #currentRow = maxPersonRowInAnySlot + baseLessonRowInSlot + baseSlotRowInSite + baseSiteRow  # next empty row 
+              end     # end looping sorted lessons within a day/slot
+            end    # responds to cell["values"]
+          elsif cells.key?("value") then     # just holds cell info (not lessons) to be shown
+            currentRow = baseSlotRowInSite + baseSiteRow
+            mydata.push(googleBatchDataItem.call(currentRow,currentCol,1,1,[[cells["value"].to_s]]))
+          end
+          #</td>
+          currentCol += currentCol == 1 ? 1 : 2       # first column is title, rest have adjacent tutors & students.
+        end       # end looping days within slots
+        #</tr>
+        baseSlotRowInSite += maxPersonRowInAnySlot      # set ready for next slot (row of days)
+        if baseLessonRowInSlot == 0 && maxPersonRowInAnySlot == 0 then
+          baseSlotRowInSite += 1                # cater for when no lessons with tutors or students of interest
+        end
+      end       # end looping slots
+      holdRailsLoggerLevel = Rails.logger.level
+      Rails.logger.level = 1 
+      googleBatchDataUpdate.call(spreadsheet_id, mydata)
+      googleBatchUpdate.call(myformat)    
+      Rails.logger.level = holdRailsLoggerLevel
+
+      #</table>
+      
+      baseSiteRow += baseSlotRowInSite + 1    # +1 adds blank row between sites
+      #<br>
+    end           # end looping sites
+=end
+  end
+
+
   private
 
     # Never trust parameters from the scary internet, only allow the white list through.
@@ -1649,6 +2496,27 @@ class AdminsController < ApplicationController
     def deletedays_params
       params.require(:delete).permit(:from, :num_days)
     end
+
+
+  # Sort the values in display2 (cell of lessons/sessions) by status and then by tutor name
+  # as some lessons have no tutor, this returns the tutor name if available.
+  # This can then be used as the second attribute in the sort.
+  def valueOrder(obj)
+    if obj.tutors.exists?
+      obj.tutors.sort_by {|t| t.pname }.first.pname
+    else
+      "_"
+    end
+  end
+
+  def valueOrderStatus(obj)
+    if obj.status != nil
+      obj.status
+    else
+      ""
+    end
+  end
+    
 
   
 end

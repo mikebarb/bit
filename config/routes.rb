@@ -22,6 +22,8 @@ Rails.application.routes.draw do
   get 'admins/loadstudents2' => 'admins#loadstudents2', as: :loadstudents2
   get 'admins/loadschedule' => 'admins#loadschedule', as: :loadschedule
   get 'admins/loadtest' => 'admins#loadtest', as: :loadtest
+  get 'admins/loadtest2' => 'admins#loadtest2', as: :loadtest2
+  get 'admins/googleroster' => 'admins#googleroster', as: :googleroster
   get 'admins/copydaysedit' => 'admins#copydaysedit', as: :copydaysedit
   get 'admins/copydays' => 'admins#copydays', as: :copydays
   get 'admins/deletedaysedit' => 'admins#deletedaysedit', as: :deletedaysedit
