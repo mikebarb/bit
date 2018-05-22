@@ -2036,6 +2036,7 @@ class AdminsController < ApplicationController
       }
     }
 
+# ************ execute batch update of values - [data items] ****************************
     # googlebatchdataitem.call(spreadsheet_id, 
     #                          passed in batch data [gppg;ebatcjdataote, ...])
     googleBatchDataUpdate = lambda{|ss_id, dataitems |
@@ -2048,204 +2049,59 @@ class AdminsController < ApplicationController
     }
 
 # ************ text format run using batch_update_values ****************************
-    # googlebatchTextFormatRunItem.call(rowStart, colStart, numberOfRows, numberOfCols,
-    #                          values[[]])
-    googleTextFormatRun = lambda{|rs, cs|
-      result = {
-                  update_cells: {
-                  	  start: {sheet_id: sheet_id,
-                  	          row_index: rs - 1,
-                  	          column_index: cs - 1
-                  	  },
-                      rows: [ 
-                              { values: {
-                                          user_entered_value: "This is a test string",
-                                          user_entered_format: {
-                                            text_format: {
-                                              bold: true
-                                            }
-                                          }
-                                }
-                              }
-                            ],
-                      fields: 'userEnteredValue, userEnteredFormat.textFormat.bold'
-                      }
-                }
-    }
-                                  
-                                  
-=begin                                  
-                                  text_format_run: {
-                                    start_index: 1,
-                                    format: {
+    # googlebatchTextFormatRunItem.call(rowStart, colStart, 
+    #                                   text, breakPointToChangeFormat[])
+    googleTextFormatRun = lambda{|rs, cs, myText, myBreaks|
+      result = 
+        {
+            update_cells: {
+          	  start: {sheet_id: sheet_id,
+          	          row_index: rs - 1,
+          	          column_index: cs - 1
+          	  },
+              rows: [ 
+                      { values: [ 
+                                  {
+                                    user_entered_value: {
+                                      string_value: myText
+                                    },
+                                    user_entered_format: {
                                       text_format: {
-                                        #foreground_color: {
-                                        #  object(Color)
-                                        #},
-                                        #font_family: string,
-                                        #font_size: number,
-                                        bold: TRUE,
-                                        #italic: boolean,
-                                        #strikethrough: boolean,
-                                        #underline: boolean,
+                                        fontFamily: "Arial"
                                       }
-                                    }
+                                    },
+                                    text_format_runs: [
+                                      {
+                                        start_index: myBreaks[0],
+                                        format: {
+                                          bold: true,
+                                          font_size: 10
+                                        }
+                                      }
+                                    ]
                                   }
-                                }
-                              },
-                              {
-                                text_format_run: {
-                                  start_index: 5,
-                                  format: {
-                                    text_format: {
-                                      #foreground_color: {
-                                      #  object(Color)
-                                      #},
-                                      #font_family: string,
-                                      #font_size: number,
-                                      bold: FALSE,
-                                      #italic: boolean,
-                                      #strikethrough: boolean,
-                                      #underline: boolean,
-                                    }
-                                  }
-                                }
-                              }
-                            ]
-                      },
+                                ]
+                      }
                       
-                      fields: "textFormatRun.textFormat(bold)"
-                      #fields: "textFormatRuns.textFormatRun.textFormat.bold"
-                      #fields: "user_entered_format(wrap_strategy)"
+              ],
+              fields: "userEnteredValue, userEnteredFormat.textFormat.bold, textFormatRuns.format.(bold, fontSize, fontFamily)"
+            }
+        }
+        if myBreaks[1] < myText.length then
+          secondRun = {
+                  start_index: myBreaks[1],
+                  format: {
+                    bold: false,
+                    font_size: 10
                   }
                 }
+          result[:update_cells][:rows][0][:values][0][:text_format_runs].push(secondRun)
+        end
+        return result
     }
-=end
-
-#---------------------------------
-#      sheet_properties:
-#      {
-#        "sheetId": number,
-#        "title": string,
-#        "index": number,
-#        "sheetType": enum(SheetType),
-#        "gridProperties": {
-#          object(GridProperties)
-#        },
-#        "hidden": boolean,
-#        "tabColor": {
-#          object(Color)
-#        },
-#        "rightToLeft": boolean
-#      }
-
-#---------------------------------
-#      grid_data: 
-#      {
-#        "startRow": number,
-#        "startColumn": number,
-#        "rowData": [
-#          {
-#            object(RowData)
-#          }
-#        ],
-#        "rowMetadata": [
-#          {
-#            object(DimensionProperties)
-#          }
-#        ],
-#        "columnMetadata": [
-#          {
-#            object(DimensionProperties)
-#          }
-#        ]
-#      }
-
-#---------------------------------
-#      row_data: 
-#      {
-#        "values": [
-#          {
-#            object(CellData)
-#          }
-#        ]
-#      }
-
-#---------------------------------
-#      requests: 
-#      {...(Note: one of at a time!)
-#         "repeat_cell": {
-#            object(RepeatCellRequest)
-#          },
-#       ....
-#       }
-
-#---------------------------------
-#      repeat_cell: 
-#      {
-#        "range": {
-#          object(GridRange)
-#        },
-#        "cell": {
-#          object(CellData)
-#        },
-#        "fields": string
-#      }
-
-#---------------------------------
-#      cell_data: 
-#      {
-#        "userEnteredValue": {
-#          object(ExtendedValue)
-#        },
-#        "effectiveValue": {
-#          object(ExtendedValue)
-#        },
-#        "formattedValue": string,
-#        "userEnteredFormat": {
-#          object(CellFormat)
-#        },
-#        "effectiveFormat": {
-#          object(CellFormat)
-#        },
-#        "hyperlink": string,
-#        "note": string,
-#        "textFormatRuns": [
-#          {
-#            object(TextFormatRun)
-#          }
-#        ],
-#        "dataValidation": {
-#          object(DataValidationRule)
-#        },
-#        "pivotTable": {
-#          object(PivotTable)
-#        }
-#      }
-
-#---------------------------------
-#      text_format_run: 
-#      {
-#        "startIndex": number,
-#        "format": {
-#          object(TextFormat)
-#        }
-#      }
-
-#---------------------------------
-#    text_format: 
-#    {
-#      "foregroundColor": {
-#        object(Color)
-#      },
-#      "fontFamily": string,
-#      "fontSize": number,
-#      "bold": boolean,
-#      "italic": boolean,
-#      "strikethrough": boolean,
-#      "underline": boolean,
-#    }
-
+                
+                
+# ************ batch update of data items ****************************
     # googlebatchdataitem.call(spreadsheet_id, 
     #                          passed in batch data [gppg;ebatcjdataote, ...])
     googleBatchDataUpdate = lambda{|ss_id, dataitems |
@@ -2257,10 +2113,11 @@ class AdminsController < ApplicationController
       end
     }
 
-
+testing = false    # true or false
+if testing then
 
 #--------------------- Test Data -------------------------------
-#=begin
+
 # Clear the sheet
     googleClearSheet.call
     
@@ -2282,7 +2139,7 @@ class AdminsController < ApplicationController
     googleBatchUpdate.call(batchitems)    
 
 # Some test cellvalues - individual update
-    myvalues = [["xxxupdate_spreadsheet_value","test data - this row will get a background colour"]]
+    myvalues = [["update_spreadsheet_value","test data - this row will get a background colour"]]
     googleValues.call(1, 1, 1, 2, myvalues)
 
 # Some test value data - batch update
@@ -2305,15 +2162,16 @@ class AdminsController < ApplicationController
     batchitems = []  # reset
     batchitems.push(googleColAutowidthItem.call(1, 1))
     googleBatchUpdate.call(batchitems)    
-
     
-    batchitems.push(googleTextFormatRun.call(10,2))
-    
+    logger.debug "about to try out googleTextFormatRun"
+    batchitems = []
+    batchitems.push(googleTextFormatRun.call(10,2, "123456789\n1234567890123456789", [0,10]))
     googleBatchUpdate.call(batchitems)    
-#=end
+    logger.debug "done googleTextFormatRun"
+
+else
 
 # let does some processing - writing rosters to google sheets.
-=begin
     @sf = 5   # number of significant figures in dom ids for lesson,tutor, etc.
 
     mystartdate = current_user.daystart
@@ -2387,11 +2245,16 @@ class AdminsController < ApplicationController
                       #<div class="tutorname tutorinline <%= set_class_status(tutor, entry) %>">tutor: <%= tutor.pname %></div>
                       logger.debug "DataItem parameters: " + currentRow.to_s + ", " + currentCol.to_s + ", 1, 1, " + tutor.pname 
                       tutorData = tutor.pname
+                      formatBreakPoints = []
+                      formatBreakPoints.push(0)
+                      formatBreakPoints.push(tutor.pname.length)
                       # tutor.subjects
                       # thistutrole.comment
                       # tutor.comment
                       # Status: thistutrole.status Kind: thistutrole.kind
-                      mydata.push(googleBatchDataItem.call(currentRow, currentCol, 1, 1, [[tutorData]]))
+                      myformat.push(googleTextFormatRun.call(currentRow, currentCol,
+                                                             tutorData, formatBreakPoints))
+                      #mydata.push(googleBatchDataItem.call(currentRow, currentCol, 1, 1, [[tutorData]]))
                       myformat.push(googleBGColourItem.call(currentRow, currentCol, 1, 1, [1,0,0]))
                       currentTutorRowInLesson += 1
                     end       # tutors of interest
@@ -2417,7 +2280,10 @@ class AdminsController < ApplicationController
                       currentRow = currentStudentRowInLesson + baseLessonRowInSlot + baseSlotRowInSite + baseSiteRow
                       #<div class="studentname studentinline <%= set_class_status(student, entry) %>">student: <%= student.pname %></div>
                       logger.debug "DataItem parameters: " + currentRow.to_s + ", " + currentCol.to_s + ", 1, 1, " + student.pname 
+                      formatBreakPoints = []
+                      formatBreakPoints.push(0)
                       studentData = student.pname
+                      formatBreakPoints.push(student.pname.length)
                       studentSex = student.sex == nil ? "" :
                            (student.sex.downcase.include?("female") ? "(F) " : (student.sex.downcase.include?("male") ? "(M) " : ""))
                       studentSubjects = " Yr: " + (student.year == nil ? "   " : student.year.rjust(3)) + " | " +  student.study
@@ -2426,7 +2292,9 @@ class AdminsController < ApplicationController
                       # student.comment
                       studentData += "\n" + student.comment
                       # Status: thisrole.status Kind: thisrole.kind
-                      mydata.push(googleBatchDataItem.call(currentRow, currentCol + 1, 1, 1, [[studentData]]))
+                      myformat.push(googleTextFormatRun.call(currentRow, currentCol + 1,
+                                                             studentData, formatBreakPoints))
+                      #mydata.push(googleBatchDataItem.call(currentRow, currentCol + 1, 1, 1, [[studentData]]))
                       myformat.push(googleBGColourItem.call(currentRow, currentCol + 1, 1, 1, [0,1,0]))
                       currentStudentRowInLesson += 1
                     end           # students of interest
@@ -2482,7 +2350,7 @@ class AdminsController < ApplicationController
       baseSiteRow += baseSlotRowInSite + 1    # +1 adds blank row between sites
       #<br>
     end           # end looping sites
-=end
+end
   end
 
 
