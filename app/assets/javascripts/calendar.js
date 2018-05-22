@@ -1393,10 +1393,12 @@ var ready = function() {
 // This is the drag and drop code
 // which uses ajax to update the database
 // the drag reverts if database update fails.
+// good intro document: 
+// https://www.elated.com/articles/drag-and-drop-with-jquery-your-essential-guide/
 
   // for moving the lessons
-  $( function() {
-    $( ".lesson" ).draggable({
+  function elementdraggable(myelement){
+    $(myelement).draggable({
       revert: true,
       zIndex: 100,
       //comments display on click, remove when begin the drag
@@ -1404,8 +1406,10 @@ var ready = function() {
         $('#comments').css('visibility', 'hidden');  
       }
     });
+  }
 
-    $( ".slot" ).droppable({
+  function slotdroppable(myelement){
+    $(myelement).droppable({
       accept: ".lesson",
       drop: function( event, ui ) {
         var dom_change = {};
@@ -1428,20 +1432,14 @@ var ready = function() {
           .removeClass( "my-over" );
       }
     });
-  });
+  }
 
-  // for moving the students and tutors
-  $( function() {
-    $( ".student, .tutor" ).draggable({
-      revert: true,
-      zIndex: 100,
-      //comments display on click, remove when begin the drag
-      start: function(event, ui) {
-        $('#comments').css('visibility', 'hidden');  
-      }
-    });
+  elementdraggable(".lesson");
+  slotdroppable(".slot");
 
-    $( ".lesson" ).droppable({
+  // for moving tutors and students.
+  function lessondroppable(myelement){
+    $(myelement).droppable({
       accept: ".student, .tutor",
       drop: function( event, ui ) {
         var dom_change = {};
@@ -1451,13 +1449,6 @@ var ready = function() {
           dom_change['action'] = "copy";          
         }
         dom_change['move_ele_id'] = ui.draggable.attr('id');
-        //**done** currentActivity['ele_old_parent_id'] = document.getElementById(thisEleId).parentElement.id;
-        //** old version ** dom_change['ele_old_parent_id'] = document.getElementById(dom_change['move_ele_id']).parentElement.id;
-        //currentActivity['ele_old_parent_id'] = clickInsideElementClassList2(thisEle, ['lesson']).id;
-        //currentActivity['ele_old_parent_id'] = clickInsideElementClassList2(thisEle, ['slot']).id;
-        
-        // Before this update = to handle layout change in page - adding class 'grouptutors'
-        //dom_change['ele_old_parent_id'] = document.getElementById(dom_change['move_ele_id']).parentElement.id;
         dom_change['ele_old_parent_id'] = clickInsideElementClassList2(document.getElementById(dom_change['move_ele_id']), ['lesson']).id;
         
         dom_change['ele_new_parent_id'] = this.id;
@@ -1486,8 +1477,11 @@ var ready = function() {
           .removeClass( "my-over" );
       }
     });
-  });
-
+  }
+  
+  elementdraggable(".student, .tutor");
+  lessondroppable(".lesson");
+  
 //------------------------ End of Drag and Drop ----------------------------
 
 //----- Common Functions used by both Drag & Drop and Context Menu ---------
@@ -1761,6 +1755,8 @@ var ready = function() {
     // set status
     var status = 'n-status-' + domchange['status'];
     newlessonele.classList.add(status);
+    elementdraggable(newlessonele);
+    lessondroppable(newlessonele);
     console.log(parentele);
   }
 
@@ -1790,6 +1786,7 @@ var ready = function() {
     var directparentclassname = elemoving.parentElement.className;
     if ('copy' == domchange['action']){
       var eletoplace = elemoving.cloneNode(true, true);
+      elementdraggable(eletoplace);
     }else if('move' == domchange['action']){
       eletoplace = elemoving;
     }
