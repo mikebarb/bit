@@ -1442,16 +1442,20 @@ var ready = function() {
     $(myelement).droppable({
       accept: ".student, .tutor",
       drop: function( event, ui ) {
+        var this_move_element = document.getElementById(ui.draggable.attr('id'));
         var dom_change = {};
         dom_change['action'] = "move";
-        var this_move_element = document.getElementById(ui.draggable.attr('id'));
-        if(clickInsideElementClassList2(this_move_element, ['index'])){
-          dom_change['action'] = "copy";          
-        }
         dom_change['move_ele_id'] = ui.draggable.attr('id');
-        dom_change['ele_old_parent_id'] = clickInsideElementClassList2(document.getElementById(dom_change['move_ele_id']), ['lesson']).id;
-        
         dom_change['ele_new_parent_id'] = this.id;
+        //dom_change['ele_old_parent_id'] = clickInsideElementClassList2(document.getElementById(dom_change['move_ele_id']), ['lesson']).id;
+        if(clickInsideElementClassList2(this_move_element, ['index'])){
+          dom_change['action'] = "copy";
+          //dom_change['ele_old_parent_id'] = this_move_element.parentElement.id; 
+        } else {
+          dom_change['ele_old_parent_id'] = 
+          clickInsideElementClassList2(document.getElementById(dom_change['move_ele_id']),
+                                       ['lesson']).id;
+        }
         var type = getRecordType(dom_change['move_ele_id']);
         if(type == 's'){
           dom_change['element_type'] = "student";
@@ -1559,7 +1563,6 @@ var ready = function() {
     console.log(domchange);
     var action = domchange['action'];   //move or copy
     var personid = getRecordId(domchange['move_ele_id']);
-    var oldlessonid = getRecordId(domchange['ele_old_parent_id']);
     var newlessonid = getRecordId(domchange['ele_new_parent_id']);
     if(oldlessonid == newlessonid){
       //alert("You dropped this item in the same location!!!");
@@ -1572,32 +1575,30 @@ var ready = function() {
     if( 's' == recordtype ){    //student
       console.log("we have a student - " + personid);
       console.log("action: " + action);
-      if(action == "move") {   
-        //myurl = "https://bit3-micmac.c9users.io/studentmovelesson/";
-        myurl = myhost + "/studentmovelesson/";
-      } else if(action == "copy"){ // copy
-        //myurl = "https://bit3-micmac.c9users.io/studentcopylesson/";
-        myurl = myhost + "/studentcopylesson/";
-      }
       mydata =  { 'student_id'     : personid, 
-                  'old_lesson_id' : oldlessonid,
                   'new_lesson_id' : newlessonid,
                   'domchange'      : domchange 
                 };
+      if(action == "move") {   
+        myurl = myhost + "/studentmovelesson/";
+        var oldlessonid = getRecordId(domchange['ele_old_parent_id']);
+        mydata['old_lesson_id'] =  oldlessonid;
+      } else if(action == "copy"){ // copy
+        myurl = myhost + "/studentcopylesson/";
+      }
     } else if( 't' == recordtype ){   //tutor
       console.log("we have a tutor - " + personid);
-      if(action == "move") {
-        //myurl = "https://bit3-micmac.c9users.io/tutormovelesson/";
-        myurl = myhost + "/tutormovelesson/";
-      } else { // copy
-        //myurl = "https://bit3-micmac.c9users.io/tutorcopylesson/";
-        myurl = myhost + "/tutorcopylesson/";
-      }
       mydata =  { 'tutor_id'       : personid, 
-                  'old_lesson_id' : oldlessonid,
                   'new_lesson_id' : newlessonid,
                   'domchange'      : domchange                  
                 };
+      if(action == "move") {
+        var oldlessonid = getRecordId(domchange['ele_old_parent_id']);
+        mydata['old_lesson_id'] =  oldlessonid;
+        myurl = myhost + "/tutormovelesson/";
+      } else { // copy
+        myurl = myhost + "/tutorcopylesson/";
+      }
       
     } else {
       console.log("error - the moving person is not a tutor or student");
@@ -1770,23 +1771,50 @@ var ready = function() {
     var newparentid = domchange['ele_new_parent_id'];
     var moveRecordType = getRecordType(domchange['move_ele_id']);
     var newid = moveRecordType + getRecordId(domchange['move_ele_id']);
+    var oldid = domchange['move_ele_id'];
+    //console.log("moveelement - oldid: " + oldid + " => newid: " + newid);
+    var elemoving = document.getElementById(oldid);
+    var directparentclassname = elemoving.parentElement.className;
+    // check if being copied from tutor/student lists or within scheduling
     //console.log("***************t: " + moveRecordType);
     switch(moveRecordType) {
       case 't': //tutor
+        if(clickInsideElementClassList2(elemoving, ['index'])){
+          var sample_tutor = document.getElementsByClassName('schedule')[0].getElementsByClassName('tutor')[0];
+          directparentclassname = sample_tutor.parentElement.className;
+        }
+        newid = newparentid + newid;
+        break;
       case 's': //student
+        if(clickInsideElementClassList2(elemoving, ['index'])){
+          var sample_student = document.getElementsByClassName('schedule')[0].getElementsByClassName('student')[0];
+          directparentclassname = sample_student.parentElement.className;
+        }
         newid = newparentid + newid;
         break;
       case 'n': //lesson
         newid = newparentid.substr(0, newparentid.length-sf-1) + newid;
         break;
     }
-    var oldid = domchange['move_ele_id'];
-    //console.log("moveelement - oldid: " + oldid + " => newid: " + newid);
-    var elemoving = document.getElementById(oldid);
-    var directparentclassname = elemoving.parentElement.className;
     if ('copy' == domchange['action']){
       var eletoplace = elemoving.cloneNode(true, true);
       elementdraggable(eletoplace);
+      if(clickInsideElementClassList2(elemoving, ['index'])){
+        // Need to add some more content - status, kind, comments,etc.
+        var new_ele1 = document.createElement('div');
+        var new_ele2 = document.createElement('div');
+        new_ele2.classList.add("statusinfo");
+        new_ele2.textContent = "Status: Kind: ";
+        var comment_ele = eletoplace.getElementsByClassName('comment')[0];
+        var comment_ele_children = comment_ele.children;
+        comment_ele.appendChild(new_ele2);
+        if( moveRecordType == 't') {   // tutor
+          new_ele1.classList.add("tutrolecomment");
+        } else if (moveRecordType == 's') {   // student
+          new_ele1.classList.add("rolecomment");
+        }
+        comment_ele.insertBefore(new_ele1, comment_ele_children[1]);
+      }
     }else if('move' == domchange['action']){
       eletoplace = elemoving;
     }
@@ -1840,7 +1868,7 @@ var ready = function() {
         var studentsparent = parent_element.getElementsByClassName(directparentclassname)[0];
         var movestudentname = eletoplace.getElementsByClassName('studentname')[0].innerHTML;
         var mystudents = studentsparent.getElementsByClassName('student');
-        if (mystudents) {    // have tutors
+        if (mystudents) {    // have students
           flagInserted = false;
           var mystudent;
           for (let i = 0; i < mystudents.length; i++){

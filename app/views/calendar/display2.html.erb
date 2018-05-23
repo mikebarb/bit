@@ -61,6 +61,7 @@
 
 <% logger.debug "-------------- displayed index completed -----------------------------" %>
 
+<div class=schedule>
 <% @cal.each do |location, calLocation| %>
   <% firsttablecolumn = true %>
   <table id=site-<%= location %> >
@@ -149,6 +150,7 @@
   </table>
 <br>
 <% end %>
+</div>
 
   <nav id="context-menu" class="context-menu">
     <ul class="context-menu__items">

@@ -17,6 +17,7 @@
     <% end %>
 </div>
 
+<div class=schedule>
 <% @cal.each do |location, calLocation|
      usedColumns = calLocation[0][0]["days"].keys
      usedColumnsIndex = [0]
@@ -121,6 +122,7 @@
   </table>
   <br>
 <% end %>
+</div>
 
   <nav id="context-menu" class="context-menu">
     <ul class="context-menu__items">
