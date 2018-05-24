@@ -39,7 +39,7 @@ Rails.application.configure do
   # this failed loading heroku - implemented comemnts from:
   # https://github.com/lautis/uglifier/issues/127
   #config.assets.js_compressor = :uglifier
-  config.assets.js_compressor = :uglifier(harmony: true)
+  config.assets.js_compressor = Uglifier.new(harmony: true)
 
   # config.assets.css_compressor = :sass
 
