@@ -24,6 +24,17 @@ module CalendarHelper
     end
     result
   end
+
+# for fast version of display
+  def set_class_status_f(personRole)
+    status = personRole.status
+    if status != nil && status != ''
+      result = status
+    else
+      result = 'standard'  
+    end
+    result
+  end
   
   def set_class_kind(person, entry)
     if person.class == Tutor
@@ -43,6 +54,17 @@ module CalendarHelper
     end
     result
   end
+  
+  def set_class_kind_f(personRole)
+    kind = personRole.kind
+    if kind != nil && kind != ''
+      result = kind
+    else
+      result = 'standard'  
+    end
+    result
+  end
+  
 
   # Sort the values in display2 (cell of lessons/sessions) by status and then by tutor name
   # as some lessons have no tutor, this returns the tutor name if available.

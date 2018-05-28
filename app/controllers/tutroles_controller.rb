@@ -110,11 +110,16 @@ class TutrolesController < ApplicationController
         flagupdate = true
       end
     end
+    #byebug
+    logger.debug "controller - about to call save: " + @tutrole.inspect
     respond_to do |format|
       if @tutrole.save
+        #byebug
+        logger.debug "controller - successful save: " + @tutrole.inspect
         #format.html { redirect_to @tutor, notice: 'Tutor was successfully updated.' }
         format.json { render :show, status: :ok, location: @tutrole }
       else
+        logger.debug "controller - errored save: " + @tutrole.inspect
         logger.debug("errors.messages: " + @tutrole.errors.messages.inspect)
         format.json { render json: @tutrole.errors.messages, status: :unprocessable_entity }
       end

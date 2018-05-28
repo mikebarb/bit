@@ -20,7 +20,33 @@ class CalendarController < ApplicationController
     
     # call the library in controllers/concerns/calendarutilities.rb
     @cal = calendar_read_display2(@sf, mystartdate, myenddate)
+    #byebug
+    #logger.debug "display1 ending"
   end
+ 
+   #=============================================================================================
+  # the workdesk - display tutors and students hortzontally 
+  #=============================================================================================
+  def display1f
+    @sf = 5   # number of significant figures in dom ids for lesson,tutor, etc.
+    #@site = "Kaleen"
+
+    @tutors = Tutor
+              .where.not(status: "inactive")
+              .order('pname')
+    @students = Student
+                .where.not(status: "inactive")
+                .order('pname')
+
+    mystartdate = current_user.daystart
+    myenddate = current_user.daystart + current_user.daydur.days
+    
+    # call the library in controllers/concerns/calendarutilities.rb
+    @cal = calendar_read_display1f(@sf, mystartdate, myenddate, {})
+    #byebug
+    #logger.debug "display1 ending"
+  end
+  
   
   
   #=============================================================================================
