@@ -141,8 +141,8 @@ module Calendarutilities
   def calendar_read_display1f(sf, mystartdate, myenddate, options)
     @sf = sf    # significant figures for ids used in browser display
     
-    roster = options.has_key?('roster') ? true : false
-    roster = true
+    roster = options.has_key?(:roster) ? true : false
+    #roster = true
     # define a two dimesional array to hold the table info to be displayed.
     # row and column [0] will hold counts of elements populated in that row or column
     # row and column [1] will hold the titles for that rolw or column.

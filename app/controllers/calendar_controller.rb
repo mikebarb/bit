@@ -24,7 +24,7 @@ class CalendarController < ApplicationController
     #logger.debug "display1 ending"
   end
  
-   #=============================================================================================
+  #=============================================================================================
   # the workdesk - display tutors and students hortzontally 
   #=============================================================================================
   def display1f
@@ -153,6 +153,34 @@ class CalendarController < ApplicationController
     end
 
   end
+
+  #=============================================================================================
+  # the roster - display tutors and students hortzontally 
+  #=============================================================================================
+  def roster1f
+    @sf = 5   # number of significant figures in dom ids for lesson,tutor, etc.
+    #@site = "Kaleen"
+
+    @tutors = Tutor
+              .where.not(status: "inactive")
+              .order('pname')
+    @students = Student
+                .where.not(status: "inactive")
+                .order('pname')
+
+    mystartdate = current_user.daystart
+    myenddate = current_user.daystart + current_user.daydur.days
+    
+    # call the library in controllers/concerns/calendarutilities.rb
+    @cal = calendar_read_display1f(@sf, mystartdate, myenddate, {roster: true})
+    #byebug
+    #logger.debug "display1 ending"
+  end
+  
+
+
+
+
   
   #=============================================================================================
   # roster display for use at the sites   -   show all days of the week

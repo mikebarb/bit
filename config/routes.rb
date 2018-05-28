@@ -46,6 +46,7 @@ Rails.application.routes.draw do
   get 'calendar/display1f' => 'calendar#display1f', as: :calendar_display1f
   get 'calendar/display2' => 'calendar#display2', as: :calendar_display2
   get 'calendar/roster1' => 'calendar#roster1', as: :calendar_roster1
+  get 'calendar/roster1f' => 'calendar#roster1f', as: :calendar_roster1f
   get 'calendar/roster2' => 'calendar#roster2', as: :calendar_roster2
 
   get 'lessons/:id/move' => 'lessons#move', as: :move_lesson
