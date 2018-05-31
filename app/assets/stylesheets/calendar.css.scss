@@ -322,6 +322,29 @@ table, th, td {
   margin-bottom: 0px;
 }
 
+// Site colours
+#site-CALWELL {
+  border: 2px solid lightpink;
+}
+#site-DICKSON {
+  border: 2px solid mediumseagreen;
+}
+#site-GUNGAHLIN {
+  border: 2px solid lightskyblue;
+}
+#site-KALEEN {
+  border: 2px solid purple;
+}
+#site-KAMBAH {
+  border: 2px solid yellow;
+}
+#site-WODEN {
+  border: 2px solid gainsboro;
+}
+
+
+
+
 // Tutors & Students backgroune colours
 
 // Background defaults to white if no settings in database
@@ -342,85 +365,135 @@ table, th, td {
 // colours taken from:
 // https://www.whoishostingthis.com/resources/css-colors/
 
-
 // tutor status
+
 .t-status-scheduled {
   background-color: mediumturquoise;   
 }
-
 .t-status-notified {
   background-color: mediumaquamarine;   
 }
-
 .t-status-confirmed {
   background-color: palegreen;   
 }
-
 .t-status-attended {
   background-color: yellowgreen;   
 }
-
 .t-status-deal {
   background-color: fuchsia;   // a highlighter pink 
 }
-
-.t-status-absent {
-  background-color: orange;    
-}
-
 .t-status-away {
   background-color: gainsboro;      // light gray   
 }
+// note: absent defined previously
 
-//============================================
-.t-kind-BFL {
-  background-color: #ffff00;   //yellow  
-}
-
-.t-kind-away-action {
-  background-color: #ff0000;   //red  
-}
-
+// already existing statuses - do not want to remove
+// in order to ensure old entries (imported) remain working
 .t-status-undealtAbsent {
   background-color: #ff0000;   //red 
 }
-
-.t-kind-known-steps-remaining {
-  background-color: #ff9900;   //orange  
-}
-
-.t-kind-needsAttention {
-  background-color: #ff00ff;   //magneta  
-}
-
-.t-kind-breakRoutine-relief {
-  background-color: #00ff00;   //cyan 
-}
-
-.t-kind-bewareIssue {
-  background-color: #9900ff;   //purple 
-}
-
 .t-status-dealtAbsent {
   background-color: #666666;   //grey 
-}
-
-.t-kind-awayAction {
-  background-color: #CC0000;   //dark rec
 }
 .t-status-absent {
   background-color: #CC0000;   //dark red
 }
 
+.t-kind-standard {
+  background-color: mediumspringgreen;  
+}
+.t-kind-training {
+  background-color: sandybrown;  
+}
+.t-kind-called {
+  background-color: lightskyblue;  
+}
+.t-kind-relief {
+  background-color: wheat;  
+}
+
+// already existing kinds - do not want to remove
+// in order to ensure old entries (imported) remain working
+.t-kind-BFL {
+  background-color: #ffff00;   //yellow  
+}
+.t-kind-away-action {
+  background-color: #ff0000;   //red  
+}
+.t-kind-known-steps-remaining {
+  background-color: #ff9900;   //orange  
+}
+.t-kind-needsAttention {
+  background-color: #ff00ff;   //magneta  
+}
+.t-kind-breakRoutine-relief {
+  background-color: #00ff00;   //cyan 
+}
+.t-kind-bewareIssue {
+  background-color: #9900ff;   //purple 
+}
+.t-kind-awayAction {
+  background-color: #CC0000;   //dark rec
+}
 .t-kind-onCall {
   background-color: #00FFFF;   //ligt blue
 }
-
 .t-kind-onSetup {
   background-color: #EAD1DC;   //ligt magneta 3
 }
 
+//============================================
 // colours for students
+
+// already existing statuses - do not want to remove
+// in order to ensure old entries (imported) remain working
+
+.s-status-scheduled {
+  background-color: mediumturquoise;   
+}
+.s-status-attended {
+  background-color: yellowgreen;   
+}
+.s-status-deal {
+  background-color: fuchsia;        // a highlighter pink 
+}
+.s-status-away {
+  background-color: gainsboro;      // light gray   
+}
+// absent covered below.
+
+
+.s-status-undealtAbsent {
+  background-color: #FF0000;   //red  
+}
+.s-status-dealtAbsent {
+  background-color: #666666;   // grey  
+}
+
+.s-status-absent {
+  background-color: #666666;   // grey  
+}
+
+// ------ student kind --------------------
+.s-kind-first {
+  background-color: #B6D7A8;   //light green 2  
+}
+.s-kind-catchup {
+  background-color: lightblue;  
+}
+.s-kind-fortnightly {
+  background-color: steelblue;  
+}
+.s-kind-onetoone {
+  background-color: salmon;  
+}
+.s-kind-standard {
+  background-color: mediumspringgreen;  
+}
+
+// already existing kinds - do not want to remove
+// in order to ensure old entries (imported) remain working
+
 .s-kind-BFL {
   background-color: #ffff00;   //yellow  
 }
@@ -431,10 +504,6 @@ table, th, td {
 
 .s-kind-1stpaid {
   background-color: #B6D7A8;   //light green 2  
-}
-
-.s-status-undealtAbsent {
-  background-color: #FF0000;   //red  
 }
 
 .s-kind-known-steps-remaining {
@@ -451,14 +520,6 @@ table, th, td {
 
 .s-kind-bewareIssue {
   background-color: #9900FF;   //purple  
-}
-
-.s-status-dealtAbsent {
-  background-color: #666666;   // grey  
-}
-
-.s-status-absent {
-  background-color: #666666;   // grey  
 }
 
 .s-kind-fortnightly {
@@ -478,7 +539,7 @@ table, th, td {
 }
 
 .s-kind-Woden {
-  background-color: #D9D9D9;   //light grey 1  
+  background-color: #D9D9D9;   //light grey 1
 }
 
 .s-kind-Kambah {

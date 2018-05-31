@@ -251,6 +251,7 @@ var ready = function() {
     var scmi_setKind = false;
     var scmi_editComment = false;
     var scmi_history = false;
+    var scmi_changes = false;
     var scmi_editSubject = false;
     
     //  var currentActivity = {};   declared globally within this module
@@ -274,6 +275,7 @@ var ready = function() {
           scmi_copy = scmi_move = scmi_remove = scmi_addLesson = true;
           scmi_setStatus = scmi_setKind = scmi_editComment = true;
           scmi_history = true;
+          scmi_changes = true;
         }
         break;
       case 'n':   //lesson which is always in the main scheduling area.
@@ -304,13 +306,16 @@ var ready = function() {
     setscmi('context-editComment', scmi_editComment);
     setscmi('context-editSubject', scmi_editSubject);
     setscmi('context-history', scmi_history);
+    setscmi('context-changes', scmi_changes);
   }
   
   function setscmi(elementId, scmi){
-    if(scmi){
-      document.getElementById(elementId).classList.remove('hideme'); 
-    }else{
-      document.getElementById(elementId).classList.add('hideme'); 
+    if(document.getElementById(elementId)){
+      if(scmi){
+        document.getElementById(elementId).classList.remove('hideme'); 
+      }else{
+        document.getElementById(elementId).classList.add('hideme'); 
+      }
     }
   }
 
@@ -357,7 +362,7 @@ var ready = function() {
       //      session           -> nearest slot as old parent
       currentActivity['action'] = thisAction;
       currentActivity['move_ele_id'] =  thisEleId;
-      thisEle = document.getElementById(thisEleId)
+      thisEle = document.getElementById(thisEleId);
       //currentActivity['ele_old_parent_id'] = document.getElementById(thisEleId).parentElement.id;
       switch ( getRecordType(thisEleId) ) {
         case 's':   //student
@@ -521,6 +526,27 @@ var ready = function() {
         // This will update the relevant comment.
         getHistory(currentActivity);        
         break;
+      case "changes":
+        // Display changes has been selected on an element.
+        // Want to open another tab to display the changes.
+        // url is "https//:myhost/tutors or students/change/n"
+        // currentActivity['action'] = thisAction;
+        // currentActivity['move_ele_id'] =  thisEleId;
+        //console.log ("in changes");
+        //console.log(currentActivity);
+        var personType = getRecordType(thisEleId);
+        var personId = getRecordId(thisEleId);
+        var myurl = '';
+        if(personType == 't') {
+          myurl = myhost + '/tutors/change/' + personId;
+        } else if (personType == 's') {
+          myurl = myhost + '/students/change/' + personId;
+        }
+        //console.log('myurl: ' + myurl);
+        window.open(myurl, '_blank');
+        //var win = window.open(myurl, '_blank');
+        //win.focus();
+        break;
       }
       //console.log("--- completed context menu actioner ---");
       //console.log("--- currentActivity ---");
@@ -543,36 +569,42 @@ var ready = function() {
     // etm = element tertiary menu
     var etmEleId = etmEle.id; // element clicked on e.g. tutor, student, lesson
     var recordType = getRecordType(etmEleId);  //student, tutor, lesson
-    var stmi_tutor_status_deal      = false;   // stmi = set tertiary menu item
-    var stmi_tutor_status_dealt     = false;
-    var stmi_tutor_status_scheduled = false;
-    var stmi_tutor_status_notified  = false;
-    var stmi_tutor_status_confirmed = false;
-    var stmi_tutor_status_attended  = false;
+    var stmi_tutor_status_scheduled   = false;   // stmi = set tertiary menu item
+    var stmi_tutor_status_notified    = false;
+    var stmi_tutor_status_confirmed   = false;
+    var stmi_tutor_status_attended    = false;
+    var stmi_tutor_status_deal        = false;   
+    var stmi_tutor_status_absent      = false;
+    var stmi_tutor_status_away        = false;
     
-    var stmi_tutor_kind_oncall      = false;
-    var stmi_tutor_kind_onsetup     = false;
-    var stmi_tutor_kind_bfl         = false;
-    var stmi_tutor_kind_standard    = false;
-    var stmi_tutor_kind_deal        = false;
-    var stmi_tutor_kind_called      = false;
-    var stmi_tutor_kind_away        = false;
+    var stmi_tutor_kind_oncall        = false;
+    var stmi_tutor_kind_onsetup       = false;
+    var stmi_tutor_kind_bfl           = false;
+    var stmi_tutor_kind_training      = false;
+    var stmi_tutor_kind_standard      = false;
+    var stmi_tutor_kind_called        = false;
+    var stmi_tutor_kind_relief        = false;
 
-    var stmi_student_status_deal    = false;
-    var stmi_student_status_dealt   = false;
-    var stmi_student_status_attended = false;
+    var stmi_student_status_scheduled = false;
+    var stmi_student_status_attended  = false;
+    var stmi_student_status_deal      = false;
+    var stmi_student_status_absent    = false;
+    var stmi_student_status_away      = false;
 
-    var stmi_student_kind_free      = false;
-    var stmi_student_kind_first     = false;
-    var stmi_student_kind_standard  = false;
+    var stmi_student_kind_free        = false;
+    var stmi_student_kind_first       = false;
+    var stmi_student_kind_catchup     = false;
+    var stmi_student_kind_fortnightly = false;
+    var stmi_student_kind_onetoone    = false;
+    var stmi_student_kind_standard    = false;
 
-    var stmi_lesson_status_oncall   = false;
-    var stmi_lesson_status_onsetup  = false;
-    var stmi_lesson_status_standard = false;
-    var stmi_lesson_status_onbfl    = false;
+    var stmi_lesson_status_oncall     = false;
+    var stmi_lesson_status_onsetup    = false;
+    var stmi_lesson_status_onbfl      = false;
+    var stmi_lesson_status_standard   = false;
 
-    var stmi_edit_comment           = false;
-    var stmi_edit_subject           = false;
+    var stmi_edit_comment             = false;
+    var stmi_edit_subject             = false;
     
     // First, identify type of element being actioned e.g. tutor, lesson, etc..
     switch(recordType){
@@ -582,22 +614,23 @@ var ready = function() {
         switch(etmAction){
           case 'setStatus':   // tutor set Status options
             console.debug("etmAction is tutor");
-            stmi_tutor_status_deal      = true;       // stmi - set tertiary menu item
-            stmi_tutor_status_dealt     = true;
-            stmi_tutor_status_scheduled = true;
+            stmi_tutor_status_scheduled = true;   // stmi - set tertiary menu item
             stmi_tutor_status_notified  = true;
             stmi_tutor_status_confirmed = true;
             stmi_tutor_status_attended  = true;
+            stmi_tutor_status_deal      = true;
+            stmi_tutor_status_absent    = true;
+            stmi_tutor_status_away      = true;
             break;
           case 'setKind':   // tutor set Kind options
             console.debug("etmAction is setKind");
+            stmi_tutor_kind_bfl         = true;
             stmi_tutor_kind_oncall      = true;
             stmi_tutor_kind_onsetup     = true;
-            stmi_tutor_kind_bfl         = true;
+            stmi_tutor_kind_training    = true;
             stmi_tutor_kind_standard    = true;
-            stmi_tutor_kind_deal        = true;
             stmi_tutor_kind_called      = true;
-            stmi_tutor_kind_away        = true;
+            stmi_tutor_kind_relief      = true;
             break;
           case 'editComment':   // show the text edit box & populate
             console.debug("etmAction is editComment");
@@ -615,23 +648,28 @@ var ready = function() {
         switch(etmAction){
           case 'setStatus':   // student set Status options
             console.debug("etmAction is setStatus");
-            stmi_student_status_deal    = true;
-            stmi_student_status_dealt   = true;
-            stmi_student_status_attended = true;
+            stmi_student_status_scheduled = true
+            stmi_student_status_attended  = true;
+            stmi_student_status_deal      = true;
+            stmi_student_status_absent    = true;
+            stmi_student_status_away      = true;
             break;
           case 'setKind':   // student set Kind options
             console.debug("etmAction is setKind");
-            stmi_student_kind_free      = true;            
-            stmi_student_kind_first     = true;
-            stmi_student_kind_standard  = true;
+            stmi_student_kind_free        = true;            
+            stmi_student_kind_first       = true;
+            stmi_student_kind_catchup     = true;
+            stmi_student_kind_fortnightly = true;
+            stmi_student_kind_onetoone    = true;
+            stmi_student_kind_standard    = true;
             break;
           case 'editComment':   // show the text edit box & populate
             console.debug("etmAction is editComment");
-            stmi_edit_comment           = true;
+            stmi_edit_comment             = true;
             break;
           case 'editSubject':   // show the text edit box & populate
             console.debug("etmAction is editSubject");
-            stmi_edit_subject           = true;
+            stmi_edit_subject             = true;
             break;
         }     // switch(etmAction)
         break;
@@ -641,46 +679,52 @@ var ready = function() {
         // Now show the tertiary choices for this element.
         switch(etmAction){
           case 'setStatus':   // lesson set Status options
-            stmi_lesson_status_oncall   = true;
-            stmi_lesson_status_onsetup  = true;
-            stmi_lesson_status_standard = true;
-            stmi_lesson_status_onbfl    = true;
+            stmi_lesson_status_oncall     = true;
+            stmi_lesson_status_onsetup    = true;
+            stmi_lesson_status_onbfl      = true;
+            stmi_lesson_status_standard   = true;
             break;
           case 'editComment':   // show the text edit box & populate
             console.debug("etmAction is editComment");
-            stmi_edit_comment           = true;
+            stmi_edit_comment             = true;
             break;
         }
         break;
     }     // switch(recordType
     
-    setscmi('tutor-status-deal', stmi_tutor_status_deal);
-    setscmi('tutor-status-dealt', stmi_tutor_status_dealt);
     setscmi('tutor-status-scheduled', stmi_tutor_status_scheduled);
     setscmi('tutor-status-notified', stmi_tutor_status_notified);
     setscmi('tutor-status-confirmed', stmi_tutor_status_confirmed);
     setscmi('tutor-status-attended', stmi_tutor_status_attended);
+    setscmi('tutor-status-deal', stmi_tutor_status_deal);
+    setscmi('tutor-status-absent', stmi_tutor_status_absent);
+    setscmi('tutor-status-away', stmi_tutor_status_away);
     
+    setscmi('tutor-kind-bfl', stmi_tutor_kind_bfl);
     setscmi('tutor-kind-oncall', stmi_tutor_kind_oncall);
     setscmi('tutor-kind-onsetup', stmi_tutor_kind_onsetup);
-    setscmi('tutor-kind-bfl', stmi_tutor_kind_bfl);
+    setscmi('tutor-kind-training', stmi_tutor_kind_training);
     setscmi('tutor-kind-standard', stmi_tutor_kind_standard);
-    setscmi('tutor-kind-deal', stmi_tutor_kind_deal);
     setscmi('tutor-kind-called', stmi_tutor_kind_called);
-    setscmi('tutor-kind-away', stmi_tutor_kind_away);
+    setscmi('tutor-kind-relief', stmi_tutor_kind_relief);
 
-    setscmi('student-status-deal', stmi_student_status_deal);
-    setscmi('student-status-dealt', stmi_student_status_dealt);
+    setscmi('student-status-scheduled', stmi_student_status_scheduled);
     setscmi('student-status-attended', stmi_student_status_attended);
+    setscmi('student-status-deal', stmi_student_status_deal);
+    setscmi('student-status-absent', stmi_student_status_absent);
+    setscmi('student-status-away', stmi_student_status_away);
 
     setscmi('student-kind-free', stmi_student_kind_free);            
     setscmi('student-kind-first', stmi_student_kind_first);
+    setscmi('student-kind-catchup', stmi_student_kind_catchup);
+    setscmi('student-kind-fortnightly', stmi_student_kind_fortnightly);
+    setscmi('student-kind-onetoone', stmi_student_kind_onetoone);
     setscmi('student-kind-standard', stmi_student_kind_standard);
 
     setscmi('lesson-status-oncall', stmi_lesson_status_oncall);
     setscmi('lesson-status-onsetup', stmi_lesson_status_onsetup);
-    setscmi('lesson-status-standard', stmi_lesson_status_standard);
     setscmi('lesson-status-on_BFL', stmi_lesson_status_onbfl);
+    setscmi('lesson-status-standard', stmi_lesson_status_standard);
 
     setscmi('edit-comment', stmi_edit_comment);
     setscmi('edit-subject', stmi_edit_subject);
