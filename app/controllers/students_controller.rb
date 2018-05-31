@@ -1,6 +1,8 @@
 class StudentsController < ApplicationController
   include Historyutilities
   before_action :set_student, only: [:show, :showsessions, :edit, :update, :destroy]
+  before_filter :authenticate_user!, :set_user_for_models
+  after_filter :reset_user_for_models
 
   # GET /students
   # GET /students.json
@@ -23,11 +25,23 @@ class StudentsController < ApplicationController
     end
   end
 
-  # GET /tutors/history/1
-  # GET /tutors/history/1.json
+  # GET /students/history/1
+  # GET /students/history/1.json
   def history
     @student_history =  student_history(params[:id])
   end
+
+  # GET /students/change/1
+  # GET /students/change/1.json
+  def change
+    @student_change =  student_change(params[:id])
+    respond_to do |format|
+      format.html
+      format.json { render :change, status: :ok }
+    end
+  end
+
+
   
   # GET /studentsessions/1
   # GET /studentsessions/1.json
@@ -127,6 +141,14 @@ class StudentsController < ApplicationController
     # Use callbacks to share common setup or constraints between actions.
     def set_student
       @student = Student.find(params[:id])
+    end
+
+    def set_user_for_models
+      Thread.current[:current_user_id] = current_user.id
+    end
+    
+    def reset_user_for_models
+      Thread.current[:current_user_id] = nil
     end
 
     # Never trust parameters from the scary internet, only allow the white list through.

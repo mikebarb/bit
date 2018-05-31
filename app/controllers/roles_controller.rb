@@ -1,5 +1,7 @@
 class RolesController < ApplicationController
   before_action :set_role, only: [:show, :edit, :update, :destroy]
+  before_filter :authenticate_user!, :set_user_for_models
+  after_filter :reset_user_for_models
 
   # GET /roles
   # GET /roles.json
@@ -163,6 +165,14 @@ class RolesController < ApplicationController
     # Use callbacks to share common setup or constraints between actions.
     def set_role
       @role = Role.find(params[:id])
+    end
+
+    def set_user_for_models
+      Thread.current[:current_user_id] = current_user.id
+    end
+    
+    def reset_user_for_models
+      Thread.current[:current_user_id] = nil
     end
 
     # Never trust parameters from the scary internet, only allow the white list through.

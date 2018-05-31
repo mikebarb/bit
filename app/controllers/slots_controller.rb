@@ -1,5 +1,8 @@
 class SlotsController < ApplicationController
   before_action :set_slot, only: [:show, :edit, :update, :destroy]
+  before_filter :authenticate_user!, :set_user_for_models
+  after_filter :reset_user_for_models
+  
 
   # GET /slots
   # GET /slots.json
@@ -73,6 +76,14 @@ class SlotsController < ApplicationController
       @slot = Slot.find(params[:id])
     end
 
+    def set_user_for_models
+      Thread.current[:current_user_id] = current_user.id
+    end
+    
+    def reset_user_for_models
+      Thread.current[:current_user_id] = nil
+    end
+    
     # Never trust parameters from the scary internet, only allow the white list through.
     def slot_params
       params.require(:slot).permit(:timeslot, :location, :comment)

@@ -1,5 +1,7 @@
 class TutrolesController < ApplicationController
   before_action :set_tutrole, only: [:show, :edit, :update, :destroy]
+  before_filter :authenticate_user!, :set_user_for_models
+  after_filter :reset_user_for_models
 
   # GET /tutroles
   # GET /tutroles.json
@@ -100,7 +102,7 @@ class TutrolesController < ApplicationController
     end
     if params[:kind]
       if @tutrole.kind != params[:kind]
-        @tutrole.kind = params[:kind]
+        #@tutrole.kind = params[:kind]
         flagupdate = true
       end
     end
@@ -110,16 +112,13 @@ class TutrolesController < ApplicationController
         flagupdate = true
       end
     end
-    #byebug
-    logger.debug "controller - about to call save: " + @tutrole.inspect
+    #Thread.current[:current_user_id] = current_user.id
+    @updateValues = "test"
     respond_to do |format|
       if @tutrole.save
-        #byebug
-        logger.debug "controller - successful save: " + @tutrole.inspect
         #format.html { redirect_to @tutor, notice: 'Tutor was successfully updated.' }
         format.json { render :show, status: :ok, location: @tutrole }
       else
-        logger.debug "controller - errored save: " + @tutrole.inspect
         logger.debug("errors.messages: " + @tutrole.errors.messages.inspect)
         format.json { render json: @tutrole.errors.messages, status: :unprocessable_entity }
       end
@@ -157,6 +156,14 @@ class TutrolesController < ApplicationController
     def set_tutrole
       @tutrole = Tutrole.find(params[:id])
     end
+    
+    def set_user_for_models
+      Thread.current[:current_user_id] = current_user.id
+    end
+    
+    def reset_user_for_models
+      Thread.current[:current_user_id] = nil
+    end
 
     # Never trust parameters from the scary internet, only allow the white list through.
     def tutrole_params
@@ -167,4 +174,7 @@ class TutrolesController < ApplicationController
                                     :element_type, :new_value]
       )
     end
+
+
+
 end

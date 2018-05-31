@@ -11,10 +11,24 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema.define(version: 20180322054353) do
+ActiveRecord::Schema.define(version: 20180528220652) do
 
   # These are extensions that must be enabled in order to support this database
   enable_extension "plpgsql"
+
+  create_table "changes", force: :cascade do |t|
+    t.integer  "user"
+    t.string   "table"
+    t.integer  "rid"
+    t.string   "field"
+    t.text     "value"
+    t.datetime "modified"
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+  end
+
+  add_index "changes", ["rid"], name: "index_changes_on_rid", using: :btree
+  add_index "changes", ["table"], name: "index_changes_on_table", using: :btree
 
   create_table "lessons", force: :cascade do |t|
     t.integer  "slot_id"

@@ -1,0 +1,34 @@
+<p id="notice"><%= notice %></p>
+
+<p>
+  <strong>User:</strong>
+  <%= @change.user %>
+</p>
+
+<p>
+  <strong>Table:</strong>
+  <%= @change.table %>
+</p>
+
+<p>
+  <strong>Rid:</strong>
+  <%= @change.rid %>
+</p>
+
+<p>
+  <strong>Field:</strong>
+  <%= @change.field %>
+</p>
+
+<p>
+  <strong>Value:</strong>
+  <%= @change.value %>
+</p>
+
+<p>
+  <strong>Modified:</strong>
+  <%= @change.modified %>
+</p>
+
+<%= link_to 'Edit', edit_change_path(@change) %> |
+<%= link_to 'Back', changes_path %>

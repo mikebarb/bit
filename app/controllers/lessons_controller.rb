@@ -1,6 +1,8 @@
 class LessonsController < ApplicationController
   before_action :set_lesson, only: [:show, :edit, :update, :destroy, :move]
-
+  before_filter :authenticate_user!, :set_user_for_models
+  after_filter :reset_user_for_models
+  
   # GET /lessons
   # GET /lessons.json
   def index
@@ -119,6 +121,14 @@ class LessonsController < ApplicationController
     # Use callbacks to share common setup or constraints between actions.
     def set_lesson
       @lesson = Lesson.find(params[:id])
+    end
+    
+    def set_user_for_models
+      Thread.current[:current_user_id] = current_user.id
+    end
+    
+    def reset_user_for_models
+      Thread.current[:current_user_id] = nil
     end
 
     # Never trust parameters from the scary internet, only allow the white list through.

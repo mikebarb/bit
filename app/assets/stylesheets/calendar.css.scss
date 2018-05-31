@@ -344,18 +344,6 @@ table, th, td {
 
 
 // tutor status
-.t-status-BFL {
-  background-color: yellow;  
-}
-
-.t-status-deal {
-  background-color: fuchsia;   // a highlighter pink 
-}
-
-.t-status-dealt {
-  background-color: plum;    
-}
-
 .t-status-scheduled {
   background-color: mediumturquoise;   
 }
@@ -368,12 +356,20 @@ table, th, td {
   background-color: palegreen;   
 }
 
-.t-status-confirmed {
-  background-color: palegreen;   
-}
-
 .t-status-attended {
   background-color: yellowgreen;   
+}
+
+.t-status-deal {
+  background-color: fuchsia;   // a highlighter pink 
+}
+
+.t-status-absent {
+  background-color: orange;    
+}
+
+.t-status-away {
+  background-color: gainsboro;      // light gray   
 }
 
 //============================================

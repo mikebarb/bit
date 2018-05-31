@@ -1,0 +1,33 @@
+<%= @tutor_change["tutor"].pname %>
+<table>
+  <thead>
+    <tr>
+      <th>User</th>
+      <th>Modified</th>
+      <th>Table</th>
+      <th>DayTime</th>
+      <th>Location</th>
+      <th>Field</th>
+      <th>Value</th>
+      <th>Table Record Id</th>
+    </tr>
+  </thead>
+
+  <tbody>
+    <% @tutor_change["data"].each do |r| %>
+    <tr>
+      <td><%= r['user'] %></td>
+      <td><%= r['modified'].localtime('+10:00').strftime("%a %l:%M %p %d/%m/%Y") %></td>
+      <td><%= r['table'] %></td>
+      <td><%= if r['timeslot'] != ''
+                r['timeslot'].strftime("%a %l:%M %p %d/%m/%Y") 
+              end
+      %></td>
+      <td><%= r['location'] %></td>
+      <td><%= r['field'] %></td>
+      <td><%= r['value'] %></td>
+      <td><%= r['id'] %></td>
+    </tr>
+    <% end %>
+  </tbody>
+</table>

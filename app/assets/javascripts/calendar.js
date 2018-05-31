@@ -15,8 +15,8 @@ var ready = function() {
   var myhost = window.location.protocol + '//' + window.location.hostname;   // base url for ajax
 
   // These are used in the quick status setting.
-  var validTutorStatuses = ["Deal", "Dealt", "Scheduled", "Notified", "Confirmed", "Attended"];
-  var validStudentStatuses = ["Deal", "Dealt", "Attended"];
+  var validTutorStatuses = ["Away", "Absent", "Deal", "Scheduled", "Notified", "Confirmed", "Attended"];
+  var validStudentStatuses = ["Away", "Absent", "Deal", "Attended", "Scheduled"];
 
 
   // want to set defaults on some checkboxes on page load

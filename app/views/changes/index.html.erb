@@ -1,0 +1,33 @@
+<p id="notice"><%= notice %></p>
+
+<h1>Listing Changes</h1>
+
+<table>
+  <thead>
+    <tr>
+      <th>Id</th>
+      <th>User</th>
+      <th>Table</th>
+      <th>Rid</th>
+      <th>Field</th>
+      <th>Value</th>
+      <th>Modified</th>
+    </tr>
+  </thead>
+
+  <tbody>
+    <% @changes.reverse.each do |change| %>
+      <tr>
+        <td><%= change.id %></td>
+        <td><%= @user_names[change.user] %></td>
+        <td><%= change.table %></td>
+        <td><%= change.rid %></td>
+        <td><%= change.field %></td>
+        <td><%= change.value %></td>
+        <td><%= change.modified == nil ? '' : change.modified.localtime('+10:00').strftime('%a %Y-%m-%d %l:%M:%S.%3N %P %Z') %></td>
+      </tr>
+    <% end %>
+  </tbody>
+</table>
+
+

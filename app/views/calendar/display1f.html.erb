@@ -25,8 +25,10 @@
       <option value="Attended">Attended</option>
       <option value="Confirmed">Confirmed</option>
       <option value="Notified">Notified</option>
-      <option value="Dealt">Dealt</option>
+      <option value="Scheduled">Scheduled</option>
       <option value="Deal">Deal</option>
+      <option value="Absent">Absent</option>
+      <option value="Away">Away</option>
     </select>
 </div>
 
@@ -211,12 +213,6 @@
   <nav id="tertiary-menu" class="tertiary-menu">
     <div id="tertiary=menu-title"> Tertiary Menu Title</div>
     <ul class="tertiary-menu__choices">
-      <li id="tutor-status-deal" class="tertiary-menu__choice" data-choice="tutor-status-deal">
-        <p>tutor-status: Deal</p>
-      </li>
-      <li id="tutor-status-dealt" class="tertiary-menu__choice" data-choice="tutor-status-dealt">
-        <p>tutor-status: Dealt</p>
-      </li>
       <li id="tutor-status-scheduled" class="tertiary-menu__choice" data-choice="tutor-status-scheduled">
         <p>tutor-status: Scheduled</p>
       </li>
@@ -228,6 +224,15 @@
       </li>
       <li id="tutor-status-attended" class="tertiary-menu__choice" data-choice="tutor-status-attended">
         <p>tutor-status: Attended</p>
+      </li>
+      <li id="tutor-status-deal" class="tertiary-menu__choice" data-choice="tutor-status-deal">
+        <p>tutor-status: Deal</p>
+      </li>
+      <li id="tutor-status-dealt" class="tertiary-menu__choice" data-choice="tutor-status-absent">
+        <p>tutor-status: Absent</p>
+      </li>
+      <li id="tutor-status-dealt" class="tertiary-menu__choice" data-choice="tutor-status-away">
+        <p>tutor-status: Away</p>
       </li>
       <li id="tutor-kind-oncall" class="tertiary-menu__choice" data-choice="tutor-kind-onCall">
         <p>tutor-kind: On Call</p>
@@ -296,7 +301,7 @@
     </ul>
   </nav>
 
-  <div class="lesson" id=lessontemplate >
+  <div class="lesson hideme" id=lessontemplate >
     <div class="grouptutors"></div>
     <div class="groupstudents"></div>
     <div class="lessoncomment comment commentinline">

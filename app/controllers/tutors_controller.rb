@@ -2,6 +2,8 @@ class TutorsController < ApplicationController
   include Historyutilities
   
   before_action :set_tutor, only: [:show, :edit, :update, :destroy, :history]
+  before_filter :authenticate_user!, :set_user_for_models
+  after_filter :reset_user_for_models
 
   # GET /tutors
   # GET /tutors.json
@@ -35,6 +37,18 @@ class TutorsController < ApplicationController
       format.json { render :history, status: :ok }
     end
   end
+
+  # GET /tutors/change/1
+  # GET /tutors/change/1.json
+  def change
+    @tutor_change =  tutor_change(params[:id])
+    respond_to do |format|
+      format.html
+      format.json { render :change, status: :ok }
+    end
+  end
+
+
 
   # GET /tutors/new
   def new
@@ -128,6 +142,14 @@ class TutorsController < ApplicationController
     # Use callbacks to share common setup or constraints between actions.
     def set_tutor
       @tutor = Tutor.find(params[:id])
+    end
+
+    def set_user_for_models
+      Thread.current[:current_user_id] = current_user.id
+    end
+    
+    def reset_user_for_models
+      Thread.current[:current_user_id] = nil
     end
 
     # Never trust parameters from the scary internet, only allow the white list through.

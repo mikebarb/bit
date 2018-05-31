@@ -1,4 +1,5 @@
 Rails.application.routes.draw do
+  resources :changes
   devise_for :users, controllers: {registrations: 'registrations' } 
   devise_scope :user do
     get 'users/preferences/' => 'registrations#edit_preferences',   as: :edit_user_preferences
@@ -58,12 +59,13 @@ Rails.application.routes.draw do
 
   get 'tutors/history/:id' => 'tutors#history', as: :tutor_history
   get 'tutors/history' => 'tutors#allhistory', as: :tutors_history
+  get 'tutors/change/:id' => 'tutors#change', as: :tutor_change
   post 'tutordetailupdateskc' => 'tutors#tutordetailupdateskc', as: :tutors_tutordetailupdateskc
   resources :tutors
 
   get 'students/history/:id' => 'students#history', as: :student_history
   get 'students/history' => 'students#allhistory', as: :students_history
-  #get 'students/:id/showlessons' => 'students#showlessons', as: :show_lessons
+  get 'students/change/:id' => 'students#change', as: :student_change
   post 'studentdetailupdateskc' => 'students#studentdetailupdateskc', as: :students_studentdetailupdateskc
   resources :students
 

@@ -38,7 +38,7 @@ module Historyutilities
                                             ] }
     @tutorhistory
   end
-  
+
   # Obtain the history for a single student
   # @studenthistory holds everything required in the view
   def student_history(student_id)
@@ -70,6 +70,181 @@ module Historyutilities
                                               "" : obj.roles.where(student_id: student_id).first.status
                                             ] }
     @studenthistory
+  end
+
+  # Obtain the changes for a single tutor
+  # @tutorchanges holds everything required in the view
+  def tutor_change(tutor_id)
+    logger.debug "tutor_change called"
+    # put everything in a hash for use in the view.
+    @tutorchanges = Hash.new
+    @tutorchanges["tutor"] = Tutor.find(tutor_id)
+    startdate = Date.today - (Integer(current_user.history_back) rescue 100)
+    enddate = Date.today + (Integer(current_user.history_forward) rescue 7)
+    # override for testing only
+    startdate = Date.parse('4-4-2018')
+    enddate = Date.parse('5-4-2018')
+    @tutorchanges["startdate"] = startdate
+    @tutorchanges["enddate"]   = enddate
+
+    # provide ability to display userids ( = email address)
+    @users = User
+             .select(:id, :email)
+             .all
+    @user_names = {}
+    @users.each do |o|
+      @user_names[o.id] = o.email
+    end
+    # now collate the changes
+    # slotes o interest - in the date range
+    myslots = Slot.select(:id).where(timeslot: startdate..enddate)
+    # all lessons in those slots
+    mylessons = Lesson.select(:id).where(slot_id: myslots)
+    # all tut roles for this tutor in these lessons
+    mytutroles = Tutrole.select(:id, :lesson_id).where(tutor_id: tutor_id, lesson_id: mylessons)
+    mytutroleslessonsids = mytutroles.map {|o| o.lesson_id} # for code efficiency later
+    # now reduce to only lessons that have this tutor
+    mylessons = mylessons.select { |o| mytutroleslessonsids.include?(o.id) ? true : false }
+    #now get full details on these relevant lessons - slot info required in display 
+    mylessons = Lesson
+                 .joins(:slot)
+                 .where(id: mylessons.map {|o| o.id})
+                 .includes(:slot)
+    # lookup table into lessons to reduce db activity.
+    mylessonsindex = {}  # key = session id , value is index in lessons object array 
+    mylessons.each_with_index do |v, i|
+      mylessonsindex[v.id] = i
+    end
+    # ditto lookup table for tutroles
+    mytutrolesindex = {}  # key = session id , value is index in lessons object array 
+    mytutroles.each_with_index { |v, i| mytutrolesindex[v.id] = i }
+    # go and get the relevent changes from the change table 
+    changelessons = Change.where(table: 'Lesson', rid: mylessons.map {|o| o.id})
+    changetutroles = Change.where(table: 'Tutrole', rid: mytutroles.map {|o| o.id})
+    changetutor = Change.where(table: 'Tutor', rid: tutor_id)
+    # generate the data for display - go through each category
+    makeDsp = lambda{|h, o| 
+      h['user']     = @user_names[o.user]
+      h['modified'] = o.modified
+      h['table']    = o.table
+      h['field']    = o.field
+      h['id']       = o.id
+      h['value']    = o.value
+      h
+    }
+    @dsp = Array.new
+    changelessons.each do |o|
+      h = makeDsp.call(Hash.new(), o)
+      h['timeslot'] = mylessons[mylessonsindex[o.rid]].slot.timeslot
+      h['location'] = mylessons[mylessonsindex[o.rid]].slot.location
+      @dsp.push(h)
+    end
+    changetutroles.each do |o| 
+      h = makeDsp.call(Hash.new(), o)
+      h['timeslot'] = mylessons[mylessonsindex[mytutroles[mytutrolesindex[o.rid]].lesson_id]].slot.timeslot
+      h['location'] = mylessons[mylessonsindex[mytutroles[mytutrolesindex[o.rid]].lesson_id]].slot.location
+      @dsp.push(h)
+    end
+    # only dealing with a single tutor
+    if changetutor.length > 0
+      h = makeDsp.call(Hash.new(), changetutor[0])
+      h['timeslot'] = ''
+      h['location'] = ''
+      @dsp.push(h)
+    end
+    # sort in modified date order
+    @dsp = @dsp.sort_by{ |q| q['modified']}.reverse
+    # now store all these changes in passed display data
+    @tutorchanges["data"] = @dsp
+    @tutorchanges
+  end
+
+  # Obtain the changes for a single student
+  # @studentchanges holds everything required in the view
+  def student_change(student_id)
+    logger.debug "student_change called"
+    # put everything in a hash for use in the view.
+    @studentchanges = Hash.new
+    @studentchanges["student"] = Student.find(student_id)
+    startdate = Date.today - (Integer(current_user.history_back) rescue 100)
+    enddate = Date.today + (Integer(current_user.history_forward) rescue 7)
+    # override for testing only
+    startdate = Date.parse('4-4-2018')
+    enddate = Date.parse('5-4-2018')
+    @studentchanges["startdate"] = startdate
+    @studentchanges["enddate"]   = enddate
+
+    # provide ability to display userids ( = email address)
+    @users = User
+             .select(:id, :email)
+             .all
+    @user_names = {}
+    @users.each do |o|
+      @user_names[o.id] = o.email
+    end
+    # now collate the changes
+    # slotes o interest - in the date range
+    myslots = Slot.select(:id).where(timeslot: startdate..enddate)
+    # all lessons in those slots
+    mylessons = Lesson.select(:id).where(slot_id: myslots)
+    # all roles for this student in these lessons
+    myroles = Role.select(:id, :lesson_id).where(student_id: student_id, lesson_id: mylessons)
+    myroleslessonsids = myroles.map {|o| o.lesson_id} # for code efficiency later
+    # now reduce to only lessons that have this student
+    mylessons = mylessons.select { |o| myroleslessonsids.include?(o.id) ? true : false }
+    #now get full details on these relevant lessons - slot info required in display 
+    mylessons = Lesson
+                 .joins(:slot)
+                 .where(id: mylessons.map {|o| o.id})
+                 .includes(:slot)
+    # lookup table into lessons to reduce db activity.
+    mylessonsindex = {}  # key = session id , value is index in lessons object array 
+    mylessons.each_with_index do |v, i|
+      mylessonsindex[v.id] = i
+    end
+    # ditto lookup table for tutroles
+    myrolesindex = {}  # key = session id , value is index in lessons object array 
+    myroles.each_with_index { |v, i| myrolesindex[v.id] = i }
+    # go and get the relevent changes from the change table 
+    changelessons = Change.where(table: 'Lesson', rid: mylessons.map {|o| o.id})
+    changeroles = Change.where(table: 'Role', rid: myroles.map {|o| o.id})
+    changestudent = Change.where(table: 'Student', rid: student_id)
+    # generate the data for display - go through each category
+    #byebug
+    makeDsp = lambda{|h, o| 
+      h['user']     = @user_names[o.user]
+      h['modified'] = o.modified
+      h['table']    = o.table
+      h['field']    = o.field
+      h['id']       = o.id
+      h['value']    = o.value
+      h
+    }
+    @dsp = Array.new
+    changelessons.each do |o|
+      h = makeDsp.call(Hash.new(), o)
+      h['timeslot'] = mylessons[mylessonsindex[o.rid]].slot.timeslot
+      h['location'] = mylessons[mylessonsindex[o.rid]].slot.location
+      @dsp.push(h)
+    end
+    changeroles.each do |o| 
+      h = makeDsp.call(Hash.new(), o)
+      h['timeslot'] = mylessons[mylessonsindex[myroles[myrolesindex[o.rid]].lesson_id]].slot.timeslot
+      h['location'] = mylessons[mylessonsindex[myroles[myrolesindex[o.rid]].lesson_id]].slot.location
+      @dsp.push(h)
+    end
+    # only dealing with a single student
+    if changestudent.length > 0
+      h = makeDsp.call(Hash.new(), changestudent[0])
+      h['timeslot'] = ''
+      h['location'] = ''
+      @dsp.push(h)
+    end
+    # sort in modified date order
+    @dsp = @dsp.sort_by{ |q| q['modified']}.reverse
+    # now store all these changes in passed display data
+    @studentchanges["data"] = @dsp
+    @studentchanges
   end
   
 end

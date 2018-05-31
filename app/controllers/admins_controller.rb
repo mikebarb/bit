@@ -3,6 +3,8 @@ class AdminsController < ApplicationController
   include Calendarutilities
 
   #skip_before_action :authenticate_user!, only: [:home]
+  before_filter :set_user_for_models
+  after_filter :reset_user_for_models
 
 #---------------------------------------------------------------------------
 #
@@ -2365,6 +2367,13 @@ end
       params.require(:delete).permit(:from, :num_days)
     end
 
+    def set_user_for_models
+      Thread.current[:current_user_id] = current_user.id
+    end
+    
+    def reset_user_for_models
+      Thread.current[:current_user_id] = nil
+    end
 
   # Sort the values in display2 (cell of lessons/sessions) by status and then by tutor name
   # as some lessons have no tutor, this returns the tutor name if available.
