@@ -1,5 +1,7 @@
 <h1>Listing tutors</h1>
 <%= link_to "all tutor history", tutors_history_path %>
+<%= page_entries_info @tutors %>
+<%= paginate @tutors %>
 <table>
   <thead>
     <tr>
@@ -41,8 +43,7 @@
     <% end %>
   </tbody>
 </table>
-
+<%= paginate @tutors %>
+<%= page_entries_info @tutors %>
 <br>
-
-
 <%= link_to 'New Tutor', new_tutor_path %>

@@ -1,9 +1,5 @@
 <h1>Calendar#display3 - site rosters</h1>
 
-<!--<div class="positionable" id=comments>
-  <p>Test</p>
-</div>-->
-
 <% listofsites = Array.new
    @cal.each do |location, calLocation| 
      listofsites.push(location)
@@ -18,23 +14,12 @@
 </div>
 
 <div class=schedule>
-<% @cal.each do |location, calLocation|
-     usedColumns = calLocation[0][0]["days"].keys
-     usedColumnsIndex = [0]
-     for i in 1..(calLocation[0].length-1)
-       if usedColumns.include?(calLocation[0][i]["value"]) then
-         usedColumnsIndex.push(i)
-       end
-     end %>
-
+<% @cal.each do |location, calLocation| %>
 <%     firsttablecolumn = true %>
   <table id=site-<%= location %> >
     <% calLocation.each do |rows| %>
       <tr>
-      <% rows.each_with_index do |cells, cellIndex| 
-           unless usedColumnsIndex.include?(cellIndex) then
-             next
-           end %>
+      <% rows.each do |cells| %> 
         <% if cells.key?("slotid") then %>
           <td class="cell slot" id=<%= cells["id_dom"] + "l" + cells["slotid"].rjust(@sf, "0") %>  >
         <% elsif cells.key?("value") then %>

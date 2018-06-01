@@ -5,7 +5,7 @@ class ChangesController < ApplicationController
   # GET /changes
   # GET /changes.json
   def index
-    @changes = Change.all
+    @changes = Change.order(id: :desc).page(params[:page])
     @users = User
              .select(:id, :email)
              .all
@@ -78,6 +78,6 @@ class ChangesController < ApplicationController
 
     # Never trust parameters from the scary internet, only allow the white list through.
     def change_params
-      params.require(:change).permit(:user, :table, :rid, :field, :value, :modified)
+      params.require(:change).permit(:user, :table, :rid, :field, :value, :modified, :page)
     end
 end

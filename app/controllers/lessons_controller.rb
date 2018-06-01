@@ -6,7 +6,10 @@ class LessonsController < ApplicationController
   # GET /lessons
   # GET /lessons.json
   def index
-    @lessons = Lesson.all
+    @lessons = Lesson
+               .order(id: :desc)
+               .page(params[:page])
+               .includes(:tutors, :students, :slot)
   end
 
   # GET /lessons/1
@@ -133,7 +136,7 @@ class LessonsController < ApplicationController
 
     # Never trust parameters from the scary internet, only allow the white list through.
     def lesson_params
-      params.require(:lesson).permit( :slot_id, :comments, :status,
+      params.require(:lesson).permit( :slot_id, :comments, :status, :page,
                                       :students_attributes => [:id, :pname],
                                       :roles_attributes => [:id, :student_id, :lesson_id, :comment, :_destroy],
                                       :tutors_attributes => [:id, :pname],

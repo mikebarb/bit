@@ -1,5 +1,6 @@
 <h1>Listing lessons</h1>
-
+<%= page_entries_info @lessons %>
+<%= paginate @lessons %>
 <table>
   <thead>
     <tr>
@@ -46,7 +47,7 @@
           <td></td> <td></td> <td></td>
         <% else %>
           <td><%= lesson.slot_id %></td>
-          <td><%= slot.timeslot %></td>
+          <td><%= slot.timeslot.strftime('%a %Y-%m-%d %l:%M %P') %></td>
           <td><%= slot.location %></td>
         <% end %>
         
@@ -58,7 +59,9 @@
     <% end %>
   </tbody>
 </table>
+<%= page_entries_info @lessons %>
+<%= paginate @lessons %>
+
 
 <br>
-
 <%= link_to 'New Lesson', new_lesson_path %>

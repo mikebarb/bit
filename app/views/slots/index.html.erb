@@ -1,5 +1,6 @@
 <h1>Listing slots</h1>
-
+<%= page_entries_info @slots %>
+<%= paginate @slots %>
 <table>
   <thead>
     <tr>
@@ -15,7 +16,7 @@
     <% @slots.each do |slot| %>
       <tr>
         <td><%= slot.id %></td>
-        <td><%= slot.timeslot %></td>
+        <td><%= slot.timeslot.strftime('%a %Y-%m-%d %l:%M %P') %></td>
         <td><%= slot.location %></td>
         <td><%= slot.comment %></td>
         <td><%= link_to 'Show', slot %></td>
@@ -27,5 +28,7 @@
 </table>
 
 <br>
-
+<%= paginate @slots %>
+<%= page_entries_info @slots %>
+<br>
 <%= link_to 'New Slot', new_slot_path %>

@@ -8,7 +8,9 @@ class TutorsController < ApplicationController
   # GET /tutors
   # GET /tutors.json
   def index
-    @tutors = Tutor.all
+    @tutors = Tutor
+              .order(:pname)
+              .page(params[:page])
   end
 
   # GET /tutors/1

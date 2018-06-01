@@ -1,7 +1,8 @@
 <p id="notice"><%= notice %></p>
 
 <h1>Listing Changes</h1>
-
+<%= page_entries_info @changes %> 
+<%= paginate @changes %>
 <table>
   <thead>
     <tr>
@@ -16,7 +17,7 @@
   </thead>
 
   <tbody>
-    <% @changes.reverse.each do |change| %>
+    <% @changes.each do |change| %>
       <tr>
         <td><%= change.id %></td>
         <td><%= @user_names[change.user] %></td>
@@ -29,5 +30,9 @@
     <% end %>
   </tbody>
 </table>
+
+<%= paginate @changes %>
+<%= page_entries_info @changes %>
+
 
 

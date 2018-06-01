@@ -73,7 +73,7 @@ class CalendarController < ApplicationController
   #=============================================================================================
   # roster display for use at the sites
   #=============================================================================================
-  def roster1
+  def roster2
     #*****************************************************************
     # Set these to control what is displayed in the roster
     
@@ -185,7 +185,7 @@ class CalendarController < ApplicationController
   #=============================================================================================
   # roster display for use at the sites   -   show all days of the week
   #=============================================================================================
-  def roster2
+  def roster1
     #*****************************************************************
     # Set these to control what is displayed in the roster
     
