@@ -6,7 +6,7 @@ Rails.application.routes.draw do
     put 'users/preferences/' => 'registrations#update_preferences', as: :user_preferences
 
     get 'users/index_roles/' => 'registrations#index_roles',        as: :index_user_roles
-    get 'users/roles/:id'       => 'registrations#edit_roles',         as: :edit_user_roles
+    get 'users/roles/:id'    => 'registrations#edit_roles',         as: :edit_user_roles
     put 'users/roles/'       => 'registrations#update_roles',       as: :user_roles
   end
   
@@ -30,6 +30,7 @@ Rails.application.routes.draw do
   get 'admins/deletedaysedit' => 'admins#deletedaysedit', as: :deletedaysedit
   get 'admins/deletedays' => 'admins#deletedays', as: :deletedays
 
+
   post 'removetutorfromlesson' => 'tutroles#removetutorfromlesson', as: :removetutorfromlesson
   post 'tutorcopylesson' =>       'tutroles#tutorcopylesson', as: :tutorcopylesson
   post 'tutormovelesson' =>       'tutroles#tutormovelesson', as: :tutormovelesson
@@ -49,6 +50,9 @@ Rails.application.routes.draw do
   get 'calendar/roster1' => 'calendar#roster1', as: :calendar_roster1
   get 'calendar/roster1f' => 'calendar#roster1f', as: :calendar_roster1f
   get 'calendar/roster2' => 'calendar#roster2', as: :calendar_roster2
+
+  get 'calendar/displayoptions/' => 'calendar#displayoptions',   as: :displayoptions
+  get 'calendar/flexibledisplay/' => 'calendar#flexibledisplay', as: :flexibledisplay
 
   get 'lessons/:id/move' => 'lessons#move', as: :move_lesson
   post 'lessons/:id' => 'lessons#update', as: :update_lesson

@@ -141,8 +141,21 @@ module Calendarutilities
   def calendar_read_display1f(sf, mystartdate, myenddate, options)
     @sf = sf    # significant figures for ids used in browser display
     
+    # Process parameters and set up the options.
+    #
     roster = options.has_key?(:roster) ? true : false
     #roster = true
+    if roster && options.has_key?(:tutor_statuses)
+      tutor_statuses = options[:tutor_statuses]
+    else
+      tutor_statuses = ['attended', 'notified', 'scheduled']
+    end
+    if roster && options.has_key?(:student_statuses)
+      student_statuses = options[:student_statuses]
+    else
+      student_statuses = ['attended', 'notified', 'scheduled']
+    end
+
     # define a two dimesional array to hold the table info to be displayed.
     # row and column [0] will hold counts of elements populated in that row or column
     # row and column [1] will hold the titles for that rolw or column.
@@ -168,19 +181,41 @@ module Calendarutilities
                    .order('kind, tutors.pname')
                    .includes(:tutor, :lesson)
     
-    # Some code to reduce this array 
-    # - eliminate categories of tutors that are not of interest.
+    @roleinfo    = Role
+                   .joins(:student, :lesson)
+                   .where(lesson_id: @sessinfo.map {|o| o.id})
+                   .order('students.pname')
+                   .includes(:student, :lesson)
 
-    if roster then    // if option = roster               
+    # Some code to reduce tutrole and role arrays
+    # - eliminate categories of people that are not of interest.
+    # This reduces tutors to ones with desired statuses
+    reduce_tutrole = lambda{
       @tutroleinfo = @tutroleinfo.reduce([]) { |a,o|
-        if ['attended', 'notified', 'scheduled'].include?(o.status) then 
+        if tutor_statuses.include?(o.status) then 
           a << o
         end
         a
       }
+    }
+    # This reduces students to ones with desired statuses
+    reduce_role = lambda{
+      @roleinfo = @roleinfo.reduce([]) { |a,o|
+        if student_statuses.include?(o.status) then 
+          a << o
+        end
+        a
+      }
+    }
+
+    # now do reductions if generating a roster.
+    if roster then    // if option = roster               
+      reduce_tutrole.call
+      reduce_role.call
     end
     
-    # now create the hash{lesson_id}[tutor_index_into array, .....]    
+    # these indexes are required if reduced or not - so done after reduction.
+    # First, create the hash{lesson_id}[tutor_index_into array, .....]    
     @tutrole_lessonindex = Hash.new
     @tutroleinfo.each_with_index { |o, count|
       unless @tutrole_lessonindex.has_key? o.lesson_id then
@@ -188,25 +223,7 @@ module Calendarutilities
       end  
       @tutrole_lessonindex[o.lesson_id].push(count)
     }
-
-    @roleinfo    = Role
-                   .joins(:student, :lesson)
-                   .where(lesson_id: @sessinfo.map {|o| o.id})
-                   .order('students.pname')
-                   .includes(:student, :lesson)
-                   
-    # Now some code to reduce this array 
-    # - eliminate categories of tutors or students that are not of interest.
-    if roster then    // if option = roster               
-      @roleinfo = @roleinfo.reduce([]) { |a,o|
-        if ['attended', 'notified', 'scheduled'].include?(o.status) then 
-          a << o
-        end
-        a
-      }
-    end
-                   
-    # now create the hash{lesson_id}[student_index_into array, .....]    
+    # Second, create the hash{lesson_id}[student_index_into array, .....]    
     @role_lessonindex = Hash.new
     @roleinfo.each_with_index { |o, count|
       unless @role_lessonindex.has_key? o.lesson_id then
@@ -215,7 +232,7 @@ module Calendarutilities
       @role_lessonindex[o.lesson_id].push(count)
     }
     
-    # We can now reduce the lesson array to eliminate lessons that have
+    # Final reduction step, reduce the lesson array to eliminate lessons that have
     # no tutors or students of interest
     if roster then    // if option = roster               
       @sessinfo = @sessinfo.reduce([]) { |a,o|

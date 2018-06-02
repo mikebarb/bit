@@ -7,6 +7,33 @@
   <%= csrf_meta_tags %>
 </head>
 <body>
+
+<!-- This is a comment 
+  <div id='cssmenu'>
+    <ul>
+       <li><a href='#'>Home</a></li>
+       <li class='active'><a href='#'>Products</a>
+          <ul>
+             <li><a href='#'>Product 1</a>
+                <ul>
+                   <li><a href='#'>Sub Product</a></li>
+                   <li><a href='#'>Sub Product</a></li>
+                </ul>
+             </li>
+             <li><a href='#'>Product 2</a>
+                <ul>
+                   <li><a href='#'>Sub Product</a></li>
+                   <li><a href='#'>Sub Product</a></li>
+                </ul>
+             </li>
+          </ul>
+       </li>
+       <li><a href='#'>About</a></li>
+       <li><a href='#'>Contact</a></li>
+    </ul>
+  </div>
+ This ends the comment -->
+ 
   <% flash.each do |key, value| %>
     <div class="alert alert-<%= key %>">
       <%= value %>
@@ -28,6 +55,7 @@
         <%= link_to "calendar_roster1f", calendar_roster1f_path %>
         <%= link_to "calendar_roster2", calendar_roster2_path %>
         <%= link_to "Google_roster", googleroster_path %>
+        <%= link_to "Flexible Display", displayoptions_path %>
         <%= link_to "copydays", copydaysedit_path %>
         <%= link_to "load", load_path %>
       </ul>

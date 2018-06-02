@@ -2,6 +2,51 @@ class CalendarController < ApplicationController
   include Calendarutilities
 
   #=============================================================================================
+  # the workdesk - flexible display with multiple options. 
+  #=============================================================================================
+  def displayoptions
+    logger.debug "called calendar conroller - preferences"
+  end
+  
+  def flexibledisplay
+    @sf = 5   # number of significant figures in dom ids for lesson,tutor, etc.
+    options = Hash.new  # options to be passed into calendar read utility.
+    # dates can come from user preferences or be overridden by settings
+    # in the flexible display options or passed parameter options.
+    params[:daystart].blank? ? mystartdate = current_user.daystart :
+                                       mystartdate = params[:daystart].to_date
+    params[:daydur].blank?   ? mydaydur = current_user.daydur :
+                                       mydaydur = params[:daydur].to_i  
+    mydaydur < 1  || mydaydur > 21   ? mydaydur : 1 # limit range of days allowed!!!
+    myenddate = mystartdate + mydaydur.days
+    @displayHeader = 'Flexible Display of Calendar Workbench'
+    if params[:bench] == "roster"
+      options[:roster] = true
+      @displayHeader = 'Flexible Display of Roster'
+    end
+    if params.has_key?(:tutor_statuses)
+      options[:tutor_statuses] = params[:tutor_statuses]
+    end
+    if params.has_key?(:student_statuses)
+      options[:student_statuses] = params[:student_statuses]
+    end
+    # @compress is used in rendering the display.
+    @compress = params.has_key?(:compress) ? true : false 
+    
+    @tutors = Tutor
+              .where.not(status: "inactive")
+              .order('pname')
+    @students = Student
+                .where.not(status: "inactive")
+                .order('pname')
+
+    # call the library in controllers/concerns/calendarutilities.rb
+    @cal = calendar_read_display1f(@sf, mystartdate, myenddate, options)
+
+  end
+
+
+  #=============================================================================================
   # the workdesk - display tutors and students hortzontally 
   #=============================================================================================
   def display1
@@ -347,6 +392,11 @@ class CalendarController < ApplicationController
       #@cal[@rowindex[thislocation]][0]["value"] += 1
     end
     logger.debug '@cal- ' + @cal.inspect
+  end
+  
+  private
+  def display_params
+    params.permit(:utf8, :daystart, :daydur, :commit, :bench, :tutor_statuses)
   end
 
 end

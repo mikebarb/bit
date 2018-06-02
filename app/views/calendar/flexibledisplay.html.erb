@@ -1,0 +1,345 @@
+<h1><%= @displayHeader %></h1>
+
+<% listofsites = Array.new
+   @cal.each do |location, calLocation| 
+     listofsites.push(location)
+   end
+%>
+
+<div id="selectshows">
+    <input id=hidetutors class=selectshow onclick="selectshows()" type="checkbox" > hide tutors
+    <input id=hidestudents class=selectshow onclick="selectshows()" type="checkbox" > hide students
+    <input id=hidecomments class=selectshow onclick="selectshows()" type="checkbox" > hide comments
+    <% listofsites.each do |site| %>
+    <input id=<%= 'hide' + site %> class=selectshow onclick="selectshows()" type="checkbox" ><%= 'hide ' + site %> 
+    <% end %>
+</div>
+
+<div id="selectSetStatus">
+    <input id=enableQuickStatus type="checkbox" > enable quick setting of status to
+    <select name="quickStatus" id="quickStatusValue">
+      <option value="Attended">Attended</option>
+      <option value="Confirmed">Confirmed</option>
+      <option value="Notified">Notified</option>
+      <option value="Scheduled">Scheduled</option>
+      <option value="Deal">Deal</option>
+      <option value="Absent">Absent</option>
+      <option value="Away">Away</option>
+    </select>
+</div>
+
+
+<div class=index>
+    <div class="selectbox floating-box">
+        <h2>Select person</h2>
+        <input type="text" id="personInput" placeholder="Shorten list by keying in meaningful characters .." title="Type in characters to reduce name list">
+    </div>
+
+    <div class=index-tutors id=index-tutors>
+        <% @tutors.each do |tutor| %>
+            <div class=tutor id=<%= "t" + tutor.id.to_s.rjust(@sf, "0") %> >
+                <div style=persongroup>
+                    <div class="tutorname tutorinline">tutor: <%= tutor.pname %></div>
+                    <div class="tutorcomment comment tutorinline">
+                      <div class="tutorsubjects"><%= tutor.subjects %></div>
+                      <div class="tutorcommentdetail"><%= tutor.comment %></div>
+                    </div>
+                </div>
+            </div>
+        <% end %>
+    </div>
+
+    <div class=index-students id=index-students>
+        <% @students.each do |student| %>
+            <div class= student id=<%= "s" + student.id.to_s.rjust(@sf, "0") %> >
+                <div style=persongroup>
+                    <div class="studentname studentinline">student: <%= student.pname %></div>
+                    <div class="studentcomment comment studentinline">
+
+                      <div class="studentsubjects"><%= student.sex == nil ? "" :
+                        student.sex.downcase.include?("female")?
+                          "(F) " : student.sex.downcase.include?("male")?
+                          "(M) " : "" 
+                        %> Yr: <%= student.year == nil ? "   " : student.year.rjust(3) %> | <%= student.study %></div>
+                      <br>
+                      <div class="studentcommentdetail"><%= student.comment %></div>
+                    </div>
+                </div>
+            </div>
+        <% end %>
+    </div>
+</div>
+
+<div class=schedule>
+<% @cal.each do |location, calLocation| 
+  if @compress   # remove days with no valid slot for this site
+   usedColumns = calLocation[0][0]["days"].keys
+   usedColumnsIndex = [0]
+   for i in 1..(calLocation[0].length-1)
+     if usedColumns.include?(calLocation[0][i]["value"]) then
+       usedColumnsIndex.push(i)
+     end
+   end 
+  end %>
+  <% firsttablecolumn = true %>
+  <table id=site-<%= location %> >
+  <% calLocation.each do |rows| %>
+    <tr>
+    <% rows.each_with_index do |cells, cellIndex|
+      if @compress      
+        unless usedColumnsIndex.include?(cellIndex) then
+           next
+        end 
+      end %>
+      <% if cells.key?("slotid") then %>
+        <td class="cell slot" id=<%= cells["id_dom"] + "l" + cells["slotid"].rjust(@sf, "0") %>  >
+      <% elsif cells.key?("value") then %>
+        <% if firsttablecolumn == true then
+          firsttablecolumn = false %>
+          <td class="cell firsttablecolumn" %>
+        <% else %>
+          <td class="cell" %>
+        <% end %>
+      <% else %>
+         <td class="cell no-slot" %>
+      <% end %> 
+      <% if cells.key?("values") then %>       
+        <% if cells["values"].respond_to?(:each) then %>
+          <% #cells["values"].sort_by {|obj| [valueOrderStatus(obj),valueOrder(obj)] }.each do |entry| %>
+          <% cells["values"].each do |entry| %>
+            <div class="lesson <%= 'n-status-' + set_class_status_f(entry) %>" id=<%= cells["id_dom"] + "n" + entry.id.to_s.rjust(@sf, "0") %> >
+              
+              <div class="grouptutors">
+                <% #if entry.tutors.respond_to?(:each) then %>
+                <% if @tutrole_lessonindex.has_key? entry.id then %>
+                  <% #entry.tutors.sort_by {|obj| obj.pname }.each do |tutor| %>
+                  <% @tutrole_lessonindex[entry.id].each do |tutroleInfo_index| %>
+                    <% thistutrole = @tutroleinfo[tutroleInfo_index] %>
+                    <% tutor = thistutrole.tutor %> 
+                    <% #if tutor then %>
+                      <div class="tutor <%= "ft" + tutor.id.to_s.rjust(@sf, "0") %>" id=<%= cells["id_dom"] + "n" + entry.id.to_s.rjust(@sf, "0") + "t" + tutor.id.to_s.rjust(@sf, "0") %> >
+                        <div style=persongroup>
+                          <div class="tutorname tutorinline <%=            't-status-' + set_class_status_f(thistutrole) %>">tutor: <%= tutor.pname %></div>
+                          <div class="tutorcomment comment tutorinline <%= 't-kind-'   + set_class_kind_f(  thistutrole) %>">
+                            <% #thistutrole = entry.tutroles.where(tutor_id: tutor.id).first %>
+                            <div class="tutorsubjects"><%= tutor.subjects %></div>
+                            <div class="tutrolecomment"><%= thistutrole.comment %></div>
+                            <div class="tutorcommentdetail"><%= tutor.comment %></div>
+                            <div class="statusinfo">Status: <%= thistutrole.status %> Kind: <%= thistutrole.kind %> </div>
+                          </div>
+                        </div>
+                      </div>
+                    <% #end %>
+                  <% end %>
+                <% end %>
+              </div>
+              
+              <div class="groupstudents">
+                <% #if entry.students.respond_to?(:each) then %>
+                <% if @role_lessonindex.has_key? entry.id then %>
+                  <% #entry.students.each do |student| %>
+                  <% @role_lessonindex[entry.id].each do |roleInfo_index| %>
+                    <% thisrole = @roleinfo[roleInfo_index] %>
+                    <% student = thisrole.student %> 
+                    <% if student then %>
+                      <div class="student <%= "fs" + student.id.to_s.rjust(@sf, "0") %>" id=<%= cells["id_dom"] + "n" + entry.id.to_s.rjust(@sf, "0") + "s" + student.id.to_s.rjust(@sf, "0") %> >
+                        <div style=persongroup>
+                          <div class="studentname studentinline <%=            't-status-' + set_class_status_f(thisrole) %>">student: <%= student.pname %></div>
+                          <div class="studentcomment comment studentinline <%= 't-kind-'   + set_class_kind_f(    thisrole) %>">
+                            <% #thisrole = entry.roles.where(student_id: student.id).first %>
+                            <div class="studentsubjects"><%= student.sex == nil ? "" :
+                                student.sex.downcase.include?("female")?
+                                "(F) " : student.sex.downcase.include?("male")?
+                                "(M) " : "" 
+                                %> Yr: <%= student.year == nil ? "   " : student.year.rjust(3) %> | <%= student.study %></div>
+                            <div class="rolecomment"><%= thisrole.comment %></div>
+                            <div class="studentcommentdetail"><%= student.comment %></div>
+                            <div class="statusinfo">Status: <%= thisrole.status %> Kind: <%= thisrole.kind %></div>
+                          </div>
+                        </div>
+                      </div>
+                    <% end %>
+                  <% end %>
+                <% end %>
+              </div>
+
+              <div class="lessoncomment comment commentinline">
+                <div class="lessoncommenttext"><% if entry.comments != nil && entry.comments != "" %><%= entry.comments %><% end %></div>
+                <div class="lessonstatusinfo"><% if entry.status != nil && entry.status != "" %>Status: <%= entry.status %> <% end %></div>
+              </div>
+               
+            </div>
+          <% end %>
+        <% end %>
+      <% elsif cells.key?("value") then %>     
+        <%= cells["value"].to_s %>
+      <% end %>
+      </td>
+    <% end %>
+    </tr>
+  <% end %>
+  </table>
+<br>
+<% end %>
+</div>
+
+  <nav id="context-menu" class="context-menu">
+    <ul class="context-menu__items">
+      <li id="context-move" class="context-menu__item" data-action="move">
+        <p>Move</p>
+      </li>
+      <li id="context-copy" class="context-menu__item" data-action="copy">
+        <p>Copy</p>
+      </li>
+      <li id="context-paste" class="context-menu__item" data-action="paste">
+        <p>Drop</p>
+      </li>
+      <li id="context-remove" class="context-menu__item" data-action="remove">
+        <p>Remove</p>
+      </li>
+      <li id="context-addLesson" class="context-menu__item" data-action="addLesson">
+        <p>Add Lesson</p>
+      </li>    
+      <li id="context-removeLesson" class="context-menu__item" data-action="removeLesson">
+        <p>Remove Lesson</p>
+      </li>    
+      <li id="context-setStatus" class="context-menu__item" data-action="setStatus">
+        <p>Set Status</p>
+      </li>    
+      <li id="context-setKind" class="context-menu__item" data-action="setKind">
+        <p>Set Kind</p>
+      </li>    
+      <li id="context-editComment" class="context-menu__item" data-action="editComment">
+        <p>Edit Comment</p>
+      </li>    
+      <li id="context-editSubject" class="context-menu__item" data-action="editSubject">
+        <p>Edit Subject</p>
+      </li>    
+      <li id="context-history" class="context-menu__item" data-action="history">
+        <p>History</p>
+      </li>    
+      <li id="context-changes" class="context-menu__item" data-action="changes">
+        <p>Changes</p>
+      </li>    
+    </ul>
+  </nav>
+  
+  <nav id="tertiary-menu" class="tertiary-menu">
+    <div id="tertiary=menu-title"> Tertiary Menu Title</div>
+    <ul class="tertiary-menu__choices">
+      <li id="tutor-status-scheduled" class="tertiary-menu__choice" data-choice="tutor-status-scheduled">
+        <p>tutor-status: Scheduled</p>
+      </li>
+      <li id="tutor-status-notified" class="tertiary-menu__choice" data-choice="tutor-status-notified">
+        <p>tutor-status: Notified</p>
+      </li>
+      <li id="tutor-status-confirmed" class="tertiary-menu__choice" data-choice="tutor-status-confirmed">
+        <p>tutor-status: Confirmed</p>
+      </li>
+      <li id="tutor-status-attended" class="tertiary-menu__choice" data-choice="tutor-status-attended">
+        <p>tutor-status: Attended</p>
+      </li>
+      <li id="tutor-status-deal" class="tertiary-menu__choice" data-choice="tutor-status-deal">
+        <p>tutor-status: Deal</p>
+      </li>
+      <li id="tutor-status-absent" class="tertiary-menu__choice" data-choice="tutor-status-absent">
+        <p>tutor-status: Absent</p>
+      </li>
+      <li id="tutor-status-away" class="tertiary-menu__choice" data-choice="tutor-status-away">
+        <p>tutor-status: Away</p>
+      </li>
+      <li id="tutor-kind-bfl" class="tertiary-menu__choice" data-choice="tutor-kind-BFL">
+        <p>tutor-kind: BFL</p>
+      </li>
+      <li id="tutor-kind-oncall" class="tertiary-menu__choice" data-choice="tutor-kind-onCall">
+        <p>tutor-kind: On Call</p>
+      </li>
+      <li id="tutor-kind-onsetup" class="tertiary-menu__choice" data-choice="tutor-kind-onSetup">
+        <p>tutor-kind: On Setup</p>
+      </li>
+      <li id="tutor-kind-training" class="tertiary-menu__choice" data-choice="tutor-kind-training">
+        <p>tutor-kind: Training</p>
+      </li>
+      <li id="tutor-kind-standard" class="tertiary-menu__choice" data-choice="tutor-kind-standard">
+        <p>tutor-kind: Standard</p>
+      </li>
+      <li id="tutor-kind-called" class="tertiary-menu__choice" data-choice="tutor-kind-called">
+        <p>tutor-kind: Called</p>
+      </li>
+      <li id="tutor-kind-relief" class="tertiary-menu__choice" data-choice="tutor-kind-relief">
+        <p>tutor-kind: Relief</p>
+      </li>
+      <li id="student-status-scheduled" class="tertiary-menu__choice" data-choice="student-status-scheduled">
+        <p>student-status: Scheduled</p>
+      </li>
+      <li id="student-status-attended" class="tertiary-menu__choice" data-choice="student-status-attended">
+        <p>student-status: Attended</p>
+      </li>
+      <li id="student-status-deal" class="tertiary-menu__choice" data-choice="student-status-deal">
+        <p>student-status: Deal</p>
+      </li>
+      <li id="student-status-absent" class="tertiary-menu__choice" data-choice="student-status-absent">
+        <p>student-status: Absent</p>
+      </li>
+      <li id="student-status-away" class="tertiary-menu__choice" data-choice="student-status-away">
+        <p>student-status: Away</p>
+      </li>
+      <li id="student-kind-free" class="tertiary-menu__choice" data-choice="student-kind-free">
+        <p>student-kind: Free</p>
+      </li>
+      <li id="student-kind-first" class="tertiary-menu__choice" data-choice="student-kind-first">
+        <p>student-kind: First</p>
+      </li>
+      <li id="student-kind-catchup" class="tertiary-menu__choice" data-choice="student-kind-catchup">
+        <p>student-kind: CatchUp</p>
+      </li>
+      <li id="student-kind-fortnightly" class="tertiary-menu__choice" data-choice="student-kind-fortnightly">
+        <p>student-kind: Fortnightly</p>
+      </li>
+      <li id="student-kind-onetoone" class="tertiary-menu__choice" data-choice="student-kind-onetoone">
+        <p>student-kind: OneToOne</p>
+      </li>
+      <li id="student-kind-standard" class="tertiary-menu__choice" data-choice="student-kind-standard">
+        <p>student-kind: Standard</p>
+      </li>
+      <li id="lesson-status-oncall" class="tertiary-menu__choice" data-choice="lesson-status-onCall">
+        <p>lesson-status: onCall</p>
+      </li>
+      <li id="lesson-status-onsetup" class="tertiary-menu__choice" data-choice="lesson-status-onSetup">
+        <p>lesson-status: onSetup</p>
+      </li>
+      <li id="lesson-status-on_BFL" class="tertiary-menu__choice" data-choice="lesson-status-on_BFL">
+        <p>lesson-status: on BFL</p>
+      </li>
+      <li id="lesson-status-standard" class="tertiary-menu__choice" data-choice="lesson-status-standard">
+        <p>lesson-status: standard</p>
+      </li>
+      <li id="edit-comment" class="tertiary-menu__choice" data-choice="edit-comment">
+          <textarea id="edit-comment-text">Test Only.</textarea>
+          <button id="edit-comment-button">Update</button>
+          <div id="edit-comment-elementid" class="hideme"></div>
+      </li>
+      <li id="edit-subject" class="tertiary-menu__choice" data-choice="edit-subject">
+          <textarea id="edit-subject-text">Test Only.</textarea>
+          <button id="edit-subject-button">Update</button>
+          <div id="edit-subject-elementid" class="hideme">
+            
+          </div>
+      </li>
+    </ul>
+  </nav>
+
+  <div class="lesson hideme" id=lessontemplate >
+    <div class="grouptutors"></div>
+    <div class="groupstudents"></div>
+    <div class="lessoncomment comment commentinline">
+      <div class="lessoncommenttext"></div>
+      <div class="lessonstatusinfo">Status: standard </div>
+  </div>
+  </div>
+
+  <div id="histories" class="histories"  >
+    <div id="history-template" class="history ui-widget-content hideme"></div>
+  </div>
+
+

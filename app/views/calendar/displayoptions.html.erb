@@ -1,0 +1,59 @@
+<h2>Options for Calendar Flexible Display</h2>
+
+<%= form_tag("/calendar/flexibledisplay", {method: :get}) do %>
+
+  <p>Complete if you wish to override the default settings<br>
+     Otherwise, leave blank.</p> 
+  <div class="field">
+    <%= label_tag "Date of first day to display" %><br>
+    <%= date_field_tag :daystart %>
+  </div> 
+  <div class="field">
+    <%= label_tag "Number of days to display" %><br>
+    <%= number_field_tag :daydur %>
+  </div> 
+  
+  <div class="radio_buttons"></div>
+    Choose the purpose of this display.<br>
+    <%= radio_button_tag(:bench, "workbench", true) %>
+    <%= label_tag(:Workbench, "Calendar Work Bench") %> <br>
+    <%= radio_button_tag(:bench, "roster") %>
+    <%= label_tag(:Roster, "Roster Format - reduced items" ) %>
+  </div>
+  <br>
+  <div class="select_statuses">
+    Select the status used in roster display: <br>
+    Tutors:<br>
+    <%= select_tag(:tutor_statuses, options_for_select([ 
+        ['scheduled', 'scheduled'],
+        ['notified', 'notified'],
+        ['confirmed', 'confirmed'],
+        ['attended', 'attended'],
+        ['deal', 'deal'],
+        ['absent', 'absent'],
+        ['away', 'away'],
+        ]),
+        multiple: true) 
+    %>  <br>
+    Students:<br>
+    <%= select_tag(:student_statuses, options_for_select([ 
+        ['scheduled', 'scheduled'],
+        ['attended', 'attended'],
+        ['deal', 'deal'],
+        ['absent', 'absent'],
+        ['away', 'away'],
+        ]),
+        multiple: true) 
+    %>  <br>
+  </div>
+  <br>
+  <div class="checkbox">
+    <%= check_box_tag(:compress) %>
+    <%= label_tag(:compress, "For each site, only display days with content for sites.") %> <br>
+  </div>
+  <br>
+  <div class="actions">
+    <%= submit_tag "Display" %>
+  </div>
+<% end %>
+
