@@ -1,4 +1,7 @@
-<h1>Listing tutroles</h1>
+<h1>Listing Tutor Roles - matching lessons and tutors</h1>
+
+<%= page_entries_info @tutroles %>
+<%= paginate @tutroles %>
 
 <table>
   <thead>
@@ -27,6 +30,8 @@
     <% end %>
   </tbody>
 </table>
+<%= paginate @tutroles %>
+<%= page_entries_info @tutroles %>
 
 <br>
 

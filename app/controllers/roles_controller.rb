@@ -6,7 +6,9 @@ class RolesController < ApplicationController
   # GET /roles
   # GET /roles.json
   def index
-    @roles = Role.all
+    @roles = Role
+             .order(:id)
+             .page(params[:page])
   end
 
   # GET /roles/1

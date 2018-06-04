@@ -18,11 +18,22 @@
     <%= radio_button_tag(:bench, "workbench", true) %>
     <%= label_tag(:Workbench, "Calendar Work Bench") %> <br>
     <%= radio_button_tag(:bench, "roster") %>
-    <%= label_tag(:Roster, "Roster Format - reduced items" ) %>
+    <%= label_tag(:Roster, "Roster Format - reduced items" ) %> <br>
+    <%= radio_button_tag(:bench, "ratio") %>
+    <%= label_tag(:Roster, "Student to Tutor ratio - reduced items" ) %>
   </div>
   <br>
+  <div>
+    Display Format:<br>
+    <%= check_box_tag(:compress) %>
+    <%= label_tag(:compress, "Display only the days in a site that has slots.") %>
+  </div>
+  <br>
+  -------------------- For Rosters or Ratios -------------------------
+  <br>
   <div class="select_statuses">
-    Select the status used in roster display: <br>
+    <%= check_box_tag(:select_statuses) %>
+    <%= label_tag(:select_statuses, "Select the status used in roster display:") %><br>
     Tutors:<br>
     <%= select_tag(:tutor_statuses, options_for_select([ 
         ['scheduled', 'scheduled'],
@@ -47,13 +58,71 @@
     %>  <br>
   </div>
   <br>
-  <div class="checkbox">
-    <%= check_box_tag(:compress) %>
-    <%= label_tag(:compress, "For each site, only display days with content for sites.") %> <br>
+  <div class="select_kinds">
+    <%= check_box_tag(:select_kinds) %>
+    <%= label_tag(:select_kinds, "Select the kinds used in roster display:") %><br>
+    Tutors:<br>
+    <%= select_tag(:tutor_kinds, options_for_select([ 
+        ['BFL', 'BFL'],
+        ['OnCall', 'onCall'],
+        ['OnSetup', 'onSetup'],
+        ['training', 'training'],
+        ['standard', 'standard'],
+        ['called', 'called'],
+        ['relief', 'relief'],
+        ]),
+        multiple: true) 
+    %>  <br>
+    Students:<br>
+    <%= select_tag(:student_kinds, options_for_select([ 
+        ['free', 'free'],
+        ['first', 'first'],
+        ['catchup', 'catchup'],
+        ['fortnightly', 'fortnightly'],
+        ['onetoone', 'onetoone'],
+        ['standard', 'standard'],
+        ]),
+        multiple: true) 
+    %>  <br>
+  </div>
+  <br>
+  <div class="radio_buttons">
+    <%= check_box_tag(:select_tutors) %>
+    <%= label_tag(:select_tutors, "Select tutors used in the roster display.") %><br>
+    Select the type of identifiers for thes entries. <br>
+    <%= radio_button_tag(:t_type, "name", true) %>
+    <%= label_tag(:t_type, "Tutor identification is by name") %> <br>
+    <%= radio_button_tag(:t_type, "email") %>
+    <%= label_tag(:t_type, "Tutor identification is by email") %> <br>
+    <%= radio_button_tag(:t_type, "id") %>
+    <%= label_tag(:t_type, "Tutor identification is by id - a database record id") %> <br>
+  </div>
+  <div class="textfield">
+     You may have muliple tutors - comma separate the entries<br>
+    <%= text_field_tag(:tutor_identifiers) %>
+    <%= label_tag(:tutor_identifiers, "Tutor identifier") %> <br>
+  </div>
+  <br>
+  <div class="radio_buttons">
+    <%= check_box_tag(:select_students) %>
+    <%= label_tag(:select_students, "Select students used in the roster display.") %><br>
+    Select the type of identifiers for thes entries. <br>
+    <%= radio_button_tag(:s_type, "name", true) %>
+    <%= label_tag(:t_type, "Tutor identification is by name") %> <br>
+    <%= radio_button_tag(:s_type, "email") %>
+    <%= label_tag(:t_type, "Tutor identification is by email") %> <br>
+    <%= radio_button_tag(:s_type, "id") %>
+    <%= label_tag(:t_type, "Tutor identification is by id - a database record id") %> <br>
+  </div>
+  <div class="textfield">
+     You may have muliple tutors - comma separate the entries<br>
+    <%= text_field_tag(:student_identifiers) %>
+    <%= label_tag(:student_identifiers, "Tutor identifier") %> <br>
   </div>
   <br>
   <div class="actions">
     <%= submit_tag "Display" %>
   </div>
+
 <% end %>
 

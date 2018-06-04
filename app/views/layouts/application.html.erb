@@ -7,39 +7,70 @@
   <%= csrf_meta_tags %>
 </head>
 <body>
-
-<!-- This is a comment 
-  <div id='cssmenu'>
-    <ul>
-       <li><a href='#'>Home</a></li>
-       <li class='active'><a href='#'>Products</a>
-          <ul>
-             <li><a href='#'>Product 1</a>
-                <ul>
-                   <li><a href='#'>Sub Product</a></li>
-                   <li><a href='#'>Sub Product</a></li>
-                </ul>
-             </li>
-             <li><a href='#'>Product 2</a>
-                <ul>
-                   <li><a href='#'>Sub Product</a></li>
-                   <li><a href='#'>Sub Product</a></li>
-                </ul>
-             </li>
-          </ul>
-       </li>
-       <li><a href='#'>About</a></li>
-       <li><a href='#'>Contact</a></li>
-    </ul>
-  </div>
- This ends the comment -->
- 
+  <% # template for menu taken from
+     # https://www.internetkultur.at/simple-hamburger-drop-down-menu-with-css-and-jquery/ %>
+  <% if user_signed_in? %>
+    <div id='cssmenu'>
+      <ul>
+          <li><%= link_to "home", home_path %></li>
+          <li class='active'><%= link_to "Workbench", calendar_display1f_path %>
+            <ul>
+              <li><%= link_to "Flexible Display", displayoptions_path %></li>
+              <li><%= link_to "calendar1", calendar_display1_path %></li>
+              <li><%= link_to "calendar2", calendar_display2_path %></li>
+            </ul>
+          </li>
+          <li class='active'><%= link_to "Roster", calendar_roster1f_path %>
+            <ul>
+              <li><%= link_to "Google_roster", googleroster_path %></li>
+              <li><%= link_to "Flexible Display", displayoptions_path %></li>
+              <li><%= link_to "calendar_roster1", calendar_roster1_path %></li>
+              <li><%= link_to "calendar_roster2", calendar_roster2_path %></li>
+            </ul>
+          </li>
+          <li class='active'><%= link_to "tutors", tutors_path %>
+            <ul>
+              <li><%= link_to "tutor roles", tutroles_path %></li>
+            </ul>
+          </li>
+          <li class='active'><%= link_to "students", students_path %>
+            <ul>
+              <li><%= link_to "student roles", roles_path %></li>
+            </ul>
+          </li>
+          <li class='active'><%= link_to "Slots", slots_path %>
+            <ul>
+              <li><%= link_to "lessons", lessons_path %></li>
+            </ul>
+          </li>
+          <li><%= link_to "copydays", copydaysedit_path %>
+            <ul>
+              <li><%= link_to "deletedays", deletedaysedit_path %></li>
+            </ul>
+          </li>
+          <% if current_user.role == 'admin' %>
+            <li><%= link_to "load", load_path %></li>
+          <% end %>
+          <li class='active'><%= link_to "Logout", destroy_user_session_path, method: :delete  %>
+            <ul>
+              <li><%= link_to 'Edit profile', edit_user_registration_path %></li>
+              <li><%= link_to 'Edit preferences', edit_user_preferences_path %></li>
+              <% if current_user.role == 'admin' %>
+                <li><%= link_to 'Edit roles', index_user_roles_path %></li>
+              <% end %>
+            </ul>
+          </li>
+          <p></p>User: <strong><%= current_user.email %></strong></p>
+      </ul>
+      <p id='displaylogin'>User: <strong><%= current_user.email %></strong></p>
+    </div>
+  <% end %>
   <% flash.each do |key, value| %>
     <div class="alert alert-<%= key %>">
       <%= value %>
     </div>
   <% end %>
-  
+  <% if false %>
   <% if user_signed_in? %>
     <nav>
       <ul>
@@ -61,16 +92,19 @@
       </ul>
     </nav>
   <% end %>
+  <% end %>
   
   <p class="navbar-text pull-right">
   <% if user_signed_in? %>
-    Logged in as <strong><%= current_user.email %></strong>.
+    User: <strong><%= current_user.email %></strong>.
+    <% if false %>
     <%= link_to 'Edit profile', edit_user_registration_path, :class => 'navbar-link' %> |
     <%= link_to 'Edit preferences', edit_user_preferences_path, :class => 'navbar-link' %> |
     <% if current_user.role == 'admin' %>
       <%= link_to 'Edit roles', index_user_roles_path, :class => 'navbar-link' %> |
     <% end %>
     <%= link_to "Logout", destroy_user_session_path, method: :delete, :class => 'navbar-link'  %>
+    <% end %>
   <% else %>
     <%= link_to "Sign up", new_user_registration_path, :class => 'navbar-link'  %> |
     <%= link_to "Login", new_user_session_path, :class => 'navbar-link'  %>

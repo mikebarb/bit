@@ -144,17 +144,20 @@ module Calendarutilities
     # Process parameters and set up the options.
     #
     roster = options.has_key?(:roster) ? true : false
-    #roster = true
-    if roster && options.has_key?(:tutor_statuses)
-      tutor_statuses = options[:tutor_statuses]
-    else
-      tutor_statuses = ['attended', 'notified', 'scheduled']
+    ratio = options.has_key?(:ratio) ? true : false
+    if roster || ratio
+        tutor_statuses = options[:tutor_statuses] if options.has_key?(:tutor_statuses)
+        student_statuses = options[:student_statuses] if options.has_key?(:student_statuses)
+  
+        tutor_kinds = options[:tutor_kinds] if options.has_key?(:tutor_kinds)
+        student_kinds = options[:student_kinds] if options.has_key?(:student_kinds)
+
+        tutor_ids = options[:tutor_ids] if options.has_key?(:tutor_ids)
+        student_ids = options[:student_ids] if options.has_key?(:student_ids)
     end
-    if roster && options.has_key?(:student_statuses)
-      student_statuses = options[:student_statuses]
-    else
-      student_statuses = ['attended', 'notified', 'scheduled']
-    end
+
+
+
 
     # define a two dimesional array to hold the table info to be displayed.
     # row and column [0] will hold counts of elements populated in that row or column
@@ -169,28 +172,47 @@ module Calendarutilities
                            end_date: myenddate
                           })
 
+    @slotsinfo.each { |o|
+      if o.id == 2177
+        logger.debug "slotsinfo entry: " + o.inspect
+      end
+    }
+
     @sessinfo      = Lesson
                    .joins(:slot)
                    .where(slot_id: @slotsinfo.map {|o| o.id})
                    .order(:status)
                    .includes(:slot)
+                   
+    @sessinfo.each { |o|
+      if o.id == 25551
+        logger.debug "sessinfo entry: " + o.inspect
+      end
+    }
 
     @tutroleinfo = Tutrole
                    .joins(:tutor, :lesson)
                    .where(lesson_id: @sessinfo.map {|o| o.id})
                    .order('kind, tutors.pname')
                    .includes(:tutor, :lesson)
+
+    @tutroleinfo.each { |o|
+      if (o.id == 26938 || o.id == 26931 )
+        logger.debug "tutroleinfo entry: " + o.inspect
+      end
+    }
     
     @roleinfo    = Role
                    .joins(:student, :lesson)
                    .where(lesson_id: @sessinfo.map {|o| o.id})
                    .order('students.pname')
                    .includes(:student, :lesson)
-
+    
     # Some code to reduce tutrole and role arrays
     # - eliminate categories of people that are not of interest.
-    # This reduces tutors to ones with desired statuses
-    reduce_tutrole = lambda{
+    # This reduces tutors to ones with 
+    # a) desired tutor statuses
+    reduce_tutrole_status = lambda{
       @tutroleinfo = @tutroleinfo.reduce([]) { |a,o|
         if tutor_statuses.include?(o.status) then 
           a << o
@@ -198,8 +220,27 @@ module Calendarutilities
         a
       }
     }
-    # This reduces students to ones with desired statuses
-    reduce_role = lambda{
+    # b) desired tutor kinds
+    reduce_tutrole_kind = lambda{
+      @tutroleinfo = @tutroleinfo.reduce([]) { |a,o|
+        if tutor_kinds.include?(o.kind) then 
+          a << o
+        end
+        a
+      }
+    }
+    # c) desired tutor ids
+    reduce_tutrole_id = lambda{
+      @tutroleinfo = @tutroleinfo.reduce([]) { |a,o|
+        if tutor_ids.include?(o.tutor_id) then 
+          a << o
+        end
+        a
+      }
+    }
+    # This reduces students to ones with
+    # a) desired student statuses
+    reduce_role_status = lambda{
       @roleinfo = @roleinfo.reduce([]) { |a,o|
         if student_statuses.include?(o.status) then 
           a << o
@@ -207,12 +248,61 @@ module Calendarutilities
         a
       }
     }
+    # b) desired student kinds
+    reduce_role_kind = lambda{
+      @roleinfo = @roleinfo.reduce([]) { |a,o|
+        if student_kinds.include?(o.kind) then 
+          a << o
+        end
+        a
+      }
+    }
+    # c) desired students
+    reduce_role_id = lambda{
+      @roleinfo = @roleinfo.reduce([]) { |a,o|
+        if student_ids.include?(o.student_id) then 
+          a << o
+        end
+        a
+      }
+    }
+
+    logger.debug "Before reductions"
+    @sessinfo.each { |o|
+      if o.id == 25551
+        logger.debug "sessinfo entry: " + o.inspect
+      end
+    }
+
+    @tutroleinfo.each { |o|
+      if (o.id == 26938 || o.id == 26931 )
+        logger.debug "tutroleinfo entry: " + o.inspect
+      end
+    }
 
     # now do reductions if generating a roster.
-    if roster then    // if option = roster               
-      reduce_tutrole.call
-      reduce_role.call
+    if roster || ratio then    # if option = roster
+      reduce_tutrole_id.call if(options.has_key?(:select_tutors) && tutor_ids != nil)
+      reduce_tutrole_status.call if(options.has_key?(:select_statuses) && tutor_statuses != nil) 
+      reduce_tutrole_kind.call if(options.has_key?(:select_kinds) && tutor_kinds != nil)
+      
+      reduce_role_id.call if(options.has_key?(:select_students) && student_ids != nil)
+      reduce_role_status.call if(options.has_key?(:select_statuses) && student_statuses != nil) 
+      reduce_role_kind.call if(options.has_key?(:select_kinds) && student_kinds != nil) 
     end
+
+    logger.debug "After reductions"
+    @sessinfo.each { |o|
+      if o.id == 25551
+        logger.debug "sessinfo entry: " + o.inspect
+      end
+    }
+
+    @tutroleinfo.each { |o|
+      if (o.id == 26938 || o.id == 26931 )
+        logger.debug "tutroleinfo entry: " + o.inspect
+      end
+    }
     
     # these indexes are required if reduced or not - so done after reduction.
     # First, create the hash{lesson_id}[tutor_index_into array, .....]    
@@ -231,18 +321,47 @@ module Calendarutilities
       end  
       @role_lessonindex[o.lesson_id].push(count)
     }
-    
+    # indexes completed.
+
+    logger.debug "After indexing"
+    @sessinfo.each { |o|
+      if o.id == 25551
+        logger.debug "sessinfo entry: " + o.inspect
+      end
+    }
+
+    @tutroleinfo.each { |o|
+      if (o.id == 26938 || o.id == 26931 )
+        logger.debug "tutroleinfo entry: " + o.inspect
+      end
+    }
+
     # Final reduction step, reduce the lesson array to eliminate lessons that have
     # no tutors or students of interest
     if roster then    // if option = roster               
       @sessinfo = @sessinfo.reduce([]) { |a,o|
-        if (    @role_lessonindex.has_key?(o.id) ||
+        if ( @role_lessonindex.has_key?(o.id) ||
              @tutrole_lessonindex.has_key?(o.id)    )
           a << o
         end
         a
       }
     end
+
+    logger.debug "After reduction of session"
+    @sessinfo.each { |o|
+      if o.id == 25551
+        logger.debug "sessinfo entry: " + o.inspect
+      end
+    }
+    
+    @tutroleinfo.each { |o|
+      if (o.id == 26938 || o.id == 26931 )
+        logger.debug "tutroleinfo entry: " + o.inspect
+      end
+    }
+
+    # ------- Now generate the hash for use in the display -----------
     
     # locations - there will be separate tables for each location
     @locations    = Slot
@@ -326,4 +445,57 @@ module Calendarutilities
 
   end
 
+ # -----------------------------------------------------------------------------
+ # Generate ratios.
+ #
+ # Starting with the standard @cal hash, add in the tutor / student ratio
+ # 
+ # -----------------------------------------------------------------------------
+  def generate_ratios
+    # step through each site
+    @all_sites_ratio = {'tutor_count'=>0, 'student_count'=>0}
+    @cal.each do |location, calLocation|
+      calLocation.each_with_index do |rows, rowindex|
+        logger.debug "next row - " + rowindex.to_s
+        rows.each_with_index do |cells, colindex|
+          logger.debug "next cell - " + colindex.to_s 
+          if cells.key?("values") then  # in a slot with lessons
+            slottutorcount = slotstudentcount = 0
+            cells["values"].each do |entry|  # go thorugh each lesson
+              logger.debug "entry: " + entry.inspect
+              if @tutrole_lessonindex.has_key? entry.id then  # check for tutroles linked to this lesson
+                # could be multiple tutors in this lesson, a tutrole for each - need to step through each one
+                logger.debug "tutroles_lessonindex has an entry for this lesson with tutrole indexes into the array of: " +
+                             @tutrole_lessonindex[entry.id].inspect
+                slottutorcount += @tutrole_lessonindex[entry.id].count
+                @tutrole_lessonindex[entry.id].each do |thistutor|  # check each tutrole for diagnostics
+                  logger.debug "tutor found - tutrole: " + @tutroleinfo[thistutor].inspect
+                end
+              end
+              if @role_lessonindex.has_key? entry.id then  # check for students
+                logger.debug "student found: " + @role_lessonindex[entry.id].inspect
+                slotstudentcount += @role_lessonindex[entry.id].count 
+                @role_lessonindex[entry.id].each do |thisstudent|  # check each tutrole for diagnostics
+                  logger.debug "student found - role: " + @roleinfo[thisstudent].inspect
+                end
+              end
+            end
+            # keep counts in the cell/slot data
+            cells["ratio"] = {'tutor_count'=>slottutorcount, 'student_count'=>slotstudentcount}
+            rows[0]['ratio'] = {'tutor_count'=>0, 'student_count'=>0} unless rows[0].has_key?("ratio") 
+            rows[0]['ratio']['tutor_count']   += slottutorcount
+            rows[0]['ratio']['student_count'] += slotstudentcount
+            calLocation[0][colindex]['ratio'] = {'tutor_count'=>0, 'student_count'=>0} unless calLocation[0][colindex].has_key?("ratio")
+            calLocation[0][colindex]['ratio']['tutor_count']   += slottutorcount
+            calLocation[0][colindex]['ratio']['student_count'] += slotstudentcount
+            calLocation[0][0]['ratio'] = {'tutor_count'=>0, 'student_count'=>0} unless calLocation[0][0].has_key?("ratio")
+            calLocation[0][0]['ratio']['tutor_count']   += slottutorcount
+            calLocation[0][0]['ratio']['student_count'] += slotstudentcount
+            @all_sites_ratio['tutor_count']   += slottutorcount
+            @all_sites_ratio['student_count'] += slotstudentcount
+          end
+        end
+      end
+    end
+  end
 end

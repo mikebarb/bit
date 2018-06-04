@@ -1,5 +1,7 @@
-<h1>Listing roles</h1>
+<h1>Listing Student Roles - matching lessons and students</h1>
 
+<%= page_entries_info @roles %>
+<%= paginate @roles %>
 <table>
   <thead>
     <tr>
@@ -13,8 +15,7 @@
   </thead>
 
   <tbody>
-    <% @roles.each do |role| 
-       byebug %>
+    <% @roles.each do |role| %>
       <tr>
         <td><%= role.lesson.id %></td>
         <td><%= role.student.pname %></td>
@@ -28,6 +29,8 @@
     <% end %>
   </tbody>
 </table>
+<%= paginate @roles %>
+<%= page_entries_info @roles %>
 
 <br>
 

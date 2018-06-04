@@ -6,7 +6,9 @@ class TutrolesController < ApplicationController
   # GET /tutroles
   # GET /tutroles.json
   def index
-    @tutroles = Tutrole.all
+    @tutroles = Tutrole
+                .order(:id)
+                .page(params[:page])
   end
 
   # GET /tutroles/1
