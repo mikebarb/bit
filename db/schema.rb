@@ -11,7 +11,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema.define(version: 20180528220652) do
+ActiveRecord::Schema.define(version: 20180605080258) do
 
   # These are extensions that must be enabled in order to support this database
   enable_extension "plpgsql"
@@ -103,6 +103,8 @@ ActiveRecord::Schema.define(version: 20180528220652) do
     t.string   "status"
     t.string   "email"
     t.string   "phone"
+    t.string   "firstaid"
+    t.string   "firstlesson"
   end
 
   add_index "tutors", ["pname"], name: "index_tutors_on_pname", unique: true, using: :btree

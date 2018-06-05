@@ -49,8 +49,7 @@ class AdminsController < ApplicationController
     sf = 5    # signigicant figures
     mystartdeletedate = deletedays_params["from"].to_date
     myenddeletedate = deletedays_params["from"].to_date + deletedays_params["num_days"].to_i
-    #@cal = calendar_read_display2(sf, mystartdeletedate, myenddeletedate)
-    @cal = calendar_read_display1f(sf, mystartdeletedate, myenddeletedate, {})
+    @cal = calendar_read_display2(sf, mystartdeletedate, myenddeletedate)
     if @cal.empty?
       # these days are empty - show error and return
       flash[:notice] = "These days are empty - nothing to delete!!!"
@@ -182,15 +181,13 @@ class AdminsController < ApplicationController
     myendcopyfromdate = copydays_params["from"].to_date + copydays_params["num_days"].to_i
     mystartcopytodate = copydays_params["to"].to_date
     myendcopytodate = copydays_params["to"].to_date + copydays_params["num_days"].to_i
-    #@cal = calendar_read_display2(sf, mystartcopytodate, myendcopytodate)
-    @cal = calendar_read_display1f(sf, mystartcopytodate, myendcopytodate, {})
+    @cal = calendar_read_display2(sf, mystartcopytodate, myendcopytodate)
     unless @cal.empty?
       # destination is not empty - show error and return
       flash[:notice] = "Destination days are not empty - will not copy!!!"
       redirect_to copydaysedit_path(copydays_params)
     end
-    #@cal = calendar_read_display2(sf, mystartcopyfromdate, myendcopyfromdate)
-    @cal = calendar_read_display1f(sf, mystartcopyfromdate, myendcopyfromdate, {})
+    @cal = calendar_read_display2(sf, mystartcopyfromdate, myendcopyfromdate)
     if @cal.empty?
       # source is empty - show error and return
       flash[:notice] = "Source days are empty - nothing to copy!!!"
@@ -341,11 +338,7 @@ class AdminsController < ApplicationController
     #  email:     t[4],
     #  sname:     t[5],
     #  comment:   t[6],
-    
-    # Derived fields
-    #  status:        "active" unless prefixed with zz..
-    #  firstaid:     "yes" if name has suffix +
-    #  firstsesson:  "yes" if name has suffix *
+    #  status:    "active"
 
     readcolumns = [   'NAME + INITIAL',
                       'SUBJECTS',
@@ -398,114 +391,80 @@ class AdminsController < ApplicationController
     # Now to update the database
     loopcount = 0
     @tutors.each do |t|                 # step through all tutors from the spreadsheet
-      t[7] = ""
       pname = t[1]
       logger.debug "pname: " + pname.inspect
       if pname == ""  || pname == nil
-        t[7] = t[7] + "invalid pname - do nothing"
+        t[7] = "invalid pname - do nothing"
         next
       end
-      # determine status from name content - been marked by leading z...
-      thisstatus = "active"
-      if m = pname.match(/(^z+)(.+)$/)   # removing leading z..  (inactive entries)
+      if m =pname.match(/(^z+)(.+)$/)
         pname = m[2].strip
-        thisstatus = "inactive"
-        #t[1] = pname
+        t[1] = pname
       end
-      # look for + (firstaid:) * (firstsession) at end of pname 
-      # (first aid trained or first session trained)
-      thisfirstaid = 'no'
-      thisfirstlesson = 'no'
-      if m = pname.match(/([+* ]+)$/)
-        #byebug
-        thisfirstaid    = (m[1].include?('+') ? 'yes' : 'no')
-        thisfirstlesson = (m[1].include?('*') ? 'yes' : 'no')
-        pname = pname.gsub($1, '') unless $1.strip.length == 0
-        t[7] = t[7] + t[1] + " firstaid: " + thisfirstaid + " firstlesson: " +
-                thisfirstlesson + " pname: " + pname + " "
-      end
-      pname = pname.strip
       
       db_tutor = Tutor.find_by pname: pname
       if(db_tutor)   # already in the database
         flagupdate = 0                  # detect if any fields change
         updatetext = ""
         if db_tutor.comment != t[6]
-          db_tutor.comment   = t[6]
+          db_tutor.comment = t[6]
           flagupdate = 1
           updatetext = updatetext + " - comment"  
         end
         if db_tutor.sname != t[5]
-          db_tutor.sname   = t[5]
+          db_tutor.sname = t[5]
           flagupdate = 1
           updatetext = updatetext + " - sname"  
         end
         if db_tutor.email != t[4]
-          db_tutor.email   = t[4]
+          db_tutor.email = t[4]
           flagupdate = 1
           updatetext = updatetext + " - email"  
         end
         if db_tutor.phone != t[3]
-          db_tutor.phone   = t[3]
+          db_tutor.phone = t[3]
           flagupdate = 1
           updatetext = updatetext + " - phone"  
         end
         if db_tutor.subjects != t[2]
-          db_tutor.subjects   = t[2]
+          db_tutor.subjects = t[2]
           flagupdate = 1
           updatetext = updatetext + " - subjects"  
-        end
-        if db_tutor.status != thisstatus 
-          db_tutor.status   = thisstatus
-          flagupdate = 1
-          updatetext = updatetext + " - status"  
-        end
-        if db_tutor.firstaid != thisfirstaid 
-          db_tutor.firstaid   = thisfirstaid
-          flagupdate = 1
-          updatetext = updatetext + " - firstaid"  
-        end
-        if db_tutor.firstlesson != thisfirstlesson
-          db_tutor.firstlesson   = thisfirstlesson
-          flagupdate = 1
-          updatetext = updatetext + " - firstlesson"  
+
         end
         logger.debug "flagupdate: " + flagupdate.inspect + " db_tutor: " + db_tutor.inspect
         if flagupdate == 1                   # something changed - need to save
           if db_tutor.save
             logger.debug "db_tutor saved changes successfully"
-            t[7] = t[7] + "updated" + updatetext  
+            t[7] = "updated" + updatetext  
           else
             logger.debug "db_tutor saving failed - " + @db_tutor.errors
-            t[7] = t[7] + "failed to create"
+            t[7] = "failed to create"
           end
         else
-            t[7] = t[7] + "no changes"
+            t[7] = "no changes"
         end
       else
         # This tutor is not in the database - so need to add it.
         @db_tutor = Tutor.new(
-                              pname:        pname,
-                              subjects:     t[2],
-                              phone:        t[3],
-                              email:        t[4],
-                              sname:        t[5],
-                              comment:      t[6],
-                              status:       thisstatus,
-                              firstlesson:  thisfirstlesson,
-                              firstaid:     thisfirstaid
+                              pname: t[1],
+                              subjects: t[2],
+                              phone: t[3],
+                              email: t[4],
+                              sname: t[5],
+                              comment: t[6],
+                              status: "active"
                             )
-        #if pname =~ /^zz/                   # the way they show inactive tutors
-        #if t[1] =~ /^zz/                   # the way they show inactive tutors
-        #  @db_tutor.status = "inactive"
-        #end
+        if pname =~ /^zz/                   # the way they show inactive tutors
+          @db_tutor.status = "inactive"
+        end
         logger.debug "new - db_tutor: " + @db_tutor.inspect
         if @db_tutor.save
           logger.debug "db_tutor saved successfully"
-          t[7] = t[7] + "created"  
+          t[7] = "created"  
         else
-          logger.debug "db_tutor saving failed - " + @db_tutor.errors.inspect
-          t[7] = t[7] + "failed to create"
+          logger.debug "db_tutor saving failed - " + @db_tutor.errors
+          t[7] = "failed to create"
         end
       end
       #exit
@@ -729,7 +688,7 @@ class AdminsController < ApplicationController
 #
 #   Load Students    ---    second version
 #   Goggle spreadsheet changed dramatically in  Term 2 2017
-#   Dropped out a number of fields -now only has three columns
+#   Dropped out a number of fields -ow only has three columns
 #
 #---------------------------------------------------------------------------
   # GET /admins/loadstudents2
@@ -2229,9 +2188,8 @@ else
     #*****************************************************************
     
     # call the library in controllers/concerns/calendarutilities.rb
-    #@cal = calendar_read_display2(@sf, mystartdate, myenddate)
-    #calendar_read_display1f(sf, mystartdate, myenddate, options)
-    @cal = calendar_read_display1f(@sf, mystartdate, myenddate, {})
+    @cal = calendar_read_display2(@sf, mystartdate, myenddate)
+
     # Clear the sheet
     googleClearSheet.call
     #googleVertAlignAll.call("TOP")

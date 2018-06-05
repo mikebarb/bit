@@ -6,6 +6,7 @@ module Calendarutilities
   #      includes -> minimum number of db queries
   #      joins    -> lazy loads the db query
 
+=begin
   # Obtain all the data from the database to display calendar2.
   def calendar_read_display2(sf, mystartdate, myenddate)
     @sf = sf    # significant figures for ids used in browser display
@@ -128,7 +129,7 @@ module Calendarutilities
     return @cal
 
   end
-
+=end
  # -----------------------------------------------------------------------------
  # Obtain all the data from the database to display calendar or roster.
  #
@@ -155,10 +156,7 @@ module Calendarutilities
         tutor_ids = options[:tutor_ids] if options.has_key?(:tutor_ids)
         student_ids = options[:student_ids] if options.has_key?(:student_ids)
     end
-
-
-
-
+    
     # define a two dimesional array to hold the table info to be displayed.
     # row and column [0] will hold counts of elements populated in that row or column
     # row and column [1] will hold the titles for that rolw or column.
