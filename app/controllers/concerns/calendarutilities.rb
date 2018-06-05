@@ -172,36 +172,18 @@ module Calendarutilities
                            end_date: myenddate
                           })
 
-    @slotsinfo.each { |o|
-      if o.id == 2177
-        logger.debug "slotsinfo entry: " + o.inspect
-      end
-    }
-
     @sessinfo      = Lesson
                    .joins(:slot)
                    .where(slot_id: @slotsinfo.map {|o| o.id})
                    .order(:status)
                    .includes(:slot)
                    
-    @sessinfo.each { |o|
-      if o.id == 25551
-        logger.debug "sessinfo entry: " + o.inspect
-      end
-    }
-
     @tutroleinfo = Tutrole
                    .joins(:tutor, :lesson)
                    .where(lesson_id: @sessinfo.map {|o| o.id})
                    .order('kind, tutors.pname')
                    .includes(:tutor, :lesson)
 
-    @tutroleinfo.each { |o|
-      if (o.id == 26938 || o.id == 26931 )
-        logger.debug "tutroleinfo entry: " + o.inspect
-      end
-    }
-    
     @roleinfo    = Role
                    .joins(:student, :lesson)
                    .where(lesson_id: @sessinfo.map {|o| o.id})
@@ -267,43 +249,17 @@ module Calendarutilities
       }
     }
 
-    logger.debug "Before reductions"
-    @sessinfo.each { |o|
-      if o.id == 25551
-        logger.debug "sessinfo entry: " + o.inspect
-      end
-    }
-
-    @tutroleinfo.each { |o|
-      if (o.id == 26938 || o.id == 26931 )
-        logger.debug "tutroleinfo entry: " + o.inspect
-      end
-    }
-
     # now do reductions if generating a roster.
-    if roster || ratio then    # if option = roster
-      reduce_tutrole_id.call if(options.has_key?(:select_tutors) && tutor_ids != nil)
-      reduce_tutrole_status.call if(options.has_key?(:select_statuses) && tutor_statuses != nil) 
-      reduce_tutrole_kind.call if(options.has_key?(:select_kinds) && tutor_kinds != nil)
+    if roster || ratio then    # if option = roster or ratio
+      reduce_tutrole_id.call     if(options.has_key?(:select_tutors) && tutor_ids != nil)
+      reduce_tutrole_status.call if(options.has_key?(:select_tutor_statuses) && tutor_statuses != nil) 
+      reduce_tutrole_kind.call   if(options.has_key?(:select_tutor_kinds) && tutor_kinds != nil)
       
-      reduce_role_id.call if(options.has_key?(:select_students) && student_ids != nil)
-      reduce_role_status.call if(options.has_key?(:select_statuses) && student_statuses != nil) 
-      reduce_role_kind.call if(options.has_key?(:select_kinds) && student_kinds != nil) 
+      reduce_role_id.call     if(options.has_key?(:select_students) && student_ids != nil)
+      reduce_role_status.call if(options.has_key?(:select_student_statuses) && student_statuses != nil) 
+      reduce_role_kind.call   if(options.has_key?(:select_student_kinds) && student_kinds != nil) 
     end
 
-    logger.debug "After reductions"
-    @sessinfo.each { |o|
-      if o.id == 25551
-        logger.debug "sessinfo entry: " + o.inspect
-      end
-    }
-
-    @tutroleinfo.each { |o|
-      if (o.id == 26938 || o.id == 26931 )
-        logger.debug "tutroleinfo entry: " + o.inspect
-      end
-    }
-    
     # these indexes are required if reduced or not - so done after reduction.
     # First, create the hash{lesson_id}[tutor_index_into array, .....]    
     @tutrole_lessonindex = Hash.new
@@ -323,19 +279,6 @@ module Calendarutilities
     }
     # indexes completed.
 
-    logger.debug "After indexing"
-    @sessinfo.each { |o|
-      if o.id == 25551
-        logger.debug "sessinfo entry: " + o.inspect
-      end
-    }
-
-    @tutroleinfo.each { |o|
-      if (o.id == 26938 || o.id == 26931 )
-        logger.debug "tutroleinfo entry: " + o.inspect
-      end
-    }
-
     # Final reduction step, reduce the lesson array to eliminate lessons that have
     # no tutors or students of interest
     if roster then    // if option = roster               
@@ -347,19 +290,6 @@ module Calendarutilities
         a
       }
     end
-
-    logger.debug "After reduction of session"
-    @sessinfo.each { |o|
-      if o.id == 25551
-        logger.debug "sessinfo entry: " + o.inspect
-      end
-    }
-    
-    @tutroleinfo.each { |o|
-      if (o.id == 26938 || o.id == 26931 )
-        logger.debug "tutroleinfo entry: " + o.inspect
-      end
-    }
 
     # ------- Now generate the hash for use in the display -----------
     

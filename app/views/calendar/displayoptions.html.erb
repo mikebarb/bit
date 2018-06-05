@@ -2,6 +2,10 @@
 
 <%= form_tag("/calendar/flexibledisplay", {method: :get}) do %>
 
+  <div class="actions">
+    <%= submit_tag "Display" %>
+  </div>
+
   <p>Complete if you wish to override the default settings<br>
      Otherwise, leave blank.</p> 
   <div class="field">
@@ -30,11 +34,26 @@
   </div>
   <br>
   -------------------- For Rosters or Ratios -------------------------
+
+  <div class="select_roster_default">
+    Select default settings for roster and ratio display<br>
+    <%= check_box_tag(:select_roster_default) %>
+    <%= label_tag(:select_roster_default, "default settings for roster and ratio display") %><br>
+  </div>
+  <br>
+  <div class="select_none">
+    Disable display of tutors or students<br>
+    <%= check_box_tag(:select_tutor_none) %>
+    <%= label_tag(:select_tutor_none, "For TUTORS, display no tutors in roster and ratio display:") %><br>
+    <%= check_box_tag(:select_student_none) %>
+    <%= label_tag(:select_student_none, "For STUDENTS, display no students in roster and ratio display:") %><br>
+  </div>
+
   <br>
   <div class="select_statuses">
-    <%= check_box_tag(:select_statuses) %>
-    <%= label_tag(:select_statuses, "Select the status used in roster display:") %><br>
-    Tutors:<br>
+    Select Statuses:<br>
+    <%= check_box_tag(:select_tutor_statuses) %>
+    <%= label_tag(:select_tutor_statuses, "For TUTORS, Select the STATUSES desired in roster and ratio display:") %><br>
     <%= select_tag(:tutor_statuses, options_for_select([ 
         ['scheduled', 'scheduled'],
         ['notified', 'notified'],
@@ -46,7 +65,8 @@
         ]),
         multiple: true) 
     %>  <br>
-    Students:<br>
+    <%= check_box_tag(:select_student_statuses) %>
+    <%= label_tag(:select_student_statuses, "For STUDENTS, Select the STATUSES desired in roster and display:") %><br>
     <%= select_tag(:student_statuses, options_for_select([ 
         ['scheduled', 'scheduled'],
         ['attended', 'attended'],
@@ -59,9 +79,9 @@
   </div>
   <br>
   <div class="select_kinds">
-    <%= check_box_tag(:select_kinds) %>
-    <%= label_tag(:select_kinds, "Select the kinds used in roster display:") %><br>
-    Tutors:<br>
+    Select Kinds:<br>
+    <%= check_box_tag(:select_tutor_kinds) %>
+    <%= label_tag(:select_tutor_kinds, "For TUTORS, Select the KINDS desired in roster and ratio display:") %><br>
     <%= select_tag(:tutor_kinds, options_for_select([ 
         ['BFL', 'BFL'],
         ['OnCall', 'onCall'],
@@ -73,7 +93,8 @@
         ]),
         multiple: true) 
     %>  <br>
-    Students:<br>
+    <%= check_box_tag(:select_student_kinds) %>
+    <%= label_tag(:select_student_kinds, "For STUDENTS, Select the KINDS desired in roster and ratio display:") %><br>
     <%= select_tag(:student_kinds, options_for_select([ 
         ['free', 'free'],
         ['first', 'first'],
@@ -88,7 +109,7 @@
   <br>
   <div class="radio_buttons">
     <%= check_box_tag(:select_tutors) %>
-    <%= label_tag(:select_tutors, "Select tutors used in the roster display.") %><br>
+    <%= label_tag(:select_tutors, "Select tutors used in the roster and ratio display.") %><br>
     Select the type of identifiers for thes entries. <br>
     <%= radio_button_tag(:t_type, "name", true) %>
     <%= label_tag(:t_type, "Tutor identification is by name") %> <br>
@@ -105,7 +126,7 @@
   <br>
   <div class="radio_buttons">
     <%= check_box_tag(:select_students) %>
-    <%= label_tag(:select_students, "Select students used in the roster display.") %><br>
+    <%= label_tag(:select_students, "Select students used in the roster and ratio display.") %><br>
     Select the type of identifiers for thes entries. <br>
     <%= radio_button_tag(:s_type, "name", true) %>
     <%= label_tag(:t_type, "Tutor identification is by name") %> <br>
@@ -115,7 +136,7 @@
     <%= label_tag(:t_type, "Tutor identification is by id - a database record id") %> <br>
   </div>
   <div class="textfield">
-     You may have muliple tutors - comma separate the entries<br>
+     You may have muliple students - comma separate the entries<br>
     <%= text_field_tag(:student_identifiers) %>
     <%= label_tag(:student_identifiers, "Tutor identifier") %> <br>
   </div>

@@ -2,7 +2,9 @@ class CalendarController < ApplicationController
   include Calendarutilities
 
   #=============================================================================================
-  # the workdesk - flexible display with multiple options. 
+  # ********************************************************************************************
+  # * the workdesk - flexible display with multiple options.                                   *
+  # ********************************************************************************************
   #=============================================================================================
   def displayoptions
     logger.debug "called calendar conroller - preferences"
@@ -29,7 +31,7 @@ class CalendarController < ApplicationController
                 .where.not(status: "inactive")
                 .order('pname')
 
-
+    #byebug
     # ------------------ Roster or Ratio display (Flexible Display) ----------------------
     # There is a choice of many paramters that can be passed.
     
@@ -46,143 +48,170 @@ class CalendarController < ApplicationController
     # if roster or ratio is selected without any user settings selected,
     # then we run a standard roster configuration - used for publishing rosters.
     if options[:roster] || options[:ratio]
-      # set default roster options, if not overridden by user
-      unless(((params.has_key?(:select_statuses)) && (params[:select_statuses] == '1')) ||            
-             ((params.has_key?(:select_kinds))    && (params[:select_kinds] == '1'))    ||
-             ((params.has_key?(:select_tutors))   && (params[:select_tutors] == '1'))   ||
-             ((params.has_key?(:select_students)) && (params[:select_students] == '1'))  )
-        options[:select_statuses]   = true
+      # set default roster options, if not selected by user
+      if((params.has_key?(:select_roster_default)) && (params[:select_roster_default] == '1'))
+        options[:select_tutor_statuses]   = true
         options[:tutor_statuses]    = ['attended', 'notified', 'scheduled']
-        options[:student_statuses]  = ['attended', 'notified', 'scheduled']
+        options[:select_student_statuses]   = true
+        options[:student_statuses]  = ['attended', 'scheduled']
         @displayHeader = 'Flexible Display of Roster - default roster filtering' if options[:roster]
         @displayHeader = 'Flexible Display of Ratios - using default roster filtering' if options[:ratio]
-      end
+      else 
+        # Check = does user want to display NO tutors
+        if((params.has_key?(:select_tutor_none)) && (params[:select_tutor_none] == '1'))
+          # To not display tutors, trick is to select tutors with empty ids
+          options[:select_tutors] = true
+          options[:tutor_ids] = []
+        else   # Normal user selection for tutors
+          #
+          # detect if selection by statues is requested
+          # if so, then load the requested statues - else do not create the option
+          # For tutors.
+          if((params.has_key?(:select_tutor_statuses)) && (params[:select_tutor_statuses] == '1'))
+            options[:select_tutor_statuses] = true
+            if params.has_key?(:tutor_statuses)
+              options[:tutor_statuses] = params[:tutor_statuses]
+            end
+          end
+          
+          # detect if selection by kinds is requested
+          # if so, then load the requested kinds - else do not create the option
+          # For tutors
+          if((params.has_key?(:select_tutor_kinds)) && (params[:select_tutor_kinds] == '1'))
+            options[:select_tutor_kinds] = true
+            if params.has_key?(:tutor_kinds)
+              options[:tutor_kinds] = params[:tutor_kinds]
+            end
+          end
+          
+          # detect if selection by tutors (names, email, ids) is requested
+          # if so, then load the requested tutors - else do not create this option
+          # One of three ways to identify tutors - names, emails or record ids
+          if((params.has_key?(:select_tutors)) && (params[:select_tutors] == '1'))
+            options[:select_tutors] = true
+            if params.has_key?(:tutor_identifiers)
+              # first clean up the input - is a user inputed text field!
+              t = params[:tutor_identifiers].split(',').map {|o| o.downcase.strip}
+              t = t.reduce([]) { |a, o|   
+                a << o if o != "" 
+                a
+              }
+              # we only pass into the display utility the [record ids, ...]
+              if params[:t_type] == 'name'   # tutors will be identified by name
+                desiredtutors = @tutors.reduce([]){ |a, o|
+                  t.each do |u|
+                    if o.pname.downcase.include? u
+                      a << o.id
+                      break
+                    end
+                  end
+                  a
+                }
+              end
+              if params[:t_type] == 'email'   # tutors will be identified by email
+                desiredtutors = @tutors.reduce([]){ |a, o|
+                  t.each do |u|
+                    logger.debug "checking tutor " + o.inspect
+                    if ((o.email != nil) && (o.email.downcase.include? u))
+                      a << o.id
+                      break
+                    end
+                  end
+                  a
+                }
+              end
+              if params[:t_type] == 'id'   # clean up tutors will be identified by id
+                desiredtutors = @tutors.reduce([]){ |a, o|
+                  t.each do |u|
+                    if(/(\D+)/.match(u).nil? && (o.id == u.to_i))
+                      a << o.id
+                    end
+                  end
+                  a
+                }
+              end
+              options[:tutor_ids] = desiredtutors
+            end   # end of tutor identifere present
+          end     # end of select tutors - user selectible options
+        end       # of display tutors ( none or user selectable)
 
-      # detect if selection by statues is requested
-      # if so, then load the requested statues - else do not create the option
-      if((params.has_key?(:select_statuses)) && (params[:select_statuses] == '1'))
-        options[:select_statuses] = true
-        if params.has_key?(:tutor_statuses)
-          options[:tutor_statuses] = params[:tutor_statuses]
-        end
-        if params.has_key?(:student_statuses)
-          options[:student_statuses] = params[:student_statuses]
-        end
-      end
-      
-      # detect if selection by kinds is requested
-      # if so, then load the requested kinds - else do not create the option
-      if((params.has_key?(:select_kinds)) && (params[:select_kinds] == '1'))
-        options[:select_kinds] = true
-        if params.has_key?(:tutor_kinds)
-          options[:tutor_kinds] = params[:tutor_kinds]
-        end
-        if params.has_key?(:student_kinds)
-          options[:student_kinds] = params[:student_kinds]
-        end
-      end
-      
-      # detect if selection by tutors is requested
-      # if so, then load the requested tutors - else do not create the option
-      # One of three ways to identify tutors - names, emails or record ids
-      if((params.has_key?(:select_tutors)) && (params[:select_tutors] == '1'))
-        options[:select_tutors] = true
-        if params.has_key?(:tutor_identifiers)
-          # first clean up the input - is a user inputed text field!
-          t = params[:tutor_identifiers].split(',').map {|o| o.downcase.strip}
-          t = t.reduce([]) { |a, o|   
-            a << o if o != "" 
-            a
-          }
-          # we only pass into the display utility the [record ids, ...]
-          if params[:t_type] == 'name'   # tutors will be identified by name
-            desiredtutors = @tutors.reduce([]){ |a, o|
-              t.each do |u|
-                if o.pname.downcase.include? u
-                  a << o.id
-                  break
-                end
-              end
-              a
-            }
+        if((params.has_key?(:select_student_none)) && (params[:select_student_none] == '1'))
+          # To not display students, trick is to select students with empty ids
+          options[:select_students] = true
+          options[:student_ids] = []
+        else   # Normal user selection for students
+          # detect if selection by statues is requested
+          # if so, then load the requested statues - else do not create the option
+          # For students.
+          if((params.has_key?(:select_student_statuses)) && (params[:select_student_statuses] == '1'))
+            options[:select_student_statuses] = true
+            if params.has_key?(:student_statuses)
+              options[:student_statuses] = params[:student_statuses]
+            end
           end
-          if params[:t_type] == 'email'   # tutors will be identified by email
-            desiredtutors = @tutors.reduce([]){ |a, o|
-              t.each do |u|
-                logger.debug "checking tutor " + o.inspect
-                if ((o.email != nil) && (o.email.downcase.include? u))
-                  a << o.id
-                  break
-                end
-              end
-              a
-            }
+          
+          # detect if selection by kinds is requested
+          # if so, then load the requested kinds - else do not create the option
+          # For tutors
+          if((params.has_key?(:select_student_kinds)) && (params[:select_student_kinds] == '1'))
+            options[:select_student_kinds] = true
+            if params.has_key?(:student_kinds)
+              options[:student_kinds] = params[:student_kinds]
+            end
           end
-          if params[:t_type] == 'id'   # clean up tutors will be identified by id
-            desiredtutors = @tutors.reduce([]){ |a, o|
-              t.each do |u|
-                if(/(\D+)/.match(u).nil? && (o.id == u.to_i))
-                  a << o.id
-                end
+          
+          # detect if selection by students is requested
+          # if so, then load the requested students - else do not create the option
+          # One of three ways to identify students - names, emails or record ids
+          if((params.has_key?(:select_students)) && (params[:select_students] == '1'))
+            options[:select_students] = true
+            if params.has_key?(:student_identifiers)
+              # first clean up the input - is a user inputed text field!
+              t = params[:student_identifiers].split(',').map {|o| o.downcase.strip}
+              t = t.reduce([]) { |a, o|   
+                a << o if o != "" 
+                a
+              }
+              # we only pass into the display utility the [record ids, ...]
+              if params[:t_type] == 'name'   # students will be identified by name
+                desiredstudents = @students.reduce([]){ |a, o|
+                  t.each do |u|
+                    if o.pname.downcase.include? u
+                      a << o.id
+                      break
+                    end
+                  end
+                  a
+                }
               end
-              a
-            }
-          end
-          options[:tutor_ids] = desiredtutors
-        end   # end of tutor identifere present
-      end     # end of select tutors ...
-
-      # detect if selection by students is requested
-      # if so, then load the requested students - else do not create the option
-      # One of three ways to identify students - names, emails or record ids
-      if((params.has_key?(:select_students)) && (params[:select_students] == '1'))
-        options[:select_students] = true
-        if params.has_key?(:student_identifiers)
-          # first clean up the input - is a user inputed text field!
-          t = params[:student_identifiers].split(',').map {|o| o.downcase.strip}
-          t = t.reduce([]) { |a, o|   
-            a << o if o != "" 
-            a
-          }
-          # we only pass into the display utility the [record ids, ...]
-          if params[:t_type] == 'name'   # students will be identified by name
-            desiredstudents = @students.reduce([]){ |a, o|
-              t.each do |u|
-                if o.pname.downcase.include? u
-                  a << o.id
-                  break
-                end
+              if params[:t_type] == 'email'   # students will be identified by email
+                desiredstudents = @students.reduce([]){ |a, o|
+                  t.each do |u|
+                    logger.debug "checking student " + o.inspect
+                    if ((o.email != nil) && (o.email.downcase.include? u))
+                      a << o.id
+                      break
+                    end
+                  end
+                  a
+                }
               end
-              a
-            }
-          end
-          if params[:t_type] == 'email'   # students will be identified by email
-            desiredstudents = @students.reduce([]){ |a, o|
-              t.each do |u|
-                logger.debug "checking student " + o.inspect
-                if ((o.email != nil) && (o.email.downcase.include? u))
-                  a << o.id
-                  break
-                end
+              if params[:t_type] == 'id'   # clean up students will be identified by id
+                desiredstudents = @students.reduce([]){ |a, o|
+                  t.each do |u|
+                    if(/(\D+)/.match(u).nil? && (o.id == u.to_i))
+                      a << o.id
+                    end
+                  end
+                  a
+                }
               end
-              a
-            }
-          end
-          if params[:t_type] == 'id'   # clean up students will be identified by id
-            desiredstudents = @students.reduce([]){ |a, o|
-              t.each do |u|
-                if(/(\D+)/.match(u).nil? && (o.id == u.to_i))
-                  a << o.id
-                end
-              end
-              a
-            }
-          end
-          options[:student_ids] = desiredstudents
-        end   # end of student identifere present
-      end     # end of select students ...
-
-    end      # end of roster display - setting up parameters
+              options[:student_ids] = desiredstudents
+            end   # end of student identifere present
+          end     # end of select students ...
+        end       # end of none or user selection 
+      end         # end of default roster & ratio settings
+    end           # end of roster display - setting up parameters
     # ------- END ------ Roster display (Flexible Display) ----------------------
     logger.debug "pass these options: " + options.inspect
     #byebug
