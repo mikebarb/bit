@@ -52,6 +52,7 @@
           </li>
           <% if current_user.role == 'admin' %>
             <li><%= link_to "load", load_path %></li>
+            <li><%= link_to "loadschedule", loadschedule_path %></li>
           <% end %>
           <li class='active'><%= link_to "Logout", destroy_user_session_path, method: :delete  %>
             <ul>

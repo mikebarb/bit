@@ -16,6 +16,8 @@
       <th>Status</th>
       <th>Email</th>
       <th>Phone</th>
+      <th>First Lesson</th>
+      <th>First Aid</th>
       <th colspan="5"></th>
     </tr>
   </thead>
@@ -33,7 +35,9 @@
         <td><%= tutor.comment %></td>
         <td><%= tutor.status %></td>
         <td><%= tutor.email %></td>
-        <td><%= tutor.phone %></td>        
+        <td><%= tutor.phone %></td>
+        <td><%= tutor.firstlesson %></td>
+        <td><%= tutor.firstaid %></td>
         <td><%= link_to 'History', tutor_history_path(tutor) %></td>
         <td><%= link_to 'Changes', tutor_change_path(tutor) %></td>
         <td><%= link_to 'Show', tutor %></td>

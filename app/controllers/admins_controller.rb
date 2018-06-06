@@ -417,12 +417,9 @@ class AdminsController < ApplicationController
       thisfirstaid = 'no'
       thisfirstlesson = 'no'
       if m = pname.match(/([+* ]+)$/)
-        #byebug
         thisfirstaid    = (m[1].include?('+') ? 'yes' : 'no')
         thisfirstlesson = (m[1].include?('*') ? 'yes' : 'no')
         pname = pname.gsub($1, '') unless $1.strip.length == 0
-        t[7] = t[7] + t[1] + " firstaid: " + thisfirstaid + " firstlesson: " +
-                thisfirstlesson + " pname: " + pname + " "
       end
       pname = pname.strip
       
@@ -640,7 +637,7 @@ class AdminsController < ApplicationController
           if db_student.sex != sex
             db_student.sex = sex
             flagupdate = 1
-            updatetext = updatetext + " - sex"
+            updatetext = updatetext + " - sex (" + sex + ")"
           end
         end
         if db_student.comment != t[2]
@@ -698,15 +695,16 @@ class AdminsController < ApplicationController
         # now get the 5. perferences and 6. invcode
         # now get the 7. daycode, 8. term 4, 9. daycode
         @db_student = Student.new(
-                              pname: pname,
-                              year: year,
-                              comment: t[2],
-                              study: t[3],
-                              email: t[4],
-                              preferences: t[5],
-                              invcode: t[6],
-                              daycode: usedaycode,
-                              status: status
+                              pname:        pname,
+                              year:         year,
+                              comment:      t[2],
+                              study:        t[3],
+                              email:        t[4],
+                              preferences:  t[5],
+                              invcode:      t[6],
+                              daycode:      usedaycode,
+                              status:       status,
+                              sex:          sex
                             )
         logger.debug "new - db_student: " + @db_student.inspect
         if @db_student.save
@@ -874,6 +872,7 @@ class AdminsController < ApplicationController
 #---------------------------------------------------------------------------
   # GET /admins/loadschedule
   def loadschedule
+    logger.debug "in loadschedule"
     # log levels are: :debug, :info, :warn, :error, :fatal, and :unknown, corresponding to the log level numbers from 0 up to 5
     #logger.fatal "1.log level" + Rails.logger.level.inspect
     #service = googleauthorisation(request)
@@ -967,6 +966,7 @@ class AdminsController < ApplicationController
       
       Rails.logger.level = holdRailsLoggerLevel
       # Now scan each row read from the spreadsheet in turn
+      logger.debug "processing data from spreadsheet by rows."
       response.sheets[0].data[0].row_data.map.with_index do |r, ri|
         # r = value[] - contains info for ss cell - content & colour,
         # ri = row index
@@ -1068,6 +1068,7 @@ class AdminsController < ApplicationController
           end
           requiredSlot["timeslot"] = dt     # adjust from am to pm.
           requiredSlot["location"] = si
+          logger.debug "working with " + si.inspect + ' ' + dt.inspect
           # Now that we have a slot created, check if this has been
           # the first one for the day. i.e. there are on call and setup events
           # If so, we make them into a lesson and add them  to the slot.
@@ -1228,7 +1229,7 @@ class AdminsController < ApplicationController
         end
       end
       # second up is the "Setup"
-      # these will have a lesson status of "oncall"
+      # these will have a lesson status of "onsetup"
       # ["DAVID O\n| E12 M12 S10 |"]
       if(mylesson = r["onSetup"])
         mytutornamecontent = findTutorNameComment(mylesson, @tutors)
