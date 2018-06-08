@@ -52,7 +52,6 @@
           </li>
           <% if current_user.role == 'admin' %>
             <li><%= link_to "load", load_path %></li>
-            <li><%= link_to "loadschedule", loadschedule_path %></li>
           <% end %>
           <li class='active'><%= link_to "Logout", destroy_user_session_path, method: :delete  %>
             <ul>
@@ -63,9 +62,8 @@
               <% end %>
             </ul>
           </li>
-          <p></p>User: <strong><%= current_user.email %></strong></p>
+          <li><p class="menu-text">User: <strong><%= current_user.email %></strong></p></li>
       </ul>
-      <p id='displaylogin'>User: <strong><%= current_user.email %></strong></p>
     </div>
   <% end %>
   <% flash.each do |key, value| %>
@@ -73,30 +71,7 @@
       <%= value %>
     </div>
   <% end %>
-  <% if false %>
-  <% if user_signed_in? %>
-    <nav>
-      <ul>
-        <%= link_to "lessons", lessons_path %>
-        <%= link_to "students", students_path %>
-        <%= link_to "tutors", tutors_path %>
-        <%= link_to "slots", slots_path %>
-        <%= link_to "calendar", calendar_display_path %>
-        <%= link_to "calendar1", calendar_display1_path %>
-        <%= link_to "calendar1f", calendar_display1f_path %>
-        <%= link_to "calendar2", calendar_display2_path %>
-        <%= link_to "calendar_roster1", calendar_roster1_path %>
-        <%= link_to "calendar_roster1f", calendar_roster1f_path %>
-        <%= link_to "calendar_roster2", calendar_roster2_path %>
-        <%= link_to "Google_roster", googleroster_path %>
-        <%= link_to "Flexible Display", displayoptions_path %>
-        <%= link_to "copydays", copydaysedit_path %>
-        <%= link_to "load", load_path %>
-      </ul>
-    </nav>
-  <% end %>
-  <% end %>
-  
+
   <p class="navbar-text pull-right">
   <% if user_signed_in? %>
     <% if false %>

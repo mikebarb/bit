@@ -267,6 +267,12 @@ module Calendarutilities
       end  
       @tutrole_lessonindex[o.lesson_id].push(count)
     }
+    
+    # Sort all tutors within each session entry by pname
+    @tutrole_lessonindex.each { |k, a|
+      a = a.sort_by{ |t| @tutroleinfo[t].tutor.pname }
+    }
+    
     # Second, create the hash{lesson_id}[student_index_into array, .....]    
     @role_lessonindex = Hash.new
     @roleinfo.each_with_index { |o, count|
@@ -275,11 +281,16 @@ module Calendarutilities
       end  
       @role_lessonindex[o.lesson_id].push(count)
     }
+    # Sort all students within each session entry by pname
+    @role_lessonindex.each { |k, a|
+      a = a.sort_by{ |t| @roleinfo[t].student.pname }
+    }
+    
     # indexes completed.
 
     # Final reduction step, reduce the lesson array to eliminate lessons that have
     # no tutors or students of interest
-    if roster then    // if option = roster               
+    if roster then    # if option = roster               
       @sessinfo = @sessinfo.reduce([]) { |a,o|
         if ( @role_lessonindex.has_key?(o.id) ||
              @tutrole_lessonindex.has_key?(o.id)    )
@@ -288,6 +299,57 @@ module Calendarutilities
         a
       }
     end
+    
+    # need an index into @tutors for the sort.
+    # @tutors is already ordered by pname
+    # so only have to return the index for the sort routine.
+    @tutor_index = Hash.new
+    @tutors.each_with_index { |o, count|
+      unless @tutor_index.has_key? o.id then
+        @tutor_index[o.id] = Array.new
+      end  
+      @tutor_index[o.id] = count
+    }
+    
+    
+    # @sessinfo needs to be sorted in correct order as this will control the order
+    # they are loaded into @cal. - for lesson order.
+    # routing to sort the tutrole_lesson_index
+    # by 1. lesson.status
+    #    2. lesson.tutor.pname
+    @sessinfo = @sessinfo.sort_by{ |o| [valueOrderStatus(o), valueOrderTutor(o)]}
+
+=begin
+
+  # Sort the values in display2 (cell of lessons/sessions) by status and then by tutor name
+  # as some lessons have no tutor, this returns the tutor name if available.
+  # This can then be used as the second attribute in the sort.
+  def valueOrderTutor(obj)
+    thistutorindexarray =  @tutrole_lessonindex[obj.id]
+    if thistutorindexarray.count > 0   // has tutor entries
+      @tutorinfo[@tutroleinfo[thistutorindexarray[0]]].pname
+    else
+      "_"
+    end
+  end
+
+  def valueOrderStatus(obj)
+    if obj.status != nil
+      ["onCall", "onSetup", "onBFL", "standard"].index(obj.status)
+    else
+      -1
+    end
+  end
+  
+  @sessinfo      = Lesson
+               .joins(:slot)
+               .where(slot_id: @slotsinfo.map {|o| o.id})
+               .order(:status)
+               .includes(:slot)
+
+  
+=end
+
 
     # ------- Now generate the hash for use in the display -----------
     
@@ -372,6 +434,47 @@ module Calendarutilities
     return @cal
 
   end
+  
+  
+  # Sort the values in display2 (cell of lessons/sessions) by status and then by tutor name
+  # as some lessons have no tutor, this returns the tutor name if available.
+  # This can then be used as the second attribute in the sort.
+  def valueOrderTutor(obj)
+    thistutorindexarray =  @tutrole_lessonindex[obj.id]
+    if thistutorindexarray == nil
+      return  0
+    end
+    if thistutorindexarray.count > 0   # has tutor entries
+      thisindex = @tutor_index[@tutroleinfo[thistutorindexarray[0]].tutor_id]
+      if thisindex == nil
+        return 0
+      else
+       1 + @tutor_index[@tutroleinfo[thistutorindexarray[0]].tutor_id]
+      end
+    else
+      return 0
+    end
+  end
+  
+=begin
+  def valueOrder(obj)
+    if obj.tutors.exists?
+      obj.tutors.sort_by {|t| t.pname }.first.pname
+    else
+      "_"
+    end
+  end
+=end
+  def valueOrderStatus(obj)
+    #logger.debug "obj status: " + obj.id.inspect + " - " + obj.status
+    if obj.status != nil
+      thisindex = ["onCall", "onSetup", "onBFL", "standard"].index(obj.status)
+      thisindex == nil ? 0 : thisindex + 1
+    else
+      return 0
+    end
+  end
+  
 
  # -----------------------------------------------------------------------------
  # Generate ratios.

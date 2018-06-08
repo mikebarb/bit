@@ -50,5 +50,15 @@
   <%= @tutor.phone if @tutor.phone %>
 </p>
 
+<p>
+  <strong>First Lesson trained:</strong>
+  <%= @tutor.firstlesson if @tutor.firstlesson %>
+</p>
+
+<p>
+  <strong>First Aid trained:</strong>
+  <%= @tutor.firstaid if @tutor.firstaid %>
+</p>
+
 <%= link_to 'Edit', edit_tutor_path(@tutor) %> |
 <%= link_to 'Back', tutors_path %>

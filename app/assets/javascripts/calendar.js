@@ -81,6 +81,20 @@ var ready = function() {
     resizeListener();
   }
 
+  var stickyHeaderTop = $('#sticky-header').offset().top;
+  $(window).scroll(function (event) {
+    var y = $(this).scrollTop();
+    if (y >= stickyHeaderTop)
+      $('#sticky-header').addClass('fixed');
+    else
+      $('#sticky-header').removeClass('fixed');
+    $('#sticky-header').width($('#sticky-header').parent().width());
+  });
+  
+  $('.sticky-header__title').click(function() {
+    $('#sticky-header__collapsible').slideToggle();
+  })
+
   // Listens for contextmenu events.
   // Add the listeners for the main menu items.
   // contextmenu is an integrated javascript library function.
@@ -1192,6 +1206,11 @@ var ready = function() {
   function updatestatuskindelement(domchange){
     console.log("------------- updatestatuskindelement ------------------");
     console.log(domchange);
+    // changing the location of storing colour classes
+    // moving to tutor div from previous name and comment divs
+    // for testing keep both options - switch between them
+    var testnewformat = true;  // true or false
+    
     var updateaction = domchange['action'];
     var t = /^\w+-/.exec(updateaction);
     updateaction = updateaction.replace(t[0], '');
@@ -1241,6 +1260,28 @@ var ready = function() {
       var tutorname_eles = this_ele.getElementsByClassName("tutorname");
       // First update the classes - this controls the status colour
       if (scmType == 'kind') {   // only impact the class in comments
+        if (testnewformat) {  // new style      
+          // have to update the 'tutor' div with the 't-status-' class
+          var changeclass_ele = this_ele;
+          
+        }else{    // textnewformat = false (old style)  
+          // have to update the 'tutorcomment' div with the 't-status-' class
+          changeclass_ele = comment_ele;
+        }
+        these_classes = changeclass_ele.classList;
+        // scan these classes for our class of interest
+        these_classes.forEach(function(thisClass, index, array){
+          if (thisClass.includes(searchForClass)) {     // t-kind-
+            // as we are updating, remove this class and add the corrected class
+            foundClass = true;
+            changeclass_ele.classList.remove(thisClass);
+            changeclass_ele.classList.add(searchForClass + scmValue);
+          }
+        });
+        if(foundClass == false){    // if class was not found
+          changeclass_ele.classList.add(searchForClass + scmValue); // add it
+        }
+/*
         these_classes = comment_ele.classList;
         // scan these classes for our class of interest
         these_classes.forEach(function(thisClass, index, array){
@@ -1254,28 +1295,39 @@ var ready = function() {
         if(foundClass == false){    // if class was not found
           comment_ele.classList.add(searchForClass + scmValue); // add it
         }
+*/
         statusinfo = statusinfoele.innerHTML;
         kindtext = /Kind: \w*/.exec(statusinfo);
         statusinfo = statusinfo.replace(kindtext, 'Kind: ' + scmValue + ' ');
         statusinfoele.innerHTML = statusinfo;
       } else if (scmType == 'status') {    // only impact the class in tutorname
-        // have to update the 'tutorname' div with the 't-status-' class
-        var tutorname_ele = tutorname_eles[0];
-        these_classes = tutorname_ele.classList;
+        if (testnewformat) {  // new style      
+          // have to update the 'tutor' div with the 't-status-' class
+          var changeclass_ele = this_ele;
+          
+        }else{    // textnewformat = false (old style)  
+          // have to update the 'tutorname' div with the 't-status-' class
+          changeclass_ele = tutorname_eles[0];
+        }
+        these_classes = changeclass_ele.classList;
         // scan these classes for our class of interest
         these_classes.forEach(function(thisClass, index, array){
           if (thisClass.includes(searchForClass)) {     // t-status-
             // as we are updating, remove this class and add the corrected class
             foundClass = true;
-            tutorname_ele.classList.remove(thisClass);
-            tutorname_ele.classList.add(searchForClass + scmValue);
+            changeclass_ele.classList.remove(thisClass);
+            changeclass_ele.classList.add(searchForClass + scmValue);
           }
         });
         if(foundClass == false){    // if class was not found
-          tutorname_ele.classList.add(searchForClass + scmValue); // add it
+          changeclass_ele.classList.add(searchForClass + scmValue); // add it
         }
         statusinfo = statusinfoele.innerHTML;
-        statustext = /Status: \w*/.exec(statusinfo);
+        // we have an issue when status and kind are blank = 'Status: Kind: '
+        // statustext = /Status: \w*/.exec(statusinfo);  // replace this to resolve
+        kindtext = /Kind: \w*/.exec(statusinfo);
+        var temptext = statusinfo.replace(kindtext, '');
+        statustext = /Status: \w*/.exec(temptext);
         statusinfo = statusinfo.replace(statustext, 'Status: ' + scmValue + ' ');
         statusinfoele.innerHTML = statusinfo;
       } else if (scmType == 'comment') {  // update the comment
@@ -1321,6 +1373,31 @@ var ready = function() {
       var studentname_eles = this_ele.getElementsByClassName("studentname");
       // First update the classes - this controls the status colour
       if (scmType == 'kind') {   // only impact the class in comments
+      
+        if (testnewformat) {  // new style      
+          // have to update the 'tutor' div with the 't-status-' class
+          changeclass_ele = this_ele;
+          
+        }else{    // textnewformat = false (old style)  
+          // have to update the 'tutorcomment' div with the 't-status-' class
+          changeclass_ele = comment_ele;
+        }
+        these_classes = changeclass_ele.classList;
+        // scan these classes for our class of interest
+        these_classes.forEach(function(thisClass, index, array){
+          if (thisClass.includes(searchForClass)) {     // t-kind-
+            // as we are updating, remove this class and add the corrected class
+            foundClass = true;
+            changeclass_ele.classList.remove(thisClass);
+            changeclass_ele.classList.add(searchForClass + scmValue);
+          }
+        });
+        if(foundClass == false){    // if class was not found
+          changeclass_ele.classList.add(searchForClass + scmValue); // add it
+        }
+
+      
+/*      
         these_classes = comment_ele.classList;
         // scan these classes for our class of interest
         these_classes.forEach(function(thisClass, index, array){
@@ -1334,12 +1411,38 @@ var ready = function() {
         if(foundClass == false){    // if class was not found
           comment_ele.classList.add(searchForClass + scmValue); // add it
         }
+*/
         statusinfo = statusinfoele.innerHTML;
         kindtext = /Kind: \w*/.exec(statusinfo);
         statusinfo = statusinfo.replace(kindtext, 'Kind: ' + scmValue + ' ');
         statusinfoele.innerHTML = statusinfo;
       } else if (scmType == 'status') {    // only impact the class in studentname
+        if (testnewformat) {  // new style      
+          // have to update the 'tutor' div with the 't-status-' class
+          changeclass_ele = this_ele;
+          
+        }else{    // textnewformat = false (old style)  
+          // have to update the 'tutorcomment' div with the 't-status-' class
+          changeclass_ele = studentname_eles[0];
+        }
+
         // have to update the 'studentname' div with the 't-status-' class
+        var studentname_ele = studentname_eles[0];
+        these_classes = changeclass_ele.classList;
+        // scan these classes for our class of interest
+        these_classes.forEach(function(thisClass, index, array){
+          if (thisClass.includes(searchForClass)) {     // t-status-
+            // as we are updating, remove this class and add the corrected class
+            foundClass = true;
+            changeclass_ele.classList.remove(thisClass);
+            changeclass_ele.classList.add(searchForClass + scmValue);
+          }
+        });
+        if(foundClass == false){    // if class was not found
+          changeclass_ele.classList.add(searchForClass + scmValue); // add it
+        }
+
+/*
         var studentname_ele = studentname_eles[0];
         these_classes = studentname_ele.classList;
         // scan these classes for our class of interest
@@ -1354,8 +1457,12 @@ var ready = function() {
         if(foundClass == false){    // if class was not found
           studentname_ele.classList.add(searchForClass + scmValue); // add it
         }
+*/
         statusinfo = statusinfoele.innerHTML;
-        statustext = /Status: \w*/.exec(statusinfo);
+        //statustext = /Status: \w*/.exec(statusinfo); // see student notes
+        kindtext = /Kind: \w*/.exec(statusinfo);
+        temptext = statusinfo.replace(kindtext, '');
+        statustext = /Status: \w*/.exec(temptext);
         statusinfo = statusinfo.replace(statustext, 'Status: ' + scmValue + ' ');
         statusinfoele.innerHTML = statusinfo;
       } else if (scmType == 'comment') {  // update the role comment
@@ -2100,6 +2207,7 @@ function selectshows() {
   //console.log("processing selectShows");
   var showList = document.getElementById("selectshows").getElementsByTagName("input");
   //console.log(showList);
+  //var flagcomments = false;
   for(var i = 0; i < showList.length; i++){
     //console.log(showList[i].id);
     //console.log(showList[i].checked);
@@ -2120,8 +2228,11 @@ function selectshows() {
           document.getElementById("index-students").classList.remove("hideme");
         }
         break;
-      case "hidecomments":
-        var eleComments = document.getElementsByClassName("comment");
+      case "hidecomments":    // will hide all comments
+        //flagcomments = true;
+        showhidecomments(document.getElementsByClassName("comment"),
+        showList[i].checked);
+        /*var eleComments = document.getElementsByClassName("comment");
         if (showList[i].checked){
           for (var j=eleComments.length; j-- ; ){
             eleComments[j].classList.add("hideme");
@@ -2130,7 +2241,25 @@ function selectshows() {
           for (var j=eleComments.length; j-- ; ){
             eleComments[j].classList.remove("hideme");
           }
-        }
+        }*/
+        break;
+      case "hidetutorlessoncomments":
+        //if  (!flagcomments) {   // if all comments selected, stop here
+        showhidecomments(document.getElementsByClassName("tutrolecomment"),
+        showList[i].checked);
+        break;
+      case "hidestudentlessoncomments":
+        //if  (!flagcomments) {   // if all comments selected, stop here
+        showhidecomments(document.getElementsByClassName("rolecomment"),
+        showList[i].checked);
+        break;
+      case "hidetutorcomments":
+        showhidecomments(document.getElementsByClassName("tutorcommentdetail"),
+        showList[i].checked);
+        break;
+      case "hidestudentcomments":
+        showhidecomments(document.getElementsByClassName("studentcommentdetail"),
+        showList[i].checked);
         break;
       default:
         var thispattern = /hide(.*)/;
@@ -2148,6 +2277,19 @@ function selectshows() {
         }
     }
     
+  }
+}
+
+function showhidecomments(theseelements, tohide) {
+  //eleComments = document.getElementsByClassName("studentcommentdetail");
+  if (tohide){
+    for (var j=theseelements.length; j-- ; ){
+      theseelements[j].classList.add("hideme");
+    }
+  }else{
+    for (var j=theseelements.length; j-- ; ){
+      theseelements[j].classList.remove("hideme");
+    }
   }
 }
 

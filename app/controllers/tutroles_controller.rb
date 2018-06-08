@@ -104,7 +104,7 @@ class TutrolesController < ApplicationController
     end
     if params[:kind]
       if @tutrole.kind != params[:kind]
-        #@tutrole.kind = params[:kind]
+        @tutrole.kind = params[:kind]
         flagupdate = true
       end
     end

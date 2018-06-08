@@ -1,90 +1,75 @@
-<div id="sticky-header">
-  <h1 class="sticky-header__title"><%= @displayHeader %></h1>
-  <img class="sticky-header__icon" src=""/>
-  
-  <div id="sticky-header__collapsible">
-    <% listofsites = Array.new
-       @cal.each do |location, calLocation| 
-         listofsites.push(location)
-       end
-    %>
-  
-    <div id="selectshows">
-        <input id=hidetutors class=selectshow onclick="selectshows()" type="checkbox" > hide tutors
-        <input id=hidestudents class=selectshow onclick="selectshows()" type="checkbox" > hide students
-        <input id=hidecomments class=selectshow onclick="selectshows()" type="checkbox" > hide all comments
-        <input id=hidetutorlessoncomments class=selectshow onclick="selectshows()" type="checkbox" > hide tutor lesson comments
-        <input id=hidestudentlessoncomments class=selectshow onclick="selectshows()" type="checkbox" > hide student lesson comments
-        <input id=hidetutorcomments class=selectshow onclick="selectshows()" type="checkbox" > hide tutor comments
-        <input id=hidestudentcomments class=selectshow onclick="selectshows()" type="checkbox" > hide student comments
-        <% listofsites.each do |site| %>
-        <input id=<%= 'hide' + site %> class=selectshow onclick="selectshows()" type="checkbox" ><%= 'hide ' + site %> 
+<h1><%= @displayHeader %></h1>
+
+<% listofsites = Array.new
+   @cal.each do |location, calLocation| 
+     listofsites.push(location)
+   end
+%>
+
+<div id="selectshows">
+    <input id=hidetutors class=selectshow onclick="selectshows()" type="checkbox" > hide tutors
+    <input id=hidestudents class=selectshow onclick="selectshows()" type="checkbox" > hide students
+    <input id=hidecomments class=selectshow onclick="selectshows()" type="checkbox" > hide comments
+    <% listofsites.each do |site| %>
+    <input id=<%= 'hide' + site %> class=selectshow onclick="selectshows()" type="checkbox" ><%= 'hide ' + site %> 
+    <% end %>
+</div>
+
+<div id="selectSetStatus">
+    <input id=enableQuickStatus type="checkbox" > enable quick setting of status to
+    <select name="quickStatus" id="quickStatusValue">
+      <option value="Attended">Attended</option>
+      <option value="Confirmed">Confirmed</option>
+      <option value="Notified">Notified</option>
+      <option value="Scheduled">Scheduled</option>
+      <option value="Deal">Deal</option>
+      <option value="Absent">Absent</option>
+      <option value="Away">Away</option>
+    </select>
+</div>
+
+
+<div class=index>
+    <div class="selectbox floating-box">
+        <h2>Select person</h2>
+        <input type="text" id="personInput" placeholder="Shorten list by keying in meaningful characters .." title="Type in characters to reduce name list">
+    </div>
+
+    <div class=index-tutors id=index-tutors>
+        <% @tutors.each do |tutor| %>
+            <div class=tutor id=<%= "t" + tutor.id.to_s.rjust(@sf, "0") %> >
+                <div style=persongroup>
+                    <div class="tutorname tutorinline">tutor: <%= tutor.pname %></div>
+                    <div class="tutorcomment comment tutorinline">
+                      <div class="tutorsubjects"><%= tutor.subjects %></div>
+                      <div class="tutorcommentdetail"><%= tutor.comment %></div>
+                    </div>
+                </div>
+            </div>
         <% end %>
     </div>
-    
-    <div id="selectSetStatus">
-        <input id=enableQuickStatus type="checkbox" > enable quick setting of status to
-        <select name="quickStatus" id="quickStatusValue">
-          <option value="Attended">Attended</option>
-          <option value="Confirmed">Confirmed</option>
-          <option value="Notified">Notified</option>
-          <option value="Scheduled">Scheduled</option>
-          <option value="Deal">Deal</option>
-          <option value="Absent">Absent</option>
-          <option value="Away">Away</option>
-        </select>
-    </div>
-    
-    
-    <div class=index>
-        <div class="selectbox floating-box">
-            <h2>Select person</h2>
-            <input type="text" id="personInput" placeholder="Shorten list by keying in meaningful characters .." title="Type in characters to reduce name list">
-        </div>
-    
-        <div class=index-tutors id=index-tutors>
-            <% @tutors.each do |tutor| %>
-                <div class=tutor id=<%= "t" + tutor.id.to_s.rjust(@sf, "0") %> >
-                    <div style=persongroup>
-                        <div class="tutorname tutorinline">tutor: <%= tutor.pname %></div>
-                        <div class="tutorcomment comment tutorinline">
-                          <div class="tutorsubjects"><%= tutor.subjects %>
-                            <% if tutor.firstaid == 'yes' %>
-                              <%= "+" %>
-                            <% end %>
-                            <% if tutor.firstlesson == 'yes' %>
-                              <%= "*" %>
-                            <% end %>
-                          </div>
-                          <div class="tutorcommentdetail"><%= tutor.comment %></div>
-                        </div>
+
+    <div class=index-students id=index-students>
+        <% @students.each do |student| %>
+            <div class= student id=<%= "s" + student.id.to_s.rjust(@sf, "0") %> >
+                <div style=persongroup>
+                    <div class="studentname studentinline">student: <%= student.pname %></div>
+                    <div class="studentcomment comment studentinline">
+
+                      <div class="studentsubjects"><%= student.sex == nil ? "" :
+                        student.sex.downcase.include?("female")?
+                          "(F) " : student.sex.downcase.include?("male")?
+                          "(M) " : "" 
+                        %> Yr: <%= student.year == nil ? "   " : student.year.rjust(3) %> | <%= student.study %></div>
+                      <br>
+                      <div class="studentcommentdetail"><%= student.comment %></div>
                     </div>
                 </div>
-            <% end %>
-        </div>
-    
-        <div class=index-students id=index-students>
-            <% @students.each do |student| %>
-                <div class= student id=<%= "s" + student.id.to_s.rjust(@sf, "0") %> >
-                    <div style=persongroup>
-                        <div class="studentname studentinline">student: <%= student.pname %></div>
-                        <div class="studentcomment comment studentinline">
-    
-                          <div class="studentsubjects"><%= student.sex == nil ? "" :
-                            student.sex.downcase.include?("female")?
-                              "(F) " : student.sex.downcase.include?("male")?
-                              "(M) " : "" 
-                            %> Yr: <%= student.year == nil ? "   " : student.year.rjust(3) %> | <%= student.study %></div>
-                          <br>
-                          <div class="studentcommentdetail"><%= student.comment %></div>
-                        </div>
-                    </div>
-                </div>
-            <% end %>
-        </div>
+            </div>
+        <% end %>
     </div>
-  </div>
 </div>
+
 <div class=schedule>
 <% @cal.each do |location, calLocation| 
   if @compress   # remove days with no valid slot for this site
@@ -140,14 +125,7 @@
                           <div class="tutorname tutorinline ">tutor: <%= tutor.pname %></div>
                           <div class="tutorcomment comment tutorinline ">
                             <% #thistutrole = entry.tutroles.where(tutor_id: tutor.id).first %>
-                            <div class="tutorsubjects"><%= tutor.subjects %>
-                              <% if tutor.firstaid == 'yes' %>
-                                <%= "+" %>
-                              <% end %>
-                              <% if tutor.firstlesson == 'yes' %>
-                                <%= "*" %>
-                              <% end %>
-                            </div>
+                            <div class="tutorsubjects"><%= tutor.subjects %></div>
                             <div class="tutrolecomment"><%= thistutrole.comment %></div>
                             <div class="tutorcommentdetail"><%= tutor.comment %></div>
                             <div class="statusinfo">Status: <%= thistutrole.status %> Kind: <%= thistutrole.kind %> </div>
@@ -168,8 +146,8 @@
                     <% student = thisrole.student %> 
                     <% if student then %>
                       <div class="student <%= "fs" + student.id.to_s.rjust(@sf, "0") 
-                        %><%=            ' s-status-' + set_class_status_f(thisrole) 
-                        %><%= ' s-kind-'   + set_class_kind_f(    thisrole) 
+                        %><%=            ' t-status-' + set_class_status_f(thisrole) 
+                        %><%= ' t-kind-'   + set_class_kind_f(    thisrole) 
                         %>" id=<%= cells["id_dom"] + "n" + entry.id.to_s.rjust(@sf, "0") + "s" + student.id.to_s.rjust(@sf, "0") %> >
                         <div style=persongroup>
                           <div class="studentname studentinline ">student: <%= student.pname %></div>

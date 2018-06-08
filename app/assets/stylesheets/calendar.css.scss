@@ -6,13 +6,52 @@
   background-color: grey;
 }
 
+.fixed {
+  position: fixed;
+  top: 0;
+  z-index: 9;
+}
+
+#sticky-header {
+  background-color: white;
+}
+
+.sticky-header__title {
+  cursor: pointer;
+  position: relative;
+}
+
+.sticky-header__title::before {
+    position: absolute;
+    top: 5px;
+    right: 17px;
+    display: block;
+    height: 2px;
+    width: 20px;
+    background: black;
+    content: '';
+}
+
+.sticky-header__title::after {
+    position: absolute;
+    top: 11px;
+    right: 17px;
+    display: block;
+    height: 4px;
+    width: 20px;
+    border-top: 2px solid black;
+    border-bottom: 2px solid black;
+    content: '';
+}
+
 .lesson {
   margin: 1px;
   background-color: #f8f;
   padding-top: 8px;
   font-size: x-small;
   line-height: 8px;
-  border:5px solid #faf;}
+  border:5px solid #faf;
+}
 
 .lesson:hover {
   border: 5px solid black;
@@ -46,7 +85,7 @@
 }
 
 .tutor {
-  margin: 1px;
+  margin: 4px 1px 1px 1px;
   color: black;
   background-color: #aaf;
   line-height: 18px;
@@ -108,9 +147,9 @@
 //}
 
 .student {
-  margin: 1px;
+  margin: 4px 1px 1px 1px;
   color: black;
-  background-color: #afa;
+  //background-color: #afa;
   line-height: 18px;
   border:5px solid #afa;
 }
@@ -130,7 +169,7 @@
 
 .studentcomment {
   //display: inline-block;
-  /* background-color: white; */
+  background-color: white;
   width: 100%;
 }
 //.groupstudents .studentcomment {
@@ -342,9 +381,6 @@ table, th, td {
   border: 2px solid gainsboro;
 }
 
-
-
-
 // Tutors & Students backgroune colours
 
 // Background defaults to white if no settings in database
@@ -365,199 +401,354 @@ table, th, td {
 // colours taken from:
 // https://www.whoishostingthis.com/resources/css-colors/
 
+.tutor .tutrolecomment {
+  color: green;
+}
+.tutor .tutorcommentdetail {
+  color: blue;
+}
+
+.tutor {
+  background-color: white;   
+}
+
 // tutor status
 
-.t-status-scheduled {
+.t-status-scheduled .tutorname   {
   background-color: mediumturquoise;   
 }
-.t-status-notified {
+.t-status-notified .tutorname {
   background-color: mediumaquamarine;   
 }
-.t-status-confirmed {
+.t-status-confirmed .tutorname {
   background-color: palegreen;   
 }
-.t-status-attended {
+.t-status-attended .tutorname {
   background-color: yellowgreen;   
 }
-.t-status-deal {
+.t-status-deal .tutorname {
   background-color: fuchsia;   // a highlighter pink 
 }
-.t-status-away {
+.t-status-away .tutorname {
   background-color: gainsboro;      // light gray   
 }
 // note: absent defined previously
 
 // already existing statuses - do not want to remove
 // in order to ensure old entries (imported) remain working
-.t-status-undealtAbsent {
+.t-status-undealtAbsent .tutorname {
   background-color: #ff0000;   //red 
 }
-.t-status-dealtAbsent {
+.t-status-dealtAbsent .tutorname {
   background-color: #666666;   //grey 
 }
-.t-status-absent {
+.t-status-absent .tutorname {
   background-color: #CC0000;   //dark red
 }
 
-.t-kind-standard {
+.t-kind-standard .statusinfo {
   background-color: mediumspringgreen;  
 }
-.t-kind-training {
+.t-kind-training .statusinfo {
   background-color: sandybrown;  
 }
-.t-kind-called {
+.t-kind-called .statusinfo {
   background-color: lightskyblue;  
 }
-.t-kind-relief {
+.t-kind-relief .statusinfo {
   background-color: wheat;  
 }
 
 // already existing kinds - do not want to remove
 // in order to ensure old entries (imported) remain working
-.t-kind-BFL {
+.t-kind-BFL .statusinfo {
   background-color: #ffff00;   //yellow  
 }
-.t-kind-away-action {
+.t-kind-away-action .statusinfo {
   background-color: #ff0000;   //red  
 }
-.t-kind-known-steps-remaining {
+.t-kind-known-steps-remaining .statusinfo {
   background-color: #ff9900;   //orange  
 }
-.t-kind-needsAttention {
+.t-kind-needsAttention .statusinfo {
   background-color: #ff00ff;   //magneta  
 }
-.t-kind-breakRoutine-relief {
+.t-kind-breakRoutine-relief .statusinfo {
   background-color: #00ff00;   //cyan 
 }
-.t-kind-bewareIssue {
+.t-kind-bewareIssue .statusinfo {
   background-color: #9900ff;   //purple 
 }
-.t-kind-awayAction {
+.t-kind-awayAction .statusinfo {
   background-color: #CC0000;   //dark rec
 }
-.t-kind-onCall {
+.t-kind-onCall .statusinfo {
   background-color: #00FFFF;   //ligt blue
 }
-.t-kind-onSetup {
+.t-kind-onSetup .statusinfo {
   background-color: #EAD1DC;   //ligt magneta 3
+}
+
+//----------- borders for tutors based on kind
+
+.t-kind-standard  {
+  border: 5px solid mediumspringgreen;  
+}
+.t-kind-training {
+  border: 5px solid sandybrown;  
+}
+.t-kind-called {
+  border: 5px solid lightskyblue;  
+}
+.t-kind-relief {
+  border: 5px solid wheat;  
+}
+
+// already existing kinds - do not want to remove
+// in order to ensure old entries (imported) remain working
+.t-kind-BFL {
+  border: 5px solid #ffff00;   //yellow  
+}
+.t-kind-away-action {
+  border: 5px solid #ff0000;   //red  
+}
+.t-kind-known-steps-remaining {
+  border: 5px solid #ff9900;   //orange  
+}
+.t-kind-needsAttention {
+  border: 5px solid #ff00ff;   //magneta  
+}
+.t-kind-breakRoutine-relief {
+  border: 5px solid #00ff00;   //cyan 
+}
+.t-kind-bewareIssue {
+  border: 5px solid #9900ff;   //purple 
+}
+.t-kind-awayAction {
+  border: 5px solid #CC0000;   //dark rec
+}
+.t-kind-onCall {
+  border: 5px solid #00FFFF;   //ligt blue
+}
+.t-kind-onSetup {
+  border: 5px solid #EAD1DC;   //ligt magneta 3
 }
 
 //============================================
 // colours for students
 
+
+.student .rolecomment {
+  color: green;
+}
+.student .studentcommentdetail {
+  color: blue;
+}
+
+.student {
+  background-color: white;   
+}
+
+
 // already existing statuses - do not want to remove
 // in order to ensure old entries (imported) remain working
 
-.s-status-scheduled {
+.s-status-scheduled .studentname {
   background-color: mediumturquoise;   
 }
-.s-status-attended {
+.s-status-attended .studentname {
   background-color: yellowgreen;   
 }
-.s-status-deal {
+.s-status-deal .studentname {
   background-color: fuchsia;        // a highlighter pink 
 }
-.s-status-away {
+.s-status-away .studentname {
   background-color: gainsboro;      // light gray   
 }
 // absent covered below.
 
 
-.s-status-undealtAbsent {
+.s-status-undealtAbsent .studentname {
   background-color: #FF0000;   //red  
 }
-.s-status-dealtAbsent {
+.s-status-dealtAbsent .studentname {
   background-color: #666666;   // grey  
 }
 
-.s-status-absent {
+.s-status-absent .studentname {
   background-color: #666666;   // grey  
 }
 
 // ------ student kind --------------------
-.s-kind-first {
+.s-kind-first .statusinfo {
   background-color: #B6D7A8;   //light green 2  
 }
-.s-kind-catchup {
+.s-kind-catchup .statusinfo {
   background-color: lightblue;  
 }
-.s-kind-fortnightly {
+.s-kind-fortnightly .statusinfo {
   background-color: steelblue;  
 }
-.s-kind-onetoone {
+.s-kind-onetoone .statusinfo {
   background-color: salmon;  
 }
-.s-kind-standard {
+.s-kind-standard .statusinfo {
   background-color: mediumspringgreen;  
+}
+
+// already existing kinds - do not want to remove
+// in order to ensure old entries (imported) remain working
+
+.s-kind-BFL .statusinfo {
+  background-color: #ffff00;   //yellow  
+}
+
+.s-kind-free .statusinfo {
+  background-color: #00ff00;   //green  
+}
+
+.s-kind-1stpaid .statusinfo {
+  background-color: #B6D7A8;   //light green 2  
+}
+
+.s-kind-known-steps-remaining .statusinfo {
+  background-color: #FF9900;   //orange  
+}
+
+.s-kind-plannedAbsence-needsAttention .statusinfo {
+  background-color: #FF00FF;   //magneta  
+}
+
+.s-kind-breakRoutine-courtisyOrShifted .statusinfo {
+  background-color: #00FFFF;   //cyan  
+}
+
+.s-kind-bewareIssue .statusinfo {
+  background-color: #9900FF;   //purple  
+}
+
+.s-kind-fortnightly .statusinfo {
+  background-color: #A2C4C9;   //light cyan 2  
+}
+
+.s-kind-awayAction .statusinfo {
+  background-color: #C00000;   //dark red  
+}
+
+.s-kind-Gungahlin .statusinfo {
+  background-color: #C9DAF8;   //light green 3  
+}
+
+.s-kind-Kaleen .statusinfo {
+  background-color: #D9D2E9;   //light purple 3  
+}
+
+.s-kind-Woden .statusinfo {
+  background-color: #D9D9D9;   //light grey 1
+}
+
+.s-kind-Kambah .statusinfo {
+  background-color: #FFF2CC;   //light yellow 3  
+}
+
+// Notes
+.s-kind-notes .statusinfo {
+  background-color: #FCE5CD;   //light orange 3  
+}
+.t-kind-notes .statusinfo {
+  background-color: #FCE5CD;   //light orange 3  
+}
+.t-kind-tutorNote .statusinfo {
+  background-color: #999999;   //light orange 3  
+}
+.s-kind-tutorNote .statusinfo {
+  background-color: #999999;   //light orange 3  
+}
+
+// ------set up borders using student kind --------------------
+.s-kind-first {
+  border: 5px solid #B6D7A8;   //light green 2  
+}
+.s-kind-catchup {
+  border: 5px solid lightblue;  
+}
+.s-kind-fortnightly {
+  border: 5px solid steelblue;  
+}
+.s-kind-onetoone {
+  border: 5px solid salmon;  
+}
+.s-kind-standard {
+  border: 5px solid mediumspringgreen;  
 }
 
 // already existing kinds - do not want to remove
 // in order to ensure old entries (imported) remain working
 
 .s-kind-BFL {
-  background-color: #ffff00;   //yellow  
+  border: 5px solid #ffff00;   //yellow  
 }
 
 .s-kind-free {
-  background-color: #00ff00;   //green  
+  border: 5px solid #00ff00;   //green  
 }
 
 .s-kind-1stpaid {
-  background-color: #B6D7A8;   //light green 2  
+  border: 5px solid #B6D7A8;   //light green 2  
 }
 
 .s-kind-known-steps-remaining {
-  background-color: #FF9900;   //orange  
+  border: 5px solid #FF9900;   //orange  
 }
 
 .s-kind-plannedAbsence-needsAttention {
-  background-color: #FF00FF;   //magneta  
+  border: 5px solid #FF00FF;   //magneta  
 }
 
 .s-kind-breakRoutine-courtisyOrShifted {
-  background-color: #00FFFF;   //cyan  
+  border: 5px solid #00FFFF;   //cyan  
 }
 
 .s-kind-bewareIssue {
-  background-color: #9900FF;   //purple  
+  border: 5px solid #9900FF;   //purple  
 }
 
 .s-kind-fortnightly {
-  background-color: #A2C4C9;   //light cyan 2  
+  border: 5px solid #A2C4C9;   //light cyan 2  
 }
 
 .s-kind-awayAction {
-  background-color: #C00000;   //dark red  
+  border: 5px solid #C00000;   //dark red  
 }
 
 .s-kind-Gungahlin {
-  background-color: #C9DAF8;   //light green 3  
+  border: 5px solid #C9DAF8;   //light green 3  
 }
 
 .s-kind-Kaleen {
-  background-color: #D9D2E9;   //light purple 3  
+  border: 5px solid #D9D2E9;   //light purple 3  
 }
 
 .s-kind-Woden {
-  background-color: #D9D9D9;   //light grey 1
+  border: 5px solid #D9D9D9;   //light grey 1
 }
 
 .s-kind-Kambah {
-  background-color: #FFF2CC;   //light yellow 3  
+  border: 5px solid #FFF2CC;   //light yellow 3  
 }
 
 // Notes
 .s-kind-notes {
-  background-color: #FCE5CD;   //light orange 3  
+  border: 5px solid #FCE5CD;   //light orange 3  
 }
 .t-kind-notes {
-  background-color: #FCE5CD;   //light orange 3  
+  border: 5px solid #FCE5CD;   //light orange 3  
 }
 .t-kind-tutorNote {
-  background-color: #999999;   //light orange 3  
+  border: 5px solid #999999;   //light orange 3  
 }
 .s-kind-tutorNote {
-  background-color: #999999;   //light orange 3  
+  border: 5px solid #999999;   //light orange 3  
 }
 
 
