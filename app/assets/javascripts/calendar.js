@@ -22,8 +22,14 @@ var ready = function() {
   // want to set defaults on some checkboxes on page load
   if (document.getElementById("hidetutors") &&
       document.getElementById("hidestudents")){
-    document.getElementById("hidetutors").checked = true;
-    document.getElementById("hidestudents").checked = true;
+    //document.getElementById("hidetutors").checked = true;
+    //document.getElementById("hidestudents").checked = true;
+    
+    var showList = document.getElementsByClassName("selectsite");
+    if(showList.length > 0){
+      showList[0].checked = true;
+    }
+    
     selectshows();  // call the functions that invokes the checkbox values.
   }
   
@@ -80,20 +86,22 @@ var ready = function() {
     keyupListener();
     resizeListener();
   }
-
-  var stickyHeaderTop = $('#sticky-header').offset().top;
-  $(window).scroll(function (event) {
-    var y = $(this).scrollTop();
-    if (y >= stickyHeaderTop)
-      $('#sticky-header').addClass('fixed');
-    else
-      $('#sticky-header').removeClass('fixed');
-    $('#sticky-header').width($('#sticky-header').parent().width());
-  });
   
-  $('.sticky-header__title').click(function() {
-    $('#sticky-header__collapsible').slideToggle();
-  })
+  if ($('#sticky-header').length) {
+    var stickyHeaderTop = $('#sticky-header').offset().top;
+    $(window).scroll(function (event) {
+      var y = $(this).scrollTop();
+      if (y >= stickyHeaderTop)
+        $('#sticky-header').addClass('fixed');
+      else
+        $('#sticky-header').removeClass('fixed');
+      $('#sticky-header').width($('#sticky-header').parent().width());
+    });
+    
+    $('.sticky-header__title').click(function() {
+      $('#sticky-header__collapsible').slideToggle();
+    })
+  }
 
   // Listens for contextmenu events.
   // Add the listeners for the main menu items.
@@ -185,24 +193,6 @@ var ready = function() {
               }
             }
           }
-//      } else if ( clickEleIsStudent ){    // clicked on student
-//          // clickEleIsStudent = student element to be manipulated.
-//          console.log("clicked on student");
-//          if (document.getElementById('enableQuickStatus').checked){
-//            validStudentStatuses = ["Deal", "Dealt", "Attended"];
-//            newStatus = document.getElementById('quickStatusValue').value;
-//            if (validStudentStatuses.indexOf(newStatus) >= 0){
-//              console.log("set student status to: " + newStatus);
-//              thisChoice =  "student-status-" + newStatus.toLowerCase(); 
-//              // data-choice="tutor-status-deal"
-//              thisEleId = clickEleIsStudent.id;    // element 'clicked' on
-//              currentActivity['action'] = thisChoice;
-//              currentActivity['move_ele_id'] = thisEleId;
-//              console.log("currentActivity:");
-//              console.log(currentActivity);
-//              personupdatestatuskindcomment( currentActivity );
-//            }
-//          }          
       } else {    // clicked anywhere else
         var button = e.which || e.button;
         if ( button === 1 ) {
@@ -2146,6 +2136,7 @@ var ready = function() {
 
 //--------- Filter by name functions for the tutors and students -----------
 
+
   $("#personInput").keyup(function filterPeople() {
       console.log("filterPeople called");
       var filter, eleIndexTutors, eleTutorNames, eleIndexStudents, eleStudentNames, i, eleAncestor;
@@ -2191,13 +2182,63 @@ var ready = function() {
         }
       }
   });
-  
+
+
   function findAncestor (el, cls) {
     while ((el = el.parentElement) && !el.classList.contains(cls));
     return el;
   }
 
+/*
+  $("#personInput").keyup(filterPeople());
 
+  function filterPeople() {
+      console.log("filterPeople called");
+      var filter, eleIndexTutors, eleTutorNames, eleIndexStudents, eleStudentNames, i, eleAncestor;
+      filter = document.getElementById("personInput").value.toUpperCase();
+      //console.log("filter: " + filter);
+      eleIndexTutors = document.getElementById("index-tutors");
+      //console.log(eleIndexTutors);
+      if(! eleIndexTutors.classList.contains("hideme")){
+        eleTutorNames = eleIndexTutors.getElementsByClassName("tutorname");
+        //console.log(eleTutorNames);
+        for (i = 0; i < eleTutorNames.length; i++) {
+            var tutorNameText = eleTutorNames[i].innerHTML.substr(7).toUpperCase();
+            //console.log("tutorNameText: " + tutorNameText);
+            eleAncestor = findAncestor (eleTutorNames[i], "tutor");
+            //console.log(eleAncestor);
+            if (tutorNameText.indexOf(filter) > -1) {
+                eleAncestor.style.display = "";
+                //console.log("show");
+            } else {
+                eleAncestor.style.display = "none";
+                //console.log("hide");
+            }
+        }
+      }
+      console.log("about to process students");
+      eleIndexStudents = document.getElementById("index-students");
+      //console.log(eleIndexStudents);
+      if(! eleIndexStudents.classList.contains("hideme")){
+        eleStudentNames = eleIndexStudents.getElementsByClassName("studentname");
+        //console.log(eleStudentNames);
+        for (i = 0; i < eleStudentNames.length; i++) {
+            var studentNameText = eleStudentNames[i].innerHTML.substr(9).toUpperCase();
+            //console.log("studentNameText: " + studentNameText);
+            eleAncestor = findAncestor (eleStudentNames[i], "student");
+            //console.log(eleAncestor);
+            if (studentNameText.indexOf(filter) > -1) {
+                eleAncestor.style.display = "";
+                //console.log("show");
+            } else {
+                eleAncestor.style.display = "none";
+                //console.log("hide");
+            }
+        }
+      }
+  }
+
+*/
 
 //------ End of Filter by name functions for the tutors and students -------
 
@@ -2208,6 +2249,8 @@ function selectshows() {
   var showList = document.getElementById("selectshows").getElementsByTagName("input");
   //console.log(showList);
   //var flagcomments = false;
+  // if I have hidden both tutors and students, then also hide "index"
+  var flagshowtutorsorstudents = false;
   for(var i = 0; i < showList.length; i++){
     //console.log(showList[i].id);
     //console.log(showList[i].checked);
@@ -2215,17 +2258,19 @@ function selectshows() {
       case "hidetutors":
         //var eleThisParent = document.getElementById("index-tutors");
         if (showList[i].checked){
-          document.getElementById("index-tutors").classList.add("hideme");
-        }else{
           document.getElementById("index-tutors").classList.remove("hideme");
+          flagshowtutorsorstudents = true;
+        }else{
+          document.getElementById("index-tutors").classList.add("hideme");
         }
         break;
       case "hidestudents":
         //var eleThisParent = document.getElementById("index-students");
         if (showList[i].checked){
-          document.getElementById("index-students").classList.add("hideme");
-        }else{
           document.getElementById("index-students").classList.remove("hideme");
+          flagshowtutorsorstudents = true;
+        }else{
+          document.getElementById("index-students").classList.add("hideme");
         }
         break;
       case "hidecomments":    // will hide all comments
@@ -2270,13 +2315,17 @@ function selectshows() {
           var siteid = 'site-' + m[1];
           console.log("siteid: " + siteid);          
           if (showList[i].checked){
-            document.getElementById(siteid).classList.add("hideme");
-          }else{
             document.getElementById(siteid).classList.remove("hideme");
+          }else{
+            document.getElementById(siteid).classList.add("hideme");
           }
         }
     }
-    
+    if(flagshowtutorsorstudents){
+      document.getElementById('index-tutor-students').classList.remove("hideme");
+    }else{
+      document.getElementById('index-tutor-students').classList.add("hideme");
+    }
   }
 }
 

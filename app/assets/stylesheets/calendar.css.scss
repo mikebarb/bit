@@ -198,7 +198,7 @@ table {
   width: 100%; 
 }
 table, th, td {
-  border: 1px solid black;
+  border: 3px solid black;
 }
 
 .firsttablecolumn {
@@ -363,22 +363,46 @@ table, th, td {
 
 // Site colours
 #site-CALWELL {
-  border: 2px solid lightpink;
+  border: 4px solid lightpink;
+}
+.selectSiteCALWELL {
+  background-color: lightpink;  
+  display: inline-block;
 }
 #site-DICKSON {
-  border: 2px solid mediumseagreen;
+  border: 4px solid mediumseagreen;
+}
+.selectSiteDICKSON {
+  background-color: mediumseagreen;  
+  display: inline-block;
 }
 #site-GUNGAHLIN {
-  border: 2px solid lightskyblue;
+  border: 4px solid lightskyblue;
+}
+.selectSiteGUNGAHLIN {
+  background-color: lightskyblue;  
+  display: inline-block;
 }
 #site-KALEEN {
-  border: 2px solid purple;
+  border: 4px solid purple;
+}
+.selectSiteKALEEN {
+  background-color: purple;  
+  display: inline-block;
 }
 #site-KAMBAH {
-  border: 2px solid yellow;
+  border: 4px solid yellow;
+}
+.selectSiteKAMBAH {
+  background-color: yellow;  
+  display: inline-block;
 }
 #site-WODEN {
-  border: 2px solid gainsboro;
+  border: 4px solid gainsboro;
+}
+.selectSiteWODEN {
+  background-color: gainsboro;  
+  display: inline-block;
 }
 
 // Tutors & Students backgroune colours
@@ -401,16 +425,55 @@ table, th, td {
 // colours taken from:
 // https://www.whoishostingthis.com/resources/css-colors/
 
-.tutor .tutrolecomment {
+.checklisttutors, .checklistlesson, .checklistpersonal {
+  display: inline-block;
+}
+
+.tutor .tutrolecomment, .student .rolecomment, .checklistlesson {
   color: green;
 }
-.tutor .tutorcommentdetail {
+.tutor .tutorcommentdetail, .student .studentcommentdetail, .checklistpersonal {
   color: blue;
 }
 
-.tutor {
+.tutor, .student {
   background-color: white;   
 }
+
+/*
+.student .rolecomment, .checklistlesson {
+  color: green;
+}
+.student .studentcommentdetail, .checklistpersonal {
+  color: blue;
+}
+
+.student {
+  background-color: white;   
+}
+*/
+
+
+
+
+/*
+.selectshowspeople {
+  display: inline-block;
+  margin: 3px;
+}
+.selectshowscomments {
+  display: inline-block;
+  margin: 3px;
+}
+.selectshowscommentslesson {
+  display: inline-block;
+  margin: 3px;
+}
+.selectshowscommentspersonal {
+  display: inline-block;
+  margin: 3px;
+}
+*/
 
 // tutor status
 
@@ -536,18 +599,6 @@ table, th, td {
 
 //============================================
 // colours for students
-
-
-.student .rolecomment {
-  color: green;
-}
-.student .studentcommentdetail {
-  color: blue;
-}
-
-.student {
-  background-color: white;   
-}
 
 
 // already existing statuses - do not want to remove

@@ -23,6 +23,7 @@ class CalendarController < ApplicationController
     myenddate = mystartdate + mydaydur.days
     @displayHeader = 'Flexible Display of Calendar Workbench - no filtering'
 
+
     # @tutors and @students are used by the cal
     @tutors = Tutor
               .where.not(status: "inactive")
@@ -44,7 +45,6 @@ class CalendarController < ApplicationController
       @options[:ratio] = true
       @displayHeader = 'Display Ratios between Tutors and Students'
     end
-
     # if roster or ratio is selected without any user settings selected,
     # then we run a standard roster configuration - used for publishing rosters.
     if @options[:roster] || @options[:ratio]
@@ -64,6 +64,10 @@ class CalendarController < ApplicationController
           @options[:tutor_ids] = []
         else   # Normal user selection for tutors
           #
+          # detect if we want to show tutors with first aid certification
+          if((params.has_key?(:select_tutor_firstaid)) && (params[:select_tutor_firstaid] == '1'))
+            @options[:select_tutor_firstaid] = true
+          end
           # detect if selection by statues is requested
           # if so, then load the requested statues - else do not create the option
           # For tutors.

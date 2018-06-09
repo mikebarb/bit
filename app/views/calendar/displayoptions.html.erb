@@ -41,6 +41,12 @@
     <%= label_tag(:select_roster_default, "default settings for roster and ratio display") %><br>
   </div>
   <br>
+  <div class="select_firstaid">
+    Display tutors with first aid certification<br>
+    <%= check_box_tag(:select_tutor_firstaid) %>
+    <%= label_tag(:select_tutor_firstaid, "Display TUTORS with first aid certification") %><br>
+  </div>
+  <br>
   <div class="select_none">
     Disable display of tutors or students<br>
     <%= check_box_tag(:select_tutor_none) %>
@@ -48,7 +54,6 @@
     <%= check_box_tag(:select_student_none) %>
     <%= label_tag(:select_student_none, "For STUDENTS, display no students in roster and ratio display:") %><br>
   </div>
-
   <br>
   <div class="select_statuses">
     Select Statuses:<br>

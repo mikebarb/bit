@@ -162,6 +162,16 @@ module Calendarutilities
     # row and column [1] will hold the titles for that rolw or column.
     # tip: 'joins' does lazy load, 'include' minimises sql calls
 
+    # @tutors and @students are used by the cal
+=begin
+    #          .where.not(status: "inactive")
+    @tutors = Tutor
+              .order('pname')
+
+    #            .where.not(status: "inactive")
+    @students = Student
+                .order('pname')
+=end
     @slotsinfo     = Slot 
                    .select('id, timeslot, location')
                    .where("timeslot >= :start_date AND
@@ -218,6 +228,29 @@ module Calendarutilities
         a
       }
     }
+    # d) tutor with first aid certification into ids
+    reduce_tutrole_firstaid = lambda{
+      @tutroleinfo = @tutroleinfo.reduce([]) { |a,o|
+        if(@tutor_index.has_key?(o.tutor_id))
+          if @tutors[@tutor_index[o.tutor_id]].firstaid == 'yes' then 
+            a << o
+          end
+        end
+        a
+      }
+    }
+
+#    @tutor_index = Hash.new
+#    @tutors.each_with_index { |o, count|
+#      unless @tutor_index.has_key? o.id then
+#        @tutor_index[o.id] = Array.new
+#      end  
+#      @tutor_index[o.id] = count
+#    }
+
+
+
+
     # This reduces students to ones with
     # a) desired student statuses
     reduce_role_status = lambda{
@@ -246,16 +279,29 @@ module Calendarutilities
         a
       }
     }
-
+    
+    # need an index into @tutors for the sort
+    # and for first aid lookup into tutors.
+    # @tutors is already ordered by pname
+    # so only have to return the index for the sort routine.
+    @tutor_index = Hash.new
+    @tutors.each_with_index { |o, count|
+      unless @tutor_index.has_key? o.id then
+        @tutor_index[o.id] = Array.new
+      end  
+      @tutor_index[o.id] = count
+    }
+    
     # now do reductions if generating a roster.
     if roster || ratio then    # if option = roster or ratio
-      reduce_tutrole_id.call     if(options.has_key?(:select_tutors) && tutor_ids != nil)
-      reduce_tutrole_status.call if(options.has_key?(:select_tutor_statuses) && tutor_statuses != nil) 
-      reduce_tutrole_kind.call   if(options.has_key?(:select_tutor_kinds) && tutor_kinds != nil)
+      reduce_tutrole_firstaid.call  if(options.has_key?(:select_tutor_firstaid))
+      reduce_tutrole_id.call        if(options.has_key?(:select_tutors) && tutor_ids != nil)
+      reduce_tutrole_status.call    if(options.has_key?(:select_tutor_statuses) && tutor_statuses != nil) 
+      reduce_tutrole_kind.call      if(options.has_key?(:select_tutor_kinds) && tutor_kinds != nil)
       
-      reduce_role_id.call     if(options.has_key?(:select_students) && student_ids != nil)
-      reduce_role_status.call if(options.has_key?(:select_student_statuses) && student_statuses != nil) 
-      reduce_role_kind.call   if(options.has_key?(:select_student_kinds) && student_kinds != nil) 
+      reduce_role_id.call           if(options.has_key?(:select_students) && student_ids != nil)
+      reduce_role_status.call       if(options.has_key?(:select_student_statuses) && student_statuses != nil) 
+      reduce_role_kind.call         if(options.has_key?(:select_student_kinds) && student_kinds != nil) 
     end
 
     # these indexes are required if reduced or not - so done after reduction.
@@ -267,7 +313,6 @@ module Calendarutilities
       end  
       @tutrole_lessonindex[o.lesson_id].push(count)
     }
-    
     # Sort all tutors within each session entry by pname
     @tutrole_lessonindex.each { |k, a|
       a = a.sort_by{ |t| @tutroleinfo[t].tutor.pname }
@@ -300,59 +345,15 @@ module Calendarutilities
       }
     end
     
-    # need an index into @tutors for the sort.
-    # @tutors is already ordered by pname
-    # so only have to return the index for the sort routine.
-    @tutor_index = Hash.new
-    @tutors.each_with_index { |o, count|
-      unless @tutor_index.has_key? o.id then
-        @tutor_index[o.id] = Array.new
-      end  
-      @tutor_index[o.id] = count
-    }
-    
-    
     # @sessinfo needs to be sorted in correct order as this will control the order
     # they are loaded into @cal. - for lesson order.
     # routing to sort the tutrole_lesson_index
     # by 1. lesson.status
     #    2. lesson.tutor.pname
+
     @sessinfo = @sessinfo.sort_by{ |o| [valueOrderStatus(o), valueOrderTutor(o)]}
 
-=begin
-
-  # Sort the values in display2 (cell of lessons/sessions) by status and then by tutor name
-  # as some lessons have no tutor, this returns the tutor name if available.
-  # This can then be used as the second attribute in the sort.
-  def valueOrderTutor(obj)
-    thistutorindexarray =  @tutrole_lessonindex[obj.id]
-    if thistutorindexarray.count > 0   // has tutor entries
-      @tutorinfo[@tutroleinfo[thistutorindexarray[0]]].pname
-    else
-      "_"
-    end
-  end
-
-  def valueOrderStatus(obj)
-    if obj.status != nil
-      ["onCall", "onSetup", "onBFL", "standard"].index(obj.status)
-    else
-      -1
-    end
-  end
-  
-  @sessinfo      = Lesson
-               .joins(:slot)
-               .where(slot_id: @slotsinfo.map {|o| o.id})
-               .order(:status)
-               .includes(:slot)
-
-  
-=end
-
-
     # ------- Now generate the hash for use in the display -----------
-    
     # locations - there will be separate tables for each location
     @locations    = Slot
                   .select('location')
@@ -468,7 +469,7 @@ module Calendarutilities
   def valueOrderStatus(obj)
     #logger.debug "obj status: " + obj.id.inspect + " - " + obj.status
     if obj.status != nil
-      thisindex = ["onCall", "onSetup", "onBFL", "standard"].index(obj.status)
+      thisindex = ["onCall", "onSetup", "on_BFL", "standard"].index(obj.status)
       thisindex == nil ? 0 : thisindex + 1
     else
       return 0

@@ -10,20 +10,24 @@
     %>
   
     <div id="selectshows">
-        <input id=hidetutors class=selectshow onclick="selectshows()" type="checkbox" > hide tutors
-        <input id=hidestudents class=selectshow onclick="selectshows()" type="checkbox" > hide students
-        <input id=hidecomments class=selectshow onclick="selectshows()" type="checkbox" > hide all comments
-        <input id=hidetutorlessoncomments class=selectshow onclick="selectshows()" type="checkbox" > hide tutor lesson comments
-        <input id=hidestudentlessoncomments class=selectshow onclick="selectshows()" type="checkbox" > hide student lesson comments
-        <input id=hidetutorcomments class=selectshow onclick="selectshows()" type="checkbox" > hide tutor comments
-        <input id=hidestudentcomments class=selectshow onclick="selectshows()" type="checkbox" > hide student comments
-        <% listofsites.each do |site| %>
-        <input id=<%= 'hide' + site %> class=selectshow onclick="selectshows()" type="checkbox" ><%= 'hide ' + site %> 
-        <% end %>
-    </div>
-    
-    <div id="selectSetStatus">
-        <input id=enableQuickStatus type="checkbox" > enable quick setting of status to
+        <div class="checklisttutors">
+          <input id=hidetutors class=selectshow onclick="selectshows()" type="checkbox" >Tutors
+          <input id=hidestudents class=selectshow onclick="selectshows()" type="checkbox" >Students;
+          
+          Hide Comments=>(<input id=hidecomments class=selectshow onclick="selectshows()" type="checkbox" >All;
+        </div>
+        <div class=checklistlesson>
+        Lesson=>(<input id=hidetutorlessoncomments class=selectshow onclick="selectshows()" type="checkbox" >tutors, 
+        <input id=hidestudentlessoncomments class=selectshow onclick="selectshows()" type="checkbox" >students ), 
+        </div>
+        
+        <div class=checklistpersonal>
+        Personal=>(<input id=hidetutorcomments class=selectshow onclick="selectshows()" type="checkbox" >tutors,
+        <input id=hidestudentcomments class=selectshow onclick="selectshows()" type="checkbox" >students )
+        </div>)
+        
+        <br>
+        <input id=enableQuickStatus type="checkbox" > Enable quick setting of status to
         <select name="quickStatus" id="quickStatusValue">
           <option value="Attended">Attended</option>
           <option value="Confirmed">Confirmed</option>
@@ -33,10 +37,19 @@
           <option value="Absent">Absent</option>
           <option value="Away">Away</option>
         </select>
+        <br>
+        <% listofsites.each_with_index do |site, i| %>
+        <div class=<%= "selectSite" + site %>>
+        <input id=<%= 'hide' + site %> class="selectshow selectsite" onclick="selectshows()" type="checkbox" ><%= site + "  " %> 
+        </div>
+        <% end %>
+    </div>
+    
+    <div id="selectSetStatus">
     </div>
     
     
-    <div class=index>
+    <div class=index id=index-tutor-students>
         <div class="selectbox floating-box">
             <h2>Select person</h2>
             <input type="text" id="personInput" placeholder="Shorten list by keying in meaningful characters .." title="Type in characters to reduce name list">
@@ -207,7 +220,6 @@
     </tr>
   <% end %>
   </table>
-<br>
 <% end %>
 </div>
 

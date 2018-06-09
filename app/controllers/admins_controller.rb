@@ -2232,6 +2232,15 @@ else
     # call the library in controllers/concerns/calendarutilities.rb
     #@cal = calendar_read_display2(@sf, mystartdate, myenddate)
     #calendar_read_display1f(sf, mystartdate, myenddate, options)
+    
+    # @tutors and @students are used by the cal
+    @tutors = Tutor
+              .where.not(status: "inactive")
+              .order('pname')
+    @students = Student
+                .where.not(status: "inactive")
+                .order('pname')
+    
     @cal = calendar_read_display1f(@sf, mystartdate, myenddate, {})
     # Clear the sheet
     googleClearSheet.call
@@ -2328,10 +2337,16 @@ else
                       formatBreakPoints = []
                       formatBreakPoints.push(0)
                       studentData = student.pname
+                      logger.debug "student.pname: " + student.pname 
+                      logger.debug "lesson_id: " + entry.id.to_s
+                      if entry.id == 26608
+                        #byebug
+                      end
                       formatBreakPoints.push(student.pname.length)
                       studentSex = student.sex == nil ? "" :
                            (student.sex.downcase.include?("female") ? "(F) " : (student.sex.downcase.include?("male") ? "(M) " : ""))
-                      studentSubjects = " Yr: " + (student.year == nil ? "   " : student.year.rjust(3)) + " | " +  student.study
+                      studentSubjects = " Yr: " + (student.year == nil ? "   " : student.year.rjust(3)) +
+                                        " | " +  (student.study == nil ? "" : student.study)
                       studentData += "\n" + studentSex + studentSubjects
                       # thisrole.comment
                       # student.comment
