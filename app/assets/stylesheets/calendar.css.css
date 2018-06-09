@@ -18,19 +18,19 @@
   /* background-color: white; */
   width: 74%; }
 
-.n-status-onCall {
+.n-status-onCall, #lesson-status-oncall {
   background-color: aqua;
   border-color: blue; }
 
-.n-status-onSetup {
+.n-status-onSetup, #lesson-status-onsetup {
   background-color: aquamarine;
   border-color: green; }
 
-.n-status-on_BFL {
+.n-status-on_BFL, #lesson-status-on_BFL {
   background-color: lemonchiffon;
   border-color: yellow; }
 
-.n-status-standard {
+.n-status-standard, #lesson-status-standard {
   background-color: lavenderblush;
   border-color: hotpink; }
 
@@ -271,22 +271,22 @@ table, th, td {
 .s-status-standard {
   background-color: #ffffff; }
 
-.t-status-scheduled .tutorname {
+.t-status-scheduled .tutorname, #tutor-status-scheduled {
   background-color: mediumturquoise; }
 
-.t-status-notified .tutorname {
+.t-status-notified .tutorname, #tutor-status-notified {
   background-color: mediumaquamarine; }
 
-.t-status-confirmed .tutorname {
+.t-status-confirmed .tutorname, #tutor-status-confirmed {
   background-color: palegreen; }
 
-.t-status-attended .tutorname {
+.t-status-attended .tutorname, #tutor-status-attended {
   background-color: yellowgreen; }
 
-.t-status-deal .tutorname {
+.t-status-deal .tutorname, #tutor-status-deal {
   background-color: fuchsia; }
 
-.t-status-away .tutorname {
+.t-status-away .tutorname, #tutor-status-away {
   background-color: gainsboro; }
 
 .t-status-undealtAbsent .tutorname {
@@ -295,22 +295,22 @@ table, th, td {
 .t-status-dealtAbsent .tutorname {
   background-color: #666666; }
 
-.t-status-absent .tutorname {
+.t-status-absent .tutorname, #tutor-status-absent {
   background-color: #CC0000; }
 
-.t-kind-standard .statusinfo {
+.t-kind-standard .statusinfo, #tutor-kind-standard {
   background-color: mediumspringgreen; }
 
-.t-kind-training .statusinfo {
+.t-kind-training .statusinfo, #tutor-kind-training {
   background-color: sandybrown; }
 
-.t-kind-called .statusinfo {
+.t-kind-called .statusinfo, #tutor-kind-called {
   background-color: lightskyblue; }
 
-.t-kind-relief .statusinfo {
+.t-kind-relief .statusinfo, #tutor-kind-relief {
   background-color: wheat; }
 
-.t-kind-BFL .statusinfo {
+.t-kind-BFL .statusinfo, #tutor-kind-bfl {
   background-color: #ffff00; }
 
 .t-kind-away-action .statusinfo {
@@ -331,22 +331,22 @@ table, th, td {
 .t-kind-awayAction .statusinfo {
   background-color: #CC0000; }
 
-.t-kind-onCall .statusinfo {
+.t-kind-onCall .statusinfo, #tutor-kind-oncall {
   background-color: #00FFFF; }
 
-.t-kind-onSetup .statusinfo {
+.t-kind-onSetup .statusinfo, #tutor-kind-onsetup {
   background-color: #EAD1DC; }
 
-.s-status-scheduled .studentname {
+.s-status-scheduled .studentname, #student-status-scheduled {
   background-color: mediumturquoise; }
 
-.s-status-attended .studentname {
+.s-status-attended .studentname, #student-status-attended {
   background-color: yellowgreen; }
 
-.s-status-deal {
+.s-status-deal, #student-status-deal {
   background-color: fuchsia; }
 
-.s-status-away {
+.s-status-away, #student-status-away {
   background-color: gainsboro; }
 
 .s-status-undealtAbsent {
@@ -355,28 +355,28 @@ table, th, td {
 .s-status-dealtAbsent {
   background-color: #666666; }
 
-.s-status-absent {
+.s-status-absent, #student-status-absent {
   background-color: #666666; }
 
-.s-kind-first {
+.s-kind-first, #student-kind-first {
   background-color: #B6D7A8; }
 
-.s-kind-catchup {
+.s-kind-catchup, #student-kind-catchup {
   background-color: lightblue; }
 
-.s-kind-fortnightly {
+.s-kind-fortnightly, #student-kind-fortnightly {
   background-color: steelblue; }
 
-.s-kind-onetoone {
+.s-kind-onetoone, #student-kind-onetoone {
   background-color: salmon; }
 
-.s-kind-standard {
+.s-kind-standard, #student-kind-standard {
   background-color: mediumspringgreen; }
 
 .s-kind-BFL {
   background-color: #ffff00; }
 
-.s-kind-free {
+.s-kind-free, #student-kind-free {
   background-color: #00ff00; }
 
 .s-kind-1stpaid {
