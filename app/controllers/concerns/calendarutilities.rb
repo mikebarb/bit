@@ -443,17 +443,17 @@ module Calendarutilities
   def valueOrderTutor(obj)
     thistutorindexarray =  @tutrole_lessonindex[obj.id]
     if thistutorindexarray == nil
-      return  0
+      return  100001
     end
     if thistutorindexarray.count > 0   # has tutor entries
       thisindex = @tutor_index[@tutroleinfo[thistutorindexarray[0]].tutor_id]
       if thisindex == nil
-        return 0
+        return 100000
       else
        1 + @tutor_index[@tutroleinfo[thistutorindexarray[0]].tutor_id]
       end
     else
-      return 0
+      return 100000
     end
   end
   
