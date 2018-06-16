@@ -219,6 +219,15 @@ module Calendarutilities
         a
       }
     }
+    # b2) UNdesired tutor kinds
+    reduce_tutrole_kind_exclude = lambda{
+      @tutroleinfo = @tutroleinfo.reduce([]) { |a,o|
+        unless tutor_kinds.include?(o.kind) then 
+          a << o
+        end
+        a
+      }
+    }
     # c) desired tutor ids
     reduce_tutrole_id = lambda{
       @tutroleinfo = @tutroleinfo.reduce([]) { |a,o|
@@ -291,17 +300,17 @@ module Calendarutilities
       end  
       @tutor_index[o.id] = count
     }
-    
+    #byebug
     # now do reductions if generating a roster.
     if roster || ratio then    # if option = roster or ratio
-      reduce_tutrole_firstaid.call  if(options.has_key?(:select_tutor_firstaid))
-      reduce_tutrole_id.call        if(options.has_key?(:select_tutors) && tutor_ids != nil)
-      reduce_tutrole_status.call    if(options.has_key?(:select_tutor_statuses) && tutor_statuses != nil) 
-      reduce_tutrole_kind.call      if(options.has_key?(:select_tutor_kinds) && tutor_kinds != nil)
-      
-      reduce_role_id.call           if(options.has_key?(:select_students) && student_ids != nil)
-      reduce_role_status.call       if(options.has_key?(:select_student_statuses) && student_statuses != nil) 
-      reduce_role_kind.call         if(options.has_key?(:select_student_kinds) && student_kinds != nil) 
+      reduce_tutrole_firstaid.call      if(options.has_key?(:select_tutor_firstaid))
+      reduce_tutrole_id.call            if(options.has_key?(:select_tutors) && tutor_ids != nil)
+      reduce_tutrole_status.call        if(options.has_key?(:select_tutor_statuses) && tutor_statuses != nil) 
+      reduce_tutrole_kind.call          if(options.has_key?(:select_tutor_kinds) && tutor_kinds != nil)
+      reduce_tutrole_kind_exclude.call  if(options.has_key?(:select_tutor_kinds_exclude) && tutor_kinds != nil)
+      reduce_role_id.call               if(options.has_key?(:select_students) && student_ids != nil)
+      reduce_role_status.call           if(options.has_key?(:select_student_statuses) && student_statuses != nil) 
+      reduce_role_kind.call             if(options.has_key?(:select_student_kinds) && student_kinds != nil) 
     end
 
     # these indexes are required if reduced or not - so done after reduction.

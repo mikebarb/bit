@@ -34,13 +34,15 @@
   </div>
   <br>
   -------------------- For Rosters or Ratios -------------------------
-
   <div class="select_roster_default">
     Select default settings for roster and ratio display<br>
     <%= check_box_tag(:select_roster_default) %>
     <%= label_tag(:select_roster_default, "default settings for roster and ratio display") %><br>
   </div>
-  <br>
+  Note: <br>
+  Status default settings include 'attended' & 'scheduled' + 'notified' for tutors.<br>
+  When displaying ratios, the default settings for tutor "kinds" excludes 'onCall' and 'onSetup.'
+  <br><br>
   <div class="select_firstaid">
     Display tutors with first aid certification<br>
     <%= check_box_tag(:select_tutor_firstaid) %>

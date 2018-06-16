@@ -52,6 +52,10 @@ class CalendarController < ApplicationController
       if((params.has_key?(:select_roster_default)) && (params[:select_roster_default] == '1'))
         @options[:select_tutor_statuses]   = true
         @options[:tutor_statuses]    = ['attended', 'notified', 'scheduled']
+        if params[:bench] == "ratio"
+          @options[:select_tutor_kinds_exclude]   = true
+          @options[:tutor_kinds]    = ['onSetup', 'onCall']
+        end
         @options[:select_student_statuses]   = true
         @options[:student_statuses]  = ['attended', 'scheduled']
         @displayHeader = 'Roster - default roster filtering' if @options[:roster]
