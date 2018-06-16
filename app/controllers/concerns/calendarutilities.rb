@@ -294,13 +294,15 @@ module Calendarutilities
     # @tutors is already ordered by pname
     # so only have to return the index for the sort routine.
     @tutor_index = Hash.new
-    @tutors.each_with_index { |o, count|
-      unless @tutor_index.has_key? o.id then
-        @tutor_index[o.id] = Array.new
-      end  
-      @tutor_index[o.id] = count
-    }
-    #byebug
+    unless @tutors == nil
+      @tutors.each_with_index { |o, count|
+        unless @tutor_index.has_key? o.id then
+          @tutor_index[o.id] = Array.new
+        end  
+        @tutor_index[o.id] = count
+      }
+    end
+    
     # now do reductions if generating a roster.
     if roster || ratio then    # if option = roster or ratio
       reduce_tutrole_firstaid.call      if(options.has_key?(:select_tutor_firstaid))
@@ -316,30 +318,33 @@ module Calendarutilities
     # these indexes are required if reduced or not - so done after reduction.
     # First, create the hash{lesson_id}[tutor_index_into array, .....]    
     @tutrole_lessonindex = Hash.new
-    @tutroleinfo.each_with_index { |o, count|
-      unless @tutrole_lessonindex.has_key? o.lesson_id then
-        @tutrole_lessonindex[o.lesson_id] = Array.new
-      end  
-      @tutrole_lessonindex[o.lesson_id].push(count)
-    }
-    # Sort all tutors within each session entry by pname
-    @tutrole_lessonindex.each { |k, a|
-      a = a.sort_by{ |t| @tutroleinfo[t].tutor.pname }
-    }
+    unless @tutroleinfo == nil
+      @tutroleinfo.each_with_index { |o, count|
+        unless @tutrole_lessonindex.has_key? o.lesson_id then
+          @tutrole_lessonindex[o.lesson_id] = Array.new
+        end  
+        @tutrole_lessonindex[o.lesson_id].push(count)
+      }
+      # Sort all tutors within each session entry by pname
+      @tutrole_lessonindex.each { |k, a|
+        a = a.sort_by{ |t| @tutroleinfo[t].tutor.pname }
+      }
+    end 
     
     # Second, create the hash{lesson_id}[student_index_into array, .....]    
     @role_lessonindex = Hash.new
-    @roleinfo.each_with_index { |o, count|
-      unless @role_lessonindex.has_key? o.lesson_id then
-        @role_lessonindex[o.lesson_id] = Array.new
-      end  
-      @role_lessonindex[o.lesson_id].push(count)
-    }
-    # Sort all students within each session entry by pname
-    @role_lessonindex.each { |k, a|
-      a = a.sort_by{ |t| @roleinfo[t].student.pname }
-    }
-    
+    unless @roleinfo == nil
+      @roleinfo.each_with_index { |o, count|
+        unless @role_lessonindex.has_key? o.lesson_id then
+          @role_lessonindex[o.lesson_id] = Array.new
+        end  
+        @role_lessonindex[o.lesson_id].push(count)
+      }
+      # Sort all students within each session entry by pname
+      @role_lessonindex.each { |k, a|
+        a = a.sort_by{ |t| @roleinfo[t].student.pname }
+      }
+    end    
     # indexes completed.
 
     # Final reduction step, reduce the lesson array to eliminate lessons that have
