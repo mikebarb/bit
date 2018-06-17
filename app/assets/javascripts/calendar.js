@@ -214,6 +214,8 @@ var ready = function() {
     };
   }
   
+  //function getRecordType(ele_id){
+  //function getRecordId(ele_id){
   // this function extracts the record type (l, n, t, s) from the dom id
   // for slot, lesson, tutor and student entries
   function getRecordType(ele_id){
@@ -254,6 +256,7 @@ var ready = function() {
     var scmi_setStatus = false;
     var scmi_setKind = false;
     var scmi_editComment = false;
+    var scmi_editDetail = false;
     var scmi_history = false;
     var scmi_changes = false;
     var scmi_editSubject = false;
@@ -277,7 +280,7 @@ var ready = function() {
           scmi_editSubject = true;
         }else{  // in the main schedule area (lesson)
           scmi_copy = scmi_move = scmi_remove = scmi_addLesson = true;
-          scmi_setStatus = scmi_setKind = scmi_editComment = true;
+          scmi_setStatus = scmi_setKind = scmi_editComment = scmi_editDetail = true;
           scmi_history = true;
           scmi_changes = true;
         }
@@ -308,6 +311,7 @@ var ready = function() {
     setscmi('context-setStatus', scmi_setStatus);
     setscmi('context-setKind', scmi_setKind);
     setscmi('context-editComment', scmi_editComment);
+    setscmi('context-editDetail', scmi_editDetail);
     setscmi('context-editSubject', scmi_editSubject);
     setscmi('context-history', scmi_history);
     setscmi('context-changes', scmi_changes);
@@ -316,9 +320,9 @@ var ready = function() {
   function setscmi(elementId, scmi){
     if(document.getElementById(elementId)){
       if(scmi){
-        document.getElementById(elementId).classList.remove('hideme'); 
+        document.getElementById(elementId).classList.remove('hideme');
       }else{
-        document.getElementById(elementId).classList.add('hideme'); 
+        document.getElementById(elementId).classList.add('hideme');
       }
     }
   }
@@ -460,6 +464,23 @@ var ready = function() {
         //currentActivity['ele_old_parent_id'] = clickInsideElementClassList2(thisEle, ['slot']).id;
         enableTertiaryMenu(thisEle, thisAction, currentActivity);
         break;
+      case "editDetail":
+        // this case edits the tutor or student comment when we have clicked 
+        // on the student or tutro in the scheduler area.
+        // This is actioned by making believe that we have clicked on this 
+        // tutor or student in the index area, then let editComment take its
+        // course. (Hence no break after this section!)
+        //
+        // currentActivity['move_ele_id'] =  thisEleId;
+        // thisEle = document.getElementById(thisEleId);
+        // function getRecordType(ele_id){
+        // function getRecordId(ele_id){
+        // generate the element id of this person in the index area
+        // and override existing values.
+        thisEleId = getRecordType(thisEleId) + getRecordId(thisEleId);
+        thisEle = document.getElementById(thisEleId);
+        currentActivity['move_ele_id'] = thisEleId;
+        currentActivity['action'] = "editComment";
       case "editComment":
         // Edit Comment has been selected on an element.
         // It will open up a text field to key in your updates.
@@ -496,7 +517,8 @@ var ready = function() {
         // field in the browser doc and then show it in the tertiary menu.
         document.getElementById('edit-comment-text').value = thisComment;
         document.getElementById('edit-comment-elementid').innerHTML = thisEleId;
-        enableTertiaryMenu(thisEle, thisAction, currentActivity);
+        //enableTertiaryMenu(thisEle, thisAction, currentActivity);
+        enableTertiaryMenu(thisEle, currentActivity['action'], currentActivity);
         break;
       case "editSubject":
         // Edit Subject has been selected on an element.
@@ -1199,7 +1221,7 @@ var ready = function() {
     // changing the location of storing colour classes
     // moving to tutor div from previous name and comment divs
     // for testing keep both options - switch between them
-    var testnewformat = true;  // true or false
+    //var testnewformat = true;  // true or false
     
     var updateaction = domchange['action'];
     var t = /^\w+-/.exec(updateaction);
@@ -1214,6 +1236,7 @@ var ready = function() {
 
     if(clickInsideElementClassList2(this_ele, ['index'])){ // index context
       var personContext = 'index';
+      var personId = this_ele.id;
       if (scmType == 'comment') {
         if (recordtype == 't') {        // tutor
           var comment_ele = this_ele.getElementsByClassName("tutorcommentdetail")[0];
@@ -1233,7 +1256,7 @@ var ready = function() {
           subject_text_new = res[0] + "| " + domchange["new_value"];
         }
       }
-    } else {   // lesson context
+    } else {   // lesson (or schedule) context
       personContext = 'lesson';
       comment_ele = this_ele.getElementsByClassName("comment")[0];
       // some variables are only valid in this context
@@ -1250,14 +1273,14 @@ var ready = function() {
       var tutorname_eles = this_ele.getElementsByClassName("tutorname");
       // First update the classes - this controls the status colour
       if (scmType == 'kind') {   // only impact the class in comments
-        if (testnewformat) {  // new style      
+        //if (testnewformat) {  // new style      
           // have to update the 'tutor' div with the 't-status-' class
           var changeclass_ele = this_ele;
           
-        }else{    // textnewformat = false (old style)  
+        //}else{    // textnewformat = false (old style)  
           // have to update the 'tutorcomment' div with the 't-status-' class
-          changeclass_ele = comment_ele;
-        }
+          //changeclass_ele = comment_ele;
+        //}
         these_classes = changeclass_ele.classList;
         // scan these classes for our class of interest
         these_classes.forEach(function(thisClass, index, array){
@@ -1291,14 +1314,14 @@ var ready = function() {
         statusinfo = statusinfo.replace(kindtext, 'Kind: ' + scmValue + ' ');
         statusinfoele.innerHTML = statusinfo;
       } else if (scmType == 'status') {    // only impact the class in tutorname
-        if (testnewformat) {  // new style      
+        //if (testnewformat) {  // new style      
           // have to update the 'tutor' div with the 't-status-' class
           var changeclass_ele = this_ele;
           
-        }else{    // textnewformat = false (old style)  
+        //}else{    // textnewformat = false (old style)  
           // have to update the 'tutorname' div with the 't-status-' class
-          changeclass_ele = tutorname_eles[0];
-        }
+          //changeclass_ele = tutorname_eles[0];
+        //}
         these_classes = changeclass_ele.classList;
         // scan these classes for our class of interest
         these_classes.forEach(function(thisClass, index, array){
@@ -1364,14 +1387,14 @@ var ready = function() {
       // First update the classes - this controls the status colour
       if (scmType == 'kind') {   // only impact the class in comments
       
-        if (testnewformat) {  // new style      
+        //if (testnewformat) {  // new style      
           // have to update the 'tutor' div with the 't-status-' class
           changeclass_ele = this_ele;
           
-        }else{    // textnewformat = false (old style)  
+        //}else{    // textnewformat = false (old style)  
           // have to update the 'tutorcomment' div with the 't-status-' class
-          changeclass_ele = comment_ele;
-        }
+          //changeclass_ele = comment_ele;
+        //}
         these_classes = changeclass_ele.classList;
         // scan these classes for our class of interest
         these_classes.forEach(function(thisClass, index, array){
@@ -1407,14 +1430,14 @@ var ready = function() {
         statusinfo = statusinfo.replace(kindtext, 'Kind: ' + scmValue + ' ');
         statusinfoele.innerHTML = statusinfo;
       } else if (scmType == 'status') {    // only impact the class in studentname
-        if (testnewformat) {  // new style      
+        //if (testnewformat) {  // new style      
           // have to update the 'tutor' div with the 't-status-' class
           changeclass_ele = this_ele;
           
-        }else{    // textnewformat = false (old style)  
+        //}else{    // textnewformat = false (old style)  
           // have to update the 'tutorcomment' div with the 't-status-' class
-          changeclass_ele = studentname_eles[0];
-        }
+          //changeclass_ele = studentname_eles[0];
+        //}
 
         // have to update the 'studentname' div with the 't-status-' class
         var studentname_ele = studentname_eles[0];
