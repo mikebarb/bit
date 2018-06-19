@@ -58,17 +58,21 @@ class RolesController < ApplicationController
 
  # POST /removestudentfromlesson.json
   def removestudentfromlesson
-    logger.debug("removestudentfromlesson")
     @role = Role.where(:student_id => params[:student_id], :lesson_id => params[:old_lesson_id]).first
     #logger.debug("found role: " + @role.inspect)
     #myid = @role.id
     #logger.debug("myroleid: " + myid.inspect)
-    @role1 = Role.find(@role.id)
-    logger.debug("@role1: " + @role1.inspect)
-    @role1.destroy
+    #@role1 = Role.find(@role.id)
+    #logger.debug("@role1: " + @role1.inspect)
     respond_to do |format|
-      format.json { head :no_content }
-      #format.json { render :show, status: :created, location: @role }
+      #if @role1.destroy
+      if @role.destroy
+        format.json { head :no_content }
+        #format.json { render :show, status: :created, location: @role }
+      else
+        logger.debug("errors.messages: " + @role.errors.messages.inspect)
+        format.json { render json: @role.errors.full_messages, status: :unprocessable_entity }
+      end
     end
   end
 

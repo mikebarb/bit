@@ -1698,7 +1698,7 @@ class AdminsController < ApplicationController
     end
     service = returned_authorisation["service"]
 #-----------------------------------------------------------------
-# Crezte a new spreadsheet -works and tested
+# Create a new spreadsheet -works and tested
     #request_body = Google::Apis::SheetsV4::Spreadsheet.new
     #response = service.create_spreadsheet(request_body)
     #ss = response
@@ -1860,6 +1860,8 @@ class AdminsController < ApplicationController
 # Some key doco
 # https://www.rubydoc.info/github/google/google-api-ruby-client/Google/Apis/SheetsV4
 # https://developers.google.com/sheets/api/reference/rest/v4/spreadsheets/request
+# This one has the console
+# https://developers.google.com/sheets/api/reference/rest/v4/spreadsheets/batchUpdate
 
 
   # GET /admins/googleroster
@@ -1882,7 +1884,6 @@ class AdminsController < ApplicationController
 # Only need the id to make use of this.
     spreadsheet_id = '1VHNfTl0Qxok1ZgBD2Rwby-dqxihgSspA0InqS5dTXNI'
 #-----------------------------------------------------------------
-
     # Get URL of spreadsheet
     response = service.get_spreadsheet(spreadsheet_id)
     @spreadsheet_url = response.spreadsheet_url
@@ -1902,6 +1903,52 @@ class AdminsController < ApplicationController
     myussp = {"properties": {"title": spreadsheet_title}, "fields": "*" }
     request_body.requests = [{"update_spreadsheet_properties": myussp }]
     result = service.batch_update_spreadsheet(spreadsheet_id, request_body, {})
+
+# ************ add sheet  ************************
+    googleAddSheet = lambda{ |mytitle, mysheetproperties|
+      request_body = Google::Apis::SheetsV4::BatchUpdateSpreadsheetRequest.new
+      myas = {"properties": {"title": mytitle}}
+      request_body.requests = [{"add_sheet": myas }]
+      result = service.batch_update_spreadsheet(spreadsheet_id, request_body, {})
+      mysheetproperties.push({'index'    => result.replies[0].add_sheet.properties.index,
+                            'sheet_id' => result.replies[0].add_sheet.properties.sheet_id,
+                            'title'    => result.replies[0].add_sheet.properties.title})
+    }
+    
+# ************ delete sheets  ************************
+    googleSheetDelete = lambda{
+      result = service.get_spreadsheet(spreadsheet_id)
+      mysheets = result.sheets
+      request_body = Google::Apis::SheetsV4::BatchUpdateSpreadsheetRequest.new
+      mysheets.each_with_index do |o, i|
+        next if i == 0
+        request_body.requests == nil ?
+          request_body.requests =   [{"delete_sheet": {"sheet_id": o.properties.sheet_id}}] :
+          request_body.requests.push({"delete_sheet": {"sheet_id": o.properties.sheet_id}})
+      end
+      unless request_body.requests == nil
+        result = service.batch_update_spreadsheet(spreadsheet_id, request_body, {})
+      end
+    }
+
+# ************ get spreadsheet properties  ************************
+    googleSheetProperties = lambda{
+      result = service.get_spreadsheet(spreadsheet_id)
+      mysheets = result.sheets
+      mysheetproperties = mysheets.map{|o| {'index'    => o.properties.index, 
+                                            'sheet_id' => o.properties.sheet_id,
+                                            'title'    => o.properties.title } }
+    
+    }
+
+# ************ update sheet title  ************************
+# https://developers.google.com/sheets/api/reference/rest/v4/spreadsheets/batchUpdate
+    googleSetSheetTitle = lambda{ |mytitle|
+      request_body = Google::Apis::SheetsV4::BatchUpdateSpreadsheetRequest.new
+      myusp = {"properties": {"title": mytitle }, "fields": "title" }
+      request_body.requests = [{"update_sheet_properties": myusp }]
+      result = service.batch_update_spreadsheet(spreadsheet_id, request_body, {})
+    }
 
 # ************ delete all cells (rows) in a sheet ****************************
 # https://www.rubydoc.info/github/google/google-api-ruby-client/Google/Apis/SheetsV4/Request#delete_range-instance_method 
@@ -2157,11 +2204,11 @@ class AdminsController < ApplicationController
       end
     }
 
+#-------- To test or not to test ------------------------------
 testing = false    # true or false
 if testing then
 
 #--------------------- Test Data -------------------------------
-
 # Clear the sheet
     googleClearSheet.call
     
@@ -2213,13 +2260,16 @@ if testing then
     googleBatchUpdate.call(batchitems)    
     logger.debug "done googleTextFormatRun"
 
-else
+else      # Not to test.
 
 # let does some processing - writing rosters to google sheets.
     @sf = 5   # number of significant figures in dom ids for lesson,tutor, etc.
 
     mystartdate = current_user.daystart
     myenddate = current_user.daystart + current_user.daydur.days
+    @options = Hash.new
+    @options[:startdate] = mystartdate
+    @options[:enddate] = myenddate
     
     #*****************************************************************
     # Set these to control what is displayed in the roster
@@ -2241,7 +2291,8 @@ else
                 .where.not(status: "inactive")
                 .order('pname')
     
-    @cal = calendar_read_display1f(@sf, mystartdate, myenddate, {})
+    #@cal = calendar_read_display1f(@sf, mystartdate, myenddate, {})
+    @cal = calendar_read_display1f(@sf, @options)
     # Clear the sheet
     googleClearSheet.call
     #googleVertAlignAll.call("TOP")
@@ -2253,28 +2304,71 @@ else
 
     googleBatchUpdate.call(myformat)    
 
+    # kinds will govern the background colours for tutors and students.
+    kindcolours = {
+                    'tutor-kind-training'     => [244, 164, 96],
+                    'tutor-kind-called'       => [135, 206, 250],
+                    'tutor-kind-standard'     => [0, 250, 154],
+                    'tutor-kind-relief'       => [245, 222, 179],
+                    'tutor-kind-BFL'          => [255, 255, 0],
+                    'tutor-kind-onCall'       => [0, 255, 255],
+                    'tutor-kind-onSetup'      => [234, 209, 220],
+                    'student-kind-free'       => [0, 255, 0],
+                    'student-kind-first'      => [182, 215, 168],
+                    'student-kind-catchup'    => [173, 216, 230],
+                    'student-kind-fortnightly' => [70, 130, 180], 
+                    'student-kind-onetoone'   => [250, 128, 114],
+                    'student-kind-standard'   => [0, 250, 154],
+                    'tutor-kind-'             => [255, 255, 255],
+                    'tutor-student-'          => [255, 255, 255]
+                  }
+    kindcolours.default = [255, 255, 255]   # result if called with missing key
     
+    # clear unused sheets & get sheet properties
+    googleSheetDelete.call
+    # sets mysheetproperties = [{'index', 'sheet_id', 'title'}, ..]
+    mysheetproperties = googleSheetProperties.call    
+
     # will increment to 1 on stepping into loops => 1..n
     # Note: both rows and column indexes spreadsheets start at 1
     # Following counters used to track loactions in the spreadsheet
+    timeData = ''
     baseSiteRow  = 1 
     baseSlotRowInSite = 1
     baseLessonRowInSlot = 0
     currentTutorRowInLesson = 0
     currentStudentRowInLesson = 0
+    currentStudentInLesson = 0
     maxPersonRowInAnySlot = 0
     maxPersonRowInAnySlot = 0
     currentCol = 1
     currentRow = 1
-
     baseSiteRow  = 1                        # first site 
+    locationindex = 0                       # index into the sites
+
     @cal.each do |location, calLocation|    # step through sites
+      # make separate sheet entry for each site
+      baseSiteRow = 1                       # reset when new sheet for each site.
+      if locationindex == 0                 # first site
+        googleSetSheetTitle.call(location)
+        mysheetproperties[locationindex]['title'] = location
+      else
+        mysheetproperties = googleAddSheet.call(location, mysheetproperties)       # add a sheet
+      end
+      # mysheets = result.sheets
+      # mysheetproperties = mysheets.map{|o| {'index'    => o.properties.index, 
+      #                                       'sheet_id' => o.properties.sheet_id,
+      #                                       'title'    => o.properties.title } }
+      sheet_name = mysheetproperties[locationindex]['title']
+      sheet_id   = mysheetproperties[locationindex]['sheet_id']
+      locationindex += 1
       mydata   = []                           # google batch data writter at end of processing a site
       myformat = []
       #<table id=site-<%= location %> >
       baseSlotRowInSite = 0                   # first slot
       currentRow = baseSlotRowInSite + baseSiteRow
       calLocation.each do |rows|          # step through slots containing multiple days (fist row is actually a header row!)
+        timeData = rows[0]["value"] 
         #<tr>
         maxPersonRowInAnySlot = 0           # initialised to 1 to step a row even if no tutor or student found.
         currentCol = 1
@@ -2282,8 +2376,8 @@ else
           if cells.key?("values") then      # lessons for this day in this slot      
             if cells["values"].respond_to?(:each) then    # check we have lessons?
               baseLessonRowInSlot = 0       # index of first lesson in this slot for this day
+              #maxPersonRowInLesson = 0
               cells["values"].sort_by {|obj| [valueOrderStatus(obj),valueOrder(obj)] }.each do |entry| # step thru sorted lessons
-
               currentTutorRowInLesson = 0
               if entry.tutors.respond_to?(:each) then
                 entry.tutors.sort_by {|obj| obj.pname }.each do |tutor|
@@ -2306,10 +2400,16 @@ else
                       # thistutrole.comment
                       # tutor.comment
                       # Status: thistutrole.status Kind: thistutrole.kind
+                      mykind = thistutrole.kind
+                      mykind = mykind ? mykind : ""
+                      tutorData += ((mykind == "") ? "" : ("\n" + mykind)) 
+                      mycolour = kindcolours['tutor-kind-' + mykind]
+                      mycolour = mycolour.map {|o| o/255.0} 
                       myformat.push(googleTextFormatRun.call(currentRow, currentCol,
                                                              tutorData, formatBreakPoints))
                       #mydata.push(googleBatchDataItem.call(currentRow, currentCol, 1, 1, [[tutorData]]))
-                      myformat.push(googleBGColourItem.call(currentRow, currentCol, 1, 1, [1,0,0]))
+                      #myformat.push(googleBGColourItem.call(currentRow, currentCol, 1, 1, [1,0,0]))
+                      myformat.push(googleBGColourItem.call(currentRow, currentCol, 1, 1, mycolour))
                       currentTutorRowInLesson += 1
                     end       # tutors of interest
                   end
@@ -2321,6 +2421,8 @@ else
               end
 
               currentStudentRowInLesson = 0
+              currentStudentInLesson    = 0
+              #evenStudent = (currentStudentInLesson % 2) == 0 ? true : false
               if entry.students.respond_to?(:each) then
                 entry.students.each do |student|
                   if student then
@@ -2329,6 +2431,7 @@ else
                     #logger.debug "thisrole: " + thisrole.inspect
                     if @studentstatusforroster.include?(thisrole.status) then    # students of interest
                       logger.debug "*************processing student: " + student.pname
+                      logger.debug "currentStudentInLesson: " + currentStudentInLesson.inspect
                       logger.debug "currentStudentRowInLesson + baseLessonRowInSlot + baseSlotRowInSite: " +
                                     currentStudentRowInLesson.to_s + ", " + baseLessonRowInSlot.to_s + ", " + baseSlotRowInSite.to_s
                       currentRow = currentStudentRowInLesson + baseLessonRowInSlot + baseSlotRowInSite + baseSiteRow
@@ -2339,9 +2442,6 @@ else
                       studentData = student.pname
                       logger.debug "student.pname: " + student.pname 
                       logger.debug "lesson_id: " + entry.id.to_s
-                      if entry.id == 26608
-                        #byebug
-                      end
                       formatBreakPoints.push(student.pname.length)
                       studentSex = student.sex == nil ? "" :
                            (student.sex.downcase.include?("female") ? "(F) " : (student.sex.downcase.include?("male") ? "(M) " : ""))
@@ -2352,52 +2452,87 @@ else
                       # student.comment
                       studentData += "\n" + student.comment
                       # Status: thisrole.status Kind: thisrole.kind
-                      myformat.push(googleTextFormatRun.call(currentRow, currentCol + 1,
+                      mykind = thisrole.kind
+                      mykind = mykind ? mykind : ""
+                      mycolour = kindcolours['student-kind-' + mykind]
+                      mycolour = mycolour.map {|o| o/255.0}
+                      #myformat.push(googleTextFormatRun.call(currentRow, currentCol + 1,
+                      #                                       studentData, formatBreakPoints))
+                      colOffset = 1 + (currentStudentInLesson % 2)
+                      myformat.push(googleTextFormatRun.call(currentRow, currentCol + colOffset,
                                                              studentData, formatBreakPoints))
                       #mydata.push(googleBatchDataItem.call(currentRow, currentCol + 1, 1, 1, [[studentData]]))
-                      myformat.push(googleBGColourItem.call(currentRow, currentCol + 1, 1, 1, [0,1,0]))
-                      currentStudentRowInLesson += 1
+                      #myformat.push(googleBGColourItem.call(currentRow, currentCol + 1, 1, 1, [0,0.5,0]))
+                      myformat.push(googleBGColourItem.call(currentRow, currentCol + colOffset, 1, 1, mycolour))
+                      
+                      #byebug 
+                      currentStudentRowInLesson += 1 if (currentStudentInLesson % 2) == 1  # odd
+                      currentStudentInLesson += 1
                     end           # students of interest
                   end
                 end
+                # Need to get correct count of rows (rounding up is necessary)
+                # derive currentStudentRowInLesson from the currentStudentInLesson
+                currentStudentRowInLesson = (currentStudentInLesson % 2) == 0 ? 
+                currentStudentInLesson / 2 : (currentStudentInLesson / 2) + 1 
+                
                 # keep track of the largest count of tutors or students in lesson.
-                maxPersonRowInAnySlot = maxPersonRowInAnySlot > currentTutorRowInLesson + baseLessonRowInSlot ?
-                                        maxPersonRowInAnySlot : currentTutorRowInLesson + baseLessonRowInSlot
-              end
+                maxPersonRowInAnySlot = maxPersonRowInAnySlot > currentStudentRowInLesson + baseLessonRowInSlot ?
+                                        maxPersonRowInAnySlot : currentStudentRowInLesson + baseLessonRowInSlot
 
+              end
               #<div class="lessoncommenttext"><% if entry.comments != nil && entry.comments != "" %><%= entry.comments %><% end %></div>
               #<div class="lessonstatusinfo"><% if entry.status != nil && entry.status != "" %>Status: <%= entry.status %> <% end %></div>
-
+              mylessoncomment = ''
+              if entry.comments != nil && entry.comments != ""
+                mylessoncomment = entry.comments
+                mydata.push(googleBatchDataItem.call(currentRow,currentCol+3,1,1,[[mylessoncomment]]))
+              end
               maxPersonRowInLesson = currentTutorRowInLesson > currentStudentRowInLesson ? 
                                      currentTutorRowInLesson : currentStudentRowInLesson 
-
               # put a border around this lesson if there were lessons with people
               logger.debug "maxPersonRowInLesson: " + maxPersonRowInLesson.to_s
               if maxPersonRowInLesson > 0 then
                 borderRowStart = baseLessonRowInSlot + baseSlotRowInSite + baseSiteRow
                 borderColStart = currentCol
                 borderRows = maxPersonRowInLesson
-                borderCols = 2
+                borderCols = 4    # one tutor col and 2 student cols + lesson commment col.
                 logger.debug "border parameters: " + borderRowStart.to_s + ", " + borderColStart.to_s + ", "+ borderRows.to_s + ", " + borderCols.to_s
                 myformat.push(googleborder.call(borderRowStart, borderColStart, borderRows, borderCols, [0, 0, 0], "SOLID_THICK"))
                 myformat.push(googleWrapText.call(borderRowStart, borderColStart, borderRows, borderCols, "WRAP"))
+
+
+                # want to put timeslot time (timeData) in first column of each lesson row.
+                #byebug
+                for i in borderRowStart..borderRowStart+borderRows-1 do
+                  mydata.push(googleBatchDataItem.call(i,1,1,1,[[timeData]]))
+
+                end
+
               end
+              ###baseLessonRowInSlot += maxPersonRowInLesson
               baseLessonRowInSlot += maxPersonRowInLesson
               #currentRow = maxPersonRowInAnySlot + baseLessonRowInSlot + baseSlotRowInSite + baseSiteRow  # next empty row 
               end     # end looping sorted lessons within a day/slot
             end    # responds to cell["values"]
           elsif cells.key?("value") then     # just holds cell info (not lessons) to be shown
             currentRow = baseSlotRowInSite + baseSiteRow
+            #byebug
+            #timeData = cells["value"].to_s #if currentCol == 1 &&
+                                           #   cells["value"] != nil  # pick up the time
             mydata.push(googleBatchDataItem.call(currentRow,currentCol,1,1,[[cells["value"].to_s]]))
           end
           #</td>
-          currentCol += currentCol == 1 ? 1 : 2       # first column is title, rest have adjacent tutors & students.
+          currentCol += currentCol == 1 ? 1 : 4       # first column is title, rest have adjacent tutors & students.
         end       # end looping days within slots
         #</tr>
+        #byebug
         baseSlotRowInSite += maxPersonRowInAnySlot      # set ready for next slot (row of days)
         if baseLessonRowInSlot == 0 && maxPersonRowInAnySlot == 0 then
           baseSlotRowInSite += 1                # cater for when no lessons with tutors or students of interest
         end
+        # Add an extra row between slots - except the  first title slot
+        baseSlotRowInSite += 1 unless baseSlotRowInSite == 1
       end       # end looping slots
       holdRailsLoggerLevel = Rails.logger.level
       Rails.logger.level = 1 

@@ -46,19 +46,19 @@ class TutrolesController < ApplicationController
     logger.debug("removetutorfromlesson")
     @tutrole = Tutrole.where(:tutor_id => params[:tutor_id], :lesson_id => params[:old_lesson_id]).first
     logger.debug("found tutrole: " + @tutrole.inspect)
-    @tutrole1 = Tutrole.find(@tutrole.id)
-    logger.debug("found tutrole1: " + @tutrole1.inspect)
+    #@tutrole1 = Tutrole.find(@tutrole.id)
+    #logger.debug("found tutrole1: " + @tutrole1.inspect)
     respond_to do |format|
-      if @tutrole1.destroy
+      #if @tutrole1.destroy
+      if @tutrole.destroy
         #format.json { render :show, status: :removed, location: @tutrole1 }
         format.json { head :no_content }
       else
-        logger.debug("errors.messages: " + @tutrole1.errors.messages.inspect)
-        format.json { render json: @tutrole1.errors.full_messages, status: :unprocessable_entity }
+        logger.debug("errors.messages: " + @tutrole.errors.messages.inspect)
+        format.json { render json: @tutrole.errors.full_messages, status: :unprocessable_entity }
       end
     end
   end
-
 
   # Copy a tutor from one lesson to another. Actional just a new tutrole entry with current
   # student attached to a new parent.
