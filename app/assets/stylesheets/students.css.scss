@@ -1,3 +1,13 @@
 // Place all the styles related to the Students controller here.
 // They will automatically be included in application.css.
 // You can use Sass (SCSS) here: http://sass-lang.com/
+.tableofchanges {
+    border-spacing: unset;
+    table-layout: auto;
+}
+.tableofchanges td {
+    border: .5px solid blue;
+}
+.tableofchanges th {
+    border: .5px solid black;
+}

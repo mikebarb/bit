@@ -75,15 +75,14 @@ module Historyutilities
   # Obtain the changes for a single tutor
   # @tutorchanges holds everything required in the view
   def tutor_change(tutor_id)
-    logger.debug "tutor_change called"
     # put everything in a hash for use in the view.
     @tutorchanges = Hash.new
     @tutorchanges["tutor"] = Tutor.find(tutor_id)
     startdate = Date.today - (Integer(current_user.history_back) rescue 100)
     enddate = Date.today + (Integer(current_user.history_forward) rescue 7)
     # override for testing only
-    startdate = Date.parse('4-4-2018')
-    enddate = Date.parse('5-4-2018')
+    #startdate = Date.parse('4-4-2018')
+    #enddate = Date.parse('5-4-2018')
     @tutorchanges["startdate"] = startdate
     @tutorchanges["enddate"]   = enddate
 
@@ -169,8 +168,8 @@ module Historyutilities
     startdate = Date.today - (Integer(current_user.history_back) rescue 100)
     enddate = Date.today + (Integer(current_user.history_forward) rescue 7)
     # override for testing only
-    startdate = Date.parse('4-4-2018')
-    enddate = Date.parse('5-4-2018')
+    #startdate = Date.parse('4-4-2018')
+    #enddate = Date.parse('5-4-2018')
     @studentchanges["startdate"] = startdate
     @studentchanges["enddate"]   = enddate
 

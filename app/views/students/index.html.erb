@@ -1,5 +1,6 @@
 <h1>Listing students</h1>
-<%= link_to "all student history", students_history_path %>
+<%= link_to "all student history", students_history_path %><br>
+<%= link_to 'New Student', new_student_path %>
 <%= paginate @students %>
 <%= page_entries_info @students %>
 <table>

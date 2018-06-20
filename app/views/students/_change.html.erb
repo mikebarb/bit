@@ -1,32 +1,30 @@
-<%= @student_change["student"].pname %>
-<table>
+<table class=tableofchanges>
   <thead>
     <tr>
-      <th>User</th>
-      <th>Modified</th>
-      <th>Table</th>
-      <th>DayTime</th>
       <th>Location</th>
-      <th>Field</th>
+      <th>Lesson Day/Time</th>
+      <th>Type</th>
       <th>Value</th>
-      <th>Table Record Id</th>
+      <th>modified on</th>
+      <th>by</th>
     </tr>
   </thead>
 
   <tbody>
-    <% @student_change["data"].each do |r| %>
+    <% @student_change["data"].each do |r| 
+      next unless ["comment", "comments", "status", "kind",
+                   "subjects", "study"].include?(r['field'])
+    %>
     <tr>
-      <td><%= r['user'] %></td>
-      <td><%= r['modified'].localtime('+10:00').strftime("%a %l:%M %p %d/%m/%Y") %></td>
-      <td><%= r['table'] %></td>
+      <td><%= r['location'] %></td>
       <td><%= if r['timeslot'] != ''
-                r['timeslot'].strftime("%a %l:%M %p %d/%m/%Y") 
+                 r['timeslot'].strftime("%a %l:%M %p %d/%m/%Y") 
               end
       %></td>
-      <td><%= r['location'] %></td>
-      <td><%= r['field'] %></td>
+      <td><%= xlateTableField(r['table'], r['field']) %></td>
       <td><%= r['value'] %></td>
-      <td><%= r['id'] %></td>
+      <td><%= r['modified'].localtime('+10:00').strftime("%a %l:%M %p %d/%m/%Y") %></td>
+      <td><%= r['user'] %></td>
     </tr>
     <% end %>
   </tbody>
