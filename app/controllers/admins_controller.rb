@@ -2265,11 +2265,11 @@ else      # Not to test.
 # let does some processing - writing rosters to google sheets.
     @sf = 5   # number of significant figures in dom ids for lesson,tutor, etc.
 
-    mystartdate = current_user.daystart
-    myenddate = current_user.daystart + current_user.daydur.days
+    #mystartdate = current_user.daystart
+    #myenddate = current_user.daystart + current_user.daydur.days
     @options = Hash.new
-    @options[:startdate] = mystartdate
-    @options[:enddate] = myenddate
+    @options[:startdate] = current_user.daystart
+    @options[:enddate] = current_user.daystart + current_user.daydur.days
     
     #*****************************************************************
     # Set these to control what is displayed in the roster
@@ -2293,16 +2293,9 @@ else      # Not to test.
     
     #@cal = calendar_read_display1f(@sf, mystartdate, myenddate, {})
     @cal = calendar_read_display1f(@sf, @options)
-    # Clear the sheet
-    googleClearSheet.call
+    # Clear the first sheet - the rest are deleted.
+    googleClearSheet.call   
     #googleVertAlignAll.call("TOP")
-    myformat = []
-    myformat.push(googleVertAlign.call(1, 1, nil, nil, "TOP"))
-    myformat.push(googleWrapText.call(1, 1, nil, nil, "WRAP"))
-    myformat.push(googleColWidthItem.call(1,100,260))
-#    myformat.push(googleColWidthItem.call(1,3,20))
-
-    googleBatchUpdate.call(myformat)    
 
     # kinds will govern the background colours for tutors and students.
     kindcolours = {
@@ -2345,8 +2338,21 @@ else      # Not to test.
     currentRow = 1
     baseSiteRow  = 1                        # first site 
     locationindex = 0                       # index into the sites
+    
+    # to compress or not - remove unused days
+    @compress = true
 
     @cal.each do |location, calLocation|    # step through sites
+      if @compress   # remove days with no valid slot for this site
+        usedColumns = calLocation[0][0]["days"].keys
+        usedColumnsIndex = [0]
+        for i in 1..(calLocation[0].length-1)
+          if usedColumns.include?(calLocation[0][i]["value"]) then
+            usedColumnsIndex.push(i)
+          end
+        end 
+      end
+
       # make separate sheet entry for each site
       baseSiteRow = 1                       # reset when new sheet for each site.
       if locationindex == 0                 # first site
@@ -2364,6 +2370,14 @@ else      # Not to test.
       locationindex += 1
       mydata   = []                           # google batch data writter at end of processing a site
       myformat = []
+      # General formatting for the sheet
+      myformat.push(googleVertAlign.call(1, 1, nil, nil, "TOP"))
+      myformat.push(googleWrapText.call(1, 1, nil, nil, "WRAP"))
+      myformat.push(googleColWidthItem.call(1,100,260))
+#       myformat.push(googleColWidthItem.call(1,3,20))
+
+
+
       #<table id=site-<%= location %> >
       baseSlotRowInSite = 0                   # first slot
       currentRow = baseSlotRowInSite + baseSiteRow
@@ -2372,7 +2386,12 @@ else      # Not to test.
         #<tr>
         maxPersonRowInAnySlot = 0           # initialised to 1 to step a row even if no tutor or student found.
         currentCol = 1
-        rows.each do |cells|              # step through each day (first column is head column - for time slots!)
+        rows.each_with_index do |cells, cellIndex|              # step through each day (first column is head column - for time slots!)
+          if @compress      
+            unless usedColumnsIndex.include?(cellIndex) then
+               next
+            end 
+          end
           if cells.key?("values") then      # lessons for this day in this slot      
             if cells["values"].respond_to?(:each) then    # check we have lessons?
               baseLessonRowInSlot = 0       # index of first lesson in this slot for this day
@@ -2481,18 +2500,20 @@ else      # Not to test.
                                         maxPersonRowInAnySlot : currentStudentRowInLesson + baseLessonRowInSlot
 
               end
-              #<div class="lessoncommenttext"><% if entry.comments != nil && entry.comments != "" %><%= entry.comments %><% end %></div>
-              #<div class="lessonstatusinfo"><% if entry.status != nil && entry.status != "" %>Status: <%= entry.status %> <% end %></div>
-              mylessoncomment = ''
-              if entry.comments != nil && entry.comments != ""
-                mylessoncomment = entry.comments
-                mydata.push(googleBatchDataItem.call(currentRow,currentCol+3,1,1,[[mylessoncomment]]))
-              end
               maxPersonRowInLesson = currentTutorRowInLesson > currentStudentRowInLesson ? 
                                      currentTutorRowInLesson : currentStudentRowInLesson 
               # put a border around this lesson if there were lessons with people
               logger.debug "maxPersonRowInLesson: " + maxPersonRowInLesson.to_s
               if maxPersonRowInLesson > 0 then
+                # put in lesson comments if there were tutors or students.
+                #<div class="lessoncommenttext"><% if entry.comments != nil && entry.comments != "" %><%= entry.comments %><% end %></div>
+                #<div class="lessonstatusinfo"><% if entry.status != nil && entry.status != "" %>Status: <%= entry.status %> <% end %></div>
+                mylessoncomment = ''
+                if entry.comments != nil && entry.comments != ""
+                  mylessoncomment = entry.comments
+                  mydata.push(googleBatchDataItem.call(currentRow,currentCol+3,1,1,[[mylessoncomment]]))
+                end
+                # formatting
                 borderRowStart = baseLessonRowInSlot + baseSlotRowInSite + baseSiteRow
                 borderColStart = currentCol
                 borderRows = maxPersonRowInLesson
