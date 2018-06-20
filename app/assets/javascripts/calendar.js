@@ -260,7 +260,8 @@ var ready = function() {
     var scmi_history = false;
     var scmi_changes = false;
     var scmi_editSubject = false;
-    
+    var scmi_editEntry = false;
+
     //  var currentActivity = {};   declared globally within this module
 
     // You can only paste if a source for copy or move has been identified.
@@ -278,6 +279,7 @@ var ready = function() {
           scmi_paste = false;   //nothing can be pasted into the index space
           scmi_editComment = true;
           scmi_editSubject = true;
+          scmi_editEntry   = true;
         }else{  // in the main schedule area (lesson)
           scmi_copy = scmi_move = scmi_remove = scmi_addLesson = true;
           scmi_setStatus = scmi_setKind = scmi_editComment = scmi_editDetail = true;
@@ -315,6 +317,7 @@ var ready = function() {
     setscmi('context-editSubject', scmi_editSubject);
     setscmi('context-history', scmi_history);
     setscmi('context-changes', scmi_changes);
+    setscmi('context-editEntry', scmi_editEntry);
   }
   
   function setscmi(elementId, scmi){
@@ -567,6 +570,27 @@ var ready = function() {
           myurl = myhost + '/tutors/change/' + personId;
         } else if (personType == 's') {
           myurl = myhost + '/students/change/' + personId;
+        }
+        //console.log('myurl: ' + myurl);
+        window.open(myurl, '_blank');
+        //var win = window.open(myurl, '_blank');
+        //win.focus();
+        break;
+      case "editEntry":
+        // Edit tutor has been selected on an element.
+        // Want to open the tutor edit screen.
+        // url is "https//:myhost/tutors or students/n/edit"
+        // currentActivity['action'] = thisAction;
+        // currentActivity['move_ele_id'] =  thisEleId;
+        //console.log ("in changes");
+        //console.log(currentActivity);
+        var personType = getRecordType(thisEleId);
+        var personId = getRecordId(thisEleId);
+        var myurl = '';
+        if(personType == 't') {
+          myurl = myhost + '/tutors/' + personId + '/edit';
+        } else if (personType == 's') {
+          myurl = myhost + '/students/' + personId + '/edit';
         }
         //console.log('myurl: ' + myurl);
         window.open(myurl, '_blank');
