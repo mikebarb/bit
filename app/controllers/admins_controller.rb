@@ -2078,7 +2078,7 @@ class AdminsController < ApplicationController
     	             sheet_id: sheet_id,
     	             start_index: cs - 1,
                    end_index: cs - 1 + nc },
-  	      properties: { pixel_size: 160 },
+  	      properties: { pixel_size: passedpw },
   	      fields: "pixelSize"
         }
       }
@@ -2373,8 +2373,8 @@ else      # Not to test.
       # General formatting for the sheet
       myformat.push(googleVertAlign.call(1, 1, nil, nil, "TOP"))
       myformat.push(googleWrapText.call(1, 1, nil, nil, "WRAP"))
-      myformat.push(googleColWidthItem.call(1,100,260))
-#       myformat.push(googleColWidthItem.call(1,3,20))
+      myformat.push(googleColWidthItem.call(1,100,200))
+      myformat.push(googleColWidthItem.call(1,1,100))
 
 
 
@@ -2401,21 +2401,18 @@ else      # Not to test.
               if entry.tutors.respond_to?(:each) then
                 entry.tutors.sort_by {|obj| obj.pname }.each do |tutor|
                   if tutor then
-                    logger.debug "tutor: " + tutor.pname
                     thistutrole = tutor.tutroles.where(lesson_id: entry.id).first
-                    #logger.debug "thistutrole: " + thistutrole.inspect
                     if @tutorstatusforroster.include?(thistutrole.status) then       # tutors of interest
-                      logger.debug "*************processing tutor: " + tutor.pname
-                      logger.debug "currentTutorRowInLesson + baseLessonRowInSlot + baseSlotRowInSite: " +
-                                    currentTutorRowInLesson.to_s + ", " + baseLessonRowInSlot.to_s + ", " + baseSlotRowInSite.to_s
                       currentRow = currentTutorRowInLesson + baseLessonRowInSlot + baseSlotRowInSite + baseSiteRow
                       #<div class="tutorname tutorinline <%= set_class_status(tutor, entry) %>">tutor: <%= tutor.pname %></div>
-                      logger.debug "DataItem parameters: " + currentRow.to_s + ", " + currentCol.to_s + ", 1, 1, " + tutor.pname 
                       tutorData = tutor.pname
                       formatBreakPoints = []
                       formatBreakPoints.push(0)
                       formatBreakPoints.push(tutor.pname.length)
                       # tutor.subjects
+                      mysubjects = tutor.subjects
+                      mysubjects = mysubjects ? mysubjects : ""
+                      tutorData += ((mysubjects == "") ? "" : ("\n" + mysubjects)) 
                       # thistutrole.comment
                       # tutor.comment
                       # Status: thistutrole.status Kind: thistutrole.kind
