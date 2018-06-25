@@ -287,7 +287,7 @@ table, th, td {
   background-color: fuchsia; }
 
 .t-status-away .tutorname, #tutor-status-away {
-  background-color: gainsboro; }
+  background-color: dimgrey; }
 
 .t-status-undealtAbsent .tutorname {
   background-color: #ff0000; }
@@ -347,7 +347,7 @@ table, th, td {
   background-color: fuchsia; }
 
 .s-status-away, #student-status-away {
-  background-color: gainsboro; }
+  background-color: dimgrey; }
 
 .s-status-undealtAbsent {
   background-color: #FF0000; }
