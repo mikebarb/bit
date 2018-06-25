@@ -154,7 +154,7 @@
                        %><%= ' t-kind-'   + set_class_kind_f(  thistutrole)
                        %>" id=<%= cells["id_dom"] + "n" + entry.id.to_s.rjust(@sf, "0") + "t" + tutor.id.to_s.rjust(@sf, "0") %> >
                         <div style=persongroup>
-                          <div class="tutorname tutorinline ">tutor: <%= tutor.pname %></div>
+                          <div class="tutorname tutorinline "><%= tutor.pname %> (tut)</div>
                           <div class="tutorcomment comment tutorinline ">
                             <% #thistutrole = entry.tutroles.where(tutor_id: tutor.id).first %>
                             <div class="tutorsubjects"><%= tutor.subjects %>
@@ -189,14 +189,15 @@
                         %><%= ' s-kind-'   + set_class_kind_f(    thisrole) 
                         %>" id=<%= cells["id_dom"] + "n" + entry.id.to_s.rjust(@sf, "0") + "s" + student.id.to_s.rjust(@sf, "0") %> >
                         <div style=persongroup>
-                          <div class="studentname studentinline ">student: <%= student.pname %></div>
+                          <div class="studentname studentinline "><%= student.pname %><%= 
+                               student.year == nil ? "   " : student.year.rjust(3) %> (stu)</div>
                           <div class="studentcomment comment studentinline ">
                             <% #thisrole = entry.roles.where(student_id: student.id).first %>
                             <div class="studentsubjects"><%= student.sex == nil ? "" :
                                 student.sex.downcase.include?("female")?
                                 "(F) " : student.sex.downcase.include?("male")?
                                 "(M) " : "" 
-                                %> Yr: <%= student.year == nil ? "   " : student.year.rjust(3) %> | <%= student.study %></div>
+                                %><%= student.study %></div>
                             <div class="rolecomment"><%= thisrole.comment %></div>
                             <div class="studentcommentdetail"><%= student.comment %></div>
                             <div class="statusinfo">Status: <%= thisrole.status %> Kind: <%= thisrole.kind %></div>
