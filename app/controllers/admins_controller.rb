@@ -1952,9 +1952,9 @@ class AdminsController < ApplicationController
 
 # ************ delete all cells (rows) in a sheet ****************************
 # https://www.rubydoc.info/github/google/google-api-ruby-client/Google/Apis/SheetsV4/Request#delete_range-instance_method 
-    googleClearSheet = lambda{
+    googleClearSheet = lambda{|passed_sheet_id|
       requests = [{ delete_range:{
-        range: {sheet_id: sheet_id, start_row_index: 0, start_column_index: 0 },
+        range: {sheet_id: passed_sheet_id, start_row_index: 0, start_column_index: 0 },
         shift_dimension: "ROWS"}}]
       body = {requests: requests}
       result = service.batch_update_spreadsheet(spreadsheet_id, body, {})
@@ -1963,9 +1963,9 @@ class AdminsController < ApplicationController
 
 # ******** set vertical alignment using batch_update_spreadsheet ********
     # googleVertAlignAll.call(palign "TOP | MIDDLE | BOTTOM")
-    googleVertAlignAll = lambda{ |palign|
+    googleVertAlignAll = lambda{ |passed_sheet_id, palign|
       requests = [{repeat_cell: {
-                  	  range: {sheet_id: sheet_id,
+                  	  range: {sheet_id: passed_sheet_id,
                   	          start_row_index: 0,
                   	          start_column_index: 0
                   	  },
@@ -1989,9 +1989,9 @@ class AdminsController < ApplicationController
 # ******** update background colours using batch_update_spreadsheet ********
     # googleBGColourItem.call(rowStart, colStart, numberOfRows, numberOfCols,
     #                          colour[red_value, geen_value, blue_value])
-    googleBGColourItem = lambda{|rs, cs, nr, nc, pcolour|
+    googleBGColourItem = lambda{|passed_sheet_id, rs, cs, nr, nc, pcolour|
       {repeat_cell: {
-    	  range: {sheet_id: sheet_id,
+    	  range: {sheet_id: passed_sheet_id,
     	          start_row_index: rs - 1,
     	          end_row_index: rs - 1 + nr,
     	          start_column_index: cs - 1,
@@ -2003,9 +2003,9 @@ class AdminsController < ApplicationController
 # ******** set vertical alignment using batch_update_spreadsheet ********
     # googleVertAlign.call(rowStart, colStart, numberOfRows, numberOfCols,
     #                          palign "TOP | MIDDLE | BOTTOM")
-    googleVertAlign = lambda{|rs, cs, nr, nc, palign|
+    googleVertAlign = lambda{|passed_sheet_id, rs, cs, nr, nc, palign|
       result = {repeat_cell: {
-                  	  range: {sheet_id: sheet_id,
+                  	  range: {sheet_id: passed_sheet_id,
                   	          start_row_index: rs - 1,
                   	          start_column_index: cs - 1 },
                       cell:{user_entered_format: {vertical_alignment: palign} },
@@ -2024,9 +2024,9 @@ class AdminsController < ApplicationController
 # ******** set wrap text using batch_update_spreadsheet ********
     # googleWrapText.call(rowStart, colStart, numberOfRows, numberOfCols,
     #                          wrap "OVERFLOW_CELL | LEGACY_WRAP | CLIP | WRAP")
-    googleWrapText = lambda{|rs, cs, nr, nc, pwrap|
+    googleWrapText = lambda{|passed_sheet_id, rs, cs, nr, nc, pwrap|
       result = {repeat_cell: {
-                  	  range: {sheet_id: sheet_id,
+                  	  range: {sheet_id: passed_sheet_id,
                   	          start_row_index: rs - 1,
                   	          start_column_index: cs - 1 },
                       cell:{user_entered_format: {wrap_strategy: pwrap} },
@@ -2044,12 +2044,12 @@ class AdminsController < ApplicationController
 
 # ******** update borders using batch_update_spreadsheet ********
 # https://developers.google.com/sheets/api/samples/formatting
-    # googleborder.call(rowStart, colStart, numberOfRows, numberOfCols,
+    # googleborder.call(sheet_id, rowStart, colStart, numberOfRows, numberOfCols,
     #                          {left: color, right: .., top: .., bottom: ..})
-    googleborder = lambda{|rs, cs, nr, nc, pcolour, passedStyle |
+    googleborder = lambda{|passed_sheet_id, rs, cs, nr, nc, pcolour, passedStyle |
       {
         update_borders: {
-    	      range:  { sheet_id: sheet_id,
+    	      range:  { sheet_id: passed_sheet_id,
           	          start_row_index: rs - 1,
           	          end_row_index: rs - 1 + nr,
           	          start_column_index: cs - 1,
@@ -2071,11 +2071,11 @@ class AdminsController < ApplicationController
 
     # googlecolwidthitem.call(colStart, numberOfCols,
     #                          width_pixels)
-    googleColWidthItem = lambda{|cs, nc, passedpw|
+    googleColWidthItem = lambda{|passed_sheet_id, cs, nc, passedpw|
       {
         update_dimension_properties: {
           range: { dimension: "COLUMNS",
-    	             sheet_id: sheet_id,
+    	             sheet_id: passed_sheet_id,
     	             start_index: cs - 1,
                    end_index: cs - 1 + nc },
   	      properties: { pixel_size: passedpw },
@@ -2087,11 +2087,11 @@ class AdminsController < ApplicationController
 # ******** autoresize columns using batch_update_spreadsheet ********
 # https://developers.google.com/sheets/api/samples/rowcolumn 
 
-    # googlecolautowidthitem.call(colStart, numberOfCols)
-    googleColAutowidthItem = lambda{|cs, nc|
+    # googlecolautowidthitem.call(passed_sheet_id, colStart, numberOfCols)
+    googleColAutowidthItem = lambda{|passed_sheet_id, cs, nc|
       {
         auto_resize_dimensions: { dimensions: { dimension: "COLUMNS",
-                                      	        sheet_id: sheet_id,
+                                      	        sheet_id: passed_sheet_id,
                                       	        start_index: cs - 1,
                                                 end_index: cs - 1 + nc }
                                 }
@@ -2117,8 +2117,8 @@ class AdminsController < ApplicationController
 # ************ update values using batch_update_values ****************************
     # googlebatchdataitem.call(rowStart, colStart, numberOfRows, numberOfCols,
     #                          values[[]])
-    googleBatchDataItem = lambda{|rs, cs, nr, nc, values|
-      range = "#{sheet_name}!" + e[cs - 1] + rs.to_s + ":" +
+    googleBatchDataItem = lambda{|passed_sheet_name, rs, cs, nr, nc, values|
+      range = "#{passed_sheet_name}!" + e[cs - 1] + rs.to_s + ":" +
                                e[cs + nc - 1] + (rs + nr).to_s
       {
         range: range,
@@ -2142,11 +2142,11 @@ class AdminsController < ApplicationController
 # ************ text format run using batch_update_values ****************************
     # googlebatchTextFormatRunItem.call(rowStart, colStart, 
     #                                   text, breakPointToChangeFormat[])
-    googleTextFormatRun = lambda{|rs, cs, myText, myBreaks|
+    googleTextFormatRun = lambda{|passed_sheet_id, rs, cs, myText, myBreaks|
       result = 
         {
             update_cells: {
-          	  start: {sheet_id: sheet_id,
+          	  start: {sheet_id: passed_sheet_id,
           	          row_index: rs - 1,
           	          column_index: cs - 1
           	  },
@@ -2210,22 +2210,22 @@ if testing then
 
 #--------------------- Test Data -------------------------------
 # Clear the sheet
-    googleClearSheet.call
+    googleClearSheet.call(sheet_id)
     
 # Some test formatting
     batchitems = []
 
-    batchitems.push(googleBGColourItem.call(1,1,1,2,[0,1,0]))
-    batchitems.push(googleBGColourItem.call(6,1,1,2,[1,0,0]))
-    batchitems.push(googleBGColourItem.call(7,1,1,2,[0,0,1]))
+    batchitems.push(googleBGColourItem.call(sheet_id, 1,1,1,2,[0,1,0]))
+    batchitems.push(googleBGColourItem.call(sheet_id, 6,1,1,2,[1,0,0]))
+    batchitems.push(googleBGColourItem.call(sheet_id, 7,1,1,2,[0,0,1]))
 
-    batchitems.push(googleborder.call(2,1,2,2, [0,0,0], "SOLID_THICK"))
+    batchitems.push(googleborder.call(sheet_id, 2,1,2,2, [0,0,0], "SOLID_THICK"))
     
-    batchitems.push(googleVertAlign.call(2,1,2,2, "TOP"))
+    batchitems.push(googleVertAlign.call(sheet_id,2,1,2,2, "TOP"))
 
-    batchitems.push(googleWrapText.call(2,1,2,2, "WRAP"))
+    batchitems.push(googleWrapText.call(sheet_id, 2,1,2,2, "WRAP"))
 
-    batchitems.push(googleColWidthItem.call(1,3,160))
+    batchitems.push(googleColWidthItem.call(sheet_id, 1,3,160))
     
     googleBatchUpdate.call(batchitems)    
 
@@ -2235,13 +2235,13 @@ if testing then
 
 # Some test value data - batch update
     mydata = []
-    mydata.push(googleBatchDataItem.call(2,1,2,2,
+    mydata.push(googleBatchDataItem.call(sheet_name,2,1,2,2,
       [
        ["spreadsheet_values_batchUpdate", "test data"],
        ["spreadsheet_values_batchUpdate", "third row"]
       ])
     )
-    mydata.push(googleBatchDataItem.call(6,1,2,2,
+    mydata.push(googleBatchDataItem.call(sheet_name,6,1,2,2,
       [
        ["spreadsheet_values_batchUpdate2", "test data"],
        ["spreadsheet_values_batchUpdate2", "seventh row"]
@@ -2251,12 +2251,12 @@ if testing then
 
     #Note: need to do values first so autoformat works.
     batchitems = []  # reset
-    batchitems.push(googleColAutowidthItem.call(1, 1))
+    batchitems.push(googleColAutowidthItem.call(sheet_id, 1, 1))
     googleBatchUpdate.call(batchitems)    
     
     logger.debug "about to try out googleTextFormatRun"
     batchitems = []
-    batchitems.push(googleTextFormatRun.call(10,2, "123456789\n1234567890123456789", [0,10]))
+    batchitems.push(googleTextFormatRun.call(sheet_id, 10,2, "123456789\n1234567890123456789", [0,10]))
     googleBatchUpdate.call(batchitems)    
     logger.debug "done googleTextFormatRun"
 
@@ -2294,7 +2294,7 @@ else      # Not to test.
     #@cal = calendar_read_display1f(@sf, mystartdate, myenddate, {})
     @cal = calendar_read_display1f(@sf, @options)
     # Clear the first sheet - the rest are deleted.
-    googleClearSheet.call   
+    googleClearSheet.call(sheet_id)
     #googleVertAlignAll.call("TOP")
 
     # kinds will govern the background colours for tutors and students.
@@ -2337,10 +2337,19 @@ else      # Not to test.
     currentCol = 1
     currentRow = 1
     baseSiteRow  = 1                        # first site 
+    baseSiteRowAll  = 1                     # for the 'all' tab 
     locationindex = 0                       # index into the sites
     
     # to compress or not - remove unused days
     @compress = true
+
+    # have an all tab in google sheets to show all sites in that page
+    # this is for tutors to seach for their name across all sites.
+    # We still have a separate tab for each site
+    googleSetSheetTitle.call("All")
+    mysheetproperties[locationindex]['title'] = "All"
+    sheet_name_all = mysheetproperties[locationindex]['title']
+    sheet_id_all   = mysheetproperties[locationindex]['sheet_id']
 
     @cal.each do |location, calLocation|    # step through sites
       if @compress   # remove days with no valid slot for this site
@@ -2353,34 +2362,40 @@ else      # Not to test.
         end 
       end
 
+      mydata   = []                           # google batch data writter at end of processing a site
+      myformat = []
+
       # make separate sheet entry for each site
-      baseSiteRow = 1                       # reset when new sheet for each site.
-      if locationindex == 0                 # first site
-        googleSetSheetTitle.call(location)
-        mysheetproperties[locationindex]['title'] = location
-      else
-        mysheetproperties = googleAddSheet.call(location, mysheetproperties)       # add a sheet
+      baseSiteRow = 1               # reset when new sheet for each site.
+                                    # baseSiteRowAll continues across all sites.
+      if locationindex == 0         # set up the all tab - contains all sites
+      #  googleSetSheetTitle.call(location)
+      #  mysheetproperties[locationindex]['title'] = location
+      # General formatting for the 'all' sheet - done once
+        myformat.push(googleVertAlign.call(sheet_id_all, 1, 1, nil, nil, "TOP"))
+        myformat.push(googleWrapText.call(sheet_id_all, 1, 1, nil, nil, "WRAP"))
+        myformat.push(googleColWidthItem.call(sheet_id_all, 1,100,200))
+        myformat.push(googleColWidthItem.call(sheet_id_all, 1,1,100))
       end
+      # now have a sheet for each site.
+      mysheetproperties = googleAddSheet.call(location, mysheetproperties)       # add a sheet
       # mysheets = result.sheets
       # mysheetproperties = mysheets.map{|o| {'index'    => o.properties.index, 
       #                                       'sheet_id' => o.properties.sheet_id,
       #                                       'title'    => o.properties.title } }
+      locationindex += 1
       sheet_name = mysheetproperties[locationindex]['title']
       sheet_id   = mysheetproperties[locationindex]['sheet_id']
-      locationindex += 1
-      mydata   = []                           # google batch data writter at end of processing a site
-      myformat = []
-      # General formatting for the sheet
-      myformat.push(googleVertAlign.call(1, 1, nil, nil, "TOP"))
-      myformat.push(googleWrapText.call(1, 1, nil, nil, "WRAP"))
-      myformat.push(googleColWidthItem.call(1,100,200))
-      myformat.push(googleColWidthItem.call(1,1,100))
-
-
+      # General formatting for each site sheet
+      myformat.push(googleVertAlign.call(sheet_id, 1, 1, nil, nil, "TOP"))
+      myformat.push(googleWrapText.call(sheet_id, 1, 1, nil, nil, "WRAP"))
+      myformat.push(googleColWidthItem.call(sheet_id, 1,100,200))
+      myformat.push(googleColWidthItem.call(sheet_id, 1,1,100))
 
       #<table id=site-<%= location %> >
       baseSlotRowInSite = 0                   # first slot
-      currentRow = baseSlotRowInSite + baseSiteRow
+      currentRow    = baseSlotRowInSite + baseSiteRow
+      currentRowAll = baseSlotRowInSite + baseSiteRowAll
       calLocation.each do |rows|          # step through slots containing multiple days (fist row is actually a header row!)
         timeData = rows[0]["value"] 
         #<tr>
@@ -2403,7 +2418,9 @@ else      # Not to test.
                   if tutor then
                     thistutrole = tutor.tutroles.where(lesson_id: entry.id).first
                     if @tutorstatusforroster.include?(thistutrole.status) then       # tutors of interest
-                      currentRow = currentTutorRowInLesson + baseLessonRowInSlot + baseSlotRowInSite + baseSiteRow
+                      currentRow    = currentTutorRowInLesson + baseLessonRowInSlot + baseSlotRowInSite + baseSiteRow
+                      currentRowAll = currentTutorRowInLesson + baseLessonRowInSlot + baseSlotRowInSite + baseSiteRowAll
+                      
                       #<div class="tutorname tutorinline <%= set_class_status(tutor, entry) %>">tutor: <%= tutor.pname %></div>
                       tutorData = tutor.pname
                       formatBreakPoints = []
@@ -2421,11 +2438,14 @@ else      # Not to test.
                       tutorData += ((mykind == "") ? "" : ("\n" + mykind)) 
                       mycolour = kindcolours['tutor-kind-' + mykind]
                       mycolour = mycolour.map {|o| o/255.0} 
-                      myformat.push(googleTextFormatRun.call(currentRow, currentCol,
+                      myformat.push(googleTextFormatRun.call(sheet_id,     currentRow,    currentCol,
+                                                             tutorData, formatBreakPoints))
+                      myformat.push(googleTextFormatRun.call(sheet_id_all, currentRowAll, currentCol,
                                                              tutorData, formatBreakPoints))
                       #mydata.push(googleBatchDataItem.call(currentRow, currentCol, 1, 1, [[tutorData]]))
-                      #myformat.push(googleBGColourItem.call(currentRow, currentCol, 1, 1, [1,0,0]))
-                      myformat.push(googleBGColourItem.call(currentRow, currentCol, 1, 1, mycolour))
+                      #myformat.push(googleBGColourItem.call(sheet_id, currentRow, currentCol, 1, 1, [1,0,0]))
+                      myformat.push(googleBGColourItem.call(sheet_id,     currentRow,    currentCol, 1, 1, mycolour))
+                      myformat.push(googleBGColourItem.call(sheet_id_all, currentRowAll, currentCol, 1, 1, mycolour))
                       currentTutorRowInLesson += 1
                     end       # tutors of interest
                   end
@@ -2450,7 +2470,9 @@ else      # Not to test.
                       logger.debug "currentStudentInLesson: " + currentStudentInLesson.inspect
                       logger.debug "currentStudentRowInLesson + baseLessonRowInSlot + baseSlotRowInSite: " +
                                     currentStudentRowInLesson.to_s + ", " + baseLessonRowInSlot.to_s + ", " + baseSlotRowInSite.to_s
-                      currentRow = currentStudentRowInLesson + baseLessonRowInSlot + baseSlotRowInSite + baseSiteRow
+                      currentRow    = currentStudentRowInLesson + baseLessonRowInSlot + baseSlotRowInSite + baseSiteRow
+                      currentRowAll = currentStudentRowInLesson + baseLessonRowInSlot + baseSlotRowInSite + baseSiteRowAll
+                      
                       #<div class="studentname studentinline <%= set_class_status(student, entry) %>">student: <%= student.pname %></div>
                       logger.debug "DataItem parameters: " + currentRow.to_s + ", " + currentCol.to_s + ", 1, 1, " + student.pname 
                       formatBreakPoints = []
@@ -2472,14 +2494,17 @@ else      # Not to test.
                       mykind = mykind ? mykind : ""
                       mycolour = kindcolours['student-kind-' + mykind]
                       mycolour = mycolour.map {|o| o/255.0}
-                      #myformat.push(googleTextFormatRun.call(currentRow, currentCol + 1,
+                      #myformat.push(googleTextFormatRun.call(sheet_id, currentRow, currentCol + 1,
                       #                                       studentData, formatBreakPoints))
                       colOffset = 1 + (currentStudentInLesson % 2)
-                      myformat.push(googleTextFormatRun.call(currentRow, currentCol + colOffset,
+                      myformat.push(googleTextFormatRun.call(sheet_id,     currentRow,    currentCol + colOffset,
+                                                             studentData, formatBreakPoints))
+                      myformat.push(googleTextFormatRun.call(sheet_id_all, currentRowAll, currentCol + colOffset,
                                                              studentData, formatBreakPoints))
                       #mydata.push(googleBatchDataItem.call(currentRow, currentCol + 1, 1, 1, [[studentData]]))
-                      #myformat.push(googleBGColourItem.call(currentRow, currentCol + 1, 1, 1, [0,0.5,0]))
-                      myformat.push(googleBGColourItem.call(currentRow, currentCol + colOffset, 1, 1, mycolour))
+                      #myformat.push(googleBGColourItem.call(sheet_id, currentRow, currentCol + 1, 1, 1, [0,0.5,0]))
+                      myformat.push(googleBGColourItem.call(sheet_id,     currentRow,    currentCol + colOffset, 1, 1, mycolour))
+                      myformat.push(googleBGColourItem.call(sheet_id_all, currentRowAll, currentCol + colOffset, 1, 1, mycolour))
                       
                       #byebug 
                       currentStudentRowInLesson += 1 if (currentStudentInLesson % 2) == 1  # odd
@@ -2508,25 +2533,30 @@ else      # Not to test.
                 mylessoncomment = ''
                 if entry.comments != nil && entry.comments != ""
                   mylessoncomment = entry.comments
-                  mydata.push(googleBatchDataItem.call(currentRow,currentCol+3,1,1,[[mylessoncomment]]))
+                  mydata.push(googleBatchDataItem.call(sheet_name,    currentRow,   currentCol+3,1,1,[[mylessoncomment]]))
+                  mydata.push(googleBatchDataItem.call(sheet_name_all,currentRowAll,currentCol+3,1,1,[[mylessoncomment]]))
                 end
                 # formatting
-                borderRowStart = baseLessonRowInSlot + baseSlotRowInSite + baseSiteRow
+                borderRowStart    = baseLessonRowInSlot + baseSlotRowInSite + baseSiteRow
+                borderRowStartAll = baseLessonRowInSlot + baseSlotRowInSite + baseSiteRowAll
                 borderColStart = currentCol
                 borderRows = maxPersonRowInLesson
                 borderCols = 4    # one tutor col and 2 student cols + lesson commment col.
                 logger.debug "border parameters: " + borderRowStart.to_s + ", " + borderColStart.to_s + ", "+ borderRows.to_s + ", " + borderCols.to_s
-                myformat.push(googleborder.call(borderRowStart, borderColStart, borderRows, borderCols, [0, 0, 0], "SOLID_THICK"))
-                myformat.push(googleWrapText.call(borderRowStart, borderColStart, borderRows, borderCols, "WRAP"))
+                myformat.push(googleborder.call(sheet_id,     borderRowStart,    borderColStart, borderRows, borderCols, [0, 0, 0], "SOLID_THICK"))
+                myformat.push(googleborder.call(sheet_id_all, borderRowStartAll, borderColStart, borderRows, borderCols, [0, 0, 0], "SOLID_THICK"))
+                myformat.push(googleWrapText.call(sheet_id,     borderRowStart,    borderColStart, borderRows, borderCols, "WRAP"))
+                myformat.push(googleWrapText.call(sheet_id_all, borderRowStartAll, borderColStart, borderRows, borderCols, "WRAP"))
 
 
                 # want to put timeslot time (timeData) in first column of each lesson row.
                 #byebug
                 for i in borderRowStart..borderRowStart+borderRows-1 do
-                  mydata.push(googleBatchDataItem.call(i,1,1,1,[[timeData]]))
-
+                  mydata.push(googleBatchDataItem.call(sheet_name,    i,1,1,1,[[timeData]]))
                 end
-
+                for i in borderRowStartAll..borderRowStartAll+borderRows-1 do
+                  mydata.push(googleBatchDataItem.call(sheet_name_all,i,1,1,1,[[timeData]]))
+                end
               end
               ###baseLessonRowInSlot += maxPersonRowInLesson
               baseLessonRowInSlot += maxPersonRowInLesson
@@ -2534,11 +2564,13 @@ else      # Not to test.
               end     # end looping sorted lessons within a day/slot
             end    # responds to cell["values"]
           elsif cells.key?("value") then     # just holds cell info (not lessons) to be shown
-            currentRow = baseSlotRowInSite + baseSiteRow
+            currentRow    = baseSlotRowInSite + baseSiteRow
+            currentRowAll = baseSlotRowInSite + baseSiteRowAll
             #byebug
             #timeData = cells["value"].to_s #if currentCol == 1 &&
                                            #   cells["value"] != nil  # pick up the time
-            mydata.push(googleBatchDataItem.call(currentRow,currentCol,1,1,[[cells["value"].to_s]]))
+            mydata.push(googleBatchDataItem.call(sheet_name,    currentRow,   currentCol,1,1,[[cells["value"].to_s]]))
+            mydata.push(googleBatchDataItem.call(sheet_name_all,currentRowAll,currentCol,1,1,[[cells["value"].to_s]]))
           end
           #</td>
           currentCol += currentCol == 1 ? 1 : 4       # first column is title, rest have adjacent tutors & students.
@@ -2559,11 +2591,11 @@ else      # Not to test.
       Rails.logger.level = holdRailsLoggerLevel
 
       #</table>
-      
-      baseSiteRow += baseSlotRowInSite + 1    # +1 adds blank row between sites
+      baseSiteRow    += baseSlotRowInSite + 1    # +1 adds blank row between sites
+      baseSiteRowAll += baseSlotRowInSite + 1    # +1 adds blank row between sites
       #<br>
-    end           # end looping sites
-end
+    end       # end looping sites
+end           # end of testing option.
   end
 
 
