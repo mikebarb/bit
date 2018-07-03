@@ -30,7 +30,7 @@
   <div>
     Display Format:<br>
     <%= check_box_tag(:compress) %>
-    <%= label_tag(:compress, "Display only the days in a site that has slots.") %>
+    <%= label_tag(:compress, "Compressed Format - Display only the days in a site that has slots.") %>
   </div>
   <br>
   -------------------- For Rosters or Ratios -------------------------
@@ -40,8 +40,10 @@
     <%= label_tag(:select_roster_default, "default settings for roster and ratio display") %><br>
   </div>
   Note: <br>
-  Status default settings include 'attended' & 'scheduled' + 'notified' for tutors.<br>
-  When displaying ratios, the default settings for tutor "kinds" excludes 'onCall' and 'onSetup.'
+  Status default settings include -
+  <li>for students: 'attended', 'scheduled', 'deal', 'absent'</li>
+  <li>for tutors  : 'attended', 'notified', 'confirmed', 'scheduled', 'deal'<br>
+  When displaying ratios, the default settings for tutor "kinds" excludes 'onCall' and 'onSetup.'</li>
   <br><br>
   <div class="select_firstaid">
     Display tutors with first aid certification<br>
@@ -52,9 +54,9 @@
   <div class="select_none">
     Disable display of tutors or students<br>
     <%= check_box_tag(:select_tutor_none) %>
-    <%= label_tag(:select_tutor_none, "For TUTORS, display no tutors in roster and ratio display:") %><br>
+    <%= label_tag(:select_tutor_none, "DON'T display TUTORS in roster and ratio display:") %><br>
     <%= check_box_tag(:select_student_none) %>
-    <%= label_tag(:select_student_none, "For STUDENTS, display no students in roster and ratio display:") %><br>
+    <%= label_tag(:select_student_none, "DON'T display STUDENTS in roster and ratio display:") %><br>
   </div>
   <br>
   <div class="select_statuses">

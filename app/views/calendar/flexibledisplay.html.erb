@@ -10,14 +10,15 @@
     %>
   
     <div id="options" class="hideme">
-      <%= @options.inspect %>
+      <%= @options.to_json %>
     </div>
+    
+    <div id=refreshthis>Refresh Me</div>
 
     <div id="selectshows">
         <div class="checklisttutors">
           <input id=hidetutors class=selectshow onclick="selectshows()" type="checkbox" >Tutors
           <input id=hidestudents class=selectshow onclick="selectshows()" type="checkbox" >Students;
-          
           Hide Comments=>(<input id=hidecomments class=selectshow onclick="selectshows()" type="checkbox" >All;
         </div>
         <div class=checklistlesson>
@@ -29,6 +30,11 @@
         Personal=>(<input id=hidetutorcomments class=selectshow onclick="selectshows()" type="checkbox" >tutors,
         <input id=hidestudentcomments class=selectshow onclick="selectshows()" type="checkbox" >students )
         </div>)
+        
+        <div class=checklistlessons>
+        Hide=>(<input id=hidelessonsOnsetup class=selectshow onclick="selectshows()" type="checkbox" >onSetup,
+        <input id=hidelessonsOncall class=selectshow onclick="selectshows()" type="checkbox" >onCall )
+        </div>
         
         <br>
         <input id=enableQuickStatus type="checkbox" > Enable quick setting of status to
@@ -43,7 +49,7 @@
         </select>
         <br>
         <% listofsites.each_with_index do |site, i| %>
-        <div class=<%= "selectSite" + site %>>
+        <div class="<%= "selectSite" + site %> jumptosite">
         <input id=<%= 'hide' + site %> class="selectshow selectsite" onclick="selectshows()" type="checkbox" ><%= site + "  " %> 
         </div>
         <% end %>

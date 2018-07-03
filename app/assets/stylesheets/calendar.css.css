@@ -356,7 +356,7 @@ table, th, td {
   background-color: #666666; }
 
 .s-status-absent, #student-status-absent {
-  background-color: #666666; }
+  background-color: #CC0000; }
 
 .s-kind-first, #student-kind-first {
   background-color: #B6D7A8; }

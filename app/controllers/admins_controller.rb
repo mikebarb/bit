@@ -50,7 +50,11 @@ class AdminsController < ApplicationController
     mystartdeletedate = deletedays_params["from"].to_date
     myenddeletedate = deletedays_params["from"].to_date + deletedays_params["num_days"].to_i
     #@cal = calendar_read_display2(sf, mystartdeletedate, myenddeletedate)
-    @cal = calendar_read_display1f(sf, mystartdeletedate, myenddeletedate, {})
+    @options = Hash.new
+    @options[:startdate] = mystartdeletedate
+    @options[:enddate]   = myenddeletedate
+    #@cal = calendar_read_display1f(sf, mystartdeletedate, myenddeletedate, {})
+    @cal = calendar_read_display1f(sf, @options)
     if @cal.empty?
       # these days are empty - show error and return
       flash[:notice] = "These days are empty - nothing to delete!!!"
@@ -183,14 +187,21 @@ class AdminsController < ApplicationController
     mystartcopytodate = copydays_params["to"].to_date
     myendcopytodate = copydays_params["to"].to_date + copydays_params["num_days"].to_i
     #@cal = calendar_read_display2(sf, mystartcopytodate, myendcopytodate)
-    @cal = calendar_read_display1f(sf, mystartcopytodate, myendcopytodate, {})
+    #@cal = calendar_read_display1f(sf, mystartcopytodate, myendcopytodate, {})
+    @options = Hash.new
+    @options[:startdate] = mystartcopytodate
+    @options[:enddate]   = myendcopytodate
+    @cal = calendar_read_display1f(sf, @options)
     unless @cal.empty?
       # destination is not empty - show error and return
       flash[:notice] = "Destination days are not empty - will not copy!!!"
       redirect_to copydaysedit_path(copydays_params)
     end
     #@cal = calendar_read_display2(sf, mystartcopyfromdate, myendcopyfromdate)
-    @cal = calendar_read_display1f(sf, mystartcopyfromdate, myendcopyfromdate, {})
+    #@cal = calendar_read_display1f(sf, mystartcopyfromdate, myendcopyfromdate, {})
+    @options[:startdate] = mystartcopyfromdate
+    @options[:enddate]   = myendcopyfromdate
+    @cal = calendar_read_display1f(sf, @options)
     if @cal.empty?
       # source is empty - show error and return
       flash[:notice] = "Source days are empty - nothing to copy!!!"
@@ -2362,16 +2373,16 @@ else      # Not to test.
         end 
       end
 
-      mydata   = []                           # google batch data writter at end of processing a site
+      mydata   = []     # google batch data writter at end of processing a site
       myformat = []
 
       # make separate sheet entry for each site
       baseSiteRow = 1               # reset when new sheet for each site.
                                     # baseSiteRowAll continues across all sites.
       if locationindex == 0         # set up the all tab - contains all sites
-      #  googleSetSheetTitle.call(location)
-      #  mysheetproperties[locationindex]['title'] = location
-      # General formatting for the 'all' sheet - done once
+        #  googleSetSheetTitle.call(location)
+        #  mysheetproperties[locationindex]['title'] = location
+        # General formatting for the 'all' sheet - done once
         myformat.push(googleVertAlign.call(sheet_id_all, 1, 1, nil, nil, "TOP"))
         myformat.push(googleWrapText.call(sheet_id_all, 1, 1, nil, nil, "WRAP"))
         myformat.push(googleColWidthItem.call(sheet_id_all, 1,100,200))

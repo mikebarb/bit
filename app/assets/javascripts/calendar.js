@@ -18,10 +18,43 @@ var ready = function() {
   var validTutorStatuses = ["Away", "Absent", "Deal", "Scheduled", "Notified", "Confirmed", "Attended"];
   var validStudentStatuses = ["Away", "Absent", "Deal", "Attended", "Scheduled"];
 
-
   // want to set defaults on some checkboxes on page load
+  var flagViewOptions = false;
+  if(document.getElementById('options')){
+    var passedOptions     = document.getElementById('options').innerHTML;
+    var passedOptionsJson = JSON.parse(document.getElementById('options').innerHTML);
+    console.log(passedOptions);
+    console.log(passedOptionsJson);
+    for(var key in passedOptionsJson){            // loop json through the keys
+      if(passedOptionsJson.hasOwnProperty(key)){
+        if(key.indexOf("v_") == 0){               // initial chars in key
+          flagViewOptions = true;
+          console.log("passed: " + key + ' => ' + passedOptionsJson[key]);
+          var thisEleId = key.substr(2);
+          var thisEle = document.getElementById(thisEleId);
+          if(thisEle){                            // element is present on this page
+            if(thisEle.type == "checkbox"){
+              thisEle.checked = (passedOptionsJson[key] == "true");
+              //if(passedOptionsJson[key] == "true"){
+              //  thisEle.checked = true;
+              //}else{
+              //  thisEle.checked = false;
+              //}
+            }else if(thisEle.id == 'quickStatusValue'){
+              thisEle.value = passedOptionsJson[key];
+            }else if(thisEle.id == 'personInput'){
+              thisEle.value = passedOptionsJson[key];
+              filterPeople();
+            }
+          }
+        }
+      }
+    }
+  }
+
   if (document.getElementById("hidetutors") &&
-      document.getElementById("hidestudents")){
+      document.getElementById("hidestudents") &&
+      flagViewOptions == false ){
     //document.getElementById("hidetutors").checked = true;
     //document.getElementById("hidestudents").checked = true;
     
@@ -29,11 +62,74 @@ var ready = function() {
     if(showList.length > 0){
       showList[0].checked = true;
     }
-    
-    selectshows();  // call the functions that invokes the checkbox values.
+  }
+  selectshows();  // call the functions that invokes the checkbox values.
+
+  $("ui-draggable");
+  
+  // scroll to same location when user refreshes the screen
+  // using the refresh button that has been added to the flexible display.
+  // https://stackoverflow.com/questions/17642872/refresh-page-and-keep-scroll-position
+
+  if(document.getElementById('refreshthis')){
+    document.getElementById('refreshthis').onclick = function() {
+      var passedOptions = JSON.parse(document.getElementById('options').innerHTML);
+      passedOptions.refresh = true;  // let them know this is our refresh
+      // Now find the checked checkboxes
+      var eleAllCheckboxes = document.getElementsByClassName('selectshow');
+      for(var i=0;i<eleAllCheckboxes.length;i++){
+        var mykey   = 'v_' + eleAllCheckboxes[i].id;
+        var myvalue = eleAllCheckboxes[i].checked;
+        passedOptions[mykey] = myvalue;
+      }
+      passedOptions['v_' + 'enableQuickStatus'] = 
+                    document.getElementById('enableQuickStatus').checked;
+      passedOptions['v_' + 'quickStatusValue'] = 
+                    document.getElementById('quickStatusValue').value;
+      passedOptions['v_' + 'personInput'] = 
+                    document.getElementById('personInput').value;
+
+      var myurl = window.location.origin + window.location.pathname;
+      var currentYOffset = window.pageYOffset;  // save current page postion.
+      setCookie("jumpToScrollPostion", currentYOffset, 1);
+      var queryString = Object.keys(passedOptions).map(function(key) {
+                          return encodeURIComponent(key) + '=' +
+                                 encodeURIComponent(passedOptions[key]);
+                        }).join('&');
+      myurl = myurl + '?' + queryString;
+      window.open(myurl,"_self");
+    };
   }
   
-  $("ui-draggable");
+  // check if we should jump to postion.
+  var jumpTo = getCookie('jumpToScrollPostion');
+  if(jumpTo != "") {
+    window.scrollTo(0, jumpTo);
+    setCookie('jumpToScrollPostion', '', 0);  // and delete cookie so we don't jump again.
+  }
+
+  function setCookie(cname, cvalue, exdays) {
+    var d = new Date();
+    d.setTime(d.getTime() + (exdays*24*60*60*1000));
+    var expires = "expires="+ d.toUTCString();
+    document.cookie = cname + "=" + cvalue + ";" + expires + ";path=/";
+  }
+  
+  function getCookie(cname) {
+    var name = cname + "=";
+    var decodedCookie = decodeURIComponent(document.cookie);
+    var ca = decodedCookie.split(';');
+    for(var i = 0; i <ca.length; i++) {
+        var c = ca[i];
+        while (c.charAt(0) == ' ') {
+            c = c.substring(1);
+        }
+        if (c.indexOf(name) == 0) {
+            return c.substring(name.length, c.length);
+        }
+    }
+    return "";
+  }
   
 //------------------------ Context Menu -----------------------------
 // This is the context menu for the lesson,
@@ -76,7 +172,15 @@ var ready = function() {
   $('.context-menu__choice').mouseleave(function(){
     $(this).css('background-color', 'white');
   });
-
+  
+  $('.jumptosite').click(function(){
+    var thisInputEle = this.firstElementChild;
+    if(thisInputEle.checked == true){
+      var thisSiteId = 'site-' + thisInputEle.id.substr(4); 
+      document.getElementById(thisSiteId).scrollIntoView(true);
+      scrollBy(0, -500);
+    }
+  });
 
   // Initialise our application's code.
   // Made modular so that you have more control over initialising them. 
@@ -277,7 +381,8 @@ var ready = function() {
           // this element in student and tutor list
           scmi_copy = true;
           scmi_paste = false;   //nothing can be pasted into the index space
-          scmi_editComment = true;
+          //scmi_editComment = true;
+          scmi_editDetail = true; // consistency in context menu naming for user.
           scmi_editSubject = true;
           scmi_editEntry   = true;
         }else{  // in the main schedule area (lesson)
@@ -2104,7 +2209,7 @@ var ready = function() {
             }
 
             //if (mylessonstatus > movelessonstatus){
-            console.log (movelessonstatus + " " + movelessontutorname + " " + mylessonstatus + " " + mylessontutorname)
+            console.log (movelessonstatus + " " + movelessontutorname + " " + mylessonstatus + " " + mylessontutorname);
             var sortresult = lessonsortorder(movelessonstatus, movelessontutorname, mylessonstatus, mylessontutorname );
             console.log ("sortresult: " + sortresult);
             if (sortresult > -1){
@@ -2184,112 +2289,48 @@ var ready = function() {
 //--------- Filter by name functions for the tutors and students -----------
 
 
-  $("#personInput").keyup(function filterPeople() {
-      console.log("filterPeople called");
-      var filter, eleIndexTutors, eleTutorNames, eleIndexStudents, eleStudentNames, i, eleAncestor;
-      filter = document.getElementById("personInput").value.toUpperCase();
-      //console.log("filter: " + filter);
-      eleIndexTutors = document.getElementById("index-tutors");
-      //console.log(eleIndexTutors);
-      if(! eleIndexTutors.classList.contains("hideme")){
-        eleTutorNames = eleIndexTutors.getElementsByClassName("tutorname");
-        //console.log(eleTutorNames);
-        for (i = 0; i < eleTutorNames.length; i++) {
-            var tutorNameText = eleTutorNames[i].innerHTML.substr(7).toUpperCase();
-            //console.log("tutorNameText: " + tutorNameText);
-            eleAncestor = findAncestor (eleTutorNames[i], "tutor");
-            //console.log(eleAncestor);
-            if (tutorNameText.indexOf(filter) > -1) {
-                eleAncestor.style.display = "";
-                //console.log("show");
-            } else {
-                eleAncestor.style.display = "none";
-                //console.log("hide");
-            }
-        }
-      }
-      console.log("about to process students");
-      eleIndexStudents = document.getElementById("index-students");
-      //console.log(eleIndexStudents);
-      if(! eleIndexStudents.classList.contains("hideme")){
-        eleStudentNames = eleIndexStudents.getElementsByClassName("studentname");
-        //console.log(eleStudentNames);
-        for (i = 0; i < eleStudentNames.length; i++) {
-            var studentNameText = eleStudentNames[i].innerHTML.substr(9).toUpperCase();
-            //console.log("studentNameText: " + studentNameText);
-            eleAncestor = findAncestor (eleStudentNames[i], "student");
-            //console.log(eleAncestor);
-            if (studentNameText.indexOf(filter) > -1) {
-                eleAncestor.style.display = "";
-                //console.log("show");
-            } else {
-                eleAncestor.style.display = "none";
-                //console.log("hide");
-            }
-        }
-      }
-  });
-
-
-  function findAncestor (el, cls) {
-    while ((el = el.parentElement) && !el.classList.contains(cls));
-    return el;
-  }
-
-/*
-  $("#personInput").keyup(filterPeople());
-
-  function filterPeople() {
-      console.log("filterPeople called");
-      var filter, eleIndexTutors, eleTutorNames, eleIndexStudents, eleStudentNames, i, eleAncestor;
-      filter = document.getElementById("personInput").value.toUpperCase();
-      //console.log("filter: " + filter);
-      eleIndexTutors = document.getElementById("index-tutors");
-      //console.log(eleIndexTutors);
-      if(! eleIndexTutors.classList.contains("hideme")){
-        eleTutorNames = eleIndexTutors.getElementsByClassName("tutorname");
-        //console.log(eleTutorNames);
-        for (i = 0; i < eleTutorNames.length; i++) {
-            var tutorNameText = eleTutorNames[i].innerHTML.substr(7).toUpperCase();
-            //console.log("tutorNameText: " + tutorNameText);
-            eleAncestor = findAncestor (eleTutorNames[i], "tutor");
-            //console.log(eleAncestor);
-            if (tutorNameText.indexOf(filter) > -1) {
-                eleAncestor.style.display = "";
-                //console.log("show");
-            } else {
-                eleAncestor.style.display = "none";
-                //console.log("hide");
-            }
-        }
-      }
-      console.log("about to process students");
-      eleIndexStudents = document.getElementById("index-students");
-      //console.log(eleIndexStudents);
-      if(! eleIndexStudents.classList.contains("hideme")){
-        eleStudentNames = eleIndexStudents.getElementsByClassName("studentname");
-        //console.log(eleStudentNames);
-        for (i = 0; i < eleStudentNames.length; i++) {
-            var studentNameText = eleStudentNames[i].innerHTML.substr(9).toUpperCase();
-            //console.log("studentNameText: " + studentNameText);
-            eleAncestor = findAncestor (eleStudentNames[i], "student");
-            //console.log(eleAncestor);
-            if (studentNameText.indexOf(filter) > -1) {
-                eleAncestor.style.display = "";
-                //console.log("show");
-            } else {
-                eleAncestor.style.display = "none";
-                //console.log("hide");
-            }
-        }
-      }
-  }
-
-*/
+  $("#personInput").keyup(filterPeople);
 
 //------ End of Filter by name functions for the tutors and students -------
 
 };
+
+function filterPeople(){
+  console.log("called filterPeople");
+  var filter, eleIndexTutors, eleTutorNames, eleIndexStudents, eleStudentNames, i, eleAncestor;
+  filter = document.getElementById("personInput").value.toUpperCase();
+  eleIndexTutors = document.getElementById("index-tutors");
+  if(! eleIndexTutors.classList.contains("hideme")){
+    eleTutorNames = eleIndexTutors.getElementsByClassName("tutorname");
+    for (i = 0; i < eleTutorNames.length; i++) {
+        var tutorNameText = eleTutorNames[i].innerHTML.substr(7).toUpperCase();
+        eleAncestor = findAncestor (eleTutorNames[i], "tutor");
+        if (tutorNameText.indexOf(filter) > -1) {
+            eleAncestor.style.display = "";
+        } else {
+            eleAncestor.style.display = "none";
+        }
+    }
+  }
+  eleIndexStudents = document.getElementById("index-students");
+  if(! eleIndexStudents.classList.contains("hideme")){
+    eleStudentNames = eleIndexStudents.getElementsByClassName("studentname");
+    for (i = 0; i < eleStudentNames.length; i++) {
+        var studentNameText = eleStudentNames[i].innerHTML.substr(9).toUpperCase();
+        eleAncestor = findAncestor (eleStudentNames[i], "student");
+        if (studentNameText.indexOf(filter) > -1) {
+            eleAncestor.style.display = "";
+        } else {
+            eleAncestor.style.display = "none";
+        }
+    }
+  }
+}
+
+function findAncestor (el, cls) {
+  while ((el = el.parentElement) && !el.classList.contains(cls));
+  return el;
+}
 
 function selectshows() {
   //console.log("processing selectShows");
@@ -2305,6 +2346,7 @@ function selectshows() {
       case "hidetutors":
         //var eleThisParent = document.getElementById("index-tutors");
         if (showList[i].checked){
+          filterPeople();
           document.getElementById("index-tutors").classList.remove("hideme");
           flagshowtutorsorstudents = true;
         }else{
@@ -2314,6 +2356,7 @@ function selectshows() {
       case "hidestudents":
         //var eleThisParent = document.getElementById("index-students");
         if (showList[i].checked){
+          filterPeople();
           document.getElementById("index-students").classList.remove("hideme");
           flagshowtutorsorstudents = true;
         }else{
@@ -2353,7 +2396,18 @@ function selectshows() {
         showhidecomments(document.getElementsByClassName("studentcommentdetail"),
         showList[i].checked);
         break;
-      default:
+      case "hidelessonsOncall":
+        showhidecomments(document.querySelectorAll(".lesson.n-status-onCall"),
+        showList[i].checked);
+        break;
+      case "hidelessonsOnsetup":
+        showhidecomments(document.querySelectorAll(".lesson.n-status-onSetup"),
+        showList[i].checked);
+        break;
+      case "enableQuickStatus":
+        // do nothing - ignore.
+        break;
+      default:    // hides sites based on checklists
         var thispattern = /hide(.*)/;
         console.log("showList[i].id: " + showList[i].id);
         var m = thispattern.exec(showList[i].id);
