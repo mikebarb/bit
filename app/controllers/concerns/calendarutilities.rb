@@ -235,6 +235,12 @@ module Calendarutilities
                   .order('location')
                   .where(id: @slotsinfo.map {|o| o.id})
                   
+    # Sort sites order by specific sequence
+    # sequence requested by organiser - actually geographic locations
+    #@sessinfo = @sessinfo.sort_by{ |o| [valueOrderStatus(o), valueOrderTutor(o)]}
+    #byebug
+    @locations = @locations.sort_by{ |o| valueOrderSite(o) }
+
     #column headers will be the days - two step process to get these
     @datetimes = Slot
                   .select('timeslot')
@@ -307,9 +313,7 @@ module Calendarutilities
     end
 
     return @cal
-
   end
-  
   
   # Sort the values in display2 (cell of lessons/sessions) by status and then by tutor name
   # as some lessons have no tutor, this returns the tutor name if available.
@@ -334,14 +338,26 @@ module Calendarutilities
   def valueOrderStatus(obj)
     #logger.debug "obj status: " + obj.id.inspect + " - " + obj.status
     if obj.status != nil
-      thisindex = ["onCall", "onSetup", "on_BFL", "standard"].index(obj.status)
+      thisindex = ["onCall", "onSetup", "free", "on_BFL", "standard",
+                   "routine", "flexible", "allocte", "global", "park"].index(obj.status)
       thisindex == nil ? 0 : thisindex + 1
     else
       return 0
     end
   end
   
-
+  # used to order the sites - provided as geographic locations.
+  def valueOrderSite(obj)
+    #logger.debug "obj status: " + obj.id.inspect + " - " + obj.status
+    if obj.location != nil
+      thisindex = ["GUNGAHLIN", "KALEEN", "DICKSON", "WODEN", "KAMBAH",
+                   "ERINDALE", "CALWELL"].index(obj.location)
+      thisindex == nil ? 0 : thisindex + 1
+    else
+      return 0
+    end
+  end
+  
  # -----------------------------------------------------------------------------
  # Generate ratios.
  #

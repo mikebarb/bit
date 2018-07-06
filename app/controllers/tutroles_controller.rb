@@ -65,6 +65,12 @@ class TutrolesController < ApplicationController
   # POST /tutorcopylesson.json
   def tutorcopylesson
     @tutrole = Tutrole.new(:tutor_id => params[:tutor_id], :lesson_id => params[:new_lesson_id])
+    if params[:old_lesson_id]
+      @tutrole_from = Tutrole.where(:tutor_id => params[:tutor_id],
+                              :lesson_id => params[:old_lesson_id]).first
+      @tutrole.status = @tutrole_from.status
+      @tutrole.kind   = @tutrole_from.kind
+    end
     respond_to do |format|
       if @tutrole.save
         format.json { render :show, status: :created, location: @role }

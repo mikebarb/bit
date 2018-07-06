@@ -80,6 +80,12 @@ class RolesController < ApplicationController
   def studentcopylesson
     @role = Role.new(:student_id => params[:student_id],
                      :lesson_id => params[:new_lesson_id])
+    if params[:old_lesson_id]
+      @role_from = Role.where(:student_id => params[:student_id],
+                              :lesson_id => params[:old_lesson_id]).first
+      @role.status = @role_from.status
+      @role.kind   = @role_from.kind
+    end
     logger.debug("new_role: " + @role.inspect)
     respond_to do |format|
       if @role.save

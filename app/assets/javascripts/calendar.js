@@ -739,6 +739,7 @@ var ready = function() {
     var stmi_tutor_kind_standard      = false;
     var stmi_tutor_kind_called        = false;
     var stmi_tutor_kind_relief        = false;
+    var stmi_tutor_kind_fifteen       = false;
 
     var stmi_student_status_scheduled = false;
     var stmi_student_status_attended  = false;
@@ -752,11 +753,18 @@ var ready = function() {
     var stmi_student_kind_fortnightly = false;
     var stmi_student_kind_onetoone    = false;
     var stmi_student_kind_standard    = false;
+    var stmi_student_kind_bonus       = false;
 
     var stmi_lesson_status_oncall     = false;
     var stmi_lesson_status_onsetup    = false;
+    var stmi_lesson_status_free       = false;
     var stmi_lesson_status_onbfl      = false;
     var stmi_lesson_status_standard   = false;
+    var stmi_lesson_status_routine    = false;
+    var stmi_lesson_status_flexible   = false;
+    var stmi_lesson_status_allocate   = false;
+    var stmi_lesson_status_global     = false;
+    var stmi_lesson_status_park       = false;
 
     var stmi_edit_comment             = false;
     var stmi_edit_subject             = false;
@@ -786,6 +794,7 @@ var ready = function() {
             stmi_tutor_kind_standard    = true;
             stmi_tutor_kind_called      = true;
             stmi_tutor_kind_relief      = true;
+            stmi_tutor_kind_fifteen     = true;
             break;
           case 'editComment':   // show the text edit box & populate
             console.debug("etmAction is editComment");
@@ -817,6 +826,7 @@ var ready = function() {
             stmi_student_kind_fortnightly = true;
             stmi_student_kind_onetoone    = true;
             stmi_student_kind_standard    = true;
+            stmi_student_kind_bonus       = true;
             break;
           case 'editComment':   // show the text edit box & populate
             console.debug("etmAction is editComment");
@@ -836,8 +846,14 @@ var ready = function() {
           case 'setStatus':   // lesson set Status options
             stmi_lesson_status_oncall     = true;
             stmi_lesson_status_onsetup    = true;
+            stmi_lesson_status_free       = true;
             stmi_lesson_status_onbfl      = true;
             stmi_lesson_status_standard   = true;
+            stmi_lesson_status_routine    = true;
+            stmi_lesson_status_flexible   = true;
+            stmi_lesson_status_allocate   = true;
+            stmi_lesson_status_global     = true;
+            stmi_lesson_status_park       = true;
             break;
           case 'editComment':   // show the text edit box & populate
             console.debug("etmAction is editComment");
@@ -862,6 +878,7 @@ var ready = function() {
     setscmi('tutor-kind-standard', stmi_tutor_kind_standard);
     setscmi('tutor-kind-called', stmi_tutor_kind_called);
     setscmi('tutor-kind-relief', stmi_tutor_kind_relief);
+    setscmi('tutor-kind-fifteen', stmi_tutor_kind_fifteen);
 
     setscmi('student-status-scheduled', stmi_student_status_scheduled);
     setscmi('student-status-attended', stmi_student_status_attended);
@@ -875,11 +892,18 @@ var ready = function() {
     setscmi('student-kind-fortnightly', stmi_student_kind_fortnightly);
     setscmi('student-kind-onetoone', stmi_student_kind_onetoone);
     setscmi('student-kind-standard', stmi_student_kind_standard);
+    setscmi('student-kind-bonus', stmi_student_kind_bonus);
 
     setscmi('lesson-status-oncall', stmi_lesson_status_oncall);
     setscmi('lesson-status-onsetup', stmi_lesson_status_onsetup);
+    setscmi('lesson-status-free', stmi_lesson_status_free);
     setscmi('lesson-status-on_BFL', stmi_lesson_status_onbfl);
     setscmi('lesson-status-standard', stmi_lesson_status_standard);
+    setscmi('lesson-status-routine', stmi_lesson_status_routine);
+    setscmi('lesson-status-flexible', stmi_lesson_status_flexible);
+    setscmi('lesson-status-allocate', stmi_lesson_status_allocate);
+    setscmi('lesson-status-global', stmi_lesson_status_global);
+    setscmi('lesson-status-park', stmi_lesson_status_park);
 
     setscmi('edit-comment', stmi_edit_comment);
     setscmi('edit-subject', stmi_edit_subject);
@@ -1864,30 +1888,31 @@ var ready = function() {
     console.log("personid: " + domchange['move_ele_id']);
     var myurl;
     var mydata;
+    mydata =  { 'new_lesson_id'  : newlessonid,
+                'domchange'      : domchange                  
+              };
+    if(domchange['ele_old_parent_id'] != undefined){
+      var oldlessonid = getRecordId(domchange['ele_old_parent_id']);
+      mydata['old_lesson_id'] =  oldlessonid;
+    }
     var recordtype = getRecordType(domchange['move_ele_id']);
     if( 's' == recordtype ){    //student
       console.log("we have a student - " + personid);
       console.log("action: " + action);
-      mydata =  { 'student_id'     : personid, 
-                  'new_lesson_id' : newlessonid,
-                  'domchange'      : domchange 
-                };
+      mydata['student_id'] = personid; 
       if(action == "move") {   
         myurl = myhost + "/studentmovelesson/";
-        var oldlessonid = getRecordId(domchange['ele_old_parent_id']);
-        mydata['old_lesson_id'] =  oldlessonid;
+        //var oldlessonid = getRecordId(domchange['ele_old_parent_id']);
+        //mydata['old_lesson_id'] =  oldlessonid;
       } else if(action == "copy"){ // copy
         myurl = myhost + "/studentcopylesson/";
       }
     } else if( 't' == recordtype ){   //tutor
       console.log("we have a tutor - " + personid);
-      mydata =  { 'tutor_id'       : personid, 
-                  'new_lesson_id' : newlessonid,
-                  'domchange'      : domchange                  
-                };
+      mydata['tutor_id'] = personid; 
       if(action == "move") {
-        var oldlessonid = getRecordId(domchange['ele_old_parent_id']);
-        mydata['old_lesson_id'] =  oldlessonid;
+        //var oldlessonid = getRecordId(domchange['ele_old_parent_id']);
+        //mydata['old_lesson_id'] =  oldlessonid;
         myurl = myhost + "/tutormovelesson/";
       } else { // copy
         myurl = myhost + "/tutorcopylesson/";
@@ -2240,7 +2265,10 @@ var ready = function() {
   function lessonsortorder(a_status, a_name, b_status, b_name){
     // item1 = [lesson_status, tutor_name]
     // the following statuses must be first on the page
-    var baseorder = ['status: oncall', 'status: onsetup', 'status: on_bfl'];
+    var baseorder = ['status: oncall', 'status: onsetup', 'status: free',
+                     'status: on_bfl', 'status: standard', 'status: routine',
+                     'status: flexible', 'status: allocate', 'status: global',
+                     'status: park'];
     // all following statuses are in alphabetical order
     // If the session status is the same, then that set
     // are order by alphabetical order of tutor namme of 
@@ -2280,21 +2308,14 @@ var ready = function() {
 
   }
 
-  
-  
-  
-
 //--- End of Common Functions used by both Drag & Drop and Context Menu ----
-
-//--------- Filter by name functions for the tutors and students -----------
 
 
   $("#personInput").keyup(filterPeople);
 
-//------ End of Filter by name functions for the tutors and students -------
-
 };
 
+//--------- Filter by name functions for the tutors and students -----------
 function filterPeople(){
   console.log("called filterPeople");
   var filter, eleIndexTutors, eleTutorNames, eleIndexStudents, eleStudentNames, i, eleAncestor;
@@ -2331,6 +2352,9 @@ function findAncestor (el, cls) {
   while ((el = el.parentElement) && !el.classList.contains(cls));
   return el;
 }
+
+//------ End of Filter by name functions for the tutors and students -------
+
 
 function selectshows() {
   //console.log("processing selectShows");
