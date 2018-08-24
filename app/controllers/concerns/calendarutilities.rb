@@ -411,4 +411,153 @@ module Calendarutilities
       end
     end
   end
+  
+   # -----------------------------------------------------------------------------
+ # Generate stats.
+ #
+ # Starting with the standard @cal hash, add in the tutor / student ratio
+ # Stats recorded are:
+ # For both routine and flexible sessions:- 
+ #  S     Sessions
+ #  R     Rostered = Scheduled, Notified, Confirmed, Attended
+ #  RoTo  Rostered One to one
+ #  RCu   Rostered Catchup
+ #  RCoTo Rostered Catchup One to one
+ # 
+ # Also required for routine sessions:- 
+ #  A     Away or Absent
+ #  AoTo  Away One to one
+ #  B     Bye = fortnightly bye session, normal would be Rostered
+ #
+ # Formulas:
+ # For routine sessons:-
+ #  free Routine = availability of sessions for permanment allocations
+ #  = 2S-A-R+RCu-RoTo-AoTo+RCoTo-B
+ #
+ #  free Catch Up = sessions where catch ups can be allocated
+ #  = A+AoTo+B-RCu-RCoTo
+ #
+ # For routine sessons:-
+ #  free Catch Up = sessons where catch ups can be allocated
+ #  = 2S-R-RoTo
+ #
+ #  Note: free routine sessions do on exist for flexible sessions.
+ # -----------------------------------------------------------------------------
+  def generate_stats
+    # step through each site
+    @all_sites_ratio = {'tutor_count'=>0, 'student_count'=>0}
+    @cal.each do |location, calLocation|
+      calLocation.each_with_index do |rows, rowindex|
+        logger.debug "next row - " + rowindex.to_s
+        rows.each_with_index do |cells, colindex|
+          logger.debug "next cell - " + colindex.to_s 
+          if cells.key?("values") then  # in a slot with lessons
+            rS = rR = rA = rAoTo = rRoTo = rRCu = rRCoTo = rB = 0
+            fS = fR = fRoTo = fRCu = fRCoTo = 0
+            flagFlexible = flagRoutine = false
+            flagRostered = false
+            slottutorcount = slotstudentcount = 0
+            cells["values"].each do |entry|  # go through each lesson
+              logger.debug "entry: " + entry.inspect
+              if(entry.status == "standard" ||
+                 entry.status == "routine")
+                flagRoutine = true
+                rS += 1
+              elsif entry.status == "flexible"
+                flagFlexible = true
+                fS += 1
+              end
+              if @tutrole_lessonindex.has_key? entry.id then  # check for tutroles linked to this lesson
+                # could be multiple tutors in this lesson, a tutrole for each - need to step through each one
+                #logger.debug "tutroles_lessonindex has an entry for this lesson with tutrole indexes into the array of: " +
+                #             @tutrole_lessonindex[entry.id].inspect
+                @tutrole_lessonindex[entry.id].each do |thistutorrole|  # check each tutrole for diagnostics
+                  # slottutorcount is for ratio calculations
+                  # Ratios are only calculated using BFL, Routine and Flexible lessons
+                  #slottutorcount += @tutrole_lessonindex[entry.id].count
+                  if(["scheduled", "notified", "confirmed", "attended"].include?@tutroleinfo[thistutorrole].status)  # valid statuses for ratio calculations
+                    slottutorcount += 1 if(['on_BFL', 'standard', 'routine', 'flexible'].include?entry.status) # valid lessons for rations
+                  end
+                  logger.debug "tutor found - tutrole: " + @tutroleinfo[thistutorrole].inspect
+                end
+              end
+              if @role_lessonindex.has_key? entry.id then  # check for students
+                logger.debug "student found: " + @role_lessonindex[entry.id].inspect
+                # for ratio calculation
+                # slotstudentcount += @role_lessonindex[entry.id].count
+                @role_lessonindex[entry.id].each do |thisstudentrole|  # check each tutrole for diagnostics
+                  #logger.debug "student found - role: " + @roleinfo[thisstudentrole].inspect
+                  thisstudent = @roleinfo[thisstudentrole].student
+                  #logger.debug "thisstudent: " + thisstudent.inspect
+                  thisrole = @roleinfo[thisstudentrole]
+                  thisstudent = thisrole.student
+                  if(["scheduled", "attended"].include?thisrole.status)     # rostered
+                    flagRostered = true
+                    slotstudentcount += 1  if(['on_BFL', 'standard', 'routine', 'flexible'].include?entry.status)  # supporting ratio status
+                    rR += 1 if flagRoutine
+                    fR += 1 if flagFlexible
+                    if(["onetoone"].include?thisstudent.status)
+                      rRoTo += 1 if flagRoutine
+                      fRoTo += 1 if flagFlexible
+                    end
+                    if(["catchup"].include?thisrole.kind)
+                      rRCu += 1 if flagRoutine
+                      fRCu += 1 if flagFlexible
+                      if(["onetoone"].include?thisstudent.status)
+                        rRCoTo += 1 if flagRoutine
+                        fRCoTo += 1 if flagFlexible
+                      end        
+                    end
+                  elsif(["bye"].include?thisrole.status)
+                    rB += 1 if flagRoutine
+                  elsif(["away", "absent"].include?thisrole.status)
+                    rA += 1 if flagRoutine
+                    if(["onetoone"].include?thisstudent.status)
+                      rAoTo += 1 if flagRoutine
+                    end        
+                  end
+                end
+              end
+            end
+            # keep stats in the cell/slot data
+            cells["stats"] = {
+                              "routine"=>{
+                                           'S'      =>rS,
+                                           'R'      =>rR,
+                                           'RoTo'   =>rRoTo,
+                                           'A'      =>rA,
+                                           'AoTo'   =>rAoTo,
+                                           'RCu'    =>rRCu,
+                                           'RCoTo'  =>rRCoTo,
+                                           'B'      =>rB
+                                         },
+                              "flexible"=>{
+                                           'S'      =>fS,
+                                           'R'      =>fR,
+                                           'RoTo'   =>fRoTo,
+                                           'RCu'    =>fRCu,
+                                           'RCoTo'  =>fRCoTo,
+                                         }
+                              }
+
+            # keep counts in the cell/slot data
+            cells["ratio"] = {'tutor_count'=>slottutorcount, 'student_count'=>slotstudentcount}
+            rows[0]['ratio'] = {'tutor_count'=>0, 'student_count'=>0} unless rows[0].has_key?("ratio") 
+            rows[0]['ratio']['tutor_count']   += slottutorcount
+            rows[0]['ratio']['student_count'] += slotstudentcount
+            calLocation[0][colindex]['ratio'] = {'tutor_count'=>0, 'student_count'=>0} unless calLocation[0][colindex].has_key?("ratio")
+            calLocation[0][colindex]['ratio']['tutor_count']   += slottutorcount
+            calLocation[0][colindex]['ratio']['student_count'] += slotstudentcount
+            calLocation[0][0]['ratio'] = {'tutor_count'=>0, 'student_count'=>0} unless calLocation[0][0].has_key?("ratio")
+            calLocation[0][0]['ratio']['tutor_count']   += slottutorcount
+            calLocation[0][0]['ratio']['student_count'] += slotstudentcount
+            @all_sites_ratio['tutor_count']   += slottutorcount
+            @all_sites_ratio['student_count'] += slotstudentcount
+          end
+        end
+      end
+    end
+  end
+  
+  
 end

@@ -1,0 +1,94 @@
+<h1><%= @displayHeader %> - ratios</h1>
+
+<p>Layout is => tutor_count : student_count = ratio (student_count / tutor_count)</p> 
+
+<% #calculate ratio
+  thisratio = (@all_sites_ratio['tutor_count'] == 0 ? "NA" :
+  sprintf('%5.2f', (@all_sites_ratio['student_count'] /
+                   @all_sites_ratio['tutor_count'].to_f))) 
+%> 
+
+<p> Overall ratio across all site -> <b><%= thisratio %></b><%= ' = ' +
+    @all_sites_ratio['tutor_count'].to_s   + ':' + 
+    @all_sites_ratio['student_count'].to_s %></p>
+<div class=schedule>
+<% @cal.each do |location, calLocation| 
+  if @compress   # remove days with no valid slot for this site
+   usedColumns = calLocation[0][0]["days"].keys
+   usedColumnsIndex = [0]
+   for i in 1..(calLocation[0].length-1)
+     if usedColumns.include?(calLocation[0][i]["value"]) then
+       usedColumnsIndex.push(i)
+     end
+   end 
+  end %>
+  <% firsttablecolumn = true %>
+  <table id=site-<%= location %> >
+  <% calLocation.each_with_index do |rows, rowindex| %>
+    <tr>
+    <% rows.each_with_index do |cells, cellIndex|
+      if @compress      
+        unless usedColumnsIndex.include?(cellIndex) then
+           next
+        end 
+      end %>
+      <% if cells.key?("slotid") then %>
+        <td class="cell slot" id=<%= cells["id_dom"] + "l" + cells["slotid"].rjust(@sf, "0") %>  >
+      <% elsif cells.key?("value") then %>
+        <% if firsttablecolumn == true then
+          firsttablecolumn = false %>
+          <td class="cell firsttablecolumn" %>
+        <% else %>
+          <td class="cell" %>
+        <% end %>
+      <% else %>
+         <td class="cell no-slot" %>
+      <% end %> 
+      <% if cells.key?("value") then %>     
+        <div class='ratio'><%= cells["value"].to_s %></div>
+      <% end %>
+      <% if cells.key?('ratio') %>
+        <% #calculate ratio
+           thisratio = cells['ratio']['tutor_count'] == 0 ? "NA" : 
+                      sprintf('%5.2f', (cells['ratio']['student_count'] / cells['ratio']['tutor_count'].to_f)) 
+        %>
+        <div class='ratio'><b><%= thisratio %></b><%= ' = ' +
+                               cells['ratio']['tutor_count'].to_s + ':' +
+                               cells['ratio']['student_count'].to_s
+                              %>
+        </div>  
+      <% end %>
+      <% if cells.key?('stats') %>
+        <% #byebug %>
+        <% if cells['stats'].key?('routine') %>
+          <div class='stats'>
+            <% logger.debug "routine: " + cells['stats']['routine'].inspect %>
+            routine:<br>
+            <% cells['stats']['routine'].each { |k, v| %>
+              <% #byebug %>
+              <%= k + ': ' + v.to_s %> <br>
+            <% } %>
+          </div>  
+        <% end %>
+        <% if cells['stats'].key?('flexible') %>
+          <div class='stats'>
+            <% logger.debug "flexible: " + cells['stats']['flexible'].inspect %>
+            flexible:<br>
+            <% cells['stats']['flexible'].each { |k, v| %>
+              <% #byebug %>
+              <%= k + ': ' + v.to_s %> <br>
+            <% } %>
+          </div>  
+        <% end %>
+      <% end %>
+      </td>
+    <% end %>
+    </tr>
+  <% end %>
+  </table>
+<br>
+<% end %>
+</div>
+
+
+

@@ -74,6 +74,10 @@ class CalendarController < ApplicationController
       @options[:ratio] = true
       @displayHeader = 'Display Ratios between Tutors and Students' unless flagRefresh
     end
+    if params[:bench] == "stats" || (flagRefresh && params.has_key?(:stats))
+      @options[:stats] = true
+      @displayHeader = 'Display Statistics' unless flagRefresh
+    end
     # if this is a refresh, then we now just pick up the passed in options
     if flagRefresh
       passedParams.each do |k, v|
@@ -99,7 +103,7 @@ class CalendarController < ApplicationController
         if((params.has_key?(:select_roster_default)) && 
            (params[:select_roster_default] == '1'))
           @options[:select_tutor_statuses]   = true
-          @options[:tutor_statuses]    = ['attended', 'notified', 'scheduled', 'deal']
+          @options[:tutor_statuses]    = ['attended', 'scheduled', 'notified', 'confirmed', 'deal']
           #if params[:bench] == "ratio"
           if @options.has_key?(:ratio)
             @options[:select_tutor_kinds_exclude]   = true
@@ -291,6 +295,10 @@ class CalendarController < ApplicationController
     if @options[:ratio]
       generate_ratios()
       render 'flexibledisplayratios' and return
+    end
+    if @options[:stats]
+      generate_stats()
+      render 'flexibledisplaystats' and return
     end
 
   end
