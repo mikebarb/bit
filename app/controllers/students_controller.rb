@@ -94,6 +94,12 @@ class StudentsController < ApplicationController
         flagupdate = true
       end
     end
+    if params[:status]
+      if @student.status != params[:status]
+        @student.status = params[:status]
+        flagupdate = true
+      end
+    end
     
     respond_to do |format|
       if @student.save

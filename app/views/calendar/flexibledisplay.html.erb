@@ -100,6 +100,9 @@
                             %> Yr: <%= student.year == nil ? "   " : student.year.rjust(3) %> | <%= student.study %></div>
                           <br>
                           <div class="studentcommentdetail"><%= student.comment %></div>
+                          <div class="statusinfo">
+                            <div class="p-status">Detail: <%= student.status %></div>
+                          </div>
                         </div>
                     </div>
                 </div>
@@ -173,7 +176,10 @@
                             </div>
                             <div class="tutrolecomment"><%= thistutrole.comment %></div>
                             <div class="tutorcommentdetail"><%= tutor.comment %></div>
-                            <div class="statusinfo">Status: <%= thistutrole.status %> Kind: <%= thistutrole.kind %> </div>
+                            <div class="statusinfo">
+                              <div class="l-status">Status: <%= thistutrole.status %></div>
+                              <div class="l-kind">Kind: <%= thistutrole.kind %></div>
+                            </div>
                           </div>
                         </div>
                       </div>
@@ -206,7 +212,11 @@
                                 %><%= student.study %></div>
                             <div class="rolecomment"><%= thisrole.comment %></div>
                             <div class="studentcommentdetail"><%= student.comment %></div>
-                            <div class="statusinfo">Status: <%= thisrole.status %> Kind: <%= thisrole.kind %></div>
+                            <div class="statusinfo">
+                              <div class="l-status">Status: <%= thisrole.status %></div>
+                              <div class="l-kind">Kind: <%= thisrole.kind %></div>
+                              <div class="p-status">Detail: <%= student.status %></div>
+                            </div>
                           </div>
                         </div>
                       </div>
@@ -259,6 +269,9 @@
       </li>    
       <li id="context-setKind" class="context-menu__item" data-action="setKind">
         <p>Set Kind</p>
+      </li>    
+      <li id="context-setPersonStatus" class="context-menu__item" data-action="setPersonStatus">
+        <p>Set Person Status</p>
       </li>    
       <li id="context-editComment" class="context-menu__item" data-action="editComment">
         <p>Edit Comment</p>
@@ -335,6 +348,9 @@
       <li id="student-status-attended" class="tertiary-menu__choice" data-choice="student-status-attended">
         <p>student-status: Attended</p>
       </li>
+      <li id="student-status-bye" class="tertiary-menu__choice" data-choice="student-status-bye">
+        <p>student-status: Bye</p>
+      </li>
       <li id="student-status-deal" class="tertiary-menu__choice" data-choice="student-status-deal">
         <p>student-status: Deal</p>
       </li>
@@ -364,6 +380,21 @@
       </li>
       <li id="student-kind-bonus" class="tertiary-menu__choice" data-choice="student-kind-bonus">
         <p>student-kind: Bonus</p>
+      </li>
+      <li id="student-personstatus-new" class="tertiary-menu__choice" data-choice="student-personstatus-new">
+        <p>personStatus: New</p>
+      </li>
+      <li id="student-personstatus-fortnightly" class="tertiary-menu__choice" data-choice="student-personstatus-fortnightly">
+        <p>personStatus: Fortnightly</p>
+      </li>
+      <li id="student-personstatus-onetoone" class="tertiary-menu__choice" data-choice="student-personstatus-onetoone">
+        <p>personStatus: One To One</p>
+      </li>
+      <li id="student-personstatus-standard" class="tertiary-menu__choice" data-choice="student-personstatus-standard">
+        <p>personStatus: Standard</p>
+      </li>
+      <li id="student-personstatus-inactive" class="tertiary-menu__choice" data-choice="student-personstatus-inactive">
+        <p>personStatus: Inactive</p>
       </li>
       <li id="lesson-status-oncall" class="tertiary-menu__choice" data-choice="lesson-status-onCall">
         <p>lesson-status: onCall</p>

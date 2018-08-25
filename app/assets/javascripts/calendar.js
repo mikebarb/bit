@@ -16,7 +16,7 @@ var ready = function() {
 
   // These are used in the quick status setting.
   var validTutorStatuses = ["Away", "Absent", "Deal", "Scheduled", "Notified", "Confirmed", "Attended"];
-  var validStudentStatuses = ["Away", "Absent", "Deal", "Attended", "Scheduled"];
+  var validStudentStatuses = ["Away", "Absent", "Deal", "Bye", "Attended", "Scheduled"];
 
   // want to set defaults on some checkboxes on page load
   var flagViewOptions = false;
@@ -359,6 +359,7 @@ var ready = function() {
     var scmi_removeLesson = false;
     var scmi_setStatus = false;
     var scmi_setKind = false;
+    var scmi_setPersonStatus = false;
     var scmi_editComment = false;
     var scmi_editDetail = false;
     var scmi_history = false;
@@ -376,6 +377,7 @@ var ready = function() {
 
     switch(recordType){     // student, tutor, lesson.
       case 's':   //student
+          scmi_setPersonStatus = true;     // done in both index and main schedule area for student 
       case 't':   //tutor
         if(clickInsideElementClassList2(thisEle, ['index'])){   // index area
           // this element in student and tutor list
@@ -385,6 +387,7 @@ var ready = function() {
           scmi_editDetail = true; // consistency in context menu naming for user.
           scmi_editSubject = true;
           scmi_editEntry   = true;
+          scmi_setPersonStatus = true;     // only in index area for tutors 
         }else{  // in the main schedule area (lesson)
           scmi_copy = scmi_move = scmi_remove = scmi_addLesson = true;
           scmi_setStatus = scmi_setKind = scmi_editComment = scmi_editDetail = true;
@@ -417,6 +420,7 @@ var ready = function() {
     setscmi('context-removeLesson', scmi_removeLesson);
     setscmi('context-setStatus', scmi_setStatus);
     setscmi('context-setKind', scmi_setKind);
+    setscmi('context-setPersonStatus', scmi_setPersonStatus);
     setscmi('context-editComment', scmi_editComment);
     setscmi('context-editDetail', scmi_editDetail);
     setscmi('context-editSubject', scmi_editSubject);
@@ -569,6 +573,13 @@ var ready = function() {
         // Set Kind has been selected on an element.
         // It will open up another menu to select the status requried.
         // This will set the status of this item (tutor, student, lesson).
+        //currentActivity['ele_old_parent_id'] = clickInsideElementClassList2(thisEle, ['slot']).id;
+        enableTertiaryMenu(thisEle, thisAction, currentActivity);
+        break;
+      case "setPersonStatus":
+        // Set Person Status has been selected on an element.
+        // It will open up another menu to select the status requried.
+        // This will set the status of this item (tutor, student).
         //currentActivity['ele_old_parent_id'] = clickInsideElementClassList2(thisEle, ['slot']).id;
         enableTertiaryMenu(thisEle, thisAction, currentActivity);
         break;
@@ -743,6 +754,7 @@ var ready = function() {
 
     var stmi_student_status_scheduled = false;
     var stmi_student_status_attended  = false;
+    var stmi_student_status_bye       = false;
     var stmi_student_status_deal      = false;
     var stmi_student_status_absent    = false;
     var stmi_student_status_away      = false;
@@ -754,6 +766,12 @@ var ready = function() {
     var stmi_student_kind_onetoone    = false;
     var stmi_student_kind_standard    = false;
     var stmi_student_kind_bonus       = false;
+
+    var stmi_student_personstatus_new          = false;
+    var stmi_student_personstatus_fortnightly  = false;
+    var stmi_student_personstatus_onetoone     = false;
+    var stmi_student_personstatus_standard     = false;
+    var stmi_student_personstatus_inactive     = false;
 
     var stmi_lesson_status_oncall     = false;
     var stmi_lesson_status_onsetup    = false;
@@ -814,6 +832,7 @@ var ready = function() {
             console.debug("etmAction is setStatus");
             stmi_student_status_scheduled = true
             stmi_student_status_attended  = true;
+            stmi_student_status_bye       = true;
             stmi_student_status_deal      = true;
             stmi_student_status_absent    = true;
             stmi_student_status_away      = true;
@@ -827,6 +846,14 @@ var ready = function() {
             stmi_student_kind_onetoone    = true;
             stmi_student_kind_standard    = true;
             stmi_student_kind_bonus       = true;
+            break;
+          case 'setPersonStatus':   // student set Kind options
+            console.debug("etmAction is setKind");
+            stmi_student_personstatus_new          = true;
+            stmi_student_personstatus_fortnightly  = true;
+            stmi_student_personstatus_onetoone     = true;
+            stmi_student_personstatus_standard     = true;
+            stmi_student_personstatus_inactive     = true;
             break;
           case 'editComment':   // show the text edit box & populate
             console.debug("etmAction is editComment");
@@ -882,6 +909,7 @@ var ready = function() {
 
     setscmi('student-status-scheduled', stmi_student_status_scheduled);
     setscmi('student-status-attended', stmi_student_status_attended);
+    setscmi('student-status-bye', stmi_student_status_bye);
     setscmi('student-status-deal', stmi_student_status_deal);
     setscmi('student-status-absent', stmi_student_status_absent);
     setscmi('student-status-away', stmi_student_status_away);
@@ -893,6 +921,12 @@ var ready = function() {
     setscmi('student-kind-onetoone', stmi_student_kind_onetoone);
     setscmi('student-kind-standard', stmi_student_kind_standard);
     setscmi('student-kind-bonus', stmi_student_kind_bonus);
+
+    setscmi('student-personstatus-new', stmi_student_personstatus_new);
+    setscmi('student-personstatus-fortnightly', stmi_student_personstatus_fortnightly);
+    setscmi('student-personstatus-onetoone', stmi_student_personstatus_onetoone);
+    setscmi('student-personstatus-standard', stmi_student_personstatus_standard);
+    setscmi('student-personstatus-inactive', stmi_student_personstatus_inactive);
 
     setscmi('lesson-status-oncall', stmi_lesson_status_oncall);
     setscmi('lesson-status-onsetup', stmi_lesson_status_onsetup);
@@ -1242,6 +1276,7 @@ var ready = function() {
     }
     var persontype, myurl;
     var workaction, t, updatefield, updatevalue;
+    var updateDbRecordType;    // role or person
     console.log("move_ele_id: " + domchange['move_ele_id']);
     console.log("personid: " + personid);
     console.log("lessonid: " + lessonid);
@@ -1260,6 +1295,13 @@ var ready = function() {
       workaction = workaction.replace(updatefield, '');
       updatefield = updatefield.replace('-', '');
       updatevalue =  workaction;
+      // updating personstatus impacts the student status,
+      // not the (student)role status.
+      // Thus we need to flag that we are to update the student record
+      if(updatefield == 'personstatus'){
+        updatefield = 'status';
+        updateDbRecordType = 'person';
+      }
       // comment field is slightly different.
       if (updatefield == 'comment' ||
           updatefield == 'subject'){    
@@ -1275,6 +1317,8 @@ var ready = function() {
       mydata['student_id'] = personid;
       if ( personContext == 'lesson') {
         myurl = myhost + "/studentupdateskc";   // skc = status, kind, comment
+      } else if (updateDbRecordType == 'person') {
+        myurl = myhost + "/studentdetailupdateskc";   // +status
       } else {        // index
         myurl = myhost + "/studentdetailupdateskc";   // +subject
       }
@@ -1418,63 +1462,19 @@ var ready = function() {
 
     var foundClass = false;    
     var searchForClass, these_classes, kindtext, statusinfo, statustext;
-    var comment_text_eles;
+    var comment_text_eles, status_elements, changeclass_ele;
     
     // Let's just do tutor
     if(recordtype == 't'){
       searchForClass = "t-" + scmType + "-";
-      var tutorname_eles = this_ele.getElementsByClassName("tutorname");
+      //var tutorname_eles = this_ele.getElementsByClassName("tutorname");
       // First update the classes - this controls the status colour
       if (scmType == 'kind') {   // only impact the class in comments
-        //if (testnewformat) {  // new style      
-          // have to update the 'tutor' div with the 't-status-' class
-          var changeclass_ele = this_ele;
-          
-        //}else{    // textnewformat = false (old style)  
-          // have to update the 'tutorcomment' div with the 't-status-' class
-          //changeclass_ele = comment_ele;
-        //}
-        these_classes = changeclass_ele.classList;
-        // scan these classes for our class of interest
-        these_classes.forEach(function(thisClass, index, array){
-          if (thisClass.includes(searchForClass)) {     // t-kind-
-            // as we are updating, remove this class and add the corrected class
-            foundClass = true;
-            changeclass_ele.classList.remove(thisClass);
-            changeclass_ele.classList.add(searchForClass + scmValue);
-          }
-        });
-        if(foundClass == false){    // if class was not found
-          changeclass_ele.classList.add(searchForClass + scmValue); // add it
+        changeclass_ele = this_ele;
+        status_elements = this_ele.getElementsByClassName('l-kind');   // lesson status
+        for (let i = 0; i < status_elements.length; i++) {
+          status_elements[i].textContent = "Kind: " + scmValue;
         }
-/*
-        these_classes = comment_ele.classList;
-        // scan these classes for our class of interest
-        these_classes.forEach(function(thisClass, index, array){
-          if (thisClass.includes(searchForClass)) {     // t-kind-
-            // as we are updating, remove this class and add the corrected class
-            foundClass = true;
-            comment_ele.classList.remove(thisClass);
-            comment_ele.classList.add(searchForClass + scmValue);
-          }
-        });
-        if(foundClass == false){    // if class was not found
-          comment_ele.classList.add(searchForClass + scmValue); // add it
-        }
-*/
-        statusinfo = statusinfoele.innerHTML;
-        kindtext = /Kind: \w*/.exec(statusinfo);
-        statusinfo = statusinfo.replace(kindtext, 'Kind: ' + scmValue + ' ');
-        statusinfoele.innerHTML = statusinfo;
-      } else if (scmType == 'status') {    // only impact the class in tutorname
-        //if (testnewformat) {  // new style      
-          // have to update the 'tutor' div with the 't-status-' class
-          var changeclass_ele = this_ele;
-          
-        //}else{    // textnewformat = false (old style)  
-          // have to update the 'tutorname' div with the 't-status-' class
-          //changeclass_ele = tutorname_eles[0];
-        //}
         these_classes = changeclass_ele.classList;
         // scan these classes for our class of interest
         these_classes.forEach(function(thisClass, index, array){
@@ -1488,14 +1488,25 @@ var ready = function() {
         if(foundClass == false){    // if class was not found
           changeclass_ele.classList.add(searchForClass + scmValue); // add it
         }
-        statusinfo = statusinfoele.innerHTML;
-        // we have an issue when status and kind are blank = 'Status: Kind: '
-        // statustext = /Status: \w*/.exec(statusinfo);  // replace this to resolve
-        kindtext = /Kind: \w*/.exec(statusinfo);
-        var temptext = statusinfo.replace(kindtext, '');
-        statustext = /Status: \w*/.exec(temptext);
-        statusinfo = statusinfo.replace(statustext, 'Status: ' + scmValue + ' ');
-        statusinfoele.innerHTML = statusinfo;
+      } else if (scmType == 'status') {    // only impact the class in tutorname
+        changeclass_ele = this_ele;
+        status_elements = this_ele.getElementsByClassName('l-status');   // lesson status
+        for (let i = 0; i < status_elements.length; i++) {
+          status_elements[i].textContent = "Kind: " + scmValue;
+        }
+        these_classes = changeclass_ele.classList;
+        // scan these classes for our class of interest
+        these_classes.forEach(function(thisClass, index, array){
+          if (thisClass.includes(searchForClass)) {     // t-status-
+            // as we are updating, remove this class and add the corrected class
+            foundClass = true;
+            changeclass_ele.classList.remove(thisClass);
+            changeclass_ele.classList.add(searchForClass + scmValue);
+          }
+        });
+        if(foundClass == false){    // if class was not found
+          changeclass_ele.classList.add(searchForClass + scmValue); // add it
+        }
       } else if (scmType == 'comment') {  // update the comment
         if (personContext == 'index') {
           // Update the tutor detail comment, then update all the sheet with this commment 
@@ -1536,18 +1547,14 @@ var ready = function() {
     // Now do the student
     if(recordtype == 's'){
       searchForClass = "s-" + scmType + "-";
-      var studentname_eles = this_ele.getElementsByClassName("studentname");
+      //var studentname_eles = this_ele.getElementsByClassName("studentname");
       // First update the classes - this controls the status colour
       if (scmType == 'kind') {   // only impact the class in comments
-      
-        //if (testnewformat) {  // new style      
-          // have to update the 'tutor' div with the 't-status-' class
-          changeclass_ele = this_ele;
-          
-        //}else{    // textnewformat = false (old style)  
-          // have to update the 'tutorcomment' div with the 't-status-' class
-          //changeclass_ele = comment_ele;
-        //}
+        changeclass_ele = this_ele;
+        status_elements = this_ele.getElementsByClassName('l-kind');   // lesson status
+        for (let i = 0; i < status_elements.length; i++) {
+          status_elements[i].textContent = "Kind: " + scmValue;
+        }
         these_classes = changeclass_ele.classList;
         // scan these classes for our class of interest
         these_classes.forEach(function(thisClass, index, array){
@@ -1561,39 +1568,12 @@ var ready = function() {
         if(foundClass == false){    // if class was not found
           changeclass_ele.classList.add(searchForClass + scmValue); // add it
         }
-
-      
-/*      
-        these_classes = comment_ele.classList;
-        // scan these classes for our class of interest
-        these_classes.forEach(function(thisClass, index, array){
-          if (thisClass.includes(searchForClass)) {     // t-kind-
-            // as we are updating, remove this class and add the corrected class
-            foundClass = true;
-            comment_ele.classList.remove(thisClass);
-            comment_ele.classList.add(searchForClass + scmValue);
-          }
-        });
-        if(foundClass == false){    // if class was not found
-          comment_ele.classList.add(searchForClass + scmValue); // add it
-        }
-*/
-        statusinfo = statusinfoele.innerHTML;
-        kindtext = /Kind: \w*/.exec(statusinfo);
-        statusinfo = statusinfo.replace(kindtext, 'Kind: ' + scmValue + ' ');
-        statusinfoele.innerHTML = statusinfo;
       } else if (scmType == 'status') {    // only impact the class in studentname
-        //if (testnewformat) {  // new style      
-          // have to update the 'tutor' div with the 't-status-' class
-          changeclass_ele = this_ele;
-          
-        //}else{    // textnewformat = false (old style)  
-          // have to update the 'tutorcomment' div with the 't-status-' class
-          //changeclass_ele = studentname_eles[0];
-        //}
-
-        // have to update the 'studentname' div with the 't-status-' class
-        var studentname_ele = studentname_eles[0];
+        changeclass_ele = this_ele;
+        status_elements = this_ele.getElementsByClassName('l-status');   // lesson status
+        for (let i = 0; i < status_elements.length; i++) {
+          status_elements[i].textContent = "Status: " + scmValue;
+        }
         these_classes = changeclass_ele.classList;
         // scan these classes for our class of interest
         these_classes.forEach(function(thisClass, index, array){
@@ -1607,30 +1587,6 @@ var ready = function() {
         if(foundClass == false){    // if class was not found
           changeclass_ele.classList.add(searchForClass + scmValue); // add it
         }
-
-/*
-        var studentname_ele = studentname_eles[0];
-        these_classes = studentname_ele.classList;
-        // scan these classes for our class of interest
-        these_classes.forEach(function(thisClass, index, array){
-          if (thisClass.includes(searchForClass)) {     // t-status-
-            // as we are updating, remove this class and add the corrected class
-            foundClass = true;
-            studentname_ele.classList.remove(thisClass);
-            studentname_ele.classList.add(searchForClass + scmValue);
-          }
-        });
-        if(foundClass == false){    // if class was not found
-          studentname_ele.classList.add(searchForClass + scmValue); // add it
-        }
-*/
-        statusinfo = statusinfoele.innerHTML;
-        //statustext = /Status: \w*/.exec(statusinfo); // see student notes
-        kindtext = /Kind: \w*/.exec(statusinfo);
-        temptext = statusinfo.replace(kindtext, '');
-        statustext = /Status: \w*/.exec(temptext);
-        statusinfo = statusinfo.replace(statustext, 'Status: ' + scmValue + ' ');
-        statusinfoele.innerHTML = statusinfo;
       } else if (scmType == 'comment') {  // update the role comment
         if (personContext == 'index') {
           // Update the student detail comment, then update all the sheet with this commment 
@@ -1663,6 +1619,12 @@ var ready = function() {
             var subject_text_eles = student_lesson_eles[i].getElementsByClassName("studentsubjects");
             subject_text_eles[0].innerHTML = subject_text_new;
           }
+        }
+      } else if (scmType == 'personstatus') { // update the student status (not the status in role)
+        changeclass_ele = this_ele;
+        status_elements = this_ele.getElementsByClassName('p-status');
+        for (let i = 0; i < status_elements.length; i++) {
+          status_elements[i].textContent = "Detail: " + scmValue;
         }
       }
     }    
