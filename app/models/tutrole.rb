@@ -1,4 +1,5 @@
-class Tutrole < ActiveRecord::Base
+#class Tutrole < ActiveRecord::Base
+class Tutrole < ApplicationRecord    # required migrating to rails 5.0
   belongs_to :lesson
   belongs_to :tutor
 

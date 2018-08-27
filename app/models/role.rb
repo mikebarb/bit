@@ -1,4 +1,5 @@
-class Role < ActiveRecord::Base
+#class Role < ActiveRecord::Base
+class Role < ApplicationRecord    # required migrating to rails 5.0
   belongs_to :lesson
   belongs_to :student
   

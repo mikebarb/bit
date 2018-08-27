@@ -1,4 +1,5 @@
-class Student < ActiveRecord::Base
+#class Student < ActiveRecord::Base
+class Student < ApplicationRecord    # required migrating to rails 5.0
   has_many :roles
   has_many :lessons, through: :roles
   accepts_nested_attributes_for :lessons

@@ -1,4 +1,5 @@
-class Tutor < ActiveRecord::Base
+#class Tutor < ActiveRecord::Base
+class Tutor < ApplicationRecord    # required migrating to rails 5.0
   has_many :tutroles
   has_many :lessons, through: :tutroles
   accepts_nested_attributes_for :lessons
