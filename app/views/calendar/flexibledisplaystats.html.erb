@@ -63,7 +63,7 @@
         <% if cells['stats'].key?('routine') %>
           <div class='stats'>
             <% logger.debug "routine: " + cells['stats']['routine'].inspect %>
-            routine:<br>
+            <b>routine:</b><br>
             <% cells['stats']['routine'].each { |k, v| %>
               <% #byebug %>
               <%= k + ': ' + v.to_s %> <br>
@@ -73,7 +73,7 @@
         <% if cells['stats'].key?('flexible') %>
           <div class='stats'>
             <% logger.debug "flexible: " + cells['stats']['flexible'].inspect %>
-            flexible:<br>
+            <b>flexible:</b><br>
             <% cells['stats']['flexible'].each { |k, v| %>
               <% #byebug %>
               <%= k + ': ' + v.to_s %> <br>

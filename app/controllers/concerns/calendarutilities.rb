@@ -520,23 +520,29 @@ module Calendarutilities
               end
             end
             # keep stats in the cell/slot data
+            freeRoutine = 2*rS-rA-rR+rRCu-rRoTo-rAoTo+rRCoTo-rB
+            freeCatchup = rA+rAoTo+rB-rRCu-rRCoTo
+            flexCatchup = 2*fS-fR-fRoTo
             cells["stats"] = {
                               "routine"=>{
-                                           'S'      =>rS,
-                                           'R'      =>rR,
-                                           'RoTo'   =>rRoTo,
-                                           'A'      =>rA,
-                                           'AoTo'   =>rAoTo,
-                                           'RCu'    =>rRCu,
-                                           'RCoTo'  =>rRCoTo,
-                                           'B'      =>rB
+                                           'S'       =>rS,
+                                           'R'       =>rR,
+                                           'RoTo'    =>rRoTo,
+                                           'A'       =>rA,
+                                           'AoTo'    =>rAoTo,
+                                           'RCu'     =>rRCu,
+                                           'RCoTo'   =>rRCoTo,
+                                           'B'       =>rB,
+                                           'Free'    =>freeRoutine,
+                                           'Catchup' =>freeCatchup
                                          },
                               "flexible"=>{
-                                           'S'      =>fS,
-                                           'R'      =>fR,
-                                           'RoTo'   =>fRoTo,
-                                           'RCu'    =>fRCu,
-                                           'RCoTo'  =>fRCoTo,
+                                           'S'       =>fS,
+                                           'R'       =>fR,
+                                           'RoTo'    =>fRoTo,
+                                           'RCu'     =>fRCu,
+                                           'RCoTo'   =>fRCoTo,
+                                           'Catchup' =>flexCatchup
                                          }
                               }
 
