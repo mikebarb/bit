@@ -47,4 +47,11 @@ Rails.application.configure do
   
   #google api stuff - added by Mike
   #GOOGLE_API_USE_RAILS_LOGGER = true
+  
+  # action cable configuration - not sure where it should go!!!!!
+  #config.action_cable.url = 'ws:bit3-micmac.c9users.io:3000/cable'
+  
+  # refer https://github.com/rails/rails/issues/31524 
+  config.action_cable.allowed_request_origins = [/http:\/\/*/, /https:\/\/*/]
+  
 end

@@ -5,6 +5,17 @@
 
 /* global $ */
 
+
+// Web Socket receives a new message - calendar updates received.
+App.calendar = App.cable.subscriptions.create("CalendarChannel", {  
+//App.cable.subscriptions.create("CalendarChannel", {  
+  received: function(data) {
+    console.log("calendar.js - entered ws received function");
+    console.dir(data);
+    return;
+  }
+});
+
 // Note: this is called with turbolinks at bottom of page.
 // Written as a callable function to provide this flexibility.
 // Found that we need to be careful this does not get called twice
@@ -17,6 +28,10 @@ var ready = function() {
   // These are used in the quick status setting.
   var validTutorStatuses = ["Away", "Absent", "Deal", "Scheduled", "Notified", "Confirmed", "Attended"];
   var validStudentStatuses = ["Away", "Absent", "Deal", "Bye", "Attended", "Scheduled"];
+
+
+
+
 
   // want to set defaults on some checkboxes on page load
   var flagViewOptions = false;
@@ -387,7 +402,7 @@ var ready = function() {
           scmi_editDetail = true; // consistency in context menu naming for user.
           scmi_editSubject = true;
           scmi_editEntry   = true;
-          scmi_setPersonStatus = true;     // only in index area for tutors 
+          //scmi_setPersonStatus = true;     // only in index area for tutors 
         }else{  // in the main schedule area (lesson)
           scmi_copy = scmi_move = scmi_remove = scmi_addLesson = true;
           scmi_setStatus = scmi_setKind = scmi_editComment = scmi_editDetail = true;
@@ -446,6 +461,11 @@ var ready = function() {
   // action is the element clicked on in the menu.
   // The menu element clicked on has an attribute "data-action" that 
   // describes the required action.
+
+// currentActivity['action'] = thisAction;           //**update**
+// currentActivity['object_id'] = thisEleId;         //**update**
+// currentActivity['to'] = thisEleId;                //**update**
+
   function menuItemActioner( action ) {
     //dom_change['action'] = "move";
     //dom_change['move_ele_id'] = ui.draggable.attr('id');
@@ -480,8 +500,9 @@ var ready = function() {
       // the old (pre-manimpulation) parent of the element being manipulated.
       // i.e. tutor and student -> nearest session as old parent
       //      session           -> nearest slot as old parent
-      currentActivity['action'] = thisAction;
+      currentActivity['action'] = thisAction;           //**update**
       currentActivity['move_ele_id'] =  thisEleId;
+      currentActivity['object_id'] = thisEleId;         //**update**
       thisEle = document.getElementById(thisEleId);
       //currentActivity['ele_old_parent_id'] = document.getElementById(thisEleId).parentElement.id;
       switch ( getRecordType(thisEleId) ) {
@@ -513,6 +534,7 @@ var ready = function() {
           // based on the type of element we are moving
           // Note, currentActiviey['move_ele_id'] is the element right clicked on when
           // copy or move was selected - held over in this variable.
+          currentActivity['to'] = thisEleId;         //**update**
           switch ( getRecordType(currentActivity['move_ele_id']) ) {
             case 's':   //student
             case 't':   //tutor
@@ -522,7 +544,7 @@ var ready = function() {
               //******************************************************
               // Need the database changes and manipulation called here
               //******************************************************
-              personupdateslesson( currentActivity );
+              personupdateslesson_Update( currentActivity );      //**update**
               //----- contained in currentActivity ------------(example)
               //  move_ele_id: "Wod201705301600s002",
               //  ele_old_parent_id: "Wod201705301600n001", 
@@ -1822,6 +1844,95 @@ var ready = function() {
     //data: {lesson : {'slot_id' : slotid }, 'domchange' : domchange },
   }
 
+
+  //This function is called for either move or copy
+  //Does ajax to move or copy a student or tutor to another lesson
+  
+  // Update the approach to only use these parameters:
+  // currentActivity['action'] = thisAction;           //**update**
+  // currentActivity['object_id'] = thisEleId;         //**update**
+  // currentActivity['to'] = thisEleId;                //**update**
+  // Note: currentActivity['from']  will be populated by the controller
+  //       The last two (['to'] and or ['from']) can be nil for r actiosn.
+  
+  function personupdateslesson_Update( domchange ){
+    console.log("personupdatelesson called");
+    console.log(domchange);
+    var action = domchange['action'];   //move or copy
+    //var personid = getRecordId(domchange['move_ele_id']);
+    var newlessonid = getRecordId(domchange['ele_new_parent_id']);
+    console.log("personid: " + domchange['move_ele_id']);
+    var myurl;
+    var mydata;
+    mydata =  { 'domchange' : domchange  };
+    //mydata =  { 'new_lesson_id'  : newlessonid,
+    //            'domchange'      : domchange                  
+    //          };
+    if(domchange['ele_old_parent_id'] != undefined){
+      var oldlessonid = getRecordId(domchange['ele_old_parent_id']);
+      //mydata['old_lesson_id'] =  oldlessonid;
+    }
+    // ensure not being dropped in the same place!!!
+    if(oldlessonid == newlessonid){
+      //alert("You dropped this item in the same location!!!");
+      return;
+    }
+    var recordtype = getRecordType(domchange['move_ele_id']);
+    if( 's' == recordtype ){    //student
+      //console.log("we have a student - " + personid);
+      //console.log("action: " + action);
+      //mydata['student_id'] = personid; 
+      if(action == "move") {   
+        myurl = myhost + "/studentmovelesson/";
+        //var oldlessonid = getRecordId(domchange['ele_old_parent_id']);
+        //mydata['old_lesson_id'] =  oldlessonid;
+      } else if(action == "copy"){ // copy
+        myurl = myhost + "/studentcopylesson/";
+      }
+    } else if( 't' == recordtype ){   //tutor
+      //console.log("we have a tutor - " + personid);
+      //mydata['tutor_id'] = personid; 
+      if(action == "move") {
+        //var oldlessonid = getRecordId(domchange['ele_old_parent_id']);
+        //mydata['old_lesson_id'] =  oldlessonid;
+        //myurl = myhost + "/tutormovelesson/";
+        myurl = myhost + "/tutormovecopylesson/";
+      } else { // copy
+        //myurl = myhost + "/tutorcopylesson/";
+        myurl = myhost + "/tutormovecopylesson/";
+      }
+    } else {
+      console.log("error - the moving person is not a tutor or student");
+      return;
+    }
+    console.log("now make the ajax call - url: " + myurl);
+    $.ajax({
+        type: "POST",
+        url: myurl,
+        data: mydata,
+        dataType: "json",
+        context: domchange,
+
+        success: function(result1, result2, result3){
+          console.log("ajax call successful");
+            console.dir(result1);
+            console.log(domchange);
+            //moveelement(domchange);
+            moveelement_update(result1);
+        },
+        error: function(xhr){
+            //$(this).addClass( "processingerror" );
+            var errors = $.parseJSON(xhr.responseText);
+            var error_message = "";
+            for (var error in (errors['lesson_id'])){
+              error_message += " : " + errors['lesson_id'][error];
+            }
+            alert("error moving student or tutor to another lesson: " + error_message);
+        }
+     });
+  }
+
+
   function deleteelement( domchange ){
     //  action:             "move"
     //  ele_new_parent_id:  "Wod201705291630l002"  -- slot
@@ -2041,6 +2152,276 @@ var ready = function() {
     console.log(parentele);
   }
 
+  function moveelement_update( domchange ){
+    //  action:             "move"
+    //  ele_new_parent_id:  "Wod201705291630l002"  -- slot
+    //  ele_old_parent_id:  "Wod201705291600l001"  -- slot
+    //  move_ele_id:        "Wod201705291600n003"  -- lesson
+    
+    
+    // **Update** the approach to only use these parameters:
+    //
+    // This approach allows for the source element not being present on the page
+    // or even the destination element may not reside on this page.
+    // Web sockets allows all pages to be updated indepent of the dates choosen.
+    //
+    // currentActivity['action'] = thisAction;
+    // currentActivity['object_id'] = thisEleId;
+    // currentActivity['to'] = destination parent_id to be moved to;
+    // currentActivity['from']  = source parent_id previously attached to. 
+    // currentActivity['html_partial'] = the html for this element generated in
+    //                                    the controller.
+    //
+    // Note: The 'to', 'from' & 'object_id_old' will be populated by the
+    //       controller as required.
+    //       Also, they will be nil for some actions.
+    //
+    // The logic for parents is:
+    // ele_parent_from/to = the parent of type slot, lesson, tutor or person.
+    // ele_parent_from/to_place = the exact parent location to place the html
+    //                            which can vary based on the objec type.
+
+    //console.log("called moveelement");
+    //console.dir(domchange);
+    var action      = domchange['action'];
+    var object_type = domchange['object_type'];
+    var ele_object_old = document.getElementById(domchange['object_id_old']);
+    var ele_object = document.getElementById(domchange['object_id']);
+    //var ele_parent_from = document.getElementById(domchange['from']);
+    var ele_parent_to = document.getElementById(domchange['to']);
+    //var ele_parent_from_place;   // exact location to delete dom
+    
+    if (ele_object_old != null) {
+      // something to remove if action is move, leave if action is copy
+      if(action == 'move'){
+        ele_object_old.parentNode.removeChild(ele_object_old);
+      }
+    }
+    
+    if (ele_object == null) {
+      // new object not on page yet!!
+      // ensure is not already done by another process
+      if(ele_parent_to != null) {
+        // Ensure there is a place on the page to put this object
+        // as possiblity this user is not viewing the region this object 
+        // being moved to.
+
+        // place tutor or student into destination
+        // some names are unique to person type
+        var grouppersons = 'group' + object_type + 's';
+        var personnameclass = object_type + 'name'; 
+        if (object_type == 'tutor' || object_type == 'student') {    // person
+          // correct placement within the tutor arrangment
+          var ele_parent_to_place = ele_parent_to.getElementsByClassName(grouppersons)[0];
+          // build the dom object to be inserted from the html segment
+          var elecreated = document.createElement('div');
+          elecreated.innerHTML = domchange['html_partial'];
+          var eletoplace = elecreated.getElementsByClassName(object_type)[0]; 
+          // need to place tutor in alphabethical order
+          var name = domchange['name'];
+          var mypersons = ele_parent_to_place.getElementsByClassName(object_type);
+          if (mypersons) {    // have tutors
+            var flagInserted = false;
+            var myperson;
+            for (let i = 0; i < mypersons.length; i++){
+              myperson = mypersons[i];
+              var mypersonname = myperson.getElementsByClassName(personnameclass)[0].innerHTML;
+              console.log(mypersonname);
+              if (mypersonname.toLowerCase() > name.toLowerCase()){
+                ele_parent_to_place.insertBefore(eletoplace, myperson);
+                flagInserted = true;
+                break;
+              }
+            }
+            if(flagInserted == false) {
+              ele_parent_to_place.append(eletoplace);
+            }
+          } else {  // no tutors/students, just add.
+            console.log ("no tutors / students");
+            ele_parent_to_place.insertBefore(eletoplace, ele_parent_to_place.firstChild);
+          }
+        }
+
+
+
+      }
+    }
+
+    
+    return;
+
+    var newparentid = domchange['ele_new_parent_id'];
+    var moveRecordType = getRecordType(domchange['move_ele_id']);
+    var newid = moveRecordType + getRecordId(domchange['move_ele_id']);
+    var oldid = domchange['move_ele_id'];
+    //console.log("moveelement - oldid: " + oldid + " => newid: " + newid);
+    var elemoving = document.getElementById(oldid);
+    var directparentclassname = elemoving.parentElement.className;
+    // check if being copied from tutor/student lists or within scheduling
+    //console.log("***************t: " + moveRecordType);
+    switch(moveRecordType) {
+      case 't': //tutor
+        if(clickInsideElementClassList2(elemoving, ['index'])){
+          var sample_tutor = document.getElementsByClassName('schedule')[0].getElementsByClassName('tutor')[0];
+          directparentclassname = sample_tutor.parentElement.className;
+        }
+        newid = newparentid + newid;
+        break;
+      case 's': //student
+        if(clickInsideElementClassList2(elemoving, ['index'])){
+          var sample_student = document.getElementsByClassName('schedule')[0].getElementsByClassName('student')[0];
+          directparentclassname = sample_student.parentElement.className;
+        }
+        newid = newparentid + newid;
+        break;
+      case 'n': //lesson
+        newid = newparentid.substr(0, newparentid.length-sf-1) + newid;
+        break;
+    }
+    if ('copy' == domchange['action']){
+      var eletoplace = elemoving.cloneNode(true, true);
+      elementdraggable(eletoplace);
+      if(clickInsideElementClassList2(elemoving, ['index'])){
+        // Need to add some more content - status, kind, comments,etc.
+        var new_ele1 = document.createElement('div');
+        var new_ele2 = document.createElement('div');
+        new_ele2.classList.add("statusinfo");
+        new_ele2.textContent = "Status: Kind: ";
+        var comment_ele = eletoplace.getElementsByClassName('comment')[0];
+        var comment_ele_children = comment_ele.children;
+        comment_ele.appendChild(new_ele2);
+        if( moveRecordType == 't') {   // tutor
+          new_ele1.classList.add("tutrolecomment");
+        } else if (moveRecordType == 's') {   // student
+          new_ele1.classList.add("rolecomment");
+        }
+        comment_ele.insertBefore(new_ele1, comment_ele_children[1]);
+      }
+    }else if('move' == domchange['action']){
+      eletoplace = elemoving;
+    }
+    //console.log("----------eletoplace-------");
+    //console.log(eletoplace);
+    // note thjis parent_element is one of lesson or slot.
+    // The actual parent to insert into may be a subset
+    // e.e. tutor is actually attached to grouptutors!
+    var parent_element = document.getElementById(domchange['ele_new_parent_id']);
+    //console.log("------ parent_element ---------");
+    //console.log(parent_element);
+    switch(moveRecordType) {
+      case 't': //tutor
+        // get the parent where tutors reside for this lesson.
+        //var tutorsparent = parent_element.getElementsByClassName('grouptutors')[0];
+        // This caters for differenct class names used for css styling
+        // could be grouptutors, grouptutors1 etc. but only one class name for this element.
+        var tutorsparent = parent_element.getElementsByClassName(directparentclassname)[0];
+        // we really should insert them in correct alphabetical order
+        console.log("Show all the tutors for this target node");
+        var movetutorname = eletoplace.getElementsByClassName('tutorname')[0].innerHTML;
+        var mytutors = tutorsparent.getElementsByClassName('tutor');
+        if (mytutors) {    // have tutors
+          var flagInserted = false;
+          var mytutor;
+          console.log (" we have tutors");
+          for (let i = 0; i < mytutors.length; i++){
+            mytutor = mytutors[i];
+            var mytutorname = mytutor.getElementsByClassName('tutorname')[0].innerHTML;
+            console.log(mytutorname);
+            if (mytutorname.toLowerCase() > movetutorname.toLowerCase()){
+              tutorsparent.insertBefore(eletoplace, mytutor);
+              flagInserted = true;
+              break;
+            }
+          }
+          if(flagInserted == false) {
+            tutorsparent.append(eletoplace);
+          }
+        } else {  // no tutors, just add.
+          console.log ("no tutors");
+          tutorsparent.insertBefore(eletoplace, tutorsparent.firstChild);
+        }
+        break;
+      case 's': //student
+        // get the parent where students reside for this lesson.
+        // insert them in correct alphabetical order
+        //var studentsparent = parent_element.getElementsByClassName('groupstudents')[0];
+        // This caters for differenct class names used for css styling
+        // could be groupstudents, groupstudents1 etc. but only one class name for this element.
+        var studentsparent = parent_element.getElementsByClassName(directparentclassname)[0];
+        var movestudentname = eletoplace.getElementsByClassName('studentname')[0].innerHTML;
+        var mystudents = studentsparent.getElementsByClassName('student');
+        if (mystudents) {    // have students
+          flagInserted = false;
+          var mystudent;
+          for (let i = 0; i < mystudents.length; i++){
+            mystudent = mystudents[i];
+            var mystudentname = mystudent.getElementsByClassName('studentname')[0].innerHTML;
+            if (mystudentname.toLowerCase() > movestudentname.toLowerCase()){
+              studentsparent.insertBefore(eletoplace, mystudent);
+              flagInserted = true;
+              break;
+            }
+          }
+          if(flagInserted == false) {
+            studentsparent.append(eletoplace);
+          }
+        } else {  // no students in this lesson, just add.
+          tutorsparent.insertBefore(eletoplace, tutorsparent.firstChild);
+        }
+        break;
+      case 'n': //lesson
+        // lesson is a direct child of slot 
+        // so parent_element is correct parent.
+        // insert lesson in the correct order.
+        // order by status, then by name of first tutor.
+        // Tutors are already in alphabetical order.
+        var lessonsparent = parent_element;
+        var movelessonstatus = eletoplace.getElementsByClassName('lessonstatusinfo')[0].innerHTML.toLowerCase().trim();
+        var movelessontutorname = eletoplace.getElementsByClassName('tutor')[0];
+        if (movelessontutorname) {
+          movelessontutorname = movelessontutorname.getElementsByClassName('tutorname')[0].innerHTML.toLowerCase().trim();
+        } else {
+          movelessontutorname = '';
+        }
+        var mylessons = lessonsparent.getElementsByClassName('lesson');
+        if (mylessons) {    // have tutors
+          flagInserted = false;
+          var mylesson;
+          for (let i = 0; i < mylessons.length; i++){
+            mylesson = mylessons[i];
+            var mylessonstatus = mylesson.getElementsByClassName('lessonstatusinfo')[0].innerHTML.toLowerCase().trim();
+            var mylessontutorname = mylesson.getElementsByClassName('tutor')[0];
+            if (mylessontutorname) {
+              mylessontutorname = mylessontutorname.getElementsByClassName('tutorname')[0].innerHTML.toLowerCase().trim();
+            } else {
+              mylessontutorname = '';
+            }
+
+            //if (mylessonstatus > movelessonstatus){
+            console.log (movelessonstatus + " " + movelessontutorname + " " + mylessonstatus + " " + mylessontutorname);
+            var sortresult = lessonsortorder(movelessonstatus, movelessontutorname, mylessonstatus, mylessontutorname );
+            console.log ("sortresult: " + sortresult);
+            if (sortresult > -1){
+              lessonsparent.insertBefore(eletoplace, mylesson);
+              flagInserted = true;
+              break;
+            }
+          }
+          if(flagInserted == false) {
+            lessonsparent.append(eletoplace);
+          }
+        } else {  // no lessons in this slot, just add.
+          lessonsparent.append(eletoplace);
+          //lessonsparent.insertBefore(eletoplace, tutorsparent.firstChild);
+        }
+        //parent_element.append(eletoplace);
+        break;
+    }
+    // once successfully processed - update the id
+    eletoplace.id = newid;
+
+  }
+  
   function moveelement( domchange ){
     //  action:             "move"
     //  ele_new_parent_id:  "Wod201705291630l002"  -- slot
@@ -2320,6 +2701,10 @@ function findAncestor (el, cls) {
 
 function selectshows() {
   //console.log("processing selectShows");
+  var myShowList = document.getElementById("selectshows");
+  if (myShowList == null){
+    return;
+  }
   var showList = document.getElementById("selectshows").getElementsByTagName("input");
   //console.log(showList);
   //var flagcomments = false;

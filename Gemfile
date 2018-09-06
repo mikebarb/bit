@@ -3,7 +3,12 @@ source 'https://rubygems.org'
 # Bundle edge Rails instead: gem 'rails', github: 'rails/rails'
 #gem 'rails', '4.1.1'
 #gem 'rails', '~> 4.2'
-gem 'rails', '~> 5.0.0', '>= 5.0.0.1'
+#gem 'rails', '~> 5.0.0', '>= 5.0.0.1'
+# backlevel to this as a know working active cable connection.
+# see https://github.com/rails/rails/issues/27421 
+#gem 'rails', '5.0.0.1'
+gem 'rails', '5.0.6'
+
 
 # force active support version to make bundle updat work
 # was not in here before rails 5.

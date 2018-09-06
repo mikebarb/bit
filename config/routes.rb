@@ -34,13 +34,15 @@ Rails.application.routes.draw do
   post 'removetutorfromlesson' => 'tutroles#removetutorfromlesson', as: :removetutorfromlesson
   post 'tutorcopylesson' =>       'tutroles#tutorcopylesson', as: :tutorcopylesson
   post 'tutormovelesson' =>       'tutroles#tutormovelesson', as: :tutormovelesson
-  post 'tutorupdateskc' =>           'tutroles#tutorupdateskc', as: :tutorupdateskc
+  post 'tutormovecopylesson' =>   'tutroles#tutormovecopylesson', as: :tutormovecopylesson
+  post 'tutorupdateskc' =>        'tutroles#tutorupdateskc', as: :tutorupdateskc
   resources :tutroles
 
   post 'removestudentfromlesson' => 'roles#removestudentfromlesson', as: :removestudentfromlesson
-  post 'studentcopylesson' => 'roles#studentcopylesson', as: :studentcopylesson
-  post 'studentmovelesson' => 'roles#studentmovelesson', as: :studentmovelesson
-  post 'studentupdateskc' =>           'roles#studentupdateskc', as: :studentupdateskc
+  post 'studentcopylesson' =>       'roles#studentcopylesson', as: :studentcopylesson
+  post 'studentmovelesson' =>       'roles#studentmovelesson', as: :studentmovelesson
+  post 'studentmovecopylesson' =>   'roles#studentmovecopylesson', as: :studentmovecopylesson
+  post 'studentupdateskc' =>        'roles#studentupdateskc', as: :studentupdateskc
   resources :roles
 
   #get 'calendar/display'

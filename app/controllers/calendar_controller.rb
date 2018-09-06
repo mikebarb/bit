@@ -11,7 +11,7 @@ class CalendarController < ApplicationController
   end
   
   def flexibledisplay
-    @sf = 5   # number of significant figures in dom ids for lesson,tutor, etc.
+    #@sf = 5   # number of significant figures in dom ids for lesson,tutor, etc.
     @options = Hash.new  # options to be passed into calendar read utility.
     # dates can come from user preferences or be overridden by settings
     # in the flexible display options or passed parameter options.
@@ -289,8 +289,8 @@ class CalendarController < ApplicationController
     end
     
     # call the library in controllers/concerns/calendarutilities.rb
-    #@cal = calendar_read_display1f(@sf, mystartdate, myenddate, @options)
-    @cal = calendar_read_display1f(@sf, @options)
+    #@cal = calendar_read_display1f(@sf, @options)
+    @cal = calendar_read_display1f(@options)
     
     if @options[:ratio]
       generate_ratios()

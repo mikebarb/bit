@@ -16,8 +16,9 @@ module Calendarutilities
   # 
   # -----------------------------------------------------------------------------
   #def calendar_read_display1f(sf, mystartdate, myenddate, options)
-  def calendar_read_display1f(sf, options)
-    @sf = sf    # significant figures for ids used in browser display
+  #def calendar_read_display1f(sf, options)
+  def calendar_read_display1f(options)
+    #@sf = sf    # significant figures for ids used in browser display
     
     # Process parameters and set up the options.
     #

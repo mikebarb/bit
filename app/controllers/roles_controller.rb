@@ -78,14 +78,39 @@ class RolesController < ApplicationController
 
   # POST /studentcopylesson.json
   def studentcopylesson
-    @role = Role.new(:student_id => params[:student_id],
-                     :lesson_id => params[:new_lesson_id])
-    if params[:old_lesson_id]
-      @role_from = Role.where(:student_id => params[:student_id],
-                              :lesson_id => params[:old_lesson_id]).first
+    #byebug
+    result = /^[A-Z]+\d+n(\d+)s(\d+)$/.match(params[:domchange][:object_id])
+    if result 
+      student_id = result[2]
+      old_lesson_id = result[1]
+      @domchange['object_type'] = 'student'
+    end
+    result = /^[A-Z]+\d+n(\d+)/.match(params[:domchange][:to])
+    if result 
+      new_lesson_id = result[1]
+    end
+    logger.debug "student_id     : " + student_id.inspect
+    logger.debug "old_esoon_id : " + old_lesson_id.inspect
+    logger.debug "new_lesson_id: " + new_lesson_id.inspect
+
+    @role = Role.new(:student_id => student_id, :lesson_id => new_lesson_id)
+    # copy relevant info from old tutrole (status & kind)
+    if old_lesson_id
+      @role_from = Role.where(:student_id  => student_id,
+                                    :lesson_id => old_lesson_id).first
       @role.status = @role_from.status
       @role.kind   = @role_from.kind
     end
+    
+    
+    #@role = Role.new(:student_id => params[:student_id],
+    #                 :lesson_id => params[:new_lesson_id])
+    #if params[:old_lesson_id]
+    #  @role_from = Role.where(:student_id => params[:student_id],
+    #                          :lesson_id => params[:old_lesson_id]).first
+    #  @role.status = @role_from.status
+    #  @role.kind   = @role_from.kind
+    #end
     logger.debug("new_role: " + @role.inspect)
     respond_to do |format|
       if @role.save
@@ -99,9 +124,28 @@ class RolesController < ApplicationController
 
   # PATCH/PUT /studentmovelesson.json
   def studentmovelesson
-    @role = Role.where(:student_id => params[:student_id], :lesson_id => params[:old_lesson_id]).first
-    @role.lesson_id = params[:new_lesson_id]
-    logger.debug("after_role: " + @role.inspect)
+    #byebug
+    result = /^[A-Z]+\d+n(\d+)s(\d+)$/.match(params[:domchange][:object_id])
+    if result 
+      student_id = result[2]
+      old_lesson_id = result[1]
+      @domchange['object_type'] = 'student'
+    end
+    result = /^[A-Z]+\d+n(\d+)/.match(params[:domchange][:to])
+    if result 
+      new_lesson_id = result[1]
+    end
+    logger.debug "student_id     : " + student_id.inspect
+    logger.debug "old_lesson_id : " + old_lesson_id.inspect
+    logger.debug "new_lesson_id: " + new_lesson_id.inspect
+    @role = Role.where(:student_id => student_id, :lesson_id => old_lesson_id).first
+    logger.debug "read    @role: " + @role.inspect
+    @role.lesson_id = new_lesson_id
+    logger.debug "updated @role: " + @role.inspect
+    #byebug
+    
+    #@role = Role.where(:student_id => params[:student_id], :lesson_id => params[:old_lesson_id]).first
+    #@role.lesson_id = params[:new_lesson_id]
     respond_to do |format|
       if @role.save
         format.json { render :show, status: :ok, location: @role }
@@ -139,6 +183,9 @@ class RolesController < ApplicationController
     end
     respond_to do |format|
       if @role.save
+        logger.debug "studentupdateskc @role saved: " + @role.inspect
+        ActionCable.server.broadcast("calendar_channel", message: [@role])
+
         #format.html { redirect_to @student, notice: 'Student was successfully updated.' }
         format.json { render :show, status: :ok, location: @role }
       else
