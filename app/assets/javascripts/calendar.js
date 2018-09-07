@@ -7,6 +7,7 @@
 
 
 // Web Socket receives a new message - calendar updates received.
+/*
 App.calendar = App.cable.subscriptions.create("CalendarChannel", {  
 //App.cable.subscriptions.create("CalendarChannel", {  
   received: function(data) {
@@ -15,7 +16,7 @@ App.calendar = App.cable.subscriptions.create("CalendarChannel", {
     return;
   }
 });
-
+*/
 // Note: this is called with turbolinks at bottom of page.
 // Written as a callable function to provide this flexibility.
 // Found that we need to be careful this does not get called twice
@@ -556,7 +557,7 @@ var ready = function() {
               // find the 'slot' element in the tree working upwards
               // as thisEle is the dom location we are moving this element to.
               currentActivity['ele_new_parent_id'] = clickInsideElementClassList2(thisEle, ['slot']).id;
-              lessonupdateslot( currentActivity );
+              lessonupdateslot_Update( currentActivity );
               break;
           }
           currentActivity = {};     // clear when done - can't paste twice.
@@ -1715,9 +1716,11 @@ var ready = function() {
       drop: function( event, ui ) {
         var dom_change = {};
         dom_change['action'] = "move";
+        dom_change['object_id'] = ui.draggable.attr('id');
         dom_change['move_ele_id'] = ui.draggable.attr('id');
         dom_change['ele_old_parent_id'] = document.getElementById(dom_change['move_ele_id']).parentElement.id;
         dom_change['ele_new_parent_id'] = this.id;
+        dom_change['to'] = this.id;
         dom_change['element_type'] = "lesson";
 
         lessonupdateslot( dom_change );
@@ -1747,7 +1750,9 @@ var ready = function() {
         var dom_change = {};
         dom_change['action'] = "move";
         dom_change['move_ele_id'] = ui.draggable.attr('id');
+        dom_change['object_id'] = ui.draggable.attr('id');
         dom_change['ele_new_parent_id'] = this.id;
+        dom_change['to'] = this.id;
         //dom_change['ele_old_parent_id'] = clickInsideElementClassList2(document.getElementById(dom_change['move_ele_id']), ['lesson']).id;
         if(clickInsideElementClassList2(this_move_element, ['index'])){
           dom_change['action'] = "copy";
@@ -1766,7 +1771,7 @@ var ready = function() {
           dom_change['element_type'] = "";
         }
 
-        personupdateslesson( dom_change );
+        personupdateslesson_Update( dom_change );
 
         $( this )
           //.append(ui.draggable)
@@ -1852,12 +1857,13 @@ var ready = function() {
   // currentActivity['action'] = thisAction;           //**update**
   // currentActivity['object_id'] = thisEleId;         //**update**
   // currentActivity['to'] = thisEleId;                //**update**
-  // Note: currentActivity['from']  will be populated by the controller
-  //       The last two (['to'] and or ['from']) can be nil for r actiosn.
+  // currentActivity['from'] = populated by the controller
+  // currentActivity['object_type'] = populated by the controller
+  // Note: ['to'] and / or ['from'] can be nil for some actions.
   
   function personupdateslesson_Update( domchange ){
-    console.log("personupdatelesson called");
-    console.log(domchange);
+    //console.log("personupdatelesson called");
+    //console.log(domchange);
     var action = domchange['action'];   //move or copy
     //var personid = getRecordId(domchange['move_ele_id']);
     var newlessonid = getRecordId(domchange['ele_new_parent_id']);
@@ -1883,11 +1889,13 @@ var ready = function() {
       //console.log("action: " + action);
       //mydata['student_id'] = personid; 
       if(action == "move") {   
-        myurl = myhost + "/studentmovelesson/";
+        //myurl = myhost + "/studentmovelesson/";
+        myurl = myhost + "/studentmovecopylesson/";
         //var oldlessonid = getRecordId(domchange['ele_old_parent_id']);
         //mydata['old_lesson_id'] =  oldlessonid;
       } else if(action == "copy"){ // copy
-        myurl = myhost + "/studentcopylesson/";
+        //myurl = myhost + "/studentcopylesson/";
+        myurl = myhost + "/studentmovecopylesson/";
       }
     } else if( 't' == recordtype ){   //tutor
       //console.log("we have a tutor - " + personid);
@@ -2101,6 +2109,39 @@ var ready = function() {
   }
 
   //lessonupdateslot( oldslot_id1, slot_id1, lesson_id1, this, ui, domchange );
+  function lessonupdateslot_Update( domchange ){
+    console.log("calling lessonupdateslot");
+    console.log(domchange);
+    var lessonid = getRecordId(domchange['move_ele_id']);
+    var oldslotid = getRecordId(domchange['ele_old_parent_id']);
+    var newslotid = getRecordId(domchange['ele_new_parent_id']);
+    if(oldslotid == newslotid){
+      //alert("You dropped this item in the same location!!");
+      return;
+    }
+    //var myurl = "https://bit3-micmac.c9users.io/lessons/" + lessonid
+    var myurl = myhost + "/lessonmoveslot";
+    $.ajax({
+        type: "POST",
+        url: myurl,
+        data: {lesson : {'slot_id' : newslotid }, 'domchange' : domchange },
+        dataType: "json",
+        context: domchange,
+        success: function(){
+            console.log("done - dragged lesson " + lessonid + " to slot " + newslotid + " from " + oldslotid );
+            moveelement(domchange);
+        },
+        error: function(request, textStatus, errorThrown){
+            //$(this).addClass( "processingerror" );
+            console.log("ajax error occured: " + request.status.to_s + " - " + textStatus );
+            alert("ajax error occured: " + request.status.to_s + " - " + textStatus );
+        }
+    });
+  }
+  
+
+
+  //lessonupdateslot( oldslot_id1, slot_id1, lesson_id1, this, ui, domchange );
   function lessonupdateslot( domchange ){
     console.log("calling lessonupdateslot");
     console.log(domchange);
@@ -2112,7 +2153,7 @@ var ready = function() {
       return;
     }
     //var myurl = "https://bit3-micmac.c9users.io/lessons/" + lessonid
-    var myurl = myhost + "/lessons/" + lessonid
+    var myurl = myhost + "/lessons/" + lessonid;
     $.ajax({
         type: "POST",
         url: myurl,
@@ -2240,6 +2281,8 @@ var ready = function() {
             console.log ("no tutors / students");
             ele_parent_to_place.insertBefore(eletoplace, ele_parent_to_place.firstChild);
           }
+          //elementdraggable(".student, .tutor");
+          elementdraggable(eletoplace);
         }
 
 

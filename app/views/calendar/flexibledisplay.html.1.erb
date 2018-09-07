@@ -67,45 +67,13 @@
     
         <div class=index-tutors id=index-tutors>
             <% @tutors.each do |tutor| %>
-                <div class=tutor id=<%= "t" + tutor.id.to_s.rjust(@sf, "0") %> >
-                    <div style=persongroup>
-                        <div class="tutorname tutorinline">tutor: <%= tutor.pname %></div>
-                        <div class="tutorcomment comment tutorinline">
-                          <div class="tutorsubjects"><%= tutor.subjects %>
-                            <% if tutor.firstaid == 'yes' %>
-                              <%= "+" %>
-                            <% end %>
-                            <% if tutor.firstlesson == 'yes' %>
-                              <%= "*" %>
-                            <% end %>
-                          </div>
-                          <div class="tutorcommentdetail"><%= tutor.comment %></div>
-                        </div>
-                    </div>
-                </div>
+              <%= render partial: "index_tutor", locals: {tutor: tutor} %>
             <% end %>
         </div>
     
         <div class=index-students id=index-students>
             <% @students.each do |student| %>
-                <div class= student id=<%= "s" + student.id.to_s.rjust(@sf, "0") %> >
-                    <div style=persongroup>
-                        <div class="studentname studentinline">student: <%= student.pname %></div>
-                        <div class="studentcomment comment studentinline">
-    
-                          <div class="studentsubjects"><%= student.sex == nil ? "" :
-                            student.sex.downcase.include?("female")?
-                              "(F) " : student.sex.downcase.include?("male")?
-                              "(M) " : "" 
-                            %> Yr: <%= student.year == nil ? "   " : student.year.rjust(3) %> | <%= student.study %></div>
-                          <br>
-                          <div class="studentcommentdetail"><%= student.comment %></div>
-                          <div class="statusinfo">
-                            <div class="p-status">Detail: <%= student.status %></div>
-                          </div>
-                        </div>
-                    </div>
-                </div>
+              <%= render partial: "index_student", locals: {student: student} %>
             <% end %>
         </div>
     </div>
@@ -146,43 +114,21 @@
       <% end %> 
       <% if cells.key?("values") then %>       
         <% if cells["values"].respond_to?(:each) then %>
+          <% slot = cells["id_dom"] %>
           <% #cells["values"].sort_by {|obj| [valueOrderStatus(obj),valueOrder(obj)] }.each do |entry| %>
           <% cells["values"].each do |entry| %>
+            <% lesson = entry.id %>
             <div class="lesson <%= 'n-status-' + set_class_status_f(entry) %>" id=<%= cells["id_dom"] + "n" + entry.id.to_s.rjust(@sf, "0") %> >
-              
               <div class="grouptutors">
                 <% #if entry.tutors.respond_to?(:each) then %>
                 <% if @tutrole_lessonindex.has_key? entry.id then %>
                   <% #entry.tutors.sort_by {|obj| obj.pname }.each do |tutor| %>
                   <% @tutrole_lessonindex[entry.id].each do |tutroleInfo_index| %>
                     <% thistutrole = @tutroleinfo[tutroleInfo_index] %>
-                    <% tutor = thistutrole.tutor %> 
+                    <% tutor = thistutrole.tutor %>
                     <% #if tutor then %>
-                      <div class="tutor <%= "ft" + tutor.id.to_s.rjust(@sf, "0") 
-                       %><%=            ' t-status-' + set_class_status_f(thistutrole)
-                       %><%= ' t-kind-'   + set_class_kind_f(  thistutrole)
-                       %>" id=<%= cells["id_dom"] + "n" + entry.id.to_s.rjust(@sf, "0") + "t" + tutor.id.to_s.rjust(@sf, "0") %> >
-                        <div style=persongroup>
-                          <div class="tutorname tutorinline "><%= tutor.pname %> (tut)</div>
-                          <div class="tutorcomment comment tutorinline ">
-                            <% #thistutrole = entry.tutroles.where(tutor_id: tutor.id).first %>
-                            <div class="tutorsubjects"><%= tutor.subjects %>
-                              <% if tutor.firstaid == 'yes' %>
-                                <%= "+" %>
-                              <% end %>
-                              <% if tutor.firstlesson == 'yes' %>
-                                <%= "*" %>
-                              <% end %>
-                            </div>
-                            <div class="tutrolecomment"><%= thistutrole.comment %></div>
-                            <div class="tutorcommentdetail"><%= tutor.comment %></div>
-                            <div class="statusinfo">
-                              <div class="l-status">Status: <%= thistutrole.status %></div>
-                              <div class="l-kind">Kind: <%= thistutrole.kind %></div>
-                            </div>
-                          </div>
-                        </div>
-                      </div>
+                      <%= render partial: "schedule_tutor", 
+                          locals: {tutor: tutor, thistutrole: thistutrole, slot: slot, lesson: lesson} %>
                     <% #end %>
                   <% end %>
                 <% end %>
@@ -194,32 +140,10 @@
                   <% #entry.students.each do |student| %>
                   <% @role_lessonindex[entry.id].each do |roleInfo_index| %>
                     <% thisrole = @roleinfo[roleInfo_index] %>
-                    <% student = thisrole.student %> 
+                    <% student = thisrole.student %>
                     <% if student then %>
-                      <div class="student <%= "fs" + student.id.to_s.rjust(@sf, "0") 
-                        %><%=            ' s-status-' + set_class_status_f(thisrole) 
-                        %><%= ' s-kind-'   + set_class_kind_f(    thisrole) 
-                        %>" id=<%= cells["id_dom"] + "n" + entry.id.to_s.rjust(@sf, "0") + "s" + student.id.to_s.rjust(@sf, "0") %> >
-                        <div style=persongroup>
-                          <div class="studentname studentinline "><%= student.pname %><%= 
-                               student.year == nil ? "   " : student.year.rjust(3) %> (stu)</div>
-                          <div class="studentcomment comment studentinline ">
-                            <% #thisrole = entry.roles.where(student_id: student.id).first %>
-                            <div class="studentsubjects"><%= student.sex == nil ? "" :
-                                student.sex.downcase.include?("female")?
-                                "(F) " : student.sex.downcase.include?("male")?
-                                "(M) " : "" 
-                                %><%= student.study %></div>
-                            <div class="rolecomment"><%= thisrole.comment %></div>
-                            <div class="studentcommentdetail"><%= student.comment %></div>
-                            <div class="statusinfo">
-                              <div class="l-status">Status: <%= thisrole.status %></div>
-                              <div class="l-kind">Kind: <%= thisrole.kind %></div>
-                              <div class="p-status">Detail: <%= student.status %></div>
-                            </div>
-                          </div>
-                        </div>
-                      </div>
+                      <%= render partial: "schedule_student", 
+                          locals: {student: student, thisrole: thisrole, slot: slot, lesson: lesson} %>
                     <% end %>
                   <% end %>
                 <% end %>

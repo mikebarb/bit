@@ -83,7 +83,8 @@ class TutrolesController < ApplicationController
     elsif((result = /^t(\d+)/.match(params[:domchange][:object_id])))  #index area
       tutor_id = result[1]
       @domchange['object_type'] = 'tutor'
-      @domchange['action'] = 'copy'    # ONLY a copy allowed from index area.
+      # ONLY a copy allowed when source is in index index area.
+      @domchange['action'] = 'copy' if  @domchange['action'] == 'move'   
     else
       return
     end
@@ -97,8 +98,7 @@ class TutrolesController < ApplicationController
       @domchange['to'] = result[1]
     end
 
-    if( @domchange['action'] == 'move')
-
+    if( @domchange['action'] == 'move')    # move
       @tutrole = Tutrole
                   .includes(:tutor)
                   .where(:tutor_id => tutor_id, :lesson_id => old_lesson_id)
@@ -115,13 +115,22 @@ class TutrolesController < ApplicationController
       end
     end
 
+    @domchange['html_partial'] = render_to_string("calendar/_schedule_tutor.html",
+                                    :formats => [:html], :layout => false,
+                                    :locals => {:tutor => @tutrole.tutor, 
+                                                :thistutrole => @tutrole, 
+                                                :slot => new_slot_id, 
+                                                :lesson => new_lesson_id
+                                               })
 
-    @domchange['html_partial'] = render_to_string("calendar/_schedule_tutor_update.html", :formats => [:html], :layout => false,
+=begin
+    @domchange['html_partial'] = render_to_string("calendar/_schedule_tutor_update.html",
+                                    :formats => [:html], :layout => false,
                                     :locals => {:thistutrole => @tutrole, 
                                                 :slot => new_slot_id, 
                                                 :lesson => new_lesson_id
                                                })
-    
+=end    
     # the object_id will now change (for both move and copy as the inbuild
     # lesson number will change.
     @domchange['object_id_old'] = @domchange['object_id']

@@ -32,33 +32,26 @@ Rails.application.routes.draw do
 
 
   post 'removetutorfromlesson' => 'tutroles#removetutorfromlesson', as: :removetutorfromlesson
-  post 'tutorcopylesson' =>       'tutroles#tutorcopylesson', as: :tutorcopylesson
-  post 'tutormovelesson' =>       'tutroles#tutormovelesson', as: :tutormovelesson
-  post 'tutormovecopylesson' =>   'tutroles#tutormovecopylesson', as: :tutormovecopylesson
-  post 'tutorupdateskc' =>        'tutroles#tutorupdateskc', as: :tutorupdateskc
+  post 'tutorcopylesson'       => 'tutroles#tutorcopylesson',       as: :tutorcopylesson
+  post 'tutormovelesson'       => 'tutroles#tutormovelesson',       as: :tutormovelesson
+  post 'tutormovecopylesson'   => 'tutroles#tutormovecopylesson',   as: :tutormovecopylesson
+  post 'tutorupdateskc'        => 'tutroles#tutorupdateskc',        as: :tutorupdateskc
   resources :tutroles
 
   post 'removestudentfromlesson' => 'roles#removestudentfromlesson', as: :removestudentfromlesson
-  post 'studentcopylesson' =>       'roles#studentcopylesson', as: :studentcopylesson
-  post 'studentmovelesson' =>       'roles#studentmovelesson', as: :studentmovelesson
-  post 'studentmovecopylesson' =>   'roles#studentmovecopylesson', as: :studentmovecopylesson
-  post 'studentupdateskc' =>        'roles#studentupdateskc', as: :studentupdateskc
+  post 'studentcopylesson'       => 'roles#studentcopylesson',       as: :studentcopylesson
+  post 'studentmovelesson'       => 'roles#studentmovelesson',       as: :studentmovelesson
+  post 'studentmovecopylesson'   => 'roles#studentmovecopylesson',   as: :studentmovecopylesson
+  post 'studentupdateskc'        => 'roles#studentupdateskc',        as: :studentupdateskc
   resources :roles
 
-  #get 'calendar/display'
-  #get 'calendar/display1' => 'calendar#display1', as: :calendar_display1
-  #get 'calendar/display1f' => 'calendar#display1f', as: :calendar_display1f
-  #get 'calendar/display2' => 'calendar#display2', as: :calendar_display2
-  #get 'calendar/roster1' => 'calendar#roster1', as: :calendar_roster1
-  #get 'calendar/roster1f' => 'calendar#roster1f', as: :calendar_roster1f
-  #get 'calendar/roster2' => 'calendar#roster2', as: :calendar_roster2
-
-  get 'calendar/displayoptions/' => 'calendar#displayoptions',   as: :displayoptions
+  get 'calendar/displayoptions/'  => 'calendar#displayoptions',  as: :displayoptions
   get 'calendar/flexibledisplay/' => 'calendar#flexibledisplay', as: :flexibledisplay
 
-  get 'lessons/:id/move' => 'lessons#move', as: :move_lesson
-  post 'lessons/:id' => 'lessons#update', as: :update_lesson
-  post 'lessonupdateskc' =>           'lessons#lessonupdateskc', as: :lessonupdateskc
+  get  'lessons/:id/move' => 'lessons#move',            as: :move_lesson
+  post 'lessonmoveslot'   => 'lessons#lessonmoveslot',  as: :lessonmoveslot
+  post 'lessons/:id'      => 'lessons#update',          as: :update_lesson
+  post 'lessonupdateskc'  => 'lessons#lessonupdateskc', as: :lessonupdateskc
   resources :lessons
 
   resources :slots

@@ -115,9 +115,46 @@
       <% if cells.key?("values") then %>       
         <% if cells["values"].respond_to?(:each) then %>
           <% slot = cells["id_dom"] %>
+          <% #cells["values"].sort_by {|obj| [valueOrderStatus(obj),valueOrder(obj)] }.each do |entry| %>
           <% cells["values"].each do |entry| %>
-            <%= render partial: "schedule_lesson", 
-                locals: {slot: slot, lesson: entry} %>
+            <% lesson = entry.id %>
+            <div class="lesson <%= 'n-status-' + set_class_status_f(entry) %>" id=<%= cells["id_dom"] + "n" + entry.id.to_s.rjust(@sf, "0") %> >
+              <div class="grouptutors">
+                <% #if entry.tutors.respond_to?(:each) then %>
+                <% if @tutrole_lessonindex.has_key? entry.id then %>
+                  <% #entry.tutors.sort_by {|obj| obj.pname }.each do |tutor| %>
+                  <% @tutrole_lessonindex[entry.id].each do |tutroleInfo_index| %>
+                    <% thistutrole = @tutroleinfo[tutroleInfo_index] %>
+                    <% tutor = thistutrole.tutor %>
+                    <% #if tutor then %>
+                      <%= render partial: "schedule_tutor", 
+                          locals: {tutor: tutor, thistutrole: thistutrole, slot: slot, lesson: lesson} %>
+                    <% #end %>
+                  <% end %>
+                <% end %>
+              </div>
+              
+              <div class="groupstudents">
+                <% #if entry.students.respond_to?(:each) then %>
+                <% if @role_lessonindex.has_key? entry.id then %>
+                  <% #entry.students.each do |student| %>
+                  <% @role_lessonindex[entry.id].each do |roleInfo_index| %>
+                    <% thisrole = @roleinfo[roleInfo_index] %>
+                    <% student = thisrole.student %>
+                    <% if student then %>
+                      <%= render partial: "schedule_student", 
+                          locals: {student: student, thisrole: thisrole, slot: slot, lesson: lesson} %>
+                    <% end %>
+                  <% end %>
+                <% end %>
+              </div>
+
+              <div class="lessoncomment comment commentinline">
+                <div class="lessoncommenttext"><% if entry.comments != nil && entry.comments != "" %><%= entry.comments %><% end %></div>
+                <div class="lessonstatusinfo"><% if entry.status != nil && entry.status != "" %>Status: <%= entry.status %> <% end %></div>
+              </div>
+               
+            </div>
           <% end %>
         <% end %>
       <% elsif cells.key?("value") then %>     

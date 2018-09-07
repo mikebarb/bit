@@ -1,0 +1,23 @@
+<% byebug %>
+<div class="student <%= "fs" + thisrole.student.id.to_s.rjust(@sf, "0") 
+%><%=            ' s-status-' + set_class_status_f(thisrole)
+%><%= ' s-kind-'   + set_class_kind_f(thisrole)
+%>" id=<%= slot + "n" + lesson.to_s.rjust(@sf, "0") + "s" + thisrole.student.id.to_s.rjust(@sf, "0") %> >
+<div style=persongroup>
+  <div class="studentname studentinline "><%= thisrole.student.pname %> (stu)</div>
+  <div class="studentcomment comment studentinline ">
+    <div class="studentsubjects"><%= thisrole.student.sex == nil ? "" :
+        thisrole.student.sex.downcase.include?("female")?
+        "(F) " : thisrole.student.sex.downcase.include?("male")?
+        "(M) " : "" 
+        %><%= thisrole.student.study %></div>
+    <div class="rolecomment"><%= thisrole.comment %></div>
+    <div class="studentcommentdetail"><%= thisrole.student.comment %></div>
+    <div class="statusinfo">
+      <div class="l-status">Status: <%= thisrole.status %></div>
+      <div class="l-kind">Kind: <%= thisrole.kind %></div>
+      <div class="p-status">Detail: <%= thisrole.student.status %></div>
+    </div>
+  </div>
+</div>
+</div>

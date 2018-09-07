@@ -83,6 +83,97 @@ class LessonsController < ApplicationController
       end
     end
   end
+  
+  # POST /lessonmoveslot.json
+  def lessonmoveslot
+
+=begin
+    respond_to do |format|
+      logger.debug "lesson_params: " + lesson_params.inspect
+      
+      if @lesson.update(lesson_params)
+        format.html { redirect_to @lesson, notice: 'Lesson was successfully updated.' }
+        format.json { render :show, status: :ok, location: @lesson }
+      else
+        format.html { render :edit }
+        format.json { render json: @lesson.errors, status: :unprocessable_entity }
+      end
+    end
+  end
+=end
+  
+    @domchange = Hash.new
+    params[:domchange].each do |k, v| 
+      logger.debug "k: " + k.inspect + " => v: " + v.inspect 
+      @domchange[k] = v
+    end
+    
+    # from / source
+    if((result = /^([A-Z]+\d+)n(\d+)$/.match(params[:domchange][:object_id])))
+      lesson_id   = result[2]
+      @domchange['object_type'] = 'lesson'
+      @domchange['from'] = result[1]    # old_slot_dom_id
+    else
+      return
+    end
+    logger.debug "@domchange: " + @domchange.inspect
+    
+    # to / destination
+    result = /^(([A-Z]+)(\d{4})(\d{2})(\d{2})(\d{2})(\d{2}))/.match(params[:domchange][:to])
+    if result 
+      @domchange['to'] = new_slot_id = result[1]      # slot_dom_id
+      new_slot_location = result[2]
+      new_slot_time = DateTime.new(result[3].to_i, result[4].to_i, result[5].to_i,
+                                   result[6].to_i, result[7].to_i)
+      # need to find the slot record to match.
+      @slot = Slot.where("timeslot = :thisdate AND
+                            location like :thislocation", 
+                            {thisdate: new_slot_time,
+                             thislocation: new_slot_location + '%'
+                            }).first  
+    end
+    @lesson = Lesson.find(lesson_id)
+    @lesson.slot_id = @slot.id
+    #### saved later #### @lesson.save
+
+    # the object_id will now change (for both move and copy as the inbuild
+    # slot number will change.
+    @domchange['object_id_old'] = @domchange['object_id']
+    @domchange['object_id'] = new_slot_id + "n" + lesson_id.to_s.rjust(@sf, "0")
+
+    
+    # Need to generate the html partial for this session.
+    @tutroles = Tutrole
+                .includes(:tutor)
+                .where(:lesson_id => lesson_id)
+                .order('tutors.pname')
+
+    @roles    = Role
+                .includes(:student)
+                .where(:lesson_id => lesson_id)
+                .order('students.pname')
+
+    @domchange['html_partial'] = render_to_string("calendar/_schedule_lesson_update.html", 
+                                    :formats => [:html], :layout => false,
+                                    :locals => {:slot => new_slot_id,
+                                                :lesson => @lesson,
+                                                :thistutroles => @tutroles,
+                                                :thisroles => @roles
+                                               })
+    
+    respond_to do |format|
+      if @lesson.save
+        format.json { render json: @domchange, status: :ok }
+      else
+        format.json { render json: @lesson.errors.messages, status: :unprocessable_entity }
+      end
+    end
+  end
+  
+  
+  
+  
+  
 
   # PATCH/PUT /lessons/1
   # PATCH/PUT /lessons/1.json

@@ -1,0 +1,34 @@
+<% #byebug %>
+<div class="lesson <%= 'n-status-' + set_class_status_f(lesson) %>" id=<%= slot + "n" + lesson.id.to_s.rjust(@sf, "0") %> >
+
+  <div class="grouptutors">
+    <% if @tutrole_lessonindex.has_key? lesson.id then %>
+      <% @tutrole_lessonindex[lesson.id].each do |tutroleInfo_index| %>
+        <% thistutrole = @tutroleinfo[tutroleInfo_index] %>
+        <% tutor = thistutrole.tutor %>
+        <% if tutor then %>
+          <%= render partial: "schedule_tutor", 
+                     locals: {tutor: tutor, thistutrole: thistutrole, slot: slot, lesson: lesson.id} %>
+        <% end %>
+      <% end %>
+    <% end %>
+  </div>
+  
+  <div class="groupstudents">
+    <% if @role_lessonindex.has_key? lesson.id then %>
+      <% @role_lessonindex[lesson.id].each do |roleInfo_index| %>
+        <% thisrole = @roleinfo[roleInfo_index] %>
+        <% student = thisrole.student %>
+        <% if student then %>
+          <%= render partial: "schedule_student", 
+                  locals: {student: student, thisrole: thisrole, slot: slot, lesson: lesson.id} %>
+        <% end %>
+      <% end %>
+    <% end %>
+  </div>
+
+  <div class="lessoncomment comment commentinline">
+    <div class="lessoncommenttext"><% if lesson.comments != nil && lesson.comments != "" %><%= lesson.comments %><% end %></div>
+    <div class="lessonstatusinfo"><% if lesson.status != nil && lesson.status != "" %>Status: <%= lesson.status %> <% end %></div>
+  </div>  
+</div>
