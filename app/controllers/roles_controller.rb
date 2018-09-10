@@ -43,19 +43,6 @@ class RolesController < ApplicationController
     end
   end
 
-
-
-  # DELETE /roles/1
-  # DELETE /roles/1.json
-  ###def destroy
-  ###  @role.destroy
-  ###  respond_to do |format|
-  ###    format.html { redirect_to roles_url, notice: 'Role was successfully destroyed.' }
-  ###    format.json { head :no_content }
-  ###  end
-  ###end
-  ###    @role = Role.find(params[:id])
-
  # POST /removestudentfromlesson.json
   def removestudentfromlesson
     @domchange = Hash.new
@@ -82,28 +69,6 @@ class RolesController < ApplicationController
       end
     end
   end
-
-=begin
- # POST /removestudentfromlesson.json
-  def removestudentfromlesson
-    @role = Role.where(:student_id => params[:student_id], :lesson_id => params[:old_lesson_id]).first
-    #logger.debug("found role: " + @role.inspect)
-    #myid = @role.id
-    #logger.debug("myroleid: " + myid.inspect)
-    #@role1 = Role.find(@role.id)
-    #logger.debug("@role1: " + @role1.inspect)
-    respond_to do |format|
-      #if @role1.destroy
-      if @role.destroy
-        format.json { head :no_content }
-        #format.json { render :show, status: :created, location: @role }
-      else
-        logger.debug("errors.messages: " + @role.errors.messages.inspect)
-        format.json { render json: @role.errors.full_messages, status: :unprocessable_entity }
-      end
-    end
-  end
-=end
 
   # PATCH/PUT /studentmovecopylesson.json
   # this is the ** updated ** function to replace
@@ -167,13 +132,6 @@ class RolesController < ApplicationController
                                                 :slot => new_slot_id, 
                                                 :lesson => new_lesson_id
                                                })
-=begin    
-    @domchange['html_partial'] = render_to_string("calendar/_schedule_student_update.html", :formats => [:html], :layout => false,
-                                    :locals => {:thisrole => @role, 
-                                                :slot => new_slot_id, 
-                                                :lesson => new_lesson_id
-                                               })
-=end
     # the object_id will now change (for both move and copy as the inbuild
     # lesson number will change.
     @domchange['object_id_old'] = @domchange['object_id']
@@ -191,88 +149,6 @@ class RolesController < ApplicationController
       end
     end
   end
-
-=begin
-  # POST /studentcopylesson.json
-  def studentcopylesson
-    #byebug
-    result = /^[A-Z]+\d+n(\d+)s(\d+)$/.match(params[:domchange][:object_id])
-    if result 
-      student_id = result[2]
-      old_lesson_id = result[1]
-      @domchange['object_type'] = 'student'
-    end
-    result = /^[A-Z]+\d+n(\d+)/.match(params[:domchange][:to])
-    if result 
-      new_lesson_id = result[1]
-    end
-    logger.debug "student_id     : " + student_id.inspect
-    logger.debug "old_esoon_id : " + old_lesson_id.inspect
-    logger.debug "new_lesson_id: " + new_lesson_id.inspect
-
-    @role = Role.new(:student_id => student_id, :lesson_id => new_lesson_id)
-    # copy relevant info from old tutrole (status & kind)
-    if old_lesson_id
-      @role_from = Role.where(:student_id  => student_id,
-                                    :lesson_id => old_lesson_id).first
-      @role.status = @role_from.status
-      @role.kind   = @role_from.kind
-    end
-    
-    
-    #@role = Role.new(:student_id => params[:student_id],
-    #                 :lesson_id => params[:new_lesson_id])
-    #if params[:old_lesson_id]
-    #  @role_from = Role.where(:student_id => params[:student_id],
-    #                          :lesson_id => params[:old_lesson_id]).first
-    #  @role.status = @role_from.status
-    #  @role.kind   = @role_from.kind
-    #end
-    logger.debug("new_role: " + @role.inspect)
-    respond_to do |format|
-      if @role.save
-        format.json { render :show, status: :created, location: @role }
-      else
-        logger.debug("errors.messages: " + @role.errors.messages.inspect)
-        format.json { render json: @role.errors.full_messages, status: :unprocessable_entity }
-      end
-    end
-  end
-
-  # PATCH/PUT /studentmovelesson.json
-  def studentmovelesson
-    #byebug
-    result = /^[A-Z]+\d+n(\d+)s(\d+)$/.match(params[:domchange][:object_id])
-    if result 
-      student_id = result[2]
-      old_lesson_id = result[1]
-      @domchange['object_type'] = 'student'
-    end
-    result = /^[A-Z]+\d+n(\d+)/.match(params[:domchange][:to])
-    if result 
-      new_lesson_id = result[1]
-    end
-    logger.debug "student_id     : " + student_id.inspect
-    logger.debug "old_lesson_id : " + old_lesson_id.inspect
-    logger.debug "new_lesson_id: " + new_lesson_id.inspect
-    @role = Role.where(:student_id => student_id, :lesson_id => old_lesson_id).first
-    logger.debug "read    @role: " + @role.inspect
-    @role.lesson_id = new_lesson_id
-    logger.debug "updated @role: " + @role.inspect
-    #byebug
-    
-    #@role = Role.where(:student_id => params[:student_id], :lesson_id => params[:old_lesson_id]).first
-    #@role.lesson_id = params[:new_lesson_id]
-    respond_to do |format|
-      if @role.save
-        format.json { render :show, status: :ok, location: @role }
-      else
-        logger.debug("errors.messages: " + @role.errors.messages.inspect)
-        format.json { render json: @role.errors.messages, status: :unprocessable_entity }
-      end
-    end
-  end
-=end
 
   # PATCH/PUT /studentupdateskc.json
   # ajax updates skc = status kind comment

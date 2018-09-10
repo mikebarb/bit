@@ -41,27 +41,6 @@ class TutrolesController < ApplicationController
     end
   end
 
-=begin
-  # POST /removetutorfromlesson.json
-  def removetutorfromlesson
-    logger.debug("removetutorfromlesson")
-    @tutrole = Tutrole.where(:tutor_id => params[:tutor_id], :lesson_id => params[:old_lesson_id]).first
-    logger.debug("found tutrole: " + @tutrole.inspect)
-    #@tutrole1 = Tutrole.find(@tutrole.id)
-    #logger.debug("found tutrole1: " + @tutrole1.inspect)
-    respond_to do |format|
-      #if @tutrole1.destroy
-      if @tutrole.destroy
-        #format.json { render :show, status: :removed, location: @tutrole1 }
-        format.json { head :no_content }
-      else
-        logger.debug("errors.messages: " + @tutrole.errors.messages.inspect)
-        format.json { render json: @tutrole.errors.full_messages, status: :unprocessable_entity }
-      end
-    end
-  end
-=end
-
  # POST /removetutorfromlesson.json
   def removetutorfromlesson
     @domchange = Hash.new
@@ -152,14 +131,6 @@ class TutrolesController < ApplicationController
                                                 :lesson => new_lesson_id
                                                })
 
-=begin
-    @domchange['html_partial'] = render_to_string("calendar/_schedule_tutor_update.html",
-                                    :formats => [:html], :layout => false,
-                                    :locals => {:thistutrole => @tutrole, 
-                                                :slot => new_slot_id, 
-                                                :lesson => new_lesson_id
-                                               })
-=end    
     # the object_id will now change (for both move and copy as the inbuild
     # lesson number will change.
     @domchange['object_id_old'] = @domchange['object_id']
@@ -177,134 +148,6 @@ class TutrolesController < ApplicationController
       end
     end
   end
-
-=begin
-  # Copy a tutor from one lesson to another. Actional just a new tutrole entry with current
-  # student attached to a new parent.
-  # POST /tutorcopylesson.json
-  def tutorcopylesson
-    @domchange = Hash.new
-    params[:domchange].each do |k, v| 
-      logger.debug "k: " + k.inspect + " => v: " + v.inspect 
-      @domchange[k] = v
-    end
-    byebug
-    result = /^[A-Z]+\d+n(\d+)t(\d+)$/.match(params[:domchange][:object_id])
-    if result 
-      tutor_id = result[2]
-      old_lesson_id = result[1]
-      @domchange['object_type'] = 'tutor'
-    end
-    result = /^[A-Z]+\d+n(\d+)/.match(params[:domchange][:to])
-    if result 
-      new_lesson_id = result[1]
-    end
-    logger.debug "tutor_id     : " + tutor_id.inspect
-    logger.debug "old_esoon_id : " + old_lesson_id.inspect
-    logger.debug "new_lesson_id: " + new_lesson_id.inspect
-
-    @tutrole = Tutrole.new(:tutor_id => tutor_id, :lesson_id => new_lesson_id)
-    # copy relevant info from old tutrole (status & kind)
-    if old_lesson_id
-      @tutrole_from = Tutrole.where(:tutor_id  => tutor_id,
-                                    :lesson_id => old_lesson_id).first
-      @tutrole.status = @tutrole_from.status
-      @tutrole.kind   = @tutrole_from.kind
-    end
-    
-    #@tutrole = Tutrole.new(:tutor_id => params[:tutor_id], :lesson_id => params[:new_lesson_id])
-    #if params[:old_lesson_id]
-    #  @tutrole_from = Tutrole.where(:tutor_id => params[:tutor_id],
-    #                          :lesson_id => params[:old_lesson_id]).first
-    #  @tutrole.status = @tutrole_from.status
-    #  @tutrole.kind   = @tutrole_from.kind
-    #end
-    respond_to do |format|
-      if @tutrole.save
-        #format.json { render :show, status: :created, location: @role }
-        format.json { render :show, status: :created }
-      else
-        logger.debug("errors.messages: " + @tutrole.errors.messages.inspect)
-        format.json { render json: @tutrole.errors.full_messages, status: :unprocessable_entity }
-      end
-    end
-  end
-
-  # PATCH/PUT /tutormovelesson.json
-  def tutormovelesson
-    @domchange = Hash.new
-    params[:domchange].each do |k, v| 
-      logger.debug "k: " + k.inspect + " => v: " + v.inspect 
-      @domchange[k] = v
-    end
-    
-    # from / source
-    result = /^([A-Z]+\d+n(\d+))t(\d+)$/.match(params[:domchange][:object_id])
-    if result 
-      tutor_id = result[3]
-      old_lesson_id = result[2]
-      @domchange['object_type'] = 'tutor'
-      @domchange['from'] = result[1]
-    end
-    
-    # to / destination
-    result = /^(([A-Z]+\d+)n(\d+))/.match(params[:domchange][:to])
-    if result 
-      new_lesson_id = result[3]
-      new_slot_id = result[2]
-      @domchange['to'] = result[1]
-    end
-
-    #@tutrole = Tutrole.where(:tutor_id => tutor_id, :lesson_id => old_lesson_id).first
-    @tutrole = Tutrole
-                .includes(:tutor)
-                .where(:tutor_id => tutor_id, :lesson_id => old_lesson_id)
-                .first
-    logger.debug "read    @tutrole: " + @tutrole.inspect
-
-    @tutrole.lesson_id = new_lesson_id
-    logger.debug "updated @tutrole: " + @tutrole.inspect
-    
-    html_partial = render_to_string("calendar/_schedule_tutor_update.html", :formats => [:html], :layout => false,
-                                    :locals => {:thistutrole => @tutrole, 
-                                                :slot => new_slot_id, 
-                                                :lesson => new_lesson_id
-                                               })
-    
-    @domchange['html_partial'] = html_partial
-
-    ## render partial: "schedule_tutor", 
-    ## locals: {tutor: tutor, thistutrole: thistutrole, slot: slot, lesson: lesson}
-
-    # the object_id will now change (for both move and copy as the inbuild
-    # lesson number will change.
-    #<%= slot + "n" + lesson.to_s.rjust(@sf, "0") + "t" + tutor.id.to_s.rjust(@sf, "0") %>
-    #byebug
-    @domchange['object_id_old'] = @domchange['object_id']
-    @domchange['object_id'] = new_slot_id + "n" + new_lesson_id.to_s.rjust(@sf, "0") +
-                    "t" + tutor_id.to_s.rjust(@sf, "0")
-            
-    # want to hold the name for sorting purposes in the DOM display
-    @domchange['name'] = @tutrole.tutor.pname
-    
-    #logger.debug "@domchange: " + @domchange.inspect
-    #byebug
-                    
-    #@tutrole = Tutrole.where(:tutor_id => params[:tutor_id], :lesson_id => params[:old_lesson_id]).first
-    #@tutrole.lesson_id = params[:new_lesson_id]
-    respond_to do |format|
-      if @tutrole.save
-        #format.html { redirect_to @student, notice: 'Student was successfully updated.' }
-        ###format.json { render :show, status: :ok, location: @tutrole }
-        #format.json { render :domchange, status: :ok, location: @domchange }
-        format.json { render json: @domchange, status: :ok }
-      else
-        logger.debug("errors.messages: " + @tutrole.errors.messages.inspect)
-        format.json { render json: @tutrole.errors.messages, status: :unprocessable_entity }
-      end
-    end
-  end
-=end
 
   # PATCH/PUT /tutorupdateskc.json
   # ajax updates skc = status kind comment
