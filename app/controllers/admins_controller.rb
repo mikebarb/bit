@@ -3,8 +3,11 @@ class AdminsController < ApplicationController
   include Calendarutilities
 
   #skip_before_action :authenticate_user!, only: [:home]
-  before_filter :set_user_for_models
-  after_filter :reset_user_for_models
+  #before_filter :set_user_for_models
+  #after_filter :reset_user_for_models
+  # before_filter is depreciated in rails 5.1
+  before_action :set_user_for_models
+  after_action :reset_user_for_models
 
 #---------------------------------------------------------------------------
 #

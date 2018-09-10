@@ -467,6 +467,22 @@ var ready = function() {
 // currentActivity['object_id'] = thisEleId;         //**update**
 // currentActivity['to'] = thisEleId;                //**update**
 
+  function objectidToObjecttype(myobjectid){
+    var parseId = myobjectid.match(/(\w)\d+$/ );
+    switch(parseId[1]) {
+      case 's':
+        return 'student';
+      case 't':
+        return 'tutor';
+      case 'n':
+        return 'lesson';
+      case 'l':
+        return 'slot';
+      default:
+        return '';
+    }
+  }
+
   function menuItemActioner( action ) {
     //dom_change['action'] = "move";
     //dom_change['move_ele_id'] = ui.draggable.attr('id');
@@ -504,6 +520,7 @@ var ready = function() {
       currentActivity['action'] = thisAction;           //**update**
       currentActivity['move_ele_id'] =  thisEleId;
       currentActivity['object_id'] = thisEleId;         //**update**
+      currentActivity['object_type'] = objectidToObjecttype(thisEleId);  //**update**
       thisEle = document.getElementById(thisEleId);
       //currentActivity['ele_old_parent_id'] = document.getElementById(thisEleId).parentElement.id;
       switch ( getRecordType(thisEleId) ) {
@@ -567,13 +584,14 @@ var ready = function() {
       case "remove":
         // This removed the selected element
         // Actually deletes the mapping record for tutor and student
-        deleteentry(currentActivity);
+        deleteentry_Update(currentActivity);
         break;
       case "addLesson":
         // This will add a new lesson within the slot holding the element clicked.
         // Will add a new lesson record with this slot value.
         currentActivity['ele_new_parent_id'] = clickInsideElementClassList2(thisEle, ['slot']).id;
-        addLesson(currentActivity);
+        //addLesson(currentActivity);
+        addLesson_Update(currentActivity);
         break;
       case "removeLesson":
         // This will remove a lesson clicked on.
@@ -583,7 +601,7 @@ var ready = function() {
         // to find the nearest slot - prevous setting could have been tutor 
         // finding lesson as parent.
         currentActivity['ele_old_parent_id'] = clickInsideElementClassList2(thisEle, ['slot']).id;
-        removeLesson(currentActivity);
+        removeLesson_Update(currentActivity);
         break;
       case "setStatus":
         // Set Status has been selected on an element.
@@ -989,6 +1007,9 @@ var ready = function() {
     //console.log("thisEleId: " + thisEleId);
     currentActivity['action'] = thisChoice;
     currentActivity['move_ele_id'] = thisEleId;
+    currentActivity['object_id'] = thisEleId;
+    var parseId = thisEleId.match( /(\w)\d+$/);
+    console.dir(parseId);
     personupdatestatuskindcomment( currentActivity );
   }
   
@@ -1723,7 +1744,7 @@ var ready = function() {
         dom_change['to'] = this.id;
         dom_change['element_type'] = "lesson";
 
-        lessonupdateslot( dom_change );
+        lessonupdateslot_Update( dom_change );
         $( this )
           .removeClass( "my-over" );
       },
@@ -1796,6 +1817,45 @@ var ready = function() {
 
 //----- Common Functions used by both Drag & Drop and Context Menu ---------
 
+
+  // delete one of tutor or student 
+  function deleteentry_Update( domchange ){
+    //var itemid = getRecordId(domchange['move_ele_id']);
+    //var itemid = domchange['object_id'];
+    //var oldparentid = getRecordId(domchange['ele_old_parent_id']);
+    console.log("eleid full: " + domchange['move_ele_id']);
+    //var itemtype = getRecordType(domchange['move_ele_id']);
+    var itemtype = domchange['object_type'];
+    //if( 't' == itemtype ){  // tutor
+    if( 'tutor' == itemtype ){  // tutor
+      var mytype = 'POST';
+      var myurl = myhost + "/removetutorfromlesson";
+      var mydata =  { 'domchange' : domchange };
+    //} else if( 's' == itemtype ){  // student
+    } else if( 'student' == itemtype ){  // student
+      mytype = 'POST';
+      myurl = myhost + "/removestudentfromlesson";
+      mydata =  { 'domchange' : domchange };
+    }
+    $.ajax({
+        type: mytype,
+        url: myurl,
+        data: mydata,
+        dataType: "json",
+        context: domchange,
+        success: function(){
+            moveelement_update(domchange);
+        },
+        error: function(request, textStatus, errorThrown){
+            //$(this).addClass( "processingerror" );
+            console.log("ajax error occured: " + request.status.to_s + " - " + textStatus );
+            alert("ajax error occured: " + request.status.to_s + " - " + textStatus );
+        }
+    });
+  }
+
+
+/*
   // delete one of tutor, student or lesson. 
   function deleteentry( domchange ){
     console.log("deleteentry called");
@@ -1848,7 +1908,7 @@ var ready = function() {
     });
     //data: {lesson : {'slot_id' : slotid }, 'domchange' : domchange },
   }
-
+*/
 
   //This function is called for either move or copy
   //Does ajax to move or copy a student or tutor to another lesson
@@ -1954,6 +2014,7 @@ var ready = function() {
     eledelete.remove();
   }
 
+/* depreciate
   //This function is called for either move or copy
   //Does ajax to move or copy a student or tutor to another lesson
   function personupdateslesson( domchange ){
@@ -2027,7 +2088,34 @@ var ready = function() {
         }
      });
   }
+*/
 
+  function addLesson_Update(domchange){
+    // have domchange['object_id'] & domchange['action']
+    domchange["status"] = "flexible";
+    //var myurl = "https://bit3-micmac.c9users.io/lessons/"
+    //var myurl = myhost + "/lessons/";
+    var myurl = myhost + "/lessonadd/";
+    $.ajax({
+        type: "POST",
+        url: myurl,
+        data: {'domchange' : domchange },
+        dataType: "json",
+        context: domchange,
+        success: function(result1, result2, result3){
+            //addelement_Update(result1);
+            moveelement_update(result1);
+        },
+        error: function(request, textStatus, errorThrown){
+            //$(this).addClass( "processingerror" );
+            //console.log("ajax error occured: " + request.status.to_s + " - " + textStatus );
+            alert("ajax error occured: " + request.status.to_s + " - " + textStatus );
+        }
+    });
+  }
+
+
+/* depreciate
   function addLesson(domchange){
     console.log("calling addLesson");
     console.log(domchange);
@@ -2044,30 +2132,65 @@ var ready = function() {
         dataType: "json",
         context: domchange,
         success: function(result){
-            console.log("done - ajax added lesson to slot " + newslotid );
-            console.log(result);
-            console.log("extract the created lesson id: " + result.id );
+            //console.log("done - ajax added lesson to slot " + newslotid );
+            //console.log(result);
+            //console.log("extract the created lesson id: " + result.id );
             var lessonid = result.id;
             //ele_new_parent_id:"Wod201705291600l001"
             var slotid = domchange['ele_new_parent_id'];
-            console.log("slotid: " + slotid + " lessonid: " + lessonid);
+            //console.log("slotid: " + slotid + " lessonid: " + lessonid);
             var lessonid_base = slotid.substr(0, slotid.length-sf-1 );
             var paddedid = padleft(lessonid, sf);
-            console.log("paddedid: " + paddedid);
+            //console.log("paddedid: " + paddedid);
             var newlessonid = lessonid_base + "n" + paddedid;
-            console.log("newlessonid: " + newlessonid);
+            //console.log("newlessonid: " + newlessonid);
             domchange['move_ele_id'] = newlessonid;
-            console.log(domchange);
+            //console.log(domchange);
             addelement(domchange);
         },
         error: function(request, textStatus, errorThrown){
             //$(this).addClass( "processingerror" );
-            console.log("ajax error occured: " + request.status.to_s + " - " + textStatus );
+            //console.log("ajax error occured: " + request.status.to_s + " - " + textStatus );
             alert("ajax error occured: " + request.status.to_s + " - " + textStatus );
         }
     });
   }
-  
+*/
+
+  function removeLesson_Update(domchange){
+    console.log("calling removeLesson");
+    console.log(domchange);
+    //var lessonid = getRecordId(domchange['move_ele_id']);
+    //var myurl = "https://bit3-micmac.c9users.io/lessons/" + lessonid
+    var myurl = myhost + "/lessonremove/";
+    $.ajax({
+        type: "DELETE",
+        url: myurl,
+        //url: "lessons/" + lessonid,
+        data: {'domchange' : domchange },
+        dataType: "json",
+        context: domchange,
+        success: function(result1, result2, result3){
+            console.log("done - ajax removed lesson" );
+            //ele_new_parent_id:"Wod201705291600l001"
+            deleteelement(domchange);
+            moveelement_update(result1);
+        },
+        error: function(request, textStatus, errorThrown){
+            console.log(request);
+            var temp = request.responseJSON.base;
+            var errorText = "";
+            for(var i=0; i<temp.length; i++){
+              errorText += temp[i] + "\n";
+            }
+            console.log("ajax error occured: " + request.status.to_s + " - " + textStatus  + "\n" + errorText);
+            alert("ajax error occured\n" + request.status.to_s + " - " + textStatus + "\n" + errorText);
+        }
+    });
+  }
+
+
+/* Depreciate
   function removeLesson(domchange){
     console.log("calling removeLesson");
     console.log(domchange);
@@ -2098,6 +2221,7 @@ var ready = function() {
         }
     });
   }
+*/
 
   function padleft(num, sigfig){
     var numstr = num.toString();
@@ -2112,7 +2236,7 @@ var ready = function() {
   function lessonupdateslot_Update( domchange ){
     console.log("calling lessonupdateslot");
     console.log(domchange);
-    var lessonid = getRecordId(domchange['move_ele_id']);
+    //var lessonid = getRecordId(domchange['move_ele_id']);
     var oldslotid = getRecordId(domchange['ele_old_parent_id']);
     var newslotid = getRecordId(domchange['ele_new_parent_id']);
     if(oldslotid == newslotid){
@@ -2127,9 +2251,12 @@ var ready = function() {
         data: {lesson : {'slot_id' : newslotid }, 'domchange' : domchange },
         dataType: "json",
         context: domchange,
-        success: function(){
-            console.log("done - dragged lesson " + lessonid + " to slot " + newslotid + " from " + oldslotid );
-            moveelement(domchange);
+        success: function(result1, result2, result3){
+          console.log("ajax call successful");
+            console.dir(result1);
+            console.log(domchange);
+            //moveelement(domchange);
+            moveelement_update(result1);
         },
         error: function(request, textStatus, errorThrown){
             //$(this).addClass( "processingerror" );
@@ -2140,7 +2267,7 @@ var ready = function() {
   }
   
 
-
+/* depreciate
   //lessonupdateslot( oldslot_id1, slot_id1, lesson_id1, this, ui, domchange );
   function lessonupdateslot( domchange ){
     console.log("calling lessonupdateslot");
@@ -2171,7 +2298,9 @@ var ready = function() {
         }
     });
   }
-  
+*/
+
+/* Depreciate
   // Add a new lesson element to the DOM
   function addelement(domchange){
     console.log("addelement called");
@@ -2192,6 +2321,7 @@ var ready = function() {
     lessondroppable(newlessonele);
     console.log(parentele);
   }
+*/
 
   function moveelement_update( domchange ){
     //  action:             "move"
@@ -2226,245 +2356,136 @@ var ready = function() {
     //console.dir(domchange);
     var action      = domchange['action'];
     var object_type = domchange['object_type'];
-    var ele_object_old = document.getElementById(domchange['object_id_old']);
     var ele_object = document.getElementById(domchange['object_id']);
+    if('html_partial' in domchange){
+      // build the dom object to be inserted from the html segment
+      var elecreated = document.createElement('div');
+      elecreated.innerHTML = domchange['html_partial'];
+      var eletoplace = elecreated.getElementsByClassName(object_type)[0]; 
+    }
+    
+    // if this is a move we need to make use of object_old
+    // For copy, nothing is removed.
+    // all other actions act on the object_id
+    var ele_to_remove = null;
+    if (action == 'move'){
+      if('object_id_old' in domchange){    // dom object to delete
+        ele_to_remove = document.getElementById(domchange['object_id_old']);
+      }
+    }else if (action == 'removeLesson' ||
+              action == 'remove'){
+      ele_to_remove = document.getElementById(domchange['object_id']);
+    }
     //var ele_parent_from = document.getElementById(domchange['from']);
-    var ele_parent_to = document.getElementById(domchange['to']);
-    //var ele_parent_from_place;   // exact location to delete dom
     
-    if (ele_object_old != null) {
+    // for cases where an old element exists (e.g. remove, move), 
+    // it will deleted if still in the dom - may have already been deleted!.
+    if (ele_to_remove != null) {    // still there, delete.
       // something to remove if action is move, leave if action is copy
-      if(action == 'move'){
-        ele_object_old.parentNode.removeChild(ele_object_old);
-      }
+      ele_to_remove.parentNode.removeChild(ele_to_remove);
     }
     
-    if (ele_object == null) {
-      // new object not on page yet!!
-      // ensure is not already done by another process
-      if(ele_parent_to != null) {
-        // Ensure there is a place on the page to put this object
-        // as possiblity this user is not viewing the region this object 
-        // being moved to.
+    // to will be populated if logic requires it.
+    // required for move and copy.
+    var ele_parent_to = null;
+    if('to' in domchange){
+      ele_parent_to = document.getElementById(domchange['to']);
+    }
+    
 
-        // place tutor or student into destination
-        // some names are unique to person type
-        var grouppersons = 'group' + object_type + 's';
-        var personnameclass = object_type + 'name'; 
-        if (object_type == 'tutor' || object_type == 'student') {    // person
-          // correct placement within the tutor arrangment
-          var ele_parent_to_place = ele_parent_to.getElementsByClassName(grouppersons)[0];
-          // build the dom object to be inserted from the html segment
-          var elecreated = document.createElement('div');
-          elecreated.innerHTML = domchange['html_partial'];
-          var eletoplace = elecreated.getElementsByClassName(object_type)[0]; 
-          // need to place tutor in alphabethical order
-          var name = domchange['name'];
-          var mypersons = ele_parent_to_place.getElementsByClassName(object_type);
-          if (mypersons) {    // have tutors
-            var flagInserted = false;
-            var myperson;
-            for (let i = 0; i < mypersons.length; i++){
-              myperson = mypersons[i];
-              var mypersonname = myperson.getElementsByClassName(personnameclass)[0].innerHTML;
-              console.log(mypersonname);
-              if (mypersonname.toLowerCase() > name.toLowerCase()){
-                ele_parent_to_place.insertBefore(eletoplace, myperson);
-                flagInserted = true;
-                break;
+    
+    if (ele_object == null) {   // this element is not on this page
+
+      if (action == 'move' ||   // if this is a move or copy
+          action == 'copy'  ||
+          action == 'addLesson'){
+        if(ele_parent_to != null) {   // and there is a place to insert  
+          // Ensure there is a place on the page to put this object
+          // as possiblity this user is not viewing the region this object is 
+          // being moved to.
+  
+          // place tutor or student into destination
+          // map specific tutor or student var names generic for this section.
+          if (object_type == 'tutor' || object_type == 'student') {    // person
+            var grouppersons = 'group' + object_type + 's';
+            var personnameclass = object_type + 'name'; 
+            // correct placement within the tutor arrangment
+            var ele_parent_to_place = ele_parent_to.getElementsByClassName(grouppersons)[0];
+            // need to place tutor in alphabethical order
+            var name = domchange['name'];
+            var mypersons = ele_parent_to_place.getElementsByClassName(object_type);
+            if (mypersons) {    // have tutors
+              var flagInserted = false;
+              var myperson;
+              for (let i = 0; i < mypersons.length; i++){
+                myperson = mypersons[i];
+                var mypersonname = myperson.getElementsByClassName(personnameclass)[0].innerHTML;
+                console.log(mypersonname);
+                if (mypersonname.toLowerCase() > name.toLowerCase()){
+                  ele_parent_to_place.insertBefore(eletoplace, myperson);
+                  flagInserted = true;
+                  break;
+                }
               }
+              if(flagInserted == false) {
+                ele_parent_to_place.append(eletoplace);
+              }
+            } else {  // no tutors/students, just add.
+              console.log ("no tutors / students");
+              ele_parent_to_place.insertBefore(eletoplace, ele_parent_to_place.firstChild);
             }
-            if(flagInserted == false) {
+            //elementdraggable(".student, .tutor");
+            elementdraggable(eletoplace);
+          }
+          if (object_type == 'lesson') {    // lesson
+            // correct placement within the slot arrangment
+            ele_parent_to_place = ele_parent_to;
+            // variables required for the sort.
+            var lessontutorname_to_place = '';    // always empty for a added lesson.
+            var status_to_place = eletoplace.getElementsByClassName('lessonstatusinfo')[0].innerHTML.toLowerCase().trim();
+            // lessons to sort through to determine where to place this item.
+            var mylessons = ele_parent_to_place.getElementsByClassName(object_type);
+            if (mylessons) {    // have lessons
+              flagInserted = false;
+              var mylesson;
+              for (let i = 0; i < mylessons.length; i++){
+                mylesson = mylessons[i];
+                var mylessonstatus = mylesson.getElementsByClassName('lessonstatusinfo')[0].innerHTML.toLowerCase().trim();
+                var mylessontutorname = mylesson.getElementsByClassName('tutor')[0];
+                if (mylessontutorname) {
+                  mylessontutorname = mylessontutorname.getElementsByClassName('tutorname')[0].innerHTML.toLowerCase().trim();
+                } else {
+                  mylessontutorname = '';
+                }
+                var sortresult = lessonsortorder(status_to_place, lessontutorname_to_place, mylessonstatus, mylessontutorname );
+                if (sortresult > -1){
+                  ele_parent_to_place.insertBefore(eletoplace, mylesson);
+                  flagInserted = true;
+                  break;
+                }
+              }
+              if(flagInserted == false) {
+                ele_parent_to_place.append(eletoplace);
+              }
+            } else {  // no lessons in this slot, just add.
               ele_parent_to_place.append(eletoplace);
+              //lessonsparent.insertBefore(eletoplace, ele_parent_to_place.firstChild);
             }
-          } else {  // no tutors/students, just add.
-            console.log ("no tutors / students");
-            ele_parent_to_place.insertBefore(eletoplace, ele_parent_to_place.firstChild);
-          }
-          //elementdraggable(".student, .tutor");
-          elementdraggable(eletoplace);
+            //elementdraggable(".lesson");
+            elementdraggable(eletoplace);
+          }  
         }
-
-
-
+      }else{      // operation is an update of an existing object like status etc.
+        if( action == 'set-status'){
+          
+        }
       }
     }
 
-    
-    return;
-
-    var newparentid = domchange['ele_new_parent_id'];
-    var moveRecordType = getRecordType(domchange['move_ele_id']);
-    var newid = moveRecordType + getRecordId(domchange['move_ele_id']);
-    var oldid = domchange['move_ele_id'];
-    //console.log("moveelement - oldid: " + oldid + " => newid: " + newid);
-    var elemoving = document.getElementById(oldid);
-    var directparentclassname = elemoving.parentElement.className;
-    // check if being copied from tutor/student lists or within scheduling
-    //console.log("***************t: " + moveRecordType);
-    switch(moveRecordType) {
-      case 't': //tutor
-        if(clickInsideElementClassList2(elemoving, ['index'])){
-          var sample_tutor = document.getElementsByClassName('schedule')[0].getElementsByClassName('tutor')[0];
-          directparentclassname = sample_tutor.parentElement.className;
-        }
-        newid = newparentid + newid;
-        break;
-      case 's': //student
-        if(clickInsideElementClassList2(elemoving, ['index'])){
-          var sample_student = document.getElementsByClassName('schedule')[0].getElementsByClassName('student')[0];
-          directparentclassname = sample_student.parentElement.className;
-        }
-        newid = newparentid + newid;
-        break;
-      case 'n': //lesson
-        newid = newparentid.substr(0, newparentid.length-sf-1) + newid;
-        break;
-    }
-    if ('copy' == domchange['action']){
-      var eletoplace = elemoving.cloneNode(true, true);
-      elementdraggable(eletoplace);
-      if(clickInsideElementClassList2(elemoving, ['index'])){
-        // Need to add some more content - status, kind, comments,etc.
-        var new_ele1 = document.createElement('div');
-        var new_ele2 = document.createElement('div');
-        new_ele2.classList.add("statusinfo");
-        new_ele2.textContent = "Status: Kind: ";
-        var comment_ele = eletoplace.getElementsByClassName('comment')[0];
-        var comment_ele_children = comment_ele.children;
-        comment_ele.appendChild(new_ele2);
-        if( moveRecordType == 't') {   // tutor
-          new_ele1.classList.add("tutrolecomment");
-        } else if (moveRecordType == 's') {   // student
-          new_ele1.classList.add("rolecomment");
-        }
-        comment_ele.insertBefore(new_ele1, comment_ele_children[1]);
-      }
-    }else if('move' == domchange['action']){
-      eletoplace = elemoving;
-    }
-    //console.log("----------eletoplace-------");
-    //console.log(eletoplace);
-    // note thjis parent_element is one of lesson or slot.
-    // The actual parent to insert into may be a subset
-    // e.e. tutor is actually attached to grouptutors!
-    var parent_element = document.getElementById(domchange['ele_new_parent_id']);
-    //console.log("------ parent_element ---------");
-    //console.log(parent_element);
-    switch(moveRecordType) {
-      case 't': //tutor
-        // get the parent where tutors reside for this lesson.
-        //var tutorsparent = parent_element.getElementsByClassName('grouptutors')[0];
-        // This caters for differenct class names used for css styling
-        // could be grouptutors, grouptutors1 etc. but only one class name for this element.
-        var tutorsparent = parent_element.getElementsByClassName(directparentclassname)[0];
-        // we really should insert them in correct alphabetical order
-        console.log("Show all the tutors for this target node");
-        var movetutorname = eletoplace.getElementsByClassName('tutorname')[0].innerHTML;
-        var mytutors = tutorsparent.getElementsByClassName('tutor');
-        if (mytutors) {    // have tutors
-          var flagInserted = false;
-          var mytutor;
-          console.log (" we have tutors");
-          for (let i = 0; i < mytutors.length; i++){
-            mytutor = mytutors[i];
-            var mytutorname = mytutor.getElementsByClassName('tutorname')[0].innerHTML;
-            console.log(mytutorname);
-            if (mytutorname.toLowerCase() > movetutorname.toLowerCase()){
-              tutorsparent.insertBefore(eletoplace, mytutor);
-              flagInserted = true;
-              break;
-            }
-          }
-          if(flagInserted == false) {
-            tutorsparent.append(eletoplace);
-          }
-        } else {  // no tutors, just add.
-          console.log ("no tutors");
-          tutorsparent.insertBefore(eletoplace, tutorsparent.firstChild);
-        }
-        break;
-      case 's': //student
-        // get the parent where students reside for this lesson.
-        // insert them in correct alphabetical order
-        //var studentsparent = parent_element.getElementsByClassName('groupstudents')[0];
-        // This caters for differenct class names used for css styling
-        // could be groupstudents, groupstudents1 etc. but only one class name for this element.
-        var studentsparent = parent_element.getElementsByClassName(directparentclassname)[0];
-        var movestudentname = eletoplace.getElementsByClassName('studentname')[0].innerHTML;
-        var mystudents = studentsparent.getElementsByClassName('student');
-        if (mystudents) {    // have students
-          flagInserted = false;
-          var mystudent;
-          for (let i = 0; i < mystudents.length; i++){
-            mystudent = mystudents[i];
-            var mystudentname = mystudent.getElementsByClassName('studentname')[0].innerHTML;
-            if (mystudentname.toLowerCase() > movestudentname.toLowerCase()){
-              studentsparent.insertBefore(eletoplace, mystudent);
-              flagInserted = true;
-              break;
-            }
-          }
-          if(flagInserted == false) {
-            studentsparent.append(eletoplace);
-          }
-        } else {  // no students in this lesson, just add.
-          tutorsparent.insertBefore(eletoplace, tutorsparent.firstChild);
-        }
-        break;
-      case 'n': //lesson
-        // lesson is a direct child of slot 
-        // so parent_element is correct parent.
-        // insert lesson in the correct order.
-        // order by status, then by name of first tutor.
-        // Tutors are already in alphabetical order.
-        var lessonsparent = parent_element;
-        var movelessonstatus = eletoplace.getElementsByClassName('lessonstatusinfo')[0].innerHTML.toLowerCase().trim();
-        var movelessontutorname = eletoplace.getElementsByClassName('tutor')[0];
-        if (movelessontutorname) {
-          movelessontutorname = movelessontutorname.getElementsByClassName('tutorname')[0].innerHTML.toLowerCase().trim();
-        } else {
-          movelessontutorname = '';
-        }
-        var mylessons = lessonsparent.getElementsByClassName('lesson');
-        if (mylessons) {    // have tutors
-          flagInserted = false;
-          var mylesson;
-          for (let i = 0; i < mylessons.length; i++){
-            mylesson = mylessons[i];
-            var mylessonstatus = mylesson.getElementsByClassName('lessonstatusinfo')[0].innerHTML.toLowerCase().trim();
-            var mylessontutorname = mylesson.getElementsByClassName('tutor')[0];
-            if (mylessontutorname) {
-              mylessontutorname = mylessontutorname.getElementsByClassName('tutorname')[0].innerHTML.toLowerCase().trim();
-            } else {
-              mylessontutorname = '';
-            }
-
-            //if (mylessonstatus > movelessonstatus){
-            console.log (movelessonstatus + " " + movelessontutorname + " " + mylessonstatus + " " + mylessontutorname);
-            var sortresult = lessonsortorder(movelessonstatus, movelessontutorname, mylessonstatus, mylessontutorname );
-            console.log ("sortresult: " + sortresult);
-            if (sortresult > -1){
-              lessonsparent.insertBefore(eletoplace, mylesson);
-              flagInserted = true;
-              break;
-            }
-          }
-          if(flagInserted == false) {
-            lessonsparent.append(eletoplace);
-          }
-        } else {  // no lessons in this slot, just add.
-          lessonsparent.append(eletoplace);
-          //lessonsparent.insertBefore(eletoplace, tutorsparent.firstChild);
-        }
-        //parent_element.append(eletoplace);
-        break;
-    }
-    // once successfully processed - update the id
-    eletoplace.id = newid;
 
   }
-  
+
+/* depreciated
   function moveelement( domchange ){
     //  action:             "move"
     //  ele_new_parent_id:  "Wod201705291630l002"  -- slot
@@ -2643,9 +2664,10 @@ var ready = function() {
     eletoplace.id = newid;
 
   }
-  
+*/
+
   // provides the sort order for lessons within the slot
-  // Becomes complicated as teh order is different with postgreql
+  // Becomes complicated as the order is different with postgreql
   // and javascript with stringcomparisions.
 
   function lessonsortorder(a_status, a_name, b_status, b_name){

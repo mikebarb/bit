@@ -55,6 +55,79 @@ class LessonsController < ApplicationController
     end
   end
 
+  # DELETE /lessonremove.json
+  def lessonremove
+    @domchange = Hash.new
+    params[:domchange].each do |k, v| 
+      logger.debug "k: " + k.inspect + " => v: " + v.inspect 
+      @domchange[k] = v
+    end
+    @domchange['object_type'] = 'lesson'
+    # need to ensure object passed is just the lesson dom id 
+    result = /^(([A-Z]+\d+)n(\d+))/.match(@domchange['object_id'])
+    if result
+      @domchange['object_id'] = result[1]  # slot_dom_id where lesson is to be placed
+      @domchange['object_type'] = 'session'
+      @lesson = Lesson.find(result[3])
+    end
+    if @lesson.destroy
+      logger.debug "Lesson destroyed"
+      respond_to do |format|
+        format.json { render json: @domchange, status: :ok }
+      end
+    else
+      respond_to do |format|
+        format.json { render json: @lesson.errors, status: :unprocessable_entity  }
+      end
+    end
+  end
+
+  # POST /lessonadd.json
+  def lessonadd
+    @domchange = Hash.new
+    params[:domchange].each do |k, v| 
+      logger.debug "k: " + k.inspect + " => v: " + v.inspect 
+      @domchange[k] = v
+    end
+    @domchange['object_type'] = 'lesson'
+    # object passed which determines the slot the new session is to be placed in.
+    result = /^(([A-Z]+)(\d{4})(\d{2})(\d{2})(\d{2})(\d{2}))/.match(@domchange['object_id'])
+    if result
+      @domchange['to'] = slot_id_basepart = result[1]  # slot_dom_id where lesson is to be placed
+      slot_location = result[2]
+      slot_time = DateTime.new(result[3].to_i, result[4].to_i, result[5].to_i,
+                                   result[6].to_i, result[7].to_i)
+      # need to find the slot record to match.
+      @slot = Slot.where("timeslot = :thisdate AND
+                            location like :thislocation", 
+                            {thisdate: slot_time,
+                             thislocation: slot_location + '%'
+                            }).first  
+    end
+    @domchange['to'] = slot_id_basepart + 'l' + @slot.id.to_s.rjust(@sf, "0")
+    @lesson = Lesson.new
+    @lesson.slot_id = @slot.id
+    @lesson.status = @domchange['status']
+    respond_to do |format|
+      if @lesson.save
+        @domchange['object_id'] = slot_id_basepart + 'n' + @lesson.id.to_s.rjust(@sf, "0")
+        
+        @domchange['html_partial'] = render_to_string("calendar/_schedule_lesson_update.html", 
+                                    :formats => [:html], :layout => false,
+                                    :locals => {:slot => slot_id_basepart,
+                                                :lesson => @lesson,
+                                                :thistutroles => [],
+                                                :thisroles => []
+                                               })
+
+        format.json { render json: @domchange, status: :ok }
+      else
+        format.json { render json: @lesson.errors, status: :unprocessable_entity }
+      end
+    end
+  end
+
+
   # PATCH/PUT /lessonupdateskc.json
   # ajax updates skc = status comment (kind not valid for sessions)
   def lessonupdateskc
@@ -86,22 +159,6 @@ class LessonsController < ApplicationController
   
   # POST /lessonmoveslot.json
   def lessonmoveslot
-
-=begin
-    respond_to do |format|
-      logger.debug "lesson_params: " + lesson_params.inspect
-      
-      if @lesson.update(lesson_params)
-        format.html { redirect_to @lesson, notice: 'Lesson was successfully updated.' }
-        format.json { render :show, status: :ok, location: @lesson }
-      else
-        format.html { render :edit }
-        format.json { render json: @lesson.errors, status: :unprocessable_entity }
-      end
-    end
-  end
-=end
-  
     @domchange = Hash.new
     params[:domchange].each do |k, v| 
       logger.debug "k: " + k.inspect + " => v: " + v.inspect 
@@ -113,11 +170,8 @@ class LessonsController < ApplicationController
       lesson_id   = result[2]
       @domchange['object_type'] = 'lesson'
       @domchange['from'] = result[1]    # old_slot_dom_id
-    else
-      return
     end
-    logger.debug "@domchange: " + @domchange.inspect
-    
+
     # to / destination
     result = /^(([A-Z]+)(\d{4})(\d{2})(\d{2})(\d{2})(\d{2}))/.match(params[:domchange][:to])
     if result 
@@ -131,6 +185,7 @@ class LessonsController < ApplicationController
                             {thisdate: new_slot_time,
                              thislocation: new_slot_location + '%'
                             }).first  
+      @domchange['to'] = @domchange['to'] + 'l' + @slot.id.to_s.rjust(@sf, "0")
     end
     @lesson = Lesson.find(lesson_id)
     @lesson.slot_id = @slot.id
@@ -152,6 +207,10 @@ class LessonsController < ApplicationController
                 .includes(:student)
                 .where(:lesson_id => lesson_id)
                 .order('students.pname')
+    
+    # parameters used for sorting lessons on the page.
+    @domchange['status'] = @lesson.status
+    #not needed- extracted in js# @domchange['name'] = @tutroles.first.tutor.pname
 
     @domchange['html_partial'] = render_to_string("calendar/_schedule_lesson_update.html", 
                                     :formats => [:html], :layout => false,
@@ -160,7 +219,7 @@ class LessonsController < ApplicationController
                                                 :thistutroles => @tutroles,
                                                 :thisroles => @roles
                                                })
-    
+
     respond_to do |format|
       if @lesson.save
         format.json { render json: @domchange, status: :ok }
@@ -169,11 +228,6 @@ class LessonsController < ApplicationController
       end
     end
   end
-  
-  
-  
-  
-  
 
   # PATCH/PUT /lessons/1
   # PATCH/PUT /lessons/1.json
@@ -210,6 +264,8 @@ class LessonsController < ApplicationController
       end
     end
   end
+
+
 
   private
     # Use callbacks to share common setup or constraints between actions.

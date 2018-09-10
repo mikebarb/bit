@@ -41,6 +41,7 @@ class TutrolesController < ApplicationController
     end
   end
 
+=begin
   # POST /removetutorfromlesson.json
   def removetutorfromlesson
     logger.debug("removetutorfromlesson")
@@ -56,6 +57,34 @@ class TutrolesController < ApplicationController
       else
         logger.debug("errors.messages: " + @tutrole.errors.messages.inspect)
         format.json { render json: @tutrole.errors.full_messages, status: :unprocessable_entity }
+      end
+    end
+  end
+=end
+
+ # POST /removetutorfromlesson.json
+  def removetutorfromlesson
+    @domchange = Hash.new
+    params[:domchange].each do |k, v| 
+      logger.debug "k: " + k.inspect + " => v: " + v.inspect 
+      @domchange[k] = v
+    end
+    # need to ensure object passed is just the student dom id 
+    result = /^(([A-Z]+\d+)n(\d+)t(\d+))$/.match(@domchange['object_id'])
+    if result
+      @domchange['object_id'] = result[1]  # student_dom_id where lesson is to be placed
+      @domchange['object_type'] = 'tutor'
+      tutor_id = result[4]
+      lesson_id = result[3]
+      @tutrole = Tutrole.where(:tutor_id => tutor_id, :lesson_id => lesson_id).first
+    end
+    if @tutrole.destroy
+      respond_to do |format|
+        format.json { render json: @domchange, status: :ok }
+      end
+    else
+      respond_to do |format|
+        format.json { render json: @lesson.errors, status: :unprocessable_entity  }
       end
     end
   end

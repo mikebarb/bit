@@ -58,6 +58,34 @@ class RolesController < ApplicationController
 
  # POST /removestudentfromlesson.json
   def removestudentfromlesson
+    @domchange = Hash.new
+    params[:domchange].each do |k, v| 
+      logger.debug "k: " + k.inspect + " => v: " + v.inspect 
+      @domchange[k] = v
+    end
+    # need to ensure object passed is just the student dom id 
+    result = /^(([A-Z]+\d+)n(\d+)s(\d+))$/.match(@domchange['object_id'])
+    if result
+      @domchange['object_id'] = result[1]  # student_dom_id where lesson is to be placed
+      @domchange['object_type'] = 'student'
+      student_id = result[4]
+      lesson_id = result[3]
+      @role = Role.where(:student_id => student_id, :lesson_id => lesson_id).first
+    end
+    if @role.destroy
+      respond_to do |format|
+        format.json { render json: @domchange, status: :ok }
+      end
+    else
+      respond_to do |format|
+        format.json { render json: @lesson.errors, status: :unprocessable_entity  }
+      end
+    end
+  end
+
+=begin
+ # POST /removestudentfromlesson.json
+  def removestudentfromlesson
     @role = Role.where(:student_id => params[:student_id], :lesson_id => params[:old_lesson_id]).first
     #logger.debug("found role: " + @role.inspect)
     #myid = @role.id
@@ -75,6 +103,7 @@ class RolesController < ApplicationController
       end
     end
   end
+=end
 
   # PATCH/PUT /studentmovecopylesson.json
   # this is the ** updated ** function to replace
