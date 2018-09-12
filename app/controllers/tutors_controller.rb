@@ -80,6 +80,53 @@ class TutorsController < ApplicationController
   # POST /tutordetailupdateskc
   # POST /tutordetailupdateskc.json
   def tutordetailupdateskc
+    @domchange = Hash.new
+    params[:domchange].each do |k, v| 
+      logger.debug "k: " + k.inspect + " => v: " + v.inspect 
+      @domchange[k] = v
+    end
+
+    # extract the tutor id independant of 'index' or 'schedule' area
+    # id = t11111           ->  index
+    # id = GUN2018...t11111 -> schedule
+    if((result = /(t(\d+))$/.match(params[:domchange][:object_id])))
+      tutor_dbId = result[2].to_i
+      @domchange['object_type'] = 'tutor'
+      @domchange['object_id_old'] = @domchange['object_id']
+      @domchange['object_id'] = result[1]
+    end
+    logger.debug "@domchange: " + @domchange.inspect
+
+    @tutor = Tutor.find(tutor_dbId)
+    flagupdate = false
+    case @domchange['updatefield']
+    when 'comment'
+      if @tutor.comment != @domchange['updatevalue']
+        @tutor.comment = @domchange['updatevalue']
+        flagupdate = true
+      end
+    when 'subjects'
+      if @tutor.subjects != @domchange['updatevalue']
+        @tutor.subjects = @domchange['updatevalue']
+        flagupdate = true
+      end
+    end
+
+    respond_to do |format|
+      if @tutor.save
+        #format.html { redirect_to @tutor, notice: 'Tutor was successfully updated.' }
+        format.json { render :show, status: :ok, location: @tutor }
+      else
+        logger.debug("errors.messages: " + @tutor.errors.messages.inspect)
+        format.json { render json: @tutor.errors.messages, status: :unprocessable_entity }
+      end
+    end
+  end
+
+=begin
+  # POST /tutordetailupdateskc
+  # POST /tutordetailupdateskc.json
+  def tutordetailupdateskc
     @tutor = Tutor.find(params[:tutor_id])
     flagupdate = false
     if params[:comment]
@@ -105,7 +152,7 @@ class TutorsController < ApplicationController
       end
     end
   end
-
+=end
 
   # PATCH/PUT /tutors/1
   # PATCH/PUT /tutors/1.json

@@ -80,6 +80,62 @@ class StudentsController < ApplicationController
   # POST /studentdetailupdateskc
   # POST /studentdetailupdateskc.json
   def studentdetailupdateskc
+    @domchange = Hash.new
+    params[:domchange].each do |k, v| 
+      logger.debug "k: " + k.inspect + " => v: " + v.inspect 
+      @domchange[k] = v
+    end
+
+    # from / source
+    # need to check if is from index area or schedule area
+    # identified by the id
+    # id = t11111     ->  index
+    # id = GUN2018... -> schedule
+    if((result = /(s(\d+))$/.match(params[:domchange][:object_id])))
+      student_dbId = result[2].to_i
+      @domchange['object_type'] = 'student'
+      @domchange['object_id_old'] = @domchange['object_id']
+      @domchange['object_id'] = result[1]
+    end
+    logger.debug "@domchange: " + @domchange.inspect
+    
+    @student = Student.find(student_dbId)
+    flagupdate = false
+    case @domchange['updatefield']
+    when 'comment'
+      if @student.comment != @domchange['updatevalue']
+        @student.comment = @domchange['updatevalue']
+        flagupdate = true
+      end
+    when 'status'
+      if @student.status != @domchange['updatevalue']
+        @student.status = @domchange['updatevalue']
+        flagupdate = true
+      end
+    when 'study'
+      if @student.study != @domchange['updatevalue']
+        @student.study = @domchange['updatevalue']
+        flagupdate = true
+      end
+    end
+
+    respond_to do |format|
+      if @student.save
+        #format.html { redirect_to @student, notice: 'Student was successfully updated.' }
+        #format.json { render :show, status: :ok, location: @student }
+        format.json { render json: @domchange, status: :ok }
+      else
+        logger.debug("errors.messages: " + @student.errors.messages.inspect)
+        format.json { render json: @student.errors.messages, status: :unprocessable_entity }
+      end
+    end
+  end
+
+
+=begin
+  # POST /studentdetailupdateskc
+  # POST /studentdetailupdateskc.json
+  def studentdetailupdateskc
     @student = Student.find(params[:student_id])
     flagupdate = false
     if params[:comment]
@@ -111,6 +167,7 @@ class StudentsController < ApplicationController
       end
     end
   end
+=end
 
   # PATCH/PUT /students/1
   # PATCH/PUT /students/1.json

@@ -1,16 +1,16 @@
                 <div class=tutor id=<%= "t" + tutor.id.to_s.rjust(@sf, "0") %> >
                     <div style=persongroup>
-                        <div class="tutorname tutorinline">tutor: <%= tutor.pname %></div>
+                        <div class="tutorname tutorinline p-name"><%= tutor.pname %> (tut)<%
+                          if tutor.firstaid == 'yes'
+                            %><%= "+" %><%
+                          end
+                          if tutor.firstlesson == 'yes'
+                            %><%= "*" %><%
+                          end
+                        %></div>
+                        <div class="tutorsubjects p-subjects"><%= tutor.subjects %></div>
                         <div class="tutorcomment comment tutorinline">
-                          <div class="tutorsubjects"><%= tutor.subjects %>
-                            <% if tutor.firstaid == 'yes' %>
-                              <%= "+" %>
-                            <% end %>
-                            <% if tutor.firstlesson == 'yes' %>
-                              <%= "*" %>
-                            <% end %>
-                          </div>
-                          <div class="tutorcommentdetail"><%= tutor.comment %></div>
+                          <div class="tutorcommentdetail p-comment"><%= tutor.comment %></div>
                         </div>
                     </div>
                 </div>

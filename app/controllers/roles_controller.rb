@@ -150,6 +150,75 @@ class RolesController < ApplicationController
     end
   end
 
+
+  # PATCH/PUT /studentupdateskc.json
+  # ajax updates skc = status kind comment
+  def studentupdateskc
+    @domchange = Hash.new
+    params[:domchange].each do |k, v| 
+      logger.debug "k: " + k.inspect + " => v: " + v.inspect 
+      @domchange[k] = v
+    end
+
+    # from / source
+    # need to check if is from index area or schedule area
+    # identified by the id
+    # id = t11111     ->  index
+    # id = GUN2018... -> schedule
+    if((result = /^(([A-Z]+\d+)n(\d+))s(\d+)$/.match(params[:domchange][:object_id])))
+      slot_id = result[2]
+      student_dbId = result[4].to_i
+      lesson_dbId = result[3].to_i
+      @domchange['object_type'] = 'student'
+      @domchange['from'] = result[1]
+    end
+    logger.debug "@domchange: " + @domchange.inspect
+    
+    @role = Role  .includes(:student)
+                  .where(:student_id => student_dbId, :lesson_id => lesson_dbId)
+                  .first
+
+    flagupdate = false
+    case @domchange['updatefield']
+    when 'status'
+      if @role.status != @domchange['updatevalue']
+        @role.status = @domchange['updatevalue']
+        flagupdate = true
+      end
+    when 'kind'
+      if @role.kind != @domchange['updatevalue']
+        @role.kind = @domchange['updatevalue']
+        flagupdate = true
+      end
+    when 'comment'
+      if @role.comment != @domchange['updatevalue']
+        @role.comment = @domchange['updatevalue']
+        flagupdate = true
+      end
+    end
+    
+    @domchange['html_partial'] = render_to_string("calendar/_schedule_student.html",
+                                :formats => [:html], :layout => false,
+                                :locals => {:student => @role.student, 
+                                            :thisrole => @role, 
+                                            :slot => slot_id, 
+                                            :lesson => lesson_dbId
+                                           })
+
+    #Thread.current[:current_user_id] = current_user.id
+    @updateValues = "test"
+    respond_to do |format|
+      if @role.save
+        #format.json { render :show, status: :ok, location: @role }
+        format.json { render json: @domchange, status: :ok }
+      else
+        logger.debug("errors.messages: " + @role.errors.messages.inspect)
+        format.json { render json: @role.errors.messages, status: :unprocessable_entity }
+      end
+    end
+  end
+
+=begin
   # PATCH/PUT /studentupdateskc.json
   # ajax updates skc = status kind comment
   def studentupdateskc
@@ -187,7 +256,7 @@ class RolesController < ApplicationController
       end
     end
   end
-
+=end
 
   # PATCH/PUT /roles/1
   # PATCH/PUT /roles/1.json

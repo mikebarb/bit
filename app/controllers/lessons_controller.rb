@@ -127,7 +127,7 @@ class LessonsController < ApplicationController
     end
   end
 
-
+=begin
   # PATCH/PUT /lessonupdateskc.json
   # ajax updates skc = status comment (kind not valid for sessions)
   def lessonupdateskc
@@ -156,6 +156,80 @@ class LessonsController < ApplicationController
       end
     end
   end
+=end
+  
+  # PATCH/PUT /lessonupdateskc.json
+  # ajax updates skc = status comment (kind not valid for sessions)
+  def lessonupdateskc
+    @domchange = Hash.new
+    params[:domchange].each do |k, v| 
+      logger.debug "k: " + k.inspect + " => v: " + v.inspect 
+      @domchange[k] = v
+    end
+
+    # from / source
+    if((result = /^([A-Z]+\d+)n(\d+)$/.match(params[:domchange][:object_id])))
+      slot_id = result[1]
+      lesson_dbId   = result[2].to_i
+      @domchange['object_type'] = 'lesson'
+      @domchange['from'] = result[1]    # old_slot_dom_id
+    end
+    logger.debug "@domchange: " + @domchange.inspect
+
+    @lesson = Lesson.find(lesson_dbId)
+    logger.debug "@lesson: " + @lesson.inspect
+
+    flagupdate = false
+    case @domchange['updatefield']
+    when 'status'
+      if @lesson.status != @domchange['updatevalue']
+        @lesson.status = @domchange['updatevalue']
+        flagupdate = true
+      end
+    when 'comments'
+      if @lesson.comments != @domchange['updatevalue']
+        @lesson.comments = @domchange['updatevalue']
+        flagupdate = true
+      end
+    end
+
+=begin
+    # Need to generate the html partial for this session.
+    @tutroles = Tutrole
+                .includes(:tutor)
+                .where(:lesson_id => @lesson.id)
+                .order('tutors.pname')
+
+    @roles    = Role
+                .includes(:student)
+                .where(:lesson_id => @lesson.id)
+                .order('students.pname')
+    
+    # parameters used for sorting lessons on the page.
+    @domchange['status'] = @lesson.status
+    #not needed- extracted in js# @domchange['name'] = @tutroles.first.tutor.pname
+
+    @domchange['html_partial'] = render_to_string("calendar/_schedule_lesson_update.html", 
+                                    :formats => [:html], :layout => false,
+                                    :locals => {:slot => new_slot_id,
+                                                :lesson => @lesson,
+                                                :thistutroles => @tutroles,
+                                                :thisroles => @roles
+                                               })
+=end
+
+    respond_to do |format|
+      if @lesson.save
+        #format.html { redirect_to @student, notice: 'Student was successfully updated.' }
+        #format.json { render :show, status: :ok, location: @lesson }
+        format.json { render json: @domchange, status: :ok }
+      else
+        logger.debug("errors.messages: " + @lesson.errors.messages.inspect)
+        format.json { render json: @lesson.errors.messages, status: :unprocessable_entity }
+      end
+    end
+  end  
+  
   
   # POST /lessonmoveslot.json
   def lessonmoveslot

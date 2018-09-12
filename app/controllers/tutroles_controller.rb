@@ -152,6 +152,99 @@ class TutrolesController < ApplicationController
   # PATCH/PUT /tutorupdateskc.json
   # ajax updates skc = status kind comment
   def tutorupdateskc
+    @domchange = Hash.new
+    params[:domchange].each do |k, v| 
+      logger.debug "k: " + k.inspect + " => v: " + v.inspect 
+      @domchange[k] = v
+    end
+    
+    # from / source
+    # need to check if is from index area or schedule area
+    # identified by the id
+    # id = t11111     ->  index
+    # id = GUN2018... -> schedule
+
+    if((result = /^(([A-Z]+\d+)n(\d+))t(\d+)$/.match(params[:domchange][:object_id])))
+      slot_id = result[2]
+      tutor_dbId = result[4].to_i
+      lesson_dbId = result[3].to_i
+      @domchange['object_type'] = 'tutor'
+      @domchange['from'] = result[1]
+    end
+    logger.debug "@domchange: " + @domchange.inspect
+    
+    #@tutrole = Tutrole.where(:tutor_id => tutor_dbId, 
+    #                         :lesson_id => lesson_dbId).first
+
+    @tutrole = Tutrole.includes(:tutor)
+                      .where(:tutor_id => tutor_dbId, :lesson_id => lesson_dbId)
+                      .first
+                      
+    flagupdate = false
+    case @domchange['updatefield']
+    when 'status'
+      if @tutrole.status != @domchange['updatevalue']
+        @tutrole.status = @domchange['updatevalue']
+        flagupdate = true
+      end
+    when 'kind'
+      if @tutrole.kind != @domchange['updatevalue']
+        @tutrole.kind = @domchange['updatevalue']
+        flagupdate = true
+      end
+    when 'comment'
+      if @tutrole.comment != @domchange['updatevalue']
+        @tutrole.comment = @domchange['updatevalue']
+        flagupdate = true
+      end
+    end
+    
+    @domchange['html_partial'] = render_to_string("calendar/_schedule_tutor.html",
+                                :formats => [:html], :layout => false,
+                                :locals => {:tutor => @tutrole.tutor, 
+                                            :thistutrole => @tutrole, 
+                                            :slot => slot_id, 
+                                            :lesson => lesson_dbId
+                                           })
+    
+=begin
+    if params[:status]
+      if @tutrole.status != params[:status]
+        @tutrole.status = params[:status]
+        flagupdate = true
+      end
+    end
+    if params[:kind]
+      if @tutrole.kind != params[:kind]
+        @tutrole.kind = params[:kind]
+        flagupdate = true
+      end
+    end
+    if params[:comment]
+      if @tutrole.comment != params[:comment]
+        @tutrole.comment = params[:comment]
+        flagupdate = true
+      end
+    end
+=end
+    #Thread.current[:current_user_id] = current_user.id
+    @updateValues = "test"
+    respond_to do |format|
+      if @tutrole.save
+        #format.html { redirect_to @tutor, notice: 'Tutor was successfully updated.' }
+        #format.json { render :show, status: :ok, location: @tutrole }
+        format.json { render json: @domchange, status: :ok }
+      else
+        logger.debug("errors.messages: " + @tutrole.errors.messages.inspect)
+        format.json { render json: @tutrole.errors.messages, status: :unprocessable_entity }
+      end
+    end
+  end
+
+=begin
+  # PATCH/PUT /tutorupdateskc.json
+  # ajax updates skc = status kind comment
+  def tutorupdateskc
     @tutrole = Tutrole.where(:tutor_id => params[:tutor_id], 
                              :lesson_id => params[:lesson_id]).first
     flagupdate = false
@@ -185,7 +278,7 @@ class TutrolesController < ApplicationController
       end
     end
   end
-
+=end
 
   # PATCH/PUT /tutroles/1
   # PATCH/PUT /tutroles/1.json
