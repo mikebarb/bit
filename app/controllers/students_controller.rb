@@ -97,8 +97,7 @@ class StudentsController < ApplicationController
       @domchange['object_id_old'] = @domchange['object_id']
       @domchange['object_id'] = result[1]
     end
-    logger.debug "@domchange: " + @domchange.inspect
-    
+
     @student = Student.find(student_dbId)
     flagupdate = false
     case @domchange['updatefield']
@@ -121,8 +120,6 @@ class StudentsController < ApplicationController
 
     respond_to do |format|
       if @student.save
-        #format.html { redirect_to @student, notice: 'Student was successfully updated.' }
-        #format.json { render :show, status: :ok, location: @student }
         format.json { render json: @domchange, status: :ok }
       else
         logger.debug("errors.messages: " + @student.errors.messages.inspect)

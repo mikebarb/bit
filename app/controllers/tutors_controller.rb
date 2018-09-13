@@ -32,6 +32,7 @@ class TutorsController < ApplicationController
   # GET /tutors/history/1.json
   def history
     @tutor_history =  tutor_history(params[:id])
+
     respond_to do |format|
       format.html
       # helpful reference for jbuilder is
@@ -85,7 +86,7 @@ class TutorsController < ApplicationController
       logger.debug "k: " + k.inspect + " => v: " + v.inspect 
       @domchange[k] = v
     end
-
+    
     # extract the tutor id independant of 'index' or 'schedule' area
     # id = t11111           ->  index
     # id = GUN2018...t11111 -> schedule
@@ -114,8 +115,7 @@ class TutorsController < ApplicationController
 
     respond_to do |format|
       if @tutor.save
-        #format.html { redirect_to @tutor, notice: 'Tutor was successfully updated.' }
-        format.json { render :show, status: :ok, location: @tutor }
+        format.json { render json: @domchange, status: :ok }
       else
         logger.debug("errors.messages: " + @tutor.errors.messages.inspect)
         format.json { render json: @tutor.errors.messages, status: :unprocessable_entity }

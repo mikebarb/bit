@@ -172,8 +172,7 @@ class RolesController < ApplicationController
       @domchange['object_type'] = 'student'
       @domchange['from'] = result[1]
     end
-    logger.debug "@domchange: " + @domchange.inspect
-    
+
     @role = Role  .includes(:student)
                   .where(:student_id => student_dbId, :lesson_id => lesson_dbId)
                   .first
@@ -207,6 +206,7 @@ class RolesController < ApplicationController
 
     #Thread.current[:current_user_id] = current_user.id
     @updateValues = "test"
+    
     respond_to do |format|
       if @role.save
         #format.json { render :show, status: :ok, location: @role }

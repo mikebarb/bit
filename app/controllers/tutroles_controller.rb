@@ -163,7 +163,6 @@ class TutrolesController < ApplicationController
     # identified by the id
     # id = t11111     ->  index
     # id = GUN2018... -> schedule
-
     if((result = /^(([A-Z]+\d+)n(\d+))t(\d+)$/.match(params[:domchange][:object_id])))
       slot_id = result[2]
       tutor_dbId = result[4].to_i
@@ -171,10 +170,6 @@ class TutrolesController < ApplicationController
       @domchange['object_type'] = 'tutor'
       @domchange['from'] = result[1]
     end
-    logger.debug "@domchange: " + @domchange.inspect
-    
-    #@tutrole = Tutrole.where(:tutor_id => tutor_dbId, 
-    #                         :lesson_id => lesson_dbId).first
 
     @tutrole = Tutrole.includes(:tutor)
                       .where(:tutor_id => tutor_dbId, :lesson_id => lesson_dbId)
@@ -207,32 +202,10 @@ class TutrolesController < ApplicationController
                                             :lesson => lesson_dbId
                                            })
     
-=begin
-    if params[:status]
-      if @tutrole.status != params[:status]
-        @tutrole.status = params[:status]
-        flagupdate = true
-      end
-    end
-    if params[:kind]
-      if @tutrole.kind != params[:kind]
-        @tutrole.kind = params[:kind]
-        flagupdate = true
-      end
-    end
-    if params[:comment]
-      if @tutrole.comment != params[:comment]
-        @tutrole.comment = params[:comment]
-        flagupdate = true
-      end
-    end
-=end
     #Thread.current[:current_user_id] = current_user.id
     @updateValues = "test"
     respond_to do |format|
       if @tutrole.save
-        #format.html { redirect_to @tutor, notice: 'Tutor was successfully updated.' }
-        #format.json { render :show, status: :ok, location: @tutrole }
         format.json { render json: @domchange, status: :ok }
       else
         logger.debug("errors.messages: " + @tutrole.errors.messages.inspect)

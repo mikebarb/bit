@@ -169,7 +169,7 @@ class LessonsController < ApplicationController
 
     # from / source
     if((result = /^([A-Z]+\d+)n(\d+)$/.match(params[:domchange][:object_id])))
-      slot_id = result[1]
+      #slot_id = result[1]
       lesson_dbId   = result[2].to_i
       @domchange['object_type'] = 'lesson'
       @domchange['from'] = result[1]    # old_slot_dom_id
