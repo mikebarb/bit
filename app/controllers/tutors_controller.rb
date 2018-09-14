@@ -116,43 +116,13 @@ class TutorsController < ApplicationController
     respond_to do |format|
       if @tutor.save
         format.json { render json: @domchange, status: :ok }
+        ActionCable.server.broadcast "calendar_channel", { json: @domchange }
       else
         logger.debug("errors.messages: " + @tutor.errors.messages.inspect)
         format.json { render json: @tutor.errors.messages, status: :unprocessable_entity }
       end
     end
   end
-
-=begin
-  # POST /tutordetailupdateskc
-  # POST /tutordetailupdateskc.json
-  def tutordetailupdateskc
-    @tutor = Tutor.find(params[:tutor_id])
-    flagupdate = false
-    if params[:comment]
-      if @tutor.comment != params[:comment]
-        @tutor.comment = params[:comment]
-        flagupdate = true
-      end
-    end
-    if params[:subjects]
-      if @tutor.subjects != params[:subjects]
-        @tutor.subjects = params[:subjects]
-        flagupdate = true
-      end
-    end
-
-    respond_to do |format|
-      if @tutor.save
-        #format.html { redirect_to @tutor, notice: 'Tutor was successfully updated.' }
-        format.json { render :show, status: :ok, location: @tutor }
-      else
-        logger.debug("errors.messages: " + @tutor.errors.messages.inspect)
-        format.json { render json: @tutor.errors.messages, status: :unprocessable_entity }
-      end
-    end
-  end
-=end
 
   # PATCH/PUT /tutors/1
   # PATCH/PUT /tutors/1.json

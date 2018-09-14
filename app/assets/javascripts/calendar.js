@@ -5,7 +5,6 @@
 
 /* global $ */
 
-
 // Web Socket receives a new message - calendar updates received.
 /*
 App.calendar = App.cable.subscriptions.create("CalendarChannel", {  
@@ -13,6 +12,8 @@ App.calendar = App.cable.subscriptions.create("CalendarChannel", {
   received: function(data) {
     console.log("calendar.js - entered ws received function");
     console.dir(data);
+    moveelement_update( data );
+    console.log("dom update done!!!");
     return;
   }
 });
@@ -22,40 +23,44 @@ App.calendar = App.cable.subscriptions.create("CalendarChannel", {
 // Found that we need to be careful this does not get called twice
 // e.g. from from both tuboload and page load - causes double triggers.
 var ready = function() {
+
+App.calendar = App.cable.subscriptions.create("CalendarChannel", {  
+//App.cable.subscriptions.create("CalendarChannel", {  
+  received: function(data) {
+    console.log("calendar.js - entered ws received function");
+    console.dir(data);
+    //var returnedDomData = JSON.parse(data['json']);
+    var returnedDomData = data['json'];
+    returnedDomData['actioncable'] = true;
+    moveelement_update(returnedDomData);
+    console.log("dom update done!!!");
+    return;
+  }
+});
+
+
   // some global variables for this page
-  var sf = 5;     // significant figures for dom id components e.g.lesson ids, etc.
+  //var sf = 5;     // significant figures for dom id components e.g.lesson ids, etc.
   var myhost = window.location.protocol + '//' + window.location.hostname;   // base url for ajax
 
   // These are used in the quick status setting.
   var validTutorStatuses = ["Away", "Absent", "Deal", "Scheduled", "Notified", "Confirmed", "Attended"];
   var validStudentStatuses = ["Away", "Absent", "Deal", "Bye", "Attended", "Scheduled"];
 
-
-
-
-
   // want to set defaults on some checkboxes on page load
   var flagViewOptions = false;
   if(document.getElementById('options')){
-    var passedOptions     = document.getElementById('options').innerHTML;
+    //var passedOptions     = document.getElementById('options').innerHTML;
     var passedOptionsJson = JSON.parse(document.getElementById('options').innerHTML);
-    console.log(passedOptions);
-    console.log(passedOptionsJson);
     for(var key in passedOptionsJson){            // loop json through the keys
       if(passedOptionsJson.hasOwnProperty(key)){
         if(key.indexOf("v_") == 0){               // initial chars in key
           flagViewOptions = true;
-          console.log("passed: " + key + ' => ' + passedOptionsJson[key]);
           var thisEleId = key.substr(2);
           var thisEle = document.getElementById(thisEleId);
           if(thisEle){                            // element is present on this page
             if(thisEle.type == "checkbox"){
               thisEle.checked = (passedOptionsJson[key] == "true");
-              //if(passedOptionsJson[key] == "true"){
-              //  thisEle.checked = true;
-              //}else{
-              //  thisEle.checked = false;
-              //}
             }else if(thisEle.id == 'quickStatusValue'){
               thisEle.value = passedOptionsJson[key];
             }else if(thisEle.id == 'personInput'){
@@ -71,9 +76,6 @@ var ready = function() {
   if (document.getElementById("hidetutors") &&
       document.getElementById("hidestudents") &&
       flagViewOptions == false ){
-    //document.getElementById("hidetutors").checked = true;
-    //document.getElementById("hidestudents").checked = true;
-    
     var showList = document.getElementsByClassName("selectsite");
     if(showList.length > 0){
       showList[0].checked = true;
@@ -148,13 +150,11 @@ var ready = function() {
   }
   
   //------------------------ Context Menu -----------------------------
-  // This is the context menu for the lesson,
-  // tutor and student elements.
+  // This is the context menu for the lesson, tutor and student elements.
   // It is the first context menu to be displayed when you right click on an
   // element.
   // When some context menu item are selected, a tertiary menu is opened
   // enabling further options to be selected.
-
 
   // the order of this class list is important - searches are done from 
   // finest to broadest when looking for relevant elements(divs).
@@ -220,7 +220,7 @@ var ready = function() {
     
     $('.sticky-header__title').click(function() {
       $('#sticky-header__collapsible').slideToggle();
-    })
+    });
   }
 
   // Listens for contextmenu events.
@@ -230,15 +230,10 @@ var ready = function() {
   // menu adjacent to it.
   function contextListener() {
     document.addEventListener( "contextmenu", function(e) {
-      //console.log("== contextmenu Listener ==");
-      //console.log(e.currentTarget);
       menu = document.querySelector("#context-menu");
       tmenu = document.querySelector("#tertiary-menu");
       taskItemInContext = clickInsideElementClassList( e, taskItemClassList);
       if ( taskItemInContext ) {
-        //console.log("-----taskItemInContext-----should be the element of interest");
-        //console.log(taskItemInContext);
-        //console.log("element id: " + taskItemInContext.id);
         e.preventDefault();
         enableMenuItems();
         toggleMenuOn();
@@ -246,8 +241,6 @@ var ready = function() {
         positionMenu(menu);
         positionMenu(tmenu);
         eleClickedOn = e;                 // global variable
-        //console.log("----------event clicked on-----------");
-        //console.log(eleClickedOn);
       } else {
         taskItemInContext = null;
         toggleMenuOff();
@@ -257,9 +250,10 @@ var ready = function() {
 
   // Listens for click events on context menu items element.
   // On selection an item on the context menu, an appropriate action is triggered.
-  // 
   function clickListener() {
     document.addEventListener( "click", function(e) {
+      console.log("in clickListerner");
+      console.dir(currentActivity);
       // determine if clicked inside main context menu or tertiary context menu.
       var clickEleIsAction   = clickInsideElementClassList( e, [contextMenuItemClassName]);
       var clickEleIsChoice   = clickInsideElementClassList( e, [tertiaryMenuItemClassName]);
@@ -270,14 +264,12 @@ var ready = function() {
         e.preventDefault();
         menuItemActioner( clickEleIsAction );   // call main menu item actioner.
       } else if (clickEleIsChoice) {     // clicked in tertiary menu or text edits
-        if (clickEleIsChoice.id == 'edit-comment' ||   // clicked in an edit box
-            clickEleIsChoice.id == 'edit-subject') {  
-          //console.log("in one of the edit text boxes"); 
+        //if (clickEleIsChoice.id == 'edit-comment' ||   // clicked in an edit box
+        //    clickEleIsChoice.id == 'edit-subject') {  
+        if (clickEleIsChoice.id == 'edit-comment' ) {  
           // determine if clicked on edit-comment update button
           var thisTarget = e.target;
-          if (thisTarget.id == 'edit-comment-button' ||
-              thisTarget.id == 'edit-subject-button' ){  // do comment update
-            //console.log("edit-comment-button or edit-subject-button is clicked");
+          if (thisTarget.id == 'edit-comment-button' ){  // do comment update
             //call this function to update the text for comments or subjects.
             // This has quite a range.
             editCommentSubjectActioner(thisTarget.id);
@@ -335,7 +327,7 @@ var ready = function() {
       }
     };
   }
-  
+/*  
   //function getRecordType(ele_id){
   //function getRecordId(ele_id){
   // this function extracts the record type (l, n, t, s) from the dom id
@@ -355,6 +347,7 @@ var ready = function() {
   function getLessonIdFromTutorStudent(ele_id){
     return ele_id.substr(ele_id.length-sf-1-sf, sf);
   }
+*/
 
   // As these are context sensitive menus, we need to determine what actions
   // are displayed.
@@ -365,9 +358,11 @@ var ready = function() {
   // causes different actions to selecting them in the scheduling section (lesson).
   // Names are choosen to be self explanatory - hopefully.
   function enableMenuItems(){
-    var thisEleId = taskItemInContext.id;    // element clicked on
-    var thisEle = document.getElementById((thisEleId));
-    var recordType = getRecordType(thisEleId);  //student, tutor, lesson
+    //var thisEleId = taskItemInContext.id;    // element clicked on
+    var object_id      = taskItemInContext.id;  // element clicked on.
+    var object_type    = objectidToObjecttype(object_id); // 'lesson' 'tutor' or 'student'
+    var object_context = objectidToContext(object_id); //'index' or 'lesson'
+    var thisEle = document.getElementById(object_id);
     var scmi_copy = false;  //scmi - set comtext menu items.
     var scmi_move = false;  // to show or not show in menu
     var scmi_paste = false;  // set the dom display value at end.
@@ -384,19 +379,17 @@ var ready = function() {
     var scmi_editSubject = false;
     var scmi_editEntry = false;
 
-    //  var currentActivity = {};   declared globally within this module
-
     // You can only paste if a source for copy or move has been identified.
     if(currentActivity.action  == 'move' || // something has been copied,
        currentActivity.action  == 'copy'){  // ready to be pasted
       scmi_paste = true;
     }
 
-    switch(recordType){     // student, tutor, lesson.
-      case 's':   //student
+    switch(object_type){     // student, tutor, lesson.
+      case 'student':   //student
           scmi_setPersonStatus = true;     // done in both index and main schedule area for student 
-      case 't':   //tutor
-        if(clickInsideElementClassList2(thisEle, ['index'])){   // index area
+      case 'tutor':   //tutor
+        if(object_context == 'index'){   // index area
           // this element in student and tutor list
           scmi_copy = true;
           scmi_paste = false;   //nothing can be pasted into the index space
@@ -412,7 +405,7 @@ var ready = function() {
           scmi_changes = true;
         }
         break;
-      case 'n':   //lesson which is always in the main scheduling area.
+      case 'lesson':   //lesson which is always in the main scheduling area.
           scmi_move = scmi_addLesson = scmi_setStatus = true;
           // if there are no tutors or students in this lesson, can remove
           var mytutors = thisEle.getElementsByClassName('tutor'); 
@@ -423,7 +416,7 @@ var ready = function() {
           }
           scmi_editComment = true;
           break;
-      case 'l':   //slot which is always in the main scheduling area.
+      case 'slot':   //slot which is always in the main scheduling area.
           scmi_addLesson = true;
           break;
     }
@@ -484,6 +477,17 @@ var ready = function() {
         return '';
     }
   }
+  
+  // returns context of 'index' or 'lesson'
+  function objectidToContext(myobjectid){
+    var parseId = myobjectid.match(/^[st]\d+$/);
+    if(parseId) {
+      return 'index';
+    }else{
+      return 'lesson';
+    }
+  }
+
 
   function menuItemActioner( action ) {
     //dom_change['action'] = "move";
@@ -512,33 +516,29 @@ var ready = function() {
       // do not set currentActivity 
       // That way, when we do checks in "paste" action, currentActivity will
       // be empty if a move or copy has not been selected.
+      if(!('object_id' in currentActivity)){   // must be something to paste from.
+        return;
+      }
+      currentActivity['to']   = thisEleId;  // everthing else required is still there.
     } else {
       // but for all other actions, we need to set action, element_id and 
       // the old (pre-manimpulation) parent of the element being manipulated.
       // i.e. tutor and student -> nearest session as old parent
       //      session           -> nearest slot as old parent
-      currentActivity['action']      = thisAction;      //**update**
-      currentActivity['move_ele_id'] = thisEleId;
-      currentActivity['object_id']   = thisEleId;       //**update**
-      currentActivity['object_type'] = objectidToObjecttype(thisEleId);  //**update**
+      currentActivity = {};                             // clear array.
+      currentActivity['action']      = thisAction;      
+      //currentActivity['move_ele_id'] = thisEleId;
+      currentActivity['object_id']   = thisEleId;     
+      currentActivity['object_type'] = objectidToObjecttype(currentActivity['object_id']);
       thisEle = document.getElementById(thisEleId);
       //currentActivity['ele_old_parent_id'] = document.getElementById(thisEleId).parentElement.id;
-      switch (currentActivity['object_type']) {
+
+/*      switch (currentActivity['object_type']) {
         case 'student':   //student
         case 'tutor':   //tutor
           currentActivity['ele_old_parent_id'] = clickInsideElementClassList2(thisEle, ['lesson']).id;
           break;
         case 'lesson':   //lesson
-          currentActivity['ele_old_parent_id'] = clickInsideElementClassList2(thisEle, ['slot']).id;
-          break;
-      }
-/*
-      switch ( getRecordType(thisEleId) ) {
-        case 's':   //student
-        case 't':   //tutor
-          currentActivity['ele_old_parent_id'] = clickInsideElementClassList2(thisEle, ['lesson']).id;
-          break;
-        case 'n':   //lesson
           currentActivity['ele_old_parent_id'] = clickInsideElementClassList2(thisEle, ['slot']).id;
           break;
       }
@@ -549,6 +549,7 @@ var ready = function() {
       case "copy":
       case "move":
         // Nothing else to do, need a paste before any action can be taken!!!
+        
         break;
       case "paste":
         //Note, we need the action for the move/copy, not paste.
@@ -598,72 +599,47 @@ var ready = function() {
         deleteentry_Update(currentActivity);
         break;
       case "addLesson":
-/*        // This will add a new lesson within the slot holding the element clicked.
+        // This will add a new lesson within the slot holding the element clicked.
         // Will add a new lesson record with this slot value.
-        // currentActivity['ele_new_parent_id'] = clickInsideElementClassList2(thisEle, ['slot']).id;
-        //addLesson(currentActivity);
-*/
         addLesson_Update(currentActivity);
         break;
       case "removeLesson":
-/*      // This will remove a lesson clicked on.
+        // This will remove a lesson clicked on.
         // Will delete the lesson record for a lesson only if empty 
         // i.e. not tutors or students.
         // This is needed as no matter what element was clicked on, we still need
         // to find the nearest slot - prevous setting could have been tutor 
         // finding lesson as parent.
-        // currentActivity['ele_old_parent_id'] = clickInsideElementClassList2(thisEle, ['slot']).id;
-*/
         removeLesson_Update(currentActivity);
         break;
       case "setStatus":
-/*        // Set Status has been selected on an element.
+        // Set Status has been selected on an element.
         // It will open up another menu to select the status required.
         // This will set the status of this item (tutor, student, lesson).
-        //currentActivity['ele_old_parent_id'] = clickInsideElementClassList2(thisEle, ['slot']).id;
-        //enableTertiaryMenu(thisEle, thisAction, currentActivity);
-*/
         enableTertiaryMenu(currentActivity);
         break;
       case "setKind":
-/*      // Set Kind has been selected on an element.
+        // Set Kind has been selected on an element.
         // It will open up another menu to select the status requried.
         // This will set the status of this item (tutor, student, lesson).
-        //currentActivity['ele_old_parent_id'] = clickInsideElementClassList2(thisEle, ['slot']).id;
-        //enableTertiaryMenu(thisEle, thisAction, currentActivity);
-*/
         enableTertiaryMenu(currentActivity);
         break;
       case "setPersonStatus":
-/*      // Set Person Status has been selected on an element.
+        // Set Person Status has been selected on an element.
         // It will open up another menu to select the status requried.
         // This will set the status of this item (tutor, student).
-        //currentActivity['ele_old_parent_id'] = clickInsideElementClassList2(thisEle, ['slot']).id;
-        //enableTertiaryMenu(thisEle, thisAction, currentActivity);
-*/
         enableTertiaryMenu(currentActivity);
         break;
       case "editDetail":
-/*      // this case edits the tutor or student comment when we have clicked 
+        // this case edits the tutor or student comment when we have clicked 
         // on the student or tutor in the scheduler area.
         // This is actioned by making believe that we have clicked on this 
         // tutor or student in the index area, then let editComment take its
         // course. (Hence no break after this section!)
-        //
-        // currentActivity['move_ele_id'] =  thisEleId;
-        // thisEle = document.getElementById(thisEleId);
-        // function getRecordType(ele_id){
-        // function getRecordId(ele_id){
         // generate the element id of this person in the index area
         // and override existing values.
-        //thisEleId = getRecordType(thisEleId) + getRecordId(thisEleId);
-
-        //thisEle = document.getElementById(thisEleId);
-        //currentActivity['move_ele_id'] = thisEleId;
-        //currentActivity['action'] = "editComment";
         // We need to get the comment text which is to be edited.
         // This has to be obtained from the appropriate location in the html doc.
-*/
         if(currentActivity['object_type'] == 'tutor'   ||
            currentActivity['object_type'] == 'student'    ){
            var thisPersonComment = thisEle.getElementsByClassName('p-comment')[0].innerHTML;
@@ -679,27 +655,9 @@ var ready = function() {
         break;
 
       case "editComment":
-/*      // Edit Comment has been selected on an element.
+        // Edit Comment has been selected on an element.
         // It will open up a text field to key in your updates.
-        // This will update the relevant comment.
-        // currentActivity['action'] = 'editComment' OR 'editDetail'
-        //                ['object_id'] = [tsn]111 or GUN.....[tsn]111
-        //                ['object_type'] =
-        // thisEleId   // element clicked on.
-        // thisEle = document.getElementById(thisEleId);
-*/
-/*
-        var personContext = '';
-        if(clickInsideElementClassList2(thisEle, ['index'])){
-          personContext = 'index';
-        } else {
-          personContext = 'lesson';
-        }
-
-        // ???? is the following line needed ???????????
-        //currentActivity['ele_old_parent_id'] = clickInsideElementClassList2(thisEle, ['slot']).id;
-        var recordType = getRecordType(thisEleId);  //student, tutor, lesson
-*/
+        // This will update the relevant comment.*/
         // We need to get the comment text which is to be edited.
         // This has to be obtained from the appropriate location in the html doc.
         if(currentActivity['object_type'] == 'tutor'   ||
@@ -716,44 +674,14 @@ var ready = function() {
         document.getElementById('edit-comment-elementid').innerHTML = thisEleId;
         document.getElementById('edit-comment-action').innerHTML = thisAction;
         enableTertiaryMenu(currentActivity);
-
-/*        
-        if(recordType == 't') {   // tutor
-          if(personContext == 'index') {    // index
-            thisComment = thisEle.getElementsByClassName('tutorcommentdetail')[0].innerHTML;
-          } else {                          // lesson
-            thisComment = thisEle.getElementsByClassName('tutrolecomment')[0].innerHTML;
-          }
-        } else if(recordType == 's') {   // student
-          if(personContext == 'index'){     // index
-            thisComment = thisEle.getElementsByClassName('studentcommentdetail')[0].innerHTML;
-          } else {                          // lesson
-            thisComment = thisEle.getElementsByClassName('rolecomment')[0].innerHTML;
-          }
-        } else if(recordType == 'n') {   // session
-          thisComment = thisEle.getElementsByClassName('lessoncommenttext')[0].innerHTML;
-        }
-*/
-/*      // Now that we have the text, we need to place it into the text eniting 
-        // field in the browser doc and then show it in the tertiary menu.
-        //document.getElementById('edit-comment-text').value = thisComment;
-        //document.getElementById('edit-comment-elementid').innerHTML = thisEleId;
-        //enableTertiaryMenu(thisEle, thisAction, currentActivity);
-        //enableTertiaryMenu(thisEle, currentActivity['action'], currentActivity);
-*/
         break;
+
       case "editSubject":
         // Edit Subject has been selected on an element.
         // It will open up a text field to key in your updates.
         // This will update the relevant subject.
         // The editing dialogue is the same one as for editing
         // comments.
-        //currentActivity['ele_old_parent_id'] = clickInsideElementClassList2(thisEle, ['slot']).id;
-        // We need to get the subject text which is to be edited.
-        // This has to be obtained from the appropriate location in the html doc.
-        // The subject text for student is combined with other stuff - so 
-        // needs to be split out. Tutor is clean.
-
         // We need to get the subject text which is to be edited.
         // This has to be obtained from the appropriate location in the html doc.
         if(currentActivity['object_type'] == 'tutor'  ){
@@ -769,22 +697,6 @@ var ready = function() {
         document.getElementById('edit-comment-elementid').innerHTML = thisEleId;
         document.getElementById('edit-comment-action').innerHTML = thisAction;
         enableTertiaryMenu(currentActivity);
-/*
-        recordType = getRecordType(thisEleId);  //student, tutor, lesson
-        if(recordType == 't') {   // tutor
-          var thisSubject = thisEle.getElementsByClassName('tutorsubjects')[0].innerHTML;
-        } else if(recordType == 's') {   // student
-          thisSubject = thisEle.getElementsByClassName('studentsubjects')[0].innerHTML;
-          var res = thisSubject.split("|");
-          thisSubject = res[1];
-          thisSubject = thisSubject.slice( 1 ); // remove space inserted by display format
-        } 
-        // Now that we have the text, we need to place it into the text eniting 
-        // field in the browser doc and then show it in the tertiary menu.
-        document.getElementById('edit-subject-text').value = thisSubject;
-        document.getElementById('edit-subject-elementid').innerHTML = thisEleId;
-        enableTertiaryMenu(thisEle, thisAction, currentActivity);
-*/
         break;
       case "history":
         // Edit Comment has been selected on an element.
@@ -796,21 +708,6 @@ var ready = function() {
         // Display changes has been selected on an element.
         // Want to open another tab to display the changes.
         // url is "https//:myhost/tutors or students/change/n"
-        // currentActivity['action'] = thisAction;
-        // currentActivity['move_ele_id'] =  thisEleId;
-        //console.log ("in changes");
-        //console.log(currentActivity);
-/*
-        var personType = getRecordType(thisEleId);
-        var personId = getRecordId(thisEleId);
-        var myurl = '';
-        if(personType == 't') {
-          myurl = myhost + '/tutors/change/' + personId;
-        } else if (personType == 's') {
-          myurl = myhost + '/students/change/' + personId;
-        }
-*/
-
         if(currentActivity['object_type'] == 'tutor' ||
            currentActivity['object_type'] == 'student' ){
           var parseId = currentActivity['object_id'].match( /\w(\d+)$/);
@@ -818,21 +715,12 @@ var ready = function() {
         }else{
           return;
         }
-
-        //console.log('myurl: ' + myurl);
         window.open(myurl, '_blank');
-        //var win = window.open(myurl, '_blank');
-        //win.focus();
         break;
       case "editEntry":
         // Edit tutor has been selected on an element.
         // Want to open the tutor edit screen.
         // url is "https//:myhost/tutors or students/n/edit"
-        // currentActivity['action'] = thisAction;
-        // currentActivity['move_ele_id'] =  thisEleId;
-        //personType = getRecordType(thisEleId);
-        //personId = getRecordId(thisEleId);
-        //myurl = '';
         if(currentActivity['object_type'] == 'tutor' ||
            currentActivity['object_type'] == 'student' ){
           parseId = currentActivity['object_id'].match( /\w(\d+)$/);
@@ -840,14 +728,6 @@ var ready = function() {
         }else{
           return;
         }
-/*        
-        if(currentActivity['object_type'] == 'tutor') {
-          myurl = myhost + '/tutors/' + personId + '/edit';
-        } else if (personType == 's') {
-          myurl = myhost + '/students/' + personId + '/edit';
-        }
-*/
-        //console.log('myurl: ' + myurl);
         window.open(myurl, '_blank');
         break;
       }
@@ -858,21 +738,13 @@ var ready = function() {
   // right clicked on.
   //function enableTertiaryMenu(etmEle, etmAction, currentActivity){
   function enableTertiaryMenu(currentActivity){
-    // ** etm = element tertiary menu **
-    // etmEle = original element right clicked on.
-    //var etmEleId = currentActivity['object_id']; // element clicked on e.g. tutor, student, lesson
-    //var etmEle = document.getElementById(etmEleId);
+    // ** etm    = element tertiary menu **
+    // etmEle    = original element right clicked on - tutor, student, lesson.
     // etmAction = action selected within the primary context menu.
     var etmAction = currentActivity['action'];
-    // currentActivity['action'];
-    // currentActivity['move_ele_id'];
-    // currentActivity['ele_old_parent_id'];  ?? rarely required.
-    //console.log("--------------- enableTertiaryMenu ---------------");
     // Need to add another context menu with selection choices
     // based on action and move_ele_id
-    // etmAction = action of the first context menu e.g set tutor status
-    // etm = element tertiary menu
-    //var recordType = getRecordType(etmEleId);  //student, tutor, lesson
+    // etmAction = action of the first (main) context menu e.g set tutor status
     var recordType = currentActivity['object_type'];
     var stmi_tutor_status_scheduled   = false;   // stmi = set tertiary menu item
     var stmi_tutor_status_notified    = false;
@@ -928,13 +800,10 @@ var ready = function() {
     
     // First, identify type of element being actioned e.g. tutor, lesson, etc..
     switch(recordType){
-      //case 't':   // tutor
       case 'tutor':   // tutor
-        //console.debug("etm recordType is tutor");
         // Now show the tertiary choices for this element.
         switch(etmAction){
           case 'setStatus':   // tutor set Status options
-            //console.debug("etmAction is tutor");
             stmi_tutor_status_scheduled = true;   // stmi - set tertiary menu item
             stmi_tutor_status_notified  = true;
             stmi_tutor_status_confirmed = true;
@@ -944,7 +813,6 @@ var ready = function() {
             stmi_tutor_status_away      = true;
             break;
           case 'setKind':   // tutor set Kind options
-            //console.debug("etmAction is setKind");
             stmi_tutor_kind_bfl         = true;
             stmi_tutor_kind_oncall      = true;
             stmi_tutor_kind_onsetup     = true;
@@ -957,22 +825,14 @@ var ready = function() {
           case 'editComment':   // show the text edit box & populate
           case 'editSubject':   // show the text edit box & populate
           case 'editDetail':
-            //console.debug("etmAction is editComment");
             stmi_edit_comment           = true;
             break;
-          //case 'editSubject':   // show the text edit box & populate
-            //console.debug("etmAction is editSubject");
-            //stmi_edit_subject           = true;
-          //  break;
         }     // switch(etmAction)
         break;
-      //case 's':   // student
       case 'student':   // student
-        console.debug("etm recordType is student");
         // Now show the tertiary choices for this element.
         switch(etmAction){
           case 'setStatus':   // student set Status options
-            console.debug("etmAction is setStatus");
             stmi_student_status_scheduled = true;
             stmi_student_status_attended  = true;
             stmi_student_status_bye       = true;
@@ -981,7 +841,6 @@ var ready = function() {
             stmi_student_status_away      = true;
             break;
           case 'setKind':   // student set Kind options
-            console.debug("etmAction is setKind");
             stmi_student_kind_free        = true;            
             stmi_student_kind_first       = true;
             stmi_student_kind_catchup     = true;
@@ -991,7 +850,6 @@ var ready = function() {
             stmi_student_kind_bonus       = true;
             break;
           case 'setPersonStatus':   // student set student status options
-            console.debug("etmAction is setPersonStatus");
             stmi_student_personstatus_new          = true;
             stmi_student_personstatus_fortnightly  = true;
             stmi_student_personstatus_onetoone     = true;
@@ -1001,19 +859,12 @@ var ready = function() {
           case 'editComment':   // show the text edit box & populate
           case 'editSubject':
           case 'editDetail':
-            console.debug("etmAction is editComment");
             stmi_edit_comment             = true;
             break;
-          //case 'editSubject':   // show the text edit box & populate
-          //  console.debug("etmAction is editSubject");
-          //  stmi_edit_subject             = true;
-          //  break;
         }     // switch(etmAction)
         break;
 
-      //case 'n':   //lesson
       case 'lesson':   //lesson
-        console.debug("etm recordType is lesson");
         // Now show the tertiary choices for this element.
         switch(etmAction){
           case 'setStatus':   // lesson set Status options
@@ -1029,7 +880,6 @@ var ready = function() {
             stmi_lesson_status_park       = true;
             break;
           case 'editComment':   // show the text edit box & populate
-            console.debug("etmAction is editComment");
             stmi_edit_comment             = true;
             break;
         }
@@ -1104,26 +954,20 @@ var ready = function() {
   function menuChoiceActioner( choice ){
     // choice = the tertiary menu item selected (dom element)
     toggleTMenuOff();
-    //var thisChoice =  choice.getAttribute("data-choice");
-    //var thisEleId = taskItemInContext.id;    // element 'right clicked' on
-    currentActivity['action'] = choice.getAttribute("data-choice"); // thisChoice
+    currentActivity['action']      = choice.getAttribute("data-choice"); // thisChoice
     currentActivity['move_ele_id'] = taskItemInContext.id;   // thisEleId
     currentActivity['object_id']   = taskItemInContext.id;   // thisEleId
-    //var parseId = currentActivity['object_id'].match( /(\w)\d+$/);
     personupdatestatuskindcomment( currentActivity );
   }
-  
+
   // This actions the text editing results following the person editing
   // the text and pressing update.
   function editCommentSubjectActioner(editButton){
-    //console.log("--------------- editCommentSubjectActioner ---------------------");
-    //toggleTMenuOff();
     // thisTarget.id is one of two options:
     // - 'edit-comment-button'
-    // - 'edit-subject-button'
-    
+
     // First step is to get required details from text edit box 
-    // - updated commment + id of the comment field to be updated.
+    // Gets updated commment + id of the comment field + action taken.
     if (editButton == 'edit-comment-button'){
       //var thisComment = document.getElementById('edit-comment-text').value;
       currentActivity['object_id']   = document.getElementById('edit-comment-elementid').innerHTML;
@@ -1168,47 +1012,7 @@ var ready = function() {
 
         }
       }
-
-/*
-      currentActivity['updatefield'] = 'comment';
-      if(currentActivity['object_type'] == 'lesson'){
-        currentActivity['updatefield'] = 'comments';
-      }
-      //currentActivity['action'] = '-comment-edit';
-    } else {   // edit-subject-button
-      currentActivity['object_id']   = document.getElementById('edit-subject-elementid').innerHTML;
-      currentActivity['object_type'] = objectidToObjecttype(currentActivity['object_id']);
-      currentActivity['action']      = currentActivity['object_type'] + '-subject-edit';
-      currentActivity['updatefield'] = 'subjects';
-      if(currentActivity['object_type'] == 'student'){
-        currentActivity['updatefield'] = 'study'; 
-      }
-      currentActivity['updatevalue'] = document.getElementById('editsubject-text').value;
-*/
-/*
-      thisComment = document.getElementById('edit-subject-text').value;
-      document.getElementById('edit-subject-text').value = '';
-      //document.getElementById('edit-subject-text').value = '';
-      thisEleId = document.getElementById('edit-subject-elementid').innerHTML;
-      //currentActivity['action'] = '-subject-edit';
-      currentActivity['action'] = currentActivity['object_type'] + '-subject-edit';
-*/
     }
-/*
-    // Now set up ready for the db update and dom changes.
-    currentActivity['object_id'] = thisEleId
-    currentActivity['move_ele_id'] = thisEleId;
-    currentActivity['new_value'] = thisComment;
-    //var thisEle = document.getElementById(thisEleId);
-    var recordType = getRecordType(thisEleId);  //student, tutor, lesson
-    if (recordType == 't'){
-      currentActivity['action'] = 'tutor' + currentActivity['action'];
-    }else if (recordType == 's'){
-      currentActivity['action'] = 'student' + currentActivity['action'];
-    }else if (recordType == 'n'){
-      currentActivity['action'] = 'lesson-comment-edit';
-    }
-*/
     // now update the database, then the dom.
     personupdatecommentsubject( currentActivity );
   } 
@@ -1348,27 +1152,11 @@ var ready = function() {
   //Does ajax to get the student or tutor history
   function getHistory(domchange){
     // domchange['action']      = thisChoice;
-    // domchange['move_ele_id'] = thisEleId;
-    //var recordtype = getRecordType(domchange['move_ele_id']);  // s or t
-    //var personid = getRecordId(domchange['move_ele_id']);      // record id
+    // domchange['object_id'] = thisEleId;
     var parseid = currentActivity['object_id'].match(/\w(\d+)$/);
-    var mydata = {'domchange' : domchange};
+    //var mydata = {'domchange' : domchange};
     // url format: myhost + "/students/history/" + personid;
     var myurl = myhost + "/" + domchange['object_type'] + "s/history/" + parseid[1];
-/*
-    if( 'student' == domchange['object_type'] ){    // student
-      persontype = 'student';
-      console.log("we have a student - " + personid);
-      var myurl = myhost + "/students/history/" + personid;   // skc = status, kind, comment
-    } else if( 't' == recordtype ){   // tutor
-      persontype = 'tutor';
-      console.log("we have a tutor - " + personid);
-      myurl = myhost + "/tutors/history/" + personid;   // skc = status, kind, comment
-    } else {
-      console.log("error - request is not a tutor or student");
-      return;
-    }
-*/
     $.ajax({
         type: "GET",
         url: myurl,
@@ -1377,11 +1165,9 @@ var ready = function() {
         context: domchange,
 
         success: function(data, textStatus, xhr){
-          console.log("ajax call successful");
           showhistory(data);
         },
         error: function(xhr){
-            //$(this).addClass( "processingerror" );
             var errors = $.parseJSON(xhr.responseText);
             var error_message = "";
             for (var error in (errors['person_id'])){
@@ -1459,8 +1245,8 @@ var ready = function() {
     // domchange['action']    = thisChoice;  // in tertiary menu
     // domchange['object_id'] = thisEleId; //=moveEleId
     var mydata = {'domchange' : domchange};
-    var action = domchange['action'];   //update status or kind with value
-    var object_type = domchange['object_type'];
+    //var action = domchange['action'];   //update status or kind with value
+    //var object_type = domchange['object_type'];
     var myurl = myhost + domchange['url-action'];
     delete domchange['url-action'];
     console.log('in personupdatecommentsubject');
@@ -1473,7 +1259,8 @@ var ready = function() {
         context: domchange,
 
         success: function(result1, result2, result3){
-            moveelement_update( result1 );
+            console.log("personupdatecommentsubject Ajax response OK");
+            //moveelement_update( result1 );
         },
         error: function(xhr){
             var errors = $.parseJSON(xhr.responseText);
@@ -1481,8 +1268,8 @@ var ready = function() {
             for (var error in (errors['person_id'])){
               error_message += " : " + errors['person_id'][error];
             }
-            alert('error updating ' + persontype +
-                  ' '  + updatefield + ': ' + error_message);
+            alert('error updating ' + domchange['object_type'] +
+                  ' '  + domchange['updatefield'] + ': ' + error_message);
         }
      });
   }
@@ -1497,30 +1284,13 @@ var ready = function() {
     // domchange['object_id'] = thisEleId; //=moveEleId
     var mydata = {'domchange' : domchange};
     var action = domchange['action'];   //update status or kind with value
-    //var recordtype = getRecordType(domchange['move_ele_id']);  // s or t
-    //var recordtype = domchange['object_type'];
     var object_type = domchange['object_type'];
-    //var personid = getRecordId(domchange['move_ele_id']);      // record id
     // Need to determine the context - index or lession
     if(domchange['object_id'].match(/^[ts]\d+$/)){
       var personContext = 'index';
     }else{
       personContext = 'lesson';
     }
-    
-/*    
-    var thisEle = document.getElementById(domchange['move_ele_id']);
-    var lessonid;
-    var personContext = '';
-    if(clickInsideElementClassList2(thisEle, ['index'])){
-      personContext = 'index';
-    } else {
-      personContext = 'lesson';
-      lessonid = getLessonIdFromTutorStudent(domchange['move_ele_id']);
-      mydata['lesson_id'] = lessonid;
-    }
-*/
-    //var persontype = domchange['object_type'];
     // action = "student-status-deal"
     // var updatefield = 'status';
     // var updatevalue = 'deal';
@@ -1528,23 +1298,10 @@ var ready = function() {
     var updatefield = parseaction[2];
     var updatevalue = parseaction[3];
     var controllertype = 'role';
-    if(updatefield == 'personstatus'){
+    if(updatefield == 'personstatus'){ // treated differently - update person record
       updatefield = 'status';
       controllertype = 'person';
     }
-/*    
-    // comment field is slightly different.
-    //if (updatefield == 'comment' ||
-    //    updatefield == 'subject'){    
-    //  updatevalue = domchange['new_value'];
-    //}
-    //domchange["new_value"] = updatevalue;
-    // for student, translate from browser name to db name
-    // subject -> study
-    //if (updatefield == 'subject' && object_type == 'student') {
-    //  updatefield = 'study';
-    //}
-*/
     if (updatefield == 'subject' && object_type == 'tutor') {
       updatefield = 'subjects';
     } 
@@ -1558,25 +1315,25 @@ var ready = function() {
       if ( personContext == 'lesson') {   // scheduler portion of page
         if(controllertype == 'person'){   // student detail status + subject
           myurl = myhost + "/studentdetailupdateskc"; 
-          domchange['action'] = 'setdetail';
+          domchange['action'] = 'setDetail';
         }else{    // session/student status, kind, comment
           myurl = myhost + "/studentupdateskc";   // skc = status, kind, comment
         }
       } else {        // index portion of page
         myurl = myhost + "/studentdetailupdateskc";   // student detail status + subject
-        domchange['action'] = 'setdetail';
+        domchange['action'] = 'setDetail';
       }
     }else if ( 'tutor' == object_type){    // tutor
       if ( personContext == 'lesson') {
         if(controllertype == 'person'){   // student detail status + subject
           myurl = myhost + "/tutordetailupdateskc";   // skc = status, kind, comment + subject
-          domchange['action'] = 'setdetail';
+          domchange['action'] = 'setDetail';
         }else{    // session/student status, kind, comment
           myurl = myhost + "/tutorupdateskc";   // skc = status, kind, comment + subject
         }
       } else {        // index
         myurl = myhost + "/tutordetailupdateskc";   //
-        domchange['action'] = 'setdetail';
+        domchange['action'] = 'setDetail';
       }
     }else if ( 'lesson' == object_type){     // lesson
         myurl = myhost + "/lessonupdateskc";   // skc = status, kind, comment
@@ -1585,119 +1342,15 @@ var ready = function() {
       return;
     }
 
-/*
-    //if( 's' == recordtype ){    // student
-    if( 'student' == recordtype ){    // student
-      // action = "student-status-deal"
-      // var updatefield = 'status';
-      // var updatevalue = 'deal';
-      //var parseaction = action.match(/^(\w+)-(\w+)-(\w+)$/);
-      //var updatefield = parseaction[2];
-      //var updatevalue = parseaction[3];
-      // updating personstatus impacts the student status,
-      // not the (student)role status.
-      // Thus we need to flag that we are to update the student record
-      //if(updatefield == 'personstatus'){
-      //  updatefield = 'status';
-      //  updateDbRecordType = 'person';
-      //}
-      // comment field is slightly different.
-      //if (updatefield == 'comment' ||
-      //    updatefield == 'subject'){    
-      //  updatevalue = domchange['new_value'];
-      //}
-      //domchange["new_value"] = updatevalue;
-      // translate from browser name to db name
-      // subject -> study
-      //if (updatefield == 'subject') {
-      //  updatefield = 'study';
-      //}
-      //domchange['updatefield'] = updatefield;
-      //domchange['updatevalue'] = updatevalue;
-      //mydata[updatefield] = updatevalue;
-      //mydata['student_id'] = personid;
-      if ( personContext == 'lesson') {
-        myurl = myhost + "/studentupdateskc";   // skc = status, kind, comment
-      } else if (updateDbRecordType == 'person') {
-        myurl = myhost + "/studentdetailupdateskc";   // +status
-      } else {        // index
-        myurl = myhost + "/studentdetailupdateskc";   // +subject
-      }
-    //} else if( 't' == recordtype ){   // tutor
-    } else if( 'tutor' == recordtype ){   // tutor
-      //persontype = 'tutor';
-      // action = "tutor-status-deal"
-      // var updatefield = 'status';
-      // var updatevalue = 'deal';
-      // Note - variable 'workaction' is detroyed in this process
-      //workaction = action;
-      //t = /^\w+-/.exec(workaction);
-      //workaction = workaction.replace(t[0], '');
-      //t = /^\w+-/.exec(workaction);
-      //updatefield = t[0]; 
-      //workaction = workaction.replace(updatefield, '');
-      //updatefield = updatefield.replace('-', '');
-      //updatevalue =  workaction;
-      // comment field is slightly different.
-      //if (updatefield == 'comment' ||
-      //    updatefield == 'subject'){    
-      //  updatevalue = domchange['new_value'];
-      //}
-      //domchange["new_value"] = updatevalue;
-      // translate from browser name to db name
-      // subject -> subjects
-      if (updatefield == 'subject') {
-        updatefield = 'subjects';
-      } 
-      mydata[updatefield] = updatevalue;
-      mydata['tutor_id'] = personid;
-      if ( personContext == 'lesson') {
-        myurl = myhost + "/tutorupdateskc";   // skc = status, kind, comment
-      } else {        // index
-        myurl = myhost + "/tutordetailupdateskc";   // + subject
-      }
-    //} else if( 'n' == recordtype ){   // lesson
-    } else if( 'lesson' == recordtype ){   // lesson
-      //persontype = 'lesson';
-      // action = "lesson-status-oncall"
-      // var updatefield = 'status';
-      // var updatevalue = 'oncall';
-      // Note - variable 'workaction' is detroyed in this process
-      workaction = action;
-      t = /^\w+-/.exec(workaction);
-      workaction = workaction.replace(t[0], '');
-      t = /^\w+-/.exec(workaction);
-      updatefield = t[0]; 
-      workaction = workaction.replace(updatefield, '');
-      updatefield = updatefield.replace('-', '');
-      updatevalue =  workaction;
-      // comment field is slightly different.
-      if (updatefield == 'comment'){    
-        updatevalue = domchange['new_value'];
-        mydata['comments'] = updatevalue;
-      }else{
-        mydata[updatefield] = updatevalue;
-      }
-      domchange["new_value"] = updatevalue;
-      mydata['lesson_id'] = personid;
-      myurl = myhost + "/lessonupdateskc";   // skc = status, kind, comment
-    } else {
-      console.log("error - the record being updated is not a tutor, student or lesson");
-      return;
-    }
-*/
-  
     $.ajax({
         type: 'POST',
         url: myurl,
         data: mydata,
         dataType: "json",
         context: domchange,
-
         success: function(result1, result2, result3){
-            //updatestatuskindelement(domchange);
-            //updatestatuskindelement(result1);
-            moveelement_update( result1 );
+          console.log("personupdatestatuskindcomment: ajax response OK");
+          //moveelement_update( result1 );
         },
         error: function(xhr){
             var errors = $.parseJSON(xhr.responseText);
@@ -1705,268 +1358,11 @@ var ready = function() {
             for (var error in (errors['person_id'])){
               error_message += " : " + errors['person_id'][error];
             }
-            alert('error updating ' + persontype +
+            alert('error updating ' + domchange['object_type'] +
                   ' '  + updatefield + ': ' + error_message);
         }
      });
   }
-
-/*
-  // This updates the dom model with the changes applied
-  // to the database.
-  function updatestatuskindelement(domchange){
-    console.log("------------- updatestatuskindelement ------------------");
-    console.log(domchange);
-    // changing the location of storing colour classes
-    // moving to tutor div from previous name and comment divs
-    // for testing keep both options - switch between them
-    //var testnewformat = true;  // true or false
-    
-    var updateaction = domchange['action'];
-    var t = /^\w+-/.exec(updateaction);
-    updateaction = updateaction.replace(t[0], '');
-    t = /^\w+-/.exec(updateaction);
-    var scmType = t[0]; 
-    updateaction = updateaction.replace(scmType, '');
-    scmType = scmType.replace('-', '');
-    var scmValue =  updateaction;
-    var recordtype = getRecordType(domchange["move_ele_id"]);  // s or t
-    var this_ele = document.getElementById(domchange["move_ele_id"]);
-
-    if(clickInsideElementClassList2(this_ele, ['index'])){ // index context
-      var personContext = 'index';
-      //var personId = this_ele.id;
-      if (scmType == 'comment') {
-        if (recordtype == 't') {        // tutor
-          var comment_ele = this_ele.getElementsByClassName("tutorcommentdetail")[0];
-        }else if (recordtype == 's'){   // student
-          comment_ele = this_ele.getElementsByClassName("studentcommentdetail")[0];
-        }
-        //var comment_text_new = domchange["new_value"];
-      } else if (scmType == 'subject') {
-        if (recordtype == 't') {        // tutor
-          var subject_ele = this_ele.getElementsByClassName("tutorsubjects")[0];
-          var subject_text_new = domchange["new_value"];
-        }else if (recordtype == 's'){   // student
-          // student subject consist of added sex (optional) + year 
-          subject_ele = this_ele.getElementsByClassName("studentsubjects")[0];
-          var subject_text_old = subject_ele.innerHTML;
-          var res = subject_text_old.split("|");
-          subject_text_new = res[0] + "| " + domchange["new_value"];
-        }
-      }
-    } else {   // lesson (or schedule) context
-      personContext = 'lesson';
-      comment_ele = this_ele.getElementsByClassName("comment")[0];
-      // some variables are only valid in this context
-      var statusinfoele = this_ele.getElementsByClassName("statusinfo")[0];
-    }
-
-    var foundClass = false;    
-    //var kindtext;
-    var searchForClass, these_classes, statusinfo, statustext;
-    var comment_text_eles, status_elements, changeclass_ele;
-    
-    // Let's just do tutor
-    if(recordtype == 't'){
-      searchForClass = "t-" + scmType + "-";
-      //var tutorname_eles = this_ele.getElementsByClassName("tutorname");
-      // First update the classes - this controls the status colour
-      if (scmType == 'kind') {   // only impact the class in comments
-        changeclass_ele = this_ele;
-        status_elements = this_ele.getElementsByClassName('l-kind');   // lesson status
-        for (let i = 0; i < status_elements.length; i++) {
-          status_elements[i].textContent = "Kind: " + scmValue;
-        }
-        these_classes = changeclass_ele.classList;
-        // scan these classes for our class of interest
-        these_classes.forEach(function(thisClass, index, array){
-          if (thisClass.includes(searchForClass)) {     // t-status-
-            // as we are updating, remove this class and add the corrected class
-            foundClass = true;
-            changeclass_ele.classList.remove(thisClass);
-            changeclass_ele.classList.add(searchForClass + scmValue);
-          }
-        });
-        if(foundClass == false){    // if class was not found
-          changeclass_ele.classList.add(searchForClass + scmValue); // add it
-        }
-      } else if (scmType == 'status') {    // only impact the class in tutorname
-        changeclass_ele = this_ele;
-        status_elements = this_ele.getElementsByClassName('l-status');   // lesson status
-        for (let i = 0; i < status_elements.length; i++) {
-          status_elements[i].textContent = "Kind: " + scmValue;
-        }
-        these_classes = changeclass_ele.classList;
-        // scan these classes for our class of interest
-        these_classes.forEach(function(thisClass, index, array){
-          if (thisClass.includes(searchForClass)) {     // t-status-
-            // as we are updating, remove this class and add the corrected class
-            foundClass = true;
-            changeclass_ele.classList.remove(thisClass);
-            changeclass_ele.classList.add(searchForClass + scmValue);
-          }
-        });
-        if(foundClass == false){    // if class was not found
-          changeclass_ele.classList.add(searchForClass + scmValue); // add it
-        }
-      } else if (scmType == 'comment') {  // update the comment
-        if (personContext == 'index') {
-          // Update the tutor detail comment, then update all the sheet with this commment 
-          // update comment in the index area (top of page)
-          //comment_text_eles = comment_ele.getElementsByClassName("tutorcommentdetail");
-          comment_ele.innerHTML = domchange["new_value"];
-          // now the rest of the sheet
-          var tutor_lesson_eles = document.getElementsByClassName("f" + domchange["move_ele_id"]);
-          //tutor_lesson_eles.forEach(function(lele) { // lesson element
-          for (let i = 0; i < tutor_lesson_eles.length; i++) {
-            console.log(tutor_lesson_eles[i]);
-            comment_text_eles = tutor_lesson_eles[i].getElementsByClassName("tutorcommentdetail");
-            comment_text_eles[0].innerHTML = domchange["new_value"];
-          }
-        } else {    // lesson
-          // Now to update the comment with tutrole comment
-          comment_text_eles = comment_ele.getElementsByClassName("tutrolecomment");
-          comment_text_eles[0].innerHTML = domchange["new_value"];
-        }
-      } else if (scmType == 'subject') {  // update the tutor subject
-        if (personContext == 'index') { 
-          // Update the tutor subject, then update all the sheet with this commment 
-          // update subject in the index area (top of page)
-          //var subject_text_eles = subject_ele.getElementsByClassName("tutorsubjects");
-          //subject_text_eles[0].innerHTML = subject_text_new;
-          subject_ele.innerHTML = subject_text_new;
-          // now the rest of the sheet
-          tutor_lesson_eles = document.getElementsByClassName("f" + domchange["move_ele_id"]);
-          for (let i = 0; i < tutor_lesson_eles.length; i++) {
-            console.log(tutor_lesson_eles[i]);
-            subject_text_eles = tutor_lesson_eles[i].getElementsByClassName("tutorsubjects");
-            subject_text_eles[0].innerHTML = subject_text_new;
-          }
-        }
-      }
-    }
-
-    // Now do the student
-    if(recordtype == 's'){
-      searchForClass = "s-" + scmType + "-";
-      //var studentname_eles = this_ele.getElementsByClassName("studentname");
-      // First update the classes - this controls the status colour
-      if (scmType == 'kind') {   // only impact the class in comments
-        changeclass_ele = this_ele;
-        status_elements = this_ele.getElementsByClassName('l-kind');   // lesson status
-        for (let i = 0; i < status_elements.length; i++) {
-          status_elements[i].textContent = "Kind: " + scmValue;
-        }
-        these_classes = changeclass_ele.classList;
-        // scan these classes for our class of interest
-        these_classes.forEach(function(thisClass, index, array){
-          if (thisClass.includes(searchForClass)) {     // t-kind-
-            // as we are updating, remove this class and add the corrected class
-            foundClass = true;
-            changeclass_ele.classList.remove(thisClass);
-            changeclass_ele.classList.add(searchForClass + scmValue);
-          }
-        });
-        if(foundClass == false){    // if class was not found
-          changeclass_ele.classList.add(searchForClass + scmValue); // add it
-        }
-      } else if (scmType == 'status') {    // only impact the class in studentname
-        changeclass_ele = this_ele;
-        status_elements = this_ele.getElementsByClassName('l-status');   // lesson status
-        for (let i = 0; i < status_elements.length; i++) {
-          status_elements[i].textContent = "Status: " + scmValue;
-        }
-        these_classes = changeclass_ele.classList;
-        // scan these classes for our class of interest
-        these_classes.forEach(function(thisClass, index, array){
-          if (thisClass.includes(searchForClass)) {     // t-status-
-            // as we are updating, remove this class and add the corrected class
-            foundClass = true;
-            changeclass_ele.classList.remove(thisClass);
-            changeclass_ele.classList.add(searchForClass + scmValue);
-          }
-        });
-        if(foundClass == false){    // if class was not found
-          changeclass_ele.classList.add(searchForClass + scmValue); // add it
-        }
-      } else if (scmType == 'comment') {  // update the role comment
-        if (personContext == 'index') {
-          // Update the student detail comment, then update all the sheet with this commment 
-          // update comment in the index area (top of page)
-          //comment_text_eles = comment_ele.getElementsByClassName("studentcommentdetail");
-          comment_ele.innerHTML = domchange["new_value"];
-          // now the rest of the sheet
-          var student_lesson_eles = document.getElementsByClassName("f" + domchange["move_ele_id"]);
-          for (let i = 0; i < student_lesson_eles.length; i++) {
-            console.log(student_lesson_eles[i]);
-            comment_text_eles = student_lesson_eles[i].getElementsByClassName("studentcommentdetail");
-            comment_text_eles[0].innerHTML = domchange["new_value"];
-          }
-        } else {    // lesson
-          // Now to update the comment with tutrole comment
-          comment_text_eles = comment_ele.getElementsByClassName("rolecomment");
-          comment_text_eles[0].innerHTML = domchange["new_value"];
-        }
-      } else if (scmType == 'subject') {  // update the tutor subject
-        if (personContext == 'index') { 
-          // Update the student subject, then update all the sheet with this commment 
-          // update subject in the index area (top of page)
-          //var subject_text_eles = subject_ele.getElementsByClassName("studentsubjects");
-          //subject_text_eles[0].innerHTML = " " + subject_text_new;
-          subject_ele.innerHTML = subject_text_new;
-          // now the rest of the sheet
-          student_lesson_eles = document.getElementsByClassName("f" + domchange["move_ele_id"]);
-          for (let i = 0; i < student_lesson_eles.length; i++) {
-            console.log(student_lesson_eles[i]);
-            var subject_text_eles = student_lesson_eles[i].getElementsByClassName("studentsubjects");
-            subject_text_eles[0].innerHTML = subject_text_new;
-          }
-        }
-      } else if (scmType == 'personstatus') { // update the student status (not the status in role)
-        changeclass_ele = this_ele;
-        status_elements = this_ele.getElementsByClassName('p-status');
-        for (let i = 0; i < status_elements.length; i++) {
-          status_elements[i].textContent = "Detail: " + scmValue;
-        }
-      }
-    }    
-    
-    // Now do the lesson
-    if(recordtype == 'n'){
-      searchForClass = "n-" + scmType + "-";
-      comment_ele = this_ele.getElementsByClassName("lessoncomment")[0];
-      // First update the classes - this controls the status colour
-      if (scmType == 'status') {    // only impact the class in lesson
-        // have to update the 'lesson' div with the 't-status-' class
-        these_classes = this_ele.classList;
-        // scan these classes for our class of interest
-        these_classes.forEach(function(thisClass, index, array){
-          if (thisClass.includes(searchForClass)) {     // t-status-
-            // as we are updating, remove this class and add the corrected class
-            foundClass = true;
-            this_ele.classList.remove(thisClass);
-            this_ele.classList.add(searchForClass + scmValue);
-          }
-        });
-        if(foundClass == false){    // if class was not found
-          this_ele.classList.add(searchForClass + scmValue); // add it
-        }
-        statusinfoele = comment_ele.getElementsByClassName("lessonstatusinfo")[0];
-        statusinfo = statusinfoele.innerHTML;
-        statustext = /Status: \w* /.exec(statusinfo);
-        statusinfo = statusinfo.replace(statustext, 'Status: ' + scmValue + ' ');
-        statusinfoele.innerHTML = statusinfo;
-      } else if (scmType == 'comment') {  // update the role comment
-        // Now to update the comment with tutrole comment
-        var comment_text_ele = comment_ele.getElementsByClassName("lessoncommenttext")[0];
-        comment_text_ele.innerHTML = domchange["new_value"];
-      }
-    }    
-
-  }
-
-*/
 
   // ------------------------- Draggable History -----------------------------   
   // Draggable history container
@@ -2054,7 +1450,7 @@ var ready = function() {
 //----- Common Functions used by both Drag & Drop and Context Menu ---------
 
   //************************** AJAX ***************************************
-  // Ajax functions are:
+  // Ajax functions in this section are:
   //function deleteentry_Update( domchange ){
   //function personupdateslesson_Update( domchange ){
   //function addLesson_Update(domchange){
@@ -2075,10 +1471,10 @@ var ready = function() {
         dataType: "json",
         context: domchange,
         success: function(){
-            moveelement_update(domchange);
+            //moveelement_update(domchange);
+            console.log("deleteentry_Update Ajax response OK");
         },
         error: function(request, textStatus, errorThrown){
-            //$(this).addClass( "processingerror" );
             console.log("ajax error occured: " + request.status.to_s + " - " + textStatus );
             alert("ajax error occured: " + request.status.to_s + " - " + textStatus );
         }
@@ -2094,7 +1490,8 @@ var ready = function() {
         dataType: "json",
         context: domchange,
         success: function(result1, result2, result3){
-            moveelement_update(result1);
+            console.log("removeLesson_Update Ajax response OK");
+            //moveelement_update(result1);
         },
         error: function(request, textStatus, errorThrown){
             var temp = request.responseJSON.base;
@@ -2128,6 +1525,9 @@ var ready = function() {
         var parseToParent     = checkdomchange['to'].match(/^(\w+\d+)[nl]/);          // slot is parent   
         var parseObjectParent = checkdomchange['object_id'].match(/^(\w+\d+)[nl]/);   // slot is parent   
       }else{                         // or tutor / student.
+        if(checkdomchange['object_id'].match(/^[st]\d+$/)){  // index area is parent of object   
+          return false;
+        }
         parseToParent     = checkdomchange['to'].match(/^(\w+\d+n\d+)/);         // lesson is parent
         parseObjectParent = checkdomchange['object_id'].match(/^(\w+\d+n\d+)/);  // lesson is parent   
       }
@@ -2143,14 +1543,13 @@ var ready = function() {
     var object_type = domchange['object_type'];
     var myurl;
     var mydata;
-    if(isParentSame(domchange)){
+    if(isParentSame(domchange)){  // ignore if dropped in same location
       return;
     }
     mydata =  { 'domchange' : domchange  };
     if( 'student' == object_type || 'tutor'  == object_type){
       myurl = myhost + '/' + object_type + 'movecopylesson/'; 
     } else {
-      console.log("error - the moving person is not a tutor or student");
       return;
     }
     $.ajax({
@@ -2160,10 +1559,10 @@ var ready = function() {
         dataType: "json",
         context: domchange,
         success: function(result1, result2, result3){
-            moveelement_update(result1);
+            console.log("personupdateslesson_Update Ajax response OK");
+            //moveelement_update(result1);
         },
         error: function(xhr){
-            //$(this).addClass( "processingerror" );
             var errors = $.parseJSON(xhr.responseText);
             var error_message = "";
             for (var error in (errors['lesson_id'])){
@@ -2196,8 +1595,7 @@ var ready = function() {
   }
 
   function addLesson_Update(domchange){
-    // have domchange['object_id'] & domchange['action']
-    domchange["status"] = "flexible";
+    domchange["status"] = "flexible";  // make default for new session.
     var myurl = myhost + "/lessonadd/";
     $.ajax({
         type: "POST",
@@ -2206,12 +1604,11 @@ var ready = function() {
         dataType: "json",
         context: domchange,
         success: function(result1, result2, result3){
-            //addelement_Update(result1);
-            moveelement_update(result1);
+            console.log("addLesson_Update Ajax response OK");
+            //moveelement_update(result1);
         },
         error: function(request, textStatus, errorThrown){
             //$(this).addClass( "processingerror" );
-            //console.log("ajax error occured: " + request.status.to_s + " - " + textStatus );
             alert("ajax error occured: " + request.status.to_s + " - " + textStatus );
         }
     });
@@ -2235,26 +1632,18 @@ var ready = function() {
    This is the major function for manipulation of DOM.
 ****************************************************************************/
   function moveelement_update( domchange ){
-    //  action:             "move"
-    //  ele_new_parent_id:  "Wod201705291630l002"  -- slot
-    //  ele_old_parent_id:  "Wod201705291600l001"  -- slot
-    //  move_ele_id:        "Wod201705291600n003"  -- lesson
-    
-    
-    // **Update** the approach to only use these parameters:
-    //
     // This approach allows for the source element not being present on the page
     // or even the destination element may not reside on this page.
     // Web sockets allows all pages to be updated indepent of the dates choosen.
     //
-    // domchange['action']       = action to be taken on object.;
-    // domchange['object_id']    = thisEleId of element acted on;
-    // domchange['object_type']  = type of element acted on;
-    // domchange['to']           = destination parent_id to be moved to;
-    // domchange['from']         = source parent_id previously attached to. 
-    // domchange['html_partial'] = the html for this element generated in
-    //                             the controller.
-    // domchange['object_id_old']= move & copy: original id of object;
+    // domchange['action']        = action to be taken on object.;
+    // domchange['object_id']     = thisEleId of element acted on;
+    // domchange['object_type']   = type of element acted on;
+    // domchange['to']            = destination parent_id to be moved to;
+    // domchange['from']          = source parent_id previously attached to. 
+    // domchange['html_partial']  = the html for this element generated in
+    //                              the controller.
+    // domchange['object_id_old'] = move & copy: original id of object;
     //
     // Note: The 'to', 'from' & 'object_id_old' will be populated by the
     //       controller as required.
@@ -2262,10 +1651,17 @@ var ready = function() {
     //
     // The logic for parents is:
     // ele_parent_from/to = the parent of type slot or lesson.
-    // ele_parent_from/to_place = the exact parent DON location to place the html
-    //                            which can vary based on the objec type.
+    // ele_parent_from/to_place = the exact parent DOM location to place the html,
+    //                            exact location can vary based on the objec type.
 
     // ------------- common initialisation for all operations ---------------
+    
+    if( domchange['actioncable'] ){
+      console.log("moveelement_update processing - passed through action cable");
+    }else{
+      console.log("moveelement_update processing - passed through action cable");
+    }
+    console.log(domchange);
     var action      = domchange['action'];
     var object_type = domchange['object_type'];
     var ele_object  = document.getElementById(domchange['object_id']);
@@ -2323,7 +1719,7 @@ var ready = function() {
             // need to place tutor in alphabethical order
             var name = domchange['name'];
             var mypersons = ele_parent_to_place.getElementsByClassName(object_type);
-            if (mypersons) {    // have tutors
+            if (mypersons.length != 0) {    // have tutors
               var flagInserted = false;
               var myperson;
               for (let i = 0; i < mypersons.length; i++){
@@ -2435,7 +1831,6 @@ var ready = function() {
       if (action == 'setDetail' ||
           action == 'editDetail' ||
           action == 'editSubject'){   // if updating aspects of this element.
-        console.log("setDetail");
         if('updatefield' in domchange){     // updatefield is present
           //ele_object = object being updated (student or tutor detail)
           var updatefield = domchange['updatefield'];
@@ -2518,7 +1913,6 @@ var ready = function() {
     }
     // if get to here, do normal alphabetical order check on status
     // remember we have already checked for equal status.
-    //console.log ("a_status: " + a_status + " b_status: " + b_status);
     return (a_status > b_status ? 1 : -1 );
 
   }
@@ -2542,12 +1936,9 @@ function hideshowperson (searchClass ){    // 'student' or 'tutor'
   var eleIndexPersons = document.getElementById("index-" + searchClass + "s");
   var filter = document.getElementById("personInput").value.toUpperCase();
   if(! eleIndexPersons.classList.contains("hideme")){
-    //var elePersonNames = eleIndexPersons.getElementsByClassName("p-name");
     var eleAllPersons = eleIndexPersons.getElementsByClassName(searchClass);
     for (var i = 0; i < eleAllPersons.length; i++) {
-        //var studentNameText = eleStudentNames[i].innerHTML.substr(9).toUpperCase();
         var personNameText = eleAllPersons[i].getElementsByClassName('p-name')[0].innerHTML.toUpperCase();
-        //var eleAncestor = findAncestor (elePersonNames[i], searchClass);
         if (personNameText.indexOf(filter) > -1) {
             eleAllPersons[i].style.display = "";
         } else {
@@ -2663,7 +2054,6 @@ function selectshows() {
 }
 
 function showhidecomments(theseelements, tohide) {
-  //eleComments = document.getElementsByClassName("studentcommentdetail");
   if (tohide){
     for (var j=theseelements.length; j-- ; ){
       theseelements[j].classList.add("hideme");

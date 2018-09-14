@@ -117,54 +117,16 @@ class StudentsController < ApplicationController
         flagupdate = true
       end
     end
-
     respond_to do |format|
       if @student.save
         format.json { render json: @domchange, status: :ok }
+        ActionCable.server.broadcast "calendar_channel", { json: @domchange }
       else
         logger.debug("errors.messages: " + @student.errors.messages.inspect)
         format.json { render json: @student.errors.messages, status: :unprocessable_entity }
       end
     end
   end
-
-
-=begin
-  # POST /studentdetailupdateskc
-  # POST /studentdetailupdateskc.json
-  def studentdetailupdateskc
-    @student = Student.find(params[:student_id])
-    flagupdate = false
-    if params[:comment]
-      if @student.comment != params[:comment]
-        @student.comment = params[:comment]
-        flagupdate = true
-      end
-    end
-    if params[:study]
-      if @student.study != params[:study]
-        @student.study = params[:study]
-        flagupdate = true
-      end
-    end
-    if params[:status]
-      if @student.status != params[:status]
-        @student.status = params[:status]
-        flagupdate = true
-      end
-    end
-    
-    respond_to do |format|
-      if @student.save
-        #format.html { redirect_to @student, notice: 'Student was successfully updated.' }
-        format.json { render :show, status: :ok, location: @student }
-      else
-        logger.debug("errors.messages: " + @student.errors.messages.inspect)
-        format.json { render json: @student.errors.messages, status: :unprocessable_entity }
-      end
-    end
-  end
-=end
 
   # PATCH/PUT /students/1
   # PATCH/PUT /students/1.json

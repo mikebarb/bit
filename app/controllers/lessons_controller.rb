@@ -74,6 +74,7 @@ class LessonsController < ApplicationController
       logger.debug "Lesson destroyed"
       respond_to do |format|
         format.json { render json: @domchange, status: :ok }
+        ActionCable.server.broadcast "calendar_channel", { json: @domchange }
       end
     else
       respond_to do |format|
@@ -112,7 +113,9 @@ class LessonsController < ApplicationController
       if @lesson.save
         @domchange['object_id'] = slot_id_basepart + 'n' + @lesson.id.to_s.rjust(@sf, "0")
         
-        @domchange['html_partial'] = render_to_string("calendar/_schedule_lesson_update.html", 
+        #@domchange['html_partial'] = render_to_string("calendar/_schedule_lesson_update.html", 
+        #@domchange['html_partial'] = render_to_string("calendar/_schedule_lesson.html", 
+        @domchange['html_partial'] = render_to_string("calendar/_schedule_lesson_ajax.html", 
                                     :formats => [:html], :layout => false,
                                     :locals => {:slot => slot_id_basepart,
                                                 :lesson => @lesson,
@@ -121,43 +124,13 @@ class LessonsController < ApplicationController
                                                })
 
         format.json { render json: @domchange, status: :ok }
+        ActionCable.server.broadcast "calendar_channel", { json: @domchange }
       else
         format.json { render json: @lesson.errors, status: :unprocessable_entity }
       end
     end
   end
 
-=begin
-  # PATCH/PUT /lessonupdateskc.json
-  # ajax updates skc = status comment (kind not valid for sessions)
-  def lessonupdateskc
-    @lesson = Lesson.find(params[:lesson_id])
-    logger.debug "@lesson: " + @lesson.inspect
-    flagupdate = false
-    if params[:status]
-      if @lesson.status != params[:status]
-        @lesson.status = params[:status]
-        flagupdate = true
-      end
-    end
-    if params[:comments]
-      if @lesson.comments != params[:comments]
-        @lesson.comments = params[:comments]
-        flagupdate = true
-      end
-    end
-    respond_to do |format|
-      if @lesson.save
-        #format.html { redirect_to @student, notice: 'Student was successfully updated.' }
-        format.json { render :show, status: :ok, location: @lesson }
-      else
-        logger.debug("errors.messages: " + @lesson.errors.messages.inspect)
-        format.json { render json: @lesson.errors.messages, status: :unprocessable_entity }
-      end
-    end
-  end
-=end
-  
   # PATCH/PUT /lessonupdateskc.json
   # ajax updates skc = status comment (kind not valid for sessions)
   def lessonupdateskc
@@ -193,36 +166,12 @@ class LessonsController < ApplicationController
       end
     end
 
-=begin
-    # Need to generate the html partial for this session.
-    @tutroles = Tutrole
-                .includes(:tutor)
-                .where(:lesson_id => @lesson.id)
-                .order('tutors.pname')
-
-    @roles    = Role
-                .includes(:student)
-                .where(:lesson_id => @lesson.id)
-                .order('students.pname')
-    
-    # parameters used for sorting lessons on the page.
-    @domchange['status'] = @lesson.status
-    #not needed- extracted in js# @domchange['name'] = @tutroles.first.tutor.pname
-
-    @domchange['html_partial'] = render_to_string("calendar/_schedule_lesson_update.html", 
-                                    :formats => [:html], :layout => false,
-                                    :locals => {:slot => new_slot_id,
-                                                :lesson => @lesson,
-                                                :thistutroles => @tutroles,
-                                                :thisroles => @roles
-                                               })
-=end
-
     respond_to do |format|
       if @lesson.save
         #format.html { redirect_to @student, notice: 'Student was successfully updated.' }
         #format.json { render :show, status: :ok, location: @lesson }
         format.json { render json: @domchange, status: :ok }
+        ActionCable.server.broadcast "calendar_channel", { json: @domchange }
       else
         logger.debug("errors.messages: " + @lesson.errors.messages.inspect)
         format.json { render json: @lesson.errors.messages, status: :unprocessable_entity }
@@ -286,7 +235,8 @@ class LessonsController < ApplicationController
     @domchange['status'] = @lesson.status
     #not needed- extracted in js# @domchange['name'] = @tutroles.first.tutor.pname
 
-    @domchange['html_partial'] = render_to_string("calendar/_schedule_lesson_update.html", 
+    #@domchange['html_partial'] = render_to_string("calendar/_schedule_lesson_update.html", 
+    @domchange['html_partial'] = render_to_string("calendar/_schedule_lesson_ajax.html", 
                                     :formats => [:html], :layout => false,
                                     :locals => {:slot => new_slot_id,
                                                 :lesson => @lesson,
@@ -297,6 +247,7 @@ class LessonsController < ApplicationController
     respond_to do |format|
       if @lesson.save
         format.json { render json: @domchange, status: :ok }
+        ActionCable.server.broadcast "calendar_channel", { json: @domchange }
       else
         format.json { render json: @lesson.errors.messages, status: :unprocessable_entity }
       end

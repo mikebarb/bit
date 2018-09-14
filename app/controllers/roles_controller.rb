@@ -62,6 +62,7 @@ class RolesController < ApplicationController
     if @role.destroy
       respond_to do |format|
         format.json { render json: @domchange, status: :ok }
+        ActionCable.server.broadcast "calendar_channel", { json: @domchange }
       end
     else
       respond_to do |format|
@@ -144,6 +145,7 @@ class RolesController < ApplicationController
     respond_to do |format|
       if @role.save
         format.json { render json: @domchange, status: :ok }
+        ActionCable.server.broadcast "calendar_channel", { json: @domchange }
       else
         format.json { render json: @role.errors.messages, status: :unprocessable_entity }
       end
@@ -211,52 +213,14 @@ class RolesController < ApplicationController
       if @role.save
         #format.json { render :show, status: :ok, location: @role }
         format.json { render json: @domchange, status: :ok }
+        ActionCable.server.broadcast "calendar_channel", { json: @domchange }
+
       else
         logger.debug("errors.messages: " + @role.errors.messages.inspect)
         format.json { render json: @role.errors.messages, status: :unprocessable_entity }
       end
     end
   end
-
-=begin
-  # PATCH/PUT /studentupdateskc.json
-  # ajax updates skc = status kind comment
-  def studentupdateskc
-    @role = Role.where(:student_id => params[:student_id], 
-                             :lesson_id => params[:lesson_id]).first
-    flagupdate = false
-    if params[:status]
-      if @role.status != params[:status]
-        @role.status = params[:status]
-        flagupdate = true
-      end
-    end
-    if params[:kind]
-      if @role.kind != params[:kind]
-        @role.kind = params[:kind]
-        flagupdate = true
-      end
-    end
-    if params[:comment]
-      if @role.comment != params[:comment]
-        @role.comment = params[:comment]
-        flagupdate = true
-      end
-    end
-    respond_to do |format|
-      if @role.save
-        logger.debug "studentupdateskc @role saved: " + @role.inspect
-        ActionCable.server.broadcast("calendar_channel", message: [@role])
-
-        #format.html { redirect_to @student, notice: 'Student was successfully updated.' }
-        format.json { render :show, status: :ok, location: @role }
-      else
-        logger.debug("errors.messages: " + @role.errors.messages.inspect)
-        format.json { render json: @role.errors.messages, status: :unprocessable_entity }
-      end
-    end
-  end
-=end
 
   # PATCH/PUT /roles/1
   # PATCH/PUT /roles/1.json
