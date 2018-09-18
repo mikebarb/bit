@@ -1,93 +1,157 @@
-<h1><%= @displayHeader %> - ratios</h1>
+<div id="page_name" class="hideme">stats</div>
+<h1><%= @displayHeader %> - statistics for allocations</h1>
 
-<p>Layout is => tutor_count : student_count = ratio (student_count / tutor_count)</p> 
+<div>
+  <div class="formatcatchup selectshowstats">
+    <input id=hidecatchup onclick="showcatchup()" type="checkbox" checked>Catchup</input>
+  </div>
+  <div class="formatfree selectshowstats">
+    <input id=hidefree onclick="showfree()" type="checkbox" >Free</input>
+  </div>
+  <div class="formatstats selectshowstats">
+    <input id=hidestats onclick="showstats()" type="checkbox" >Stats</input>
+  </div>
+</div>
+<div>
+  <div class="selectdayofweek">
+    <input id=selectdowone onclick="showhidedowone()" type="checkbox" checked>Monday</input>
+  </div>
+  <div class="selectdayofweek">
+    <input id=selectdowtwo onclick="showhidedowtwo()" type="checkbox" checked>Tuesday</input>
+  </div>
+  <div class="selectdayofweek">
+    <input id=selectdowthree onclick="showhidedowthree()" type="checkbox" checked>Wednesday</input>
+  </div>
+  <div class="selectdayofweek">
+    <input id=selectdowfour onclick="showhidedowfour()" type="checkbox" checked>Thursday</input>
+  </div>
+  <div class="selectdayofweek">
+    <input id=selectdowfive onclick="showhidedowfive()" type="checkbox" checked>Friday</input>
+  </div>
+</div>
 
-<% #calculate ratio
-  thisratio = (@all_sites_ratio['tutor_count'] == 0 ? "NA" :
-  sprintf('%5.2f', (@all_sites_ratio['student_count'] /
-                   @all_sites_ratio['tutor_count'].to_f))) 
-%> 
-
-<p> Overall ratio across all site -> <b><%= thisratio %></b><%= ' = ' +
-    @all_sites_ratio['tutor_count'].to_s   + ':' + 
-    @all_sites_ratio['student_count'].to_s %></p>
-<div class=schedule>
-<% @cal.each do |location, calLocation| 
-  if @compress   # remove days with no valid slot for this site
-   usedColumns = calLocation[0][0]["days"].keys
-   usedColumnsIndex = [0]
-   for i in 1..(calLocation[0].length-1)
-     if usedColumns.include?(calLocation[0][i]["value"]) then
-       usedColumnsIndex.push(i)
-     end
-   end 
-  end %>
-  <% firsttablecolumn = true %>
-  <table id=site-<%= location %> >
-  <% calLocation.each_with_index do |rows, rowindex| %>
-    <tr>
-    <% rows.each_with_index do |cells, cellIndex|
-      if @compress      
-        unless usedColumnsIndex.include?(cellIndex) then
-           next
-        end 
-      end %>
-      <% if cells.key?("slotid") then %>
-        <td class="cell slot" id=<%= cells["id_dom"] + "l" + cells["slotid"].rjust(@sf, "0") %>  >
-      <% elsif cells.key?("value") then %>
-        <% if firsttablecolumn == true then
-          firsttablecolumn = false %>
-          <td class="cell firsttablecolumn" %>
-        <% else %>
-          <td class="cell" %>
-        <% end %>
-      <% else %>
-         <td class="cell no-slot" %>
-      <% end %> 
-      <% if cells.key?("value") then %>     
-        <div class='ratio'><%= cells["value"].to_s %></div>
-      <% end %>
-      <% if cells.key?('ratio') %>
-        <% #calculate ratio
-           thisratio = cells['ratio']['tutor_count'] == 0 ? "NA" : 
-                      sprintf('%5.2f', (cells['ratio']['student_count'] / cells['ratio']['tutor_count'].to_f)) 
-        %>
-        <div class='ratio'><b><%= thisratio %></b><%= ' = ' +
-                               cells['ratio']['tutor_count'].to_s + ':' +
-                               cells['ratio']['student_count'].to_s
-                              %>
-        </div>  
-      <% end %>
-      <% if cells.key?('stats') %>
-        <% #byebug %>
-        <% if cells['stats'].key?('routine') %>
-          <div class='stats'>
-            <% logger.debug "routine: " + cells['stats']['routine'].inspect %>
-            <b>routine:</b><br>
-            <% cells['stats']['routine'].each { |k, v| %>
-              <% #byebug %>
-              <%= k + ': ' + v.to_s %> <br>
-            <% } %>
-          </div>  
-        <% end %>
-        <% if cells['stats'].key?('flexible') %>
-          <div class='stats'>
-            <% logger.debug "flexible: " + cells['stats']['flexible'].inspect %>
-            <b>flexible:</b><br>
-            <% cells['stats']['flexible'].each { |k, v| %>
-              <% #byebug %>
-              <%= k + ': ' + v.to_s %> <br>
-            <% } %>
-          </div>  
-        <% end %>
-      <% end %>
-      </td>
-    <% end %>
-    </tr>
+<div>
+  <% listofsites = Array.new
+    @cal.each do |location, calLocation| 
+      listofsites.push(location)
+    end
+  
+    listofsites.each_with_index do |site, i| %>
+      <div class="<%= "selectSite" + site %> jumptosite">
+      <input id=<%= 'hide' + site %> class="selectshow selectsite" 
+             onclick="showhidesites()" type="checkbox" checked><%= site + "  " %> 
+      </div>
   <% end %>
-  </table>
-<br>
-<% end %>
+</div>
+
+
+<div class=index id=index-tutor-students>
+  <div class="selectbox floating-box">
+      <h2>Select Student</h2>
+      <input type="text" id="personInput" placeholder="Shorten list by keying in meaningful characters .." title="Type in characters to reduce name list">
+  </div>
+
+  <div class=index-students id=index-students>
+    <% #@students_stats[student.id][lesson.id]['lesson_object'] %>
+    <% @students_stats.each do |k, v |
+       #byebug
+       student = v['student_object'] %>
+      <div class="student <%= "fs" + student.id.to_s.rjust(@sf, "0") 
+        %>" id=<%= "s" + student.id.to_s.rjust(@sf, "0") %> >
+        <div class=persongroup>
+          <div class="studentname studentinline p-name"><%= student.pname %></div>
+        </div>
+        <div class=personstats>
+          <div class="studentstats"><%= v['total'].to_s %></div>
+        </div>
+        <div class=personlessons>
+          <% v['dom_ids'].each do |dom_id| %>
+            <div class="personlesson"><%= dom_id %></div>
+          <% end %>
+        </div>
+      </div>
+    <% end %>
+  </div>
+</div>
+
+<div class=schedule>
+  <% @cal.each do |location, calLocation| 
+    if @compress   # remove days with no valid slot for this site
+     usedColumns = calLocation[0][0]["days"].keys
+     usedColumnsIndex = [0]
+     for i in 1..(calLocation[0].length-1)
+       if usedColumns.include?(calLocation[0][i]["value"]) then
+         usedColumnsIndex.push(i)
+       end
+     end 
+    end %>
+    <% firsttablecolumn = true %>
+    <table id=site-<%= location %> >
+    <% calLocation.each_with_index do |rows, rowindex| %>
+      <tr>
+      <% rows.each_with_index do |cells, cellIndex|
+        if @compress      
+          unless usedColumnsIndex.include?(cellIndex) then
+             next
+          end 
+        end
+        if(cellIndex != 0)
+          celldatetime = calLocation[0][cellIndex]['datetime']
+          celldow = 'dow' + celldatetime.wday.to_s
+        end
+        if cells.key?("slotid") then
+          %><td class="cell slot <%= celldow %>"  id=<%= cells["id_dom"] + "l" + cells["slotid"].rjust(@sf, "0") %>  >
+        <% elsif cells.key?("value") then %>
+          <% if firsttablecolumn == true then
+            firsttablecolumn = false %>
+            <td class="cell firsttablecolumn" %>
+          <% else %>
+            <td class="cell <%= celldow %>" %>
+          <% end %>
+        <% else %>
+           <td class="cell no-slot <%= celldow %>" %>
+        <% end %> 
+        <% if cells.key?("value") then 
+             if cells.key?("datetime") then %>
+               <div class='ratio <%= celldow %>'><%= 
+               celldatetime.strftime("%a") %><br><%= celldatetime.strftime("%d%b") %></div>
+             <% else  %>
+               <div class='ratio <%= celldow %>'><%= cells["value"].to_s %></div>
+             <% end %>
+        <% end %>
+        <% if cells.key?('stats') %>
+          <div class='stats'>
+            <% if cells['stats'].key?('routine') %>
+                <b>routine:</b><br>
+                <% cells['stats']['routine'].each { |k, v| %>
+                  <%= k + ': ' + v.to_s %> <br>
+                <% } %>
+            <% end %>
+            <% if cells['stats'].key?('flexible') %>
+                <b>flexible:</b><br>
+                <% cells['stats']['flexible'].each { |k, v| %>
+                  <%= k + ': ' + v.to_s %> <br>
+                <% } %>
+            <% end %>
+            <% 
+               if @slotAllocateLessonDom_id.key?(cells["slotid"].to_i) 
+                 allocate_dom_id = @slotAllocateLessonDom_id[cells["slotid"].to_i] %>
+              Dom_id: <%= allocate_dom_id %><br>
+            <% end %>
+
+          </div>
+          <% if cells['stats'].key?('allocate') %>
+            <div class="free"><%= cells['stats']['allocate']['free'] %></div>
+            <div class="catchup"><%= cells['stats']['allocate']['catchup'] %></div>
+          <% end %>
+        <% end %>
+        </td>
+      <% end %>
+      </tr>
+    <% end %>
+    </table>
+  <br>
+  <% end %>
 </div>
 
 

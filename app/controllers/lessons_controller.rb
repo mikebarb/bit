@@ -90,6 +90,7 @@ class LessonsController < ApplicationController
       logger.debug "k: " + k.inspect + " => v: " + v.inspect 
       @domchange[k] = v
     end
+    
     @domchange['object_type'] = 'lesson'
     # object passed which determines the slot the new session is to be placed in.
     result = /^(([A-Z]+)(\d{4})(\d{2})(\d{2})(\d{2})(\d{2}))/.match(@domchange['object_id'])

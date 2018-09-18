@@ -137,7 +137,7 @@ class RolesController < ApplicationController
     # lesson number will change.
     @domchange['object_id_old'] = @domchange['object_id']
     @domchange['object_id'] = new_slot_id + "n" + new_lesson_id.to_s.rjust(@sf, "0") +
-                    "s" + student_id.to_s.rjust(@sf, "0")
+                    "t" + student_id.to_s.rjust(@sf, "0")
             
     # want to hold the name for sorting purposes in the DOM display
     @domchange['name'] = @role.student.pname
@@ -252,28 +252,14 @@ class RolesController < ApplicationController
   end
 
   private
-  
-  # This procedure is called when the student status is updated to away.
-  # When this is called, the 'role' is already loaded and the status updated, but
-  # not yet saved.
-  # This procedure now creates a 'global lesson' if not already present,
-  # so the global lesson get loaded as @global_lesson.
-  # We then copy the '@role' to '@copied_role' to be saved into '@global_lesson'.
-  # Web sockets is used to send the updates to the browsers.
   def action_to_away_controller(thisrole)
-    
     logger.debug("+++++++++++++++++++role status has changed" )
     thisrole_lesson = Lesson.includes(:slot).find(thisrole.lesson_id)
     #new_slot_time = @self_lesson.slot.datetime
     #new_slot_location = @self_lesson.slot.location
-
-    # the dom id for the slot are in two different forms
-    # GUN201802301530l0001 = when used in the slot itself
-    # GUN201802301530      = when used in any dom objects sitting within the slot.
     slot_dom_id_base  = thisrole_lesson.slot.location[0,3].upcase + 
-                        thisrole_lesson.slot.timeslot.strftime("%Y%m%d%H%M")            
-    slot_dom_id       = slot_dom_id_base + 
-                        'l' + thisrole_lesson.slot.id.to_s.rjust(@sf, "0") 
+                           thisrole_lesson.slot.timeslot.strftime("%Y%m%d%H%M")            
+    slot_dom_id = slot_dom_id_base + 'l' + thisrole_lesson.slot.id.to_s.rjust(@sf, "0") 
     @global_lessons = Lesson.where(slot_id: thisrole_lesson.slot_id, status: 'global')
     unless(@global_lesson = Lesson.where(slot_id: thisrole_lesson.slot_id, status: 'global').first)
       # No Global Lesson present - so need to create one.
@@ -285,8 +271,7 @@ class RolesController < ApplicationController
         
         @global_lesson_domchange = {
           'action' => 'addLesson',
-          'object_id' => slot_dom_id_base + 
-                         'n' + @global_lesson.id.to_s.rjust(@sf, "0"),
+          'object_id' => slot_dom_id_base + 'n' + @global_lesson.id.to_s.rjust(@sf, "0"),
           "object_type"=>"lesson", 
           "status"=>"global",
           'to' => slot_dom_id
@@ -304,6 +289,7 @@ class RolesController < ApplicationController
   
         
         ActionCable.server.broadcast "calendar_channel", { json: @global_lesson_domchange }
+        #byebug
       else
         return      # if no global, then no point continuing.
       end
@@ -313,28 +299,34 @@ class RolesController < ApplicationController
     @copied_role.lesson_id = @global_lesson.id
     #@copied_role.copied = @role.id               # remember where copied from.
     if @copied_role.save
-        global_lesson_dom_id = slot_dom_id_base +
-                               'n' + @global_lesson.id.to_s.rjust(@sf, "0")
         @global_lesson_domchange = {
-          'action'        => 'copy',
-          'object_id'     => slot_dom_id_base + 
-                             'n' + @global_lesson.id.to_s.rjust(@sf, "0") +
-                             's' + @copied_role.id.to_s.rjust(@sf, "0"),
-          "object_type"   =>"student", 
-          'to'            => global_lesson_dom_id,
-          'object_id_old' => 'xxx',
-          "status"        =>@copied_role.status,
-          'name'          => @copied_role.student.pname
+          'action' => 'addStudent',
+          'object_id' => slot_dom_id_base + 'n' + @global_lesson.id.to_s.rjust(@sf, "0"),
+          "object_type"=>"lesson", 
+          "status"=>"global",
+          'to' => slot_dom_id
         }
-        @global_lesson_domchange['html_partial'] = render_to_string("calendar/_schedule_student.html", 
+        
+        #byebug
+  
+        @global_lesson_domchange['html_partial'] = render_to_string("calendar/_schedule_lesson_ajax.html", 
                                     :formats => [:html], :layout => false,
-                                    :locals => {:student => @copied_role.student,
-                                                :thisrole => @copied_role,
-                                                :slot => slot_dom_id_base,
-                                                :lesson => @global_lesson.id
+                                    :locals => {:slot => slot_dom_id_base,
+                                                :lesson => @global_lesson,
+                                                :thistutroles => [],
+                                                :thisroles => []
                                                })
+  
+        
         ActionCable.server.broadcast "calendar_channel", { json: @global_lesson_domchange }
+        #byebug
+    
+    
+    
+    
+    
     end
+    
   end
 
 

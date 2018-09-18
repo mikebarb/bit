@@ -52,12 +52,66 @@ module Calendarutilities
                            end_date: myenddate
                           })
 
-    @sessinfo      = Lesson
-                   .joins(:slot)
-                   .where(slot_id: @slotsinfo.map {|o| o.id})
-                   .order(:status)
-                   .includes(:slot)
-                   
+      @sessinfo      = Lesson
+                     .joins(:slot)
+                     .where(slot_id: @slotsinfo.map {|o| o.id})
+                     .order(:status)
+                     .includes(:slot)
+
+    #byebug
+    # when a 'allocate' lesson is added as part of this process,
+    # we want to reread the database again to get all lessons.
+    whilecountlimit = 2             # safety net - if 'allocate' lessons not added.
+    flagAllocateAddedToSlot = true  # trick to force first loop.
+    #while(flagAllocateAddedToSlot && whilecountlimit > 0) do
+      whilecountlimit -= 1
+      @sessinfo      = Lesson
+                     .joins(:slot)
+                     .where(slot_id: @slotsinfo.map {|o| o.id})
+                     .order(:status)
+                     .includes(:slot)
+  
+      # check that all slots have an allocate session!
+      # required in the stats page for allocating catchups to a slot
+      @slotallocate = Hash.new
+      @sessinfo.each do |thissession| 
+        if(thissession.status == 'allocate')
+          @slotallocate[thissession.slot.id] = thissession.id
+        end
+      end
+      # now check that all slots have an allocate session(lesson)
+      flagAllocateAddedToSlot = false
+      @slotAllocateLessonDom_id = Hash.new
+      #byebug
+      @slotsinfo.each do |thisslot|
+        #byebug
+        if @slotallocate.has_key?(thisslot.id)   # allocate present in this slot
+          # add an allocate lesson for this slot
+          # determine dom_id for slot where new allocate lesson is to be placed.
+          #dom_id = location + datetime + lesson + student
+          slot_dom_id = thisslot.location[0..2].upcase + 
+                        thisslot.timeslot.strftime("%Y%m%d%H%M") +
+                        'n' + @slotallocate[thisslot.id].to_s.rjust(@sf, "0")
+          @slotAllocateLessonDom_id[thisslot.id] = slot_dom_id
+        else    # no 'allocate' in this slot -> create one. 
+          # add an allocate lesson for this slot
+          # determine dom_id for slot where new allocate lesson is to be placed.
+          #dom_id = location + datetime + lesson + student
+          slot_dom_id = thisslot.location[0..2].upcase + 
+                        thisslot.timeslot.strftime("%Y%m%d%H%M") +
+                        'l' + thisslot.id.to_s.rjust(@sf, "0")
+          logger.debug "add lesson allocate to slot " + slot_dom_id
+          #----------------------------------
+          # !!!!!!! Add code here !!!!!!!!!!
+          #----------------------------------
+          flagAllocateAddedToSlot = true
+        end
+      end
+    #end        # of while loop
+
+    logger.debug "+++++++++++++++++++++++++++@slotAllocateLessonDom_id: " + @slotAllocateLessonDom_id.inspect
+    #byebug
+
     @tutroleinfo = Tutrole
                    .joins(:tutor, :lesson)
                    .where(lesson_id: @sessinfo.map {|o| o.id})
@@ -275,6 +329,8 @@ module Calendarutilities
       i += 1
       @locations.each do |l|
         @cal[l.location][0][i]["value"] = @colheaders[entry]
+        match = @colheaders[entry].match(/-(\d+-\d+-\d+)/)
+        @cal[l.location][0][i]["datetime"] = DateTime.strptime(match[1], "%Y-%m-%d")
       end
       @colindex[entry] = i
     end
@@ -445,13 +501,73 @@ module Calendarutilities
  #  Note: free routine sessions do on exist for flexible sessions.
  # -----------------------------------------------------------------------------
   def generate_stats
+    # Want all the global lessons with their students
+    #Global_lessons = Lesson.where("status=?", 'global').includes(:students)
+    #Global_students = Student.joins(:lessons).where(:lessons => {status: 'global'})
+    #Global_students = Student.includes(:lessons).where(:lessons => {status: 'global'})
+    #byebug
+    @global_students = Student.includes(:lessons)
+                       .where(:lessons => {status: 'global'})
+    
+    logger.debug "@global_students: " + @global_students.inspect
+    #byebug
+    @alllessons = Hash.new
+    @global_students.each do |student|
+      student.lessons.each do |lesson|
+        unless(@alllessons.key?(lesson.id))
+          @alllessons[lesson.id] = 0
+        end
+        @alllessons[lesson.id] += 1
+      end
+    end
+    @alllessons_ids = @alllessons.keys
+    @global_lessons_with_slots = Lesson.where(id: @alllessons_ids ).includes(:slot)
+    @global_lessons_with_slots_index = Hash.new
+    @global_lessons_with_slots.each do |l|
+      @global_lessons_with_slots_index[l.id] = l 
+    end
+        
+    @students_stats = Hash.new
+    @global_students.each do |student|
+      unless(@students_stats.key?(student.id))
+        @students_stats[student.id] = Hash.new
+        @students_stats[student.id]['total'] = 0
+        #@students_stats[student.id]['away'] = 0
+        @students_stats[student.id]['dom_ids'] = Array.new
+      end
+      @students_stats[student.id]['student_object'] = student
+      student.lessons.each do |lesson|
+        unless(@students_stats[student.id].key?(lesson.id))
+          @students_stats[student.id][lesson.id] = Hash.new
+        end
+        @students_stats[student.id]['total'] += 1
+        #if lesson.role.status == 'away'
+        #  @students_stats[student.id]['away'] += 1
+        #end
+        @students_stats[student.id][lesson.id]['lesson_object'] = lesson
+        glws = @global_lessons_with_slots_index[lesson.id]
+        #dom_id = location + datetime + lesson + student
+        dom_id = glws.slot.location[0..2].upcase + 
+                 glws.slot.timeslot.strftime("%Y%m%d%H%M") +
+                 'n' + lesson.id.to_s.rjust(@sf, "0") + 
+                 's' + student.id.to_s.rjust(@sf, "0")
+        @students_stats[student.id]['dom_ids'].push(dom_id)
+      end
+    end
+    #byebug
+    @alllessons_ids = @alllessons.keys
+    @global_lessons_with_slots = Lesson.where(id: @alllessons_ids ).includes(:slot)
+                               
+    logger.debug "********************@students_stats: " + @students_stats.inspect
+    #byebug
+    
     # step through each site
     @all_sites_ratio = {'tutor_count'=>0, 'student_count'=>0}
     @cal.each do |location, calLocation|
       calLocation.each_with_index do |rows, rowindex|
-        logger.debug "next row - " + rowindex.to_s
+        #logger.debug "next row - " + rowindex.to_s
         rows.each_with_index do |cells, colindex|
-          logger.debug "next cell - " + colindex.to_s 
+          #logger.debug "next cell - " + colindex.to_s 
           if cells.key?("values") then  # in a slot with lessons
             rS = rR = rA = rAoTo = rRoTo = rRCu = rRCoTo = rB = 0
             fS = fR = fRoTo = fRCu = fRCoTo = 0
@@ -459,7 +575,7 @@ module Calendarutilities
             flagRostered = false
             slottutorcount = slotstudentcount = 0
             cells["values"].each do |entry|  # go through each lesson
-              logger.debug "entry: " + entry.inspect
+              #logger.debug "entry: " + entry.inspect
               if(entry.status == "standard" ||
                  entry.status == "routine")
                 flagRoutine = true
@@ -479,11 +595,11 @@ module Calendarutilities
                   if(["scheduled", "notified", "confirmed", "attended"].include?@tutroleinfo[thistutorrole].status)  # valid statuses for ratio calculations
                     slottutorcount += 1 if(['on_BFL', 'standard', 'routine', 'flexible'].include?entry.status) # valid lessons for rations
                   end
-                  logger.debug "tutor found - tutrole: " + @tutroleinfo[thistutorrole].inspect
+                  #logger.debug "tutor found - tutrole: " + @tutroleinfo[thistutorrole].inspect
                 end
               end
               if @role_lessonindex.has_key? entry.id then  # check for students
-                logger.debug "student found: " + @role_lessonindex[entry.id].inspect
+                #logger.debug "student found: " + @role_lessonindex[entry.id].inspect
                 # for ratio calculation
                 # slotstudentcount += @role_lessonindex[entry.id].count
                 @role_lessonindex[entry.id].each do |thisstudentrole|  # check each tutrole for diagnostics
@@ -544,7 +660,11 @@ module Calendarutilities
                                            'RCu'     =>fRCu,
                                            'RCoTo'   =>fRCoTo,
                                            'Catchup' =>flexCatchup
-                                         }
+                                         },
+                                "allocate"=>{
+                                           'free'    =>freeRoutine,
+                                           'catchup' =>freeCatchup + flexCatchup
+                                }
                               }
 
             # keep counts in the cell/slot data

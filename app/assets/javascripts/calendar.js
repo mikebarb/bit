@@ -6,37 +6,41 @@
 /* global $ */
 
 // Web Socket receives a new message - calendar updates received.
-/*
-App.calendar = App.cable.subscriptions.create("CalendarChannel", {  
-//App.cable.subscriptions.create("CalendarChannel", {  
-  received: function(data) {
-    console.log("calendar.js - entered ws received function");
-    console.dir(data);
-    moveelement_update( data );
-    console.log("dom update done!!!");
-    return;
-  }
-});
-*/
+
 // Note: this is called with turbolinks at bottom of page.
 // Written as a callable function to provide this flexibility.
 // Found that we need to be careful this does not get called twice
 // e.g. from from both tuboload and page load - causes double triggers.
-var ready = function() {
 
-App.calendar = App.cable.subscriptions.create("CalendarChannel", {  
-//App.cable.subscriptions.create("CalendarChannel", {  
-  received: function(data) {
-    console.log("calendar.js - entered ws received function");
-    console.dir(data);
-    //var returnedDomData = JSON.parse(data['json']);
-    var returnedDomData = data['json'];
-    returnedDomData['actioncable'] = true;
-    moveelement_update(returnedDomData);
-    console.log("dom update done!!!");
+var ready = function() {
+  if(document.getElementById('page_name')){
+    var page_name = document.getElementById('page_name').innerHTML;
+    if(page_name == 'calendar'){
+      ready_calendar();
+    }else if(page_name == 'stats'){
+      ready_stats();
+    }
+  }else{
     return;
   }
-});
+};
+
+
+var ready_calendar = function() {
+
+  App.calendar = App.cable.subscriptions.create("CalendarChannel", {  
+  //App.cable.subscriptions.create("CalendarChannel", {  
+    received: function(data) {
+      console.log("calendar.js - entered ws received function");
+      console.dir(data);
+      //var returnedDomData = JSON.parse(data['json']);
+      var returnedDomData = data['json'];
+      returnedDomData['actioncable'] = true;
+      moveelement_update(returnedDomData);
+      console.log("dom update done!!!");
+      return;
+    }
+  });
 
 
   // some global variables for this page
@@ -1304,7 +1308,22 @@ App.calendar = App.cable.subscriptions.create("CalendarChannel", {
     }
     if (updatefield == 'subject' && object_type == 'tutor') {
       updatefield = 'subjects';
-    } 
+    }
+    if(updatefield == 'status' &&
+       object_type == 'student')   {
+      // if current value is 'away', then need to warn the user
+      var current_status_value1 = document.getElementById(domchange['object_id']).getElementsByClassName('np-status')[0].innerHTML;
+      var current_status_match = current_status_value1.match(/status: (\w+)/i);
+      if((current_status_match != null) &&
+         (current_status_match[1] == 'away')){
+        console.log('we are moveing away for a status of AWAY');
+        if(!confirm("Are your sure?  \n" + 
+                    "Changing status from AWAY has significant implications!!!! \n" +
+                    "You will need to clean up all the catchups.")){
+          return;
+        }
+      }
+    }
     domchange['updatefield'] = updatefield;
     domchange['updatevalue'] = updatevalue;
  
@@ -2064,6 +2083,105 @@ function showhidecomments(theseelements, tohide) {
     }
   }
 }
+
+
+var ready_stats = function(){
+  console.log("entered ready_status");
+  showcatchup();
+  showfree();
+  showstats();
+ 
+  showhidedowone();  
+  showhidedowone();  
+  showhidedowtwo();  
+  showhidedowthree();  
+  showhidedowfour();  
+  showhidedowfive();  
+  
+  showhidesites();
+
+  $("#personInput").keyup(hideshowstudent);
+
+  
+};
+
+// Filter students in the stats page
+function hideshowstudent(){
+  var eleIndexPersons = document.getElementById("index-students");
+  var filter = document.getElementById("personInput").value.toUpperCase();
+  //if(! eleIndexPersons.classList.contains("hideme")){
+    var eleAllPersons = eleIndexPersons.getElementsByClassName('student');
+    for (var i = 0; i < eleAllPersons.length; i++) {
+      var personNameText = eleAllPersons[i].getElementsByClassName('p-name')[0].innerHTML.toUpperCase();
+      if (personNameText.indexOf(filter) > -1) {
+          eleAllPersons[i].style.display = "";
+      } else {
+          eleAllPersons[i].style.display = "none";
+      }
+    }
+  //}
+}
+
+
+
+// hides sites based on checklists
+function showhidesites(){
+  var thispattern = /hide(.*)/;
+  var showList = document.getElementsByClassName('selectsite')
+  for(var i = 0; i < showList.length; i++){
+    console.log("showList[i].id: " + showList[i].id);
+    var m = thispattern.exec(showList[i].id);
+    if( m ){
+      console.log("m: " + m[1]);
+      var siteid = 'site-' + m[1];
+      console.log("siteid: " + siteid);          
+      if (showList[i].checked){
+        document.getElementById(siteid).classList.remove("hideme");
+      }else{
+        document.getElementById(siteid).classList.add("hideme");
+      }
+    }
+  }
+}
+
+
+function showhidedowone()  {showhidedow('1', 'selectdowone'  );}
+function showhidedowtwo()  {showhidedow('2', 'selectdowtwo'  );}
+function showhidedowthree(){showhidedow('3', 'selectdowthree');}
+function showhidedowfour() {showhidedow('4', 'selectdowfour' );}
+function showhidedowfive() {showhidedow('5', 'selectdowfive' );}
+
+function showhidedow(day, selectdowday){
+  var myobjects = document.getElementsByClassName('dow' + day);
+  if (document.getElementById(selectdowday).checked){
+    for(var i = 0; i < myobjects.length; i++){
+      myobjects[i].classList.remove("hideme");
+    }
+  }else{
+    for(i = 0; i < myobjects.length; i++){
+      myobjects[i].classList.add("hideme");
+    }
+  }
+}
+
+
+function showcatchup(){showhidestats('catchup');}
+function showfree(){showhidestats('free');}
+function showstats(){showhidestats('stats');}
+
+function showhidestats(type){
+  var myobjects = document.getElementsByClassName(type);
+  if (document.getElementById('hide' + type).checked){
+    for(var i = 0; i < myobjects.length; i++){
+      myobjects[i].classList.remove("hideme");
+    }
+  }else{
+    for(i = 0; i < myobjects.length; i++){
+      myobjects[i].classList.add("hideme");
+    }
+  }
+}
+
 
 //$(document).ready(ready);
 $(document).on('turbolinks:load', ready);
