@@ -12,9 +12,34 @@
 // Found that we need to be careful this does not get called twice
 // e.g. from from both tuboload and page load - causes double triggers.
 
+
+// the order of this class list is important - searches are done from 
+// finest to broadest when looking for relevant elements(divs).
+var taskItemClassList_calendar = ['slot', 'lesson', 'tutor', 'student'];
+var taskItemClassList_stats = ['slot', 'lesson', 'tutor', 'student'];
+
+var taskItemInContext;  
+var contextMenuActive = "context-menu--active";
+var tertiaryMenuActive = "tertiary-menu--active";
+var contextMenuItemClassName = "context-menu__item";
+var tertiaryMenuItemClassName = "tertiary-menu__choice";
+var menu;
+var menuState = 0;
+var tmenu;            // tertiary menu with context menu parent
+var tmenuState = 0;
+var clickPosition;
+var eleClickedOn;
+var currentActivity = {};
+var stackActivity = [];
+var myhost = window.location.protocol + '//' + window.location.hostname;   // base url for ajax
+
 var ready = function() {
   if(document.getElementById('page_name')){
     var page_name = document.getElementById('page_name').innerHTML;
+    if((page_name == 'calendar') ||
+        (page_name == 'stats')){
+      ready_common();
+    }
     if(page_name == 'calendar'){
       ready_calendar();
     }else if(page_name == 'stats'){
@@ -23,6 +48,13 @@ var ready = function() {
   }else{
     return;
   }
+};
+
+
+var ready_common = function() {
+
+
+  
 };
 
 
@@ -42,10 +74,8 @@ var ready_calendar = function() {
     }
   });
 
-
   // some global variables for this page
   //var sf = 5;     // significant figures for dom id components e.g.lesson ids, etc.
-  var myhost = window.location.protocol + '//' + window.location.hostname;   // base url for ajax
 
   // These are used in the quick status setting.
   var validTutorStatuses = ["Away", "Absent", "Deal", "Scheduled", "Notified", "Confirmed", "Attended"];
@@ -153,46 +183,15 @@ var ready_calendar = function() {
     return "";
   }
   
-  //------------------------ Context Menu -----------------------------
+  //------------------------ Context Menu - calendar -----------------------------
   // This is the context menu for the lesson, tutor and student elements.
   // It is the first context menu to be displayed when you right click on an
   // element.
   // When some context menu item are selected, a tertiary menu is opened
   // enabling further options to be selected.
 
-  // the order of this class list is important - searches are done from 
-  // finest to broadest when looking for relevant elements(divs).
-  var taskItemClassList = ['slot', 'lesson', 'tutor', 'student'];
-  var taskItemInContext;  
-  var contextMenuActive = "context-menu--active";
-  var tertiaryMenuActive = "tertiary-menu--active";
-  var contextMenuItemClassName = "context-menu__item";
-  var tertiaryMenuItemClassName = "tertiary-menu__choice";
-  var menu;
-  var menuState = 0;
-  var tmenu;            // tertiary menu with context menu parent
-  var tmenuState = 0;
-  var clickPosition;
-  var eleClickedOn;
-  var currentActivity = {};
-  var stackActivity = [];
 
-  // This opertions provide visual feedback when you are moving over
-  // menu items.
-  $('.context-menu__item').mouseenter(function(){
-    $(this).css('background-color','lime');
-  });
-  $('.context-menu__item').mouseleave(function(){
-    $(this).css('background-color', 'white');
-  });
 
-  $('.context-menu__choice').mouseenter(function(){
-    $(this).css('background-color','lime');
-  });
-  $('.context-menu__choice').mouseleave(function(){
-    $(this).css('background-color', 'white');
-  });
-  
   $('.jumptosite').click(function(){
     var thisInputEle = this.firstElementChild;
     if(thisInputEle.checked == true){
@@ -205,8 +204,9 @@ var ready_calendar = function() {
   // Initialise our application's code.
   // Made modular so that you have more control over initialising them. 
   function init() {
-    contextListener();
-    clickListener();
+    menu_common();
+    contextListener_calendar();
+    clickListener_calendar();
     keyupListener();
     resizeListener();
   }
@@ -232,14 +232,14 @@ var ready_calendar = function() {
   // contextmenu is an integrated javascript library function.
   // We detect the element right clicked on and position the context
   // menu adjacent to it.
-  function contextListener() {
+  function contextListener_calendar() {
     document.addEventListener( "contextmenu", function(e) {
       menu = document.querySelector("#context-menu");
       tmenu = document.querySelector("#tertiary-menu");
-      taskItemInContext = clickInsideElementClassList( e, taskItemClassList);
+      taskItemInContext = clickInsideElementClassList( e, taskItemClassList_calendar);
       if ( taskItemInContext ) {
         e.preventDefault();
-        enableMenuItems();
+        enableMenuItems_calendar();
         toggleMenuOn();
         clickPosition = getPosition(e);  // global variable
         positionMenu(menu);
@@ -254,7 +254,7 @@ var ready_calendar = function() {
 
   // Listens for click events on context menu items element.
   // On selection an item on the context menu, an appropriate action is triggered.
-  function clickListener() {
+  function clickListener_calendar() {
     document.addEventListener( "click", function(e) {
       console.log("in clickListerner");
       console.dir(currentActivity);
@@ -266,7 +266,7 @@ var ready_calendar = function() {
   
       if ( clickEleIsAction ) {      // clicked in main context menu
         e.preventDefault();
-        menuItemActioner( clickEleIsAction );   // call main menu item actioner.
+        menuItemActioner_calendar( clickEleIsAction );   // call main menu item actioner.
       } else if (clickEleIsChoice) {     // clicked in tertiary menu or text edits
         //if (clickEleIsChoice.id == 'edit-comment' ||   // clicked in an edit box
         //    clickEleIsChoice.id == 'edit-subject') {  
@@ -321,16 +321,6 @@ var ready_calendar = function() {
     });
   }
 
-  // Listens for keyup events on escape key.
-  // Simply removes the menus.
-  function keyupListener() {
-    window.onkeyup = function(e) {
-      if ( e.keyCode === 27 ) {
-        toggleMenuOff();
-        toggleTMenuOff();
-      }
-    };
-  }
 /*  
   //function getRecordType(ele_id){
   //function getRecordId(ele_id){
@@ -361,7 +351,7 @@ var ready_calendar = function() {
   // Also, selecting tutors and students in the top of the page (index area) 
   // causes different actions to selecting them in the scheduling section (lesson).
   // Names are choosen to be self explanatory - hopefully.
-  function enableMenuItems(){
+  function enableMenuItems_calendar(){
     //var thisEleId = taskItemInContext.id;    // element clicked on
     var object_id      = taskItemInContext.id;  // element clicked on.
     var object_type    = objectidToObjecttype(object_id); // 'lesson' 'tutor' or 'student'
@@ -443,15 +433,6 @@ var ready_calendar = function() {
     setscmi('context-editEntry', scmi_editEntry);
   }
   
-  function setscmi(elementId, scmi){
-    if(document.getElementById(elementId)){
-      if(scmi){
-        document.getElementById(elementId).classList.remove('hideme');
-      }else{
-        document.getElementById(elementId).classList.add('hideme');
-      }
-    }
-  }
 
   //***********************************************************************
   // Perform the actions invoked by the context menu items.                *
@@ -466,34 +447,7 @@ var ready_calendar = function() {
   // currentActivity['object_type'] = thisEleId -> type; //**update**
   // currentActivity['to'] = thisEleId;                  //**update**
 
-  function objectidToObjecttype(myobjectid){
-    var parseId = myobjectid.match(/(\w)\d+$/ );
-    switch(parseId[1]) {
-      case 's':
-        return 'student';
-      case 't':
-        return 'tutor';
-      case 'n':
-        return 'lesson';
-      case 'l':
-        return 'slot';
-      default:
-        return '';
-    }
-  }
-  
-  // returns context of 'index' or 'lesson'
-  function objectidToContext(myobjectid){
-    var parseId = myobjectid.match(/^[st]\d+$/);
-    if(parseId) {
-      return 'index';
-    }else{
-      return 'lesson';
-    }
-  }
-
-
-  function menuItemActioner( action ) {
+  function menuItemActioner_calendar( action ) {
     //dom_change['action'] = "move";
     //dom_change['move_ele_id'] = ui.draggable.attr('id');
     //dom_change['ele_old_parent_id'] = document.getElementById(dom_change['move_ele_id']).parentElement.id;
@@ -1025,128 +979,8 @@ var ready_calendar = function() {
 // End of performing the actions invoked by the context menu items.     *
 //***********************************************************************
   
-  function toggleMenuOn() {
-    if ( menuState !== 1 ) {
-      menuState = 1;
-      menu.classList.add(contextMenuActive);
-    }
-  }
-
-  function toggleMenuOff() {
-    if ( menuState !== 0 ) {
-      menuState = 0;
-      menu.classList.remove(contextMenuActive);
-    }
-  }
-
-  function toggleTMenuOn() {
-    if ( tmenuState !== 1 ) {
-      tmenuState = 1;
-      tmenu.classList.add(tertiaryMenuActive);
-    }
-  }
-
-  function toggleTMenuOff() {
-    if ( tmenuState !== 0 ) {
-      tmenuState = 0;
-      tmenu.classList.remove(tertiaryMenuActive);
-    }
-  }
-  
-  
-  //On windows screen resize, hides the menu - start selection again 
-  function resizeListener() {
-    window.onresize = function(e) {
-      toggleMenuOff();
-      toggleTMenuOff();
-
-    };
-  }
 
   init();
-
-  // check if clicked element or element in the parent chain 
-  // is of the class provided in the list.
-  function clickInsideElementClassList( e, classNameList ) {
-    var el = e.srcElement || e.target;
-    return clickInsideElementClassList2( el, classNameList );
-  }
-  
-  function clickInsideElementClassList2( el, classNameList ) {
-    if(el.classList){
-      for(var i = classNameList.length; i--; ) {
-        if ( el.classList.contains(classNameList[i]) ) {
-          return el;
-        }
-      }
-    }
-    while ( (el = el.parentNode) ) {
-      if(el.classList){
-        for(i = classNameList.length; i--; ) {
-          if ( el.classList.contains(classNameList[i]) ) {
-            return el;
-          }
-        }
-      }
-    }
-    return false;
-  }
-  
-  // get position on screen of where the event occurred - point of clicking
-  function getPosition(e) {
-    var posx = 0;
-    var posy = 0;
-  
-    if (!e) e = window.event;
-  
-    // Notes:
-    // pageY    vertical coordiante according to document
-    // clientY  vertical coordiante according to client area = current window
-    // screenY  vertical coordiante according to user's computer screen
-    if (e.pageX || e.pageY) {
-      console.log("*** detected page positions ***");
-      posx = e.pageX;
-      posy = e.pageY;
-    } else if (e.clientX || e.clientY) {
-      console.log("*** using client positions ***");
-      posx = e.clientX + document.body.scrollLeft + 
-                         document.documentElement.scrollLeft;
-      posy = e.clientY + document.body.scrollTop + 
-                         document.documentElement.scrollTop;
-    }
-    return { x: posx, y: posy };
-  }
-
-  // Put menu in correct position - where the click event was triggered.
-  // can be called using menu, tmenu or historydisplay
-  // clickPosition is a global variable.
-  //function positionMenu(clickPosition, thismenu) {
-  function positionMenu(thismenu) {
-    var clickCoords = clickPosition;
-    var clickCoordsX = clickCoords.x;
-    var clickCoordsY = clickCoords.y;
-    
-    var menuWidth = thismenu.offsetWidth + 4;
-    var menuHeight = thismenu.offsetHeight + 4;
-    var windowWidth = window.innerWidth;
-    // This relates to window height which fails when document is higher than window
-    //var windowHeight = window.innerHeight;
-    // Hopefully this will be better!!!!
-    var windowHeight = document.documentElement.scrollHeight;
-    thismenu.style.position="absolute";
-    if ( (windowWidth - clickCoordsX) < menuWidth ) {
-      thismenu.style.left = windowWidth - menuWidth + "px";
-    } else {
-      thismenu.style.left = clickCoordsX + "px";
-    }
-    
-    if ( (windowHeight - clickCoordsY) < menuHeight ) {
-      thismenu.style.top = windowHeight - menuHeight + "px";
-    } else {
-      thismenu.style.top = clickCoordsY + "px";
-    }
-    console.log(thismenu);
-  }
 
 //------------------------ End of Context Menu -----------------------------
 
@@ -1535,28 +1369,6 @@ var ready_calendar = function() {
   // currentActivity['object_type'] = populated by the controller
   // Note: ['to'] and / or ['from'] can be nil for some actions.
   
-  // determine if a user has dropped/copied/moved into the same parent.
-  // Need for persons (tutors or students) and lessons.
-  function isParentSame(checkdomchange){
-    // only relevant to move and copy.
-    if( checkdomchange['action'] == 'move' || checkdomchange['action'] == 'copy'    ) {
-      if( checkdomchange['object_type'] == 'lesson') { //copy & move must be either a lesson
-        var parseToParent     = checkdomchange['to'].match(/^(\w+\d+)[nl]/);          // slot is parent   
-        var parseObjectParent = checkdomchange['object_id'].match(/^(\w+\d+)[nl]/);   // slot is parent   
-      }else{                         // or tutor / student.
-        if(checkdomchange['object_id'].match(/^[st]\d+$/)){  // index area is parent of object   
-          return false;
-        }
-        parseToParent     = checkdomchange['to'].match(/^(\w+\d+n\d+)/);         // lesson is parent
-        parseObjectParent = checkdomchange['object_id'].match(/^(\w+\d+n\d+)/);  // lesson is parent   
-      }
-      if( parseToParent[1]  ==  parseObjectParent[1]){  // have same parents
-        return true;                                         // do nothing
-      }
-    }
-    return false;
-  }
-
   function personupdateslesson_Update( domchange ){
     //var action = domchange['action'];   //move or copy
     var object_type = domchange['object_type'];
@@ -2092,7 +1904,6 @@ var ready_stats = function(){
   showstats();
  
   showhidedowone();  
-  showhidedowone();  
   showhidedowtwo();  
   showhidedowthree();  
   showhidedowfour();  
@@ -2101,6 +1912,260 @@ var ready_stats = function(){
   showhidesites();
 
   $("#personInput").keyup(hideshowstudent);
+  
+  init_stats();
+
+  // Initialise our application's code for stats.
+  // Made modular so that you have more control over initialising them. 
+  function init_stats() {
+    menu_common();
+    contextListener_stats();
+    clickListener_stats();
+    keyupListener();
+    resizeListener();
+  }
+
+  // Listens for contextmenu events.
+  // Add the listeners for the main menu items.
+  // contextmenu is an integrated javascript library function.
+  // We detect the element right clicked on and position the context
+  // menu adjacent to it.
+  function contextListener_stats() {
+    document.addEventListener( "contextmenu", function(e) {
+      menu = document.querySelector("#context-menu");
+      taskItemInContext = clickInsideElementClassList( e, taskItemClassList_stats);
+      if ( taskItemInContext ) {
+        e.preventDefault();
+        enableMenuItems_stats();
+        toggleMenuOn();
+        clickPosition = getPosition(e);  // global variable
+        positionMenu(menu);
+        eleClickedOn = e;                 // global variable
+      } else {
+        taskItemInContext = null;
+        toggleMenuOff();
+      }
+    });
+  }
+
+  // As these are context sensitive menus, we need to determine what actions
+  // are displayed.
+  // Basically, all items are in the browser page. They are simply shown or
+  // hidden depending on what element is right clicked on.
+  // Elements identified are tutor, students, lessons and slots.
+  // Also, selecting tutors and students in the top of the page (index area) 
+  // causes different actions to selecting them in the scheduling section (lesson).
+  // Names are choosen to be self explanatory - hopefully.
+  function enableMenuItems_stats(){
+    var object_id      = taskItemInContext.id;  // element clicked on.
+    var object_type    = objectidToObjecttype(object_id); // 'lesson' 'tutor' or 'student'
+    var object_context = objectidToContext(object_id); //'index' or 'lesson'
+    //var thisEle = document.getElementById(object_id);
+    var scmi_copy = false;  //scmi - set comtext menu items.
+    var scmi_move = false;  // to show or not show in menu
+    var scmi_paste = false;  // set the dom display value at end.
+
+    switch(object_type){     // student, tutor, lesson.
+      case 'student':   //student
+      case 'tutor':   //tutor
+        if(object_context == 'index'){   // index area
+          // this element in student and tutor list
+          scmi_move = true;
+          scmi_paste = false;   //nothing can be pasted into the index space
+        }
+        break;
+      case 'slot':   //lesson
+        if(object_context == 'lesson'){   // index area
+          // this element in student and tutor list
+          // You can only paste if a source for copy or move has been identified.
+          if(currentActivity.action  == 'move' || // something has been copied,
+             currentActivity.action  == 'copy'){  // ready to be pasted
+            scmi_paste = true;
+          }
+        }
+        break;
+    }
+    
+    // Here we simply hide or show the menu items based on above settings.
+    setscmi('context-move', scmi_move);
+    setscmi('context-copy', scmi_copy);
+    setscmi('context-paste', scmi_paste);
+  }
+  
+  // Listens for click events on context menu items element.
+  // On selection an item on the context menu, an appropriate action is triggered.
+  function clickListener_stats() {
+    document.addEventListener( "click", function(e) {
+      console.log("in clickListerner");
+      console.dir(currentActivity);
+      // determine if clicked inside main context menu.
+      var clickEleIsAction   = clickInsideElementClassList( e, [contextMenuItemClassName]);
+      if ( clickEleIsAction ) {      // clicked in main context menu
+        e.preventDefault();
+        menuItemActioner_stats( clickEleIsAction );   // call main menu item actioner.
+      } else {    // clicked anywhere else
+        var button = e.which || e.button;
+        if ( button === 1 ) {
+          toggleMenuOff();
+          toggleTMenuOff();
+        }
+      }
+    });
+  }
+
+  //***********************************************************************
+  // Perform the actions invoked by the context menu items.                *
+  // Some actions will invoke a second level (tertialy) menu.              *
+  //***********************************************************************
+  // action is the element clicked on in the menu.
+  // The menu element clicked on has an attribute "data-action" that 
+  // describes the required action.
+
+  // currentActivity['action'] = thisAction;             //**update**
+  // currentActivity['object_id'] = thisEleId;           //**update**
+  // currentActivity['object_type'] = thisEleId -> type; //**update**
+  // currentActivity['to'] = thisEleId;                  //**update**
+
+  function menuItemActioner_stats( action ) {
+    //dom_change['action'] = "move";
+    //dom_change['move_ele_id'] = ui.draggable.attr('id');
+    //dom_change['ele_old_parent_id'] = document.getElementById(dom_change['move_ele_id']).parentElement.id;
+    //dom_change['ele_new_parent_id'] = this.id;
+    //dom_change['element_type'] = "lesson";
+    toggleMenuOff();
+    var thisAction =  action.getAttribute("data-action");
+    // taskItemInContext is a global variable set when context menu first invoked.
+    var thisEleId = taskItemInContext.id;    // element 'right clicked' on
+    //var thisEle = document.getElementById((thisEleId));
+
+    // 'thisAction' are basically the context menu selectable items.
+    // However, not all of these cases were available in the menu for any given
+    // element that was right clicked on.
+    // Note that for cut, move and paste, compatability is kept between menu 
+    // selection and drag and drop.
+    
+    // There are some operations that happen for ALMOST every action.
+    // The exception is if there has already been a copy or paste - then 
+    // info from that action is held over -> stored in currentActivity.
+    // To complete this current activity, you need a paste.
+    // Otherwise, a current activity is cleared when the action is completed.
+    if((thisAction == "paste")) {   // been a cut or move initiated so can do a paste
+      // do not set currentActivity 
+      // That way, when we do checks in "paste" action, currentActivity will
+      // be empty if a move or copy has not been selected.
+      if(!('object_id' in currentActivity)){   // must be something to paste from.
+        return;
+      }
+      //currentActivity['to']   = thisEleId;  // everthing else required is still there.
+    } else {
+      // but for all other actions, we need to set action, element_id and 
+      // the old (pre-manimpulation) parent of the element being manipulated.
+      // i.e. tutor and student -> nearest session as old parent
+      //      session           -> nearest slot as old parent
+      currentActivity = {};                             // clear array.
+      currentActivity['action']      = thisAction;      
+      //currentActivity['move_ele_id'] = thisEleId;
+      // need to get the session/student to be copied from thisEleId
+      var catchupId = null;
+      var thisEle = document.getElementById(thisEleId);
+      var catchupList = thisEle.getElementsByClassName('personlessons');
+      if(catchupList){
+        var catchupEle = catchupList[0].firstElementChild;
+        if(catchupEle){
+          catchupId = catchupEle.innerHTML;
+        }
+      }
+      currentActivity['move_ele_id'] = catchupId;
+      //currentActivity['object_id']   = thisEleId;     
+      currentActivity['object_id']   = catchupId;     
+      //currentActivity['object_type'] = objectidToObjecttype(currentActivity['object_id']);
+      currentActivity['object_type'] = objectidToObjecttype(catchupId);
+      //thisEle = document.getElementById(thisEleId);
+    }
+
+    switch( thisAction ) {     
+      case "copy":
+      case "move":
+        // Nothing else to do, need a paste before any action can be taken!!!
+        
+        break;
+      case "paste":
+        //Note, we need the action for the move/copy, not paste.
+        // On dropping, need to move up parent tree of the destination element
+        // till find the appropriate parent
+        //console.log(currentActivity);
+        if( currentActivity ) {   // been a cut or move initiated so can do a paste
+          // based on the type of element we are moving
+          // Note, currentActiviey['move_ele_id'/'object_id]'is the element right clicked on when
+          // copy or move was selected - held over in this variable.
+          //currentActivity['to'] = thisEleId;         //**update**
+          currentActivity['to_slot'] = thisEleId;         //**update**
+          //*switch ( getRecordType(currentActivity['move_ele_id']) ) {
+          switch (currentActivity['object_type']) {
+            //*case 's':   //student
+            //*case 't':   //tutor
+            case 'student':   //student
+            //case 'tutor':   //tutor
+              // find the 'lesson' element in the tree working upwards
+              // as thisEle is the dom location we are moving this element to.
+              //*currentActivity['ele_new_parent_id'] = clickInsideElementClassList2(thisEle, ['lesson']).id;
+              //******************************************************
+              // Need the database changes and manipulation called here
+              //******************************************************
+              personupdateslesson_Update_stats( currentActivity );      //**update**
+              //----- contained in currentActivity ------------(example)
+              //  move_ele_id: "Wod201705301600s002",
+              //  ele_old_parent_id: "Wod201705301600n001", 
+              //  element_type: "student"
+              //  ele_new_parent_id: "Wod201705291630n003"
+              //----------required in ajax (domchange)---------------------------------
+              break;
+          }
+          currentActivity = {};     // clear when done - can't paste twice.
+        }  // end of if currentActivity
+        // Of course, if there is no currentActivity on a paste, then ignore.
+        break;
+      }
+  }
+  
+  function personupdateslesson_Update_stats( domchange ){
+    //var action = domchange['action'];   //move or copy
+    var object_type = domchange['object_type'];
+    var myurl;
+    var mydata;
+    // Parent cannot be the same in stats.
+    //if(isParentSame(domchange)){  // ignore if dropped in same location
+    //  return;
+    //}
+    mydata =  { 'domchange' : domchange  };
+    if( 'student' == object_type || 'tutor'  == object_type){
+      myurl = myhost + '/' + object_type + 'movecopylesson/'; 
+    } else {
+      return;
+    }
+    $.ajax({
+        type: "POST",
+        url: myurl,
+        data: mydata,
+        dataType: "json",
+        context: domchange,
+        success: function(result1, result2, result3){
+            console.log("personupdateslesson_Update Ajax response OK");
+            //moveelement_update(result1);
+        },
+        error: function(xhr){
+            var errors = $.parseJSON(xhr.responseText);
+            var error_message = "";
+            for (var error in (errors['lesson_id'])){
+              error_message += " : " + errors['lesson_id'][error];
+            }
+            alert("error moving student or tutor to another lesson: " + error_message);
+        }
+     });
+  }
+
+
+
 
   
 };
@@ -2122,12 +2187,10 @@ function hideshowstudent(){
   //}
 }
 
-
-
 // hides sites based on checklists
 function showhidesites(){
   var thispattern = /hide(.*)/;
-  var showList = document.getElementsByClassName('selectsite')
+  var showList = document.getElementsByClassName('selectsite');
   for(var i = 0; i < showList.length; i++){
     console.log("showList[i].id: " + showList[i].id);
     var m = thispattern.exec(showList[i].id);
@@ -2181,6 +2244,222 @@ function showhidestats(type){
     }
   }
 }
+
+// Common functions called from both scheduling and stats.
+
+// initialisation that is common to both.
+function menu_common() {
+  // This opertions provide visual feedback when you are moving over
+  // menu items.
+  $('.context-menu__item').mouseenter(function(){
+    $(this).css('background-color','lime');
+  });
+  $('.context-menu__item').mouseleave(function(){
+    $(this).css('background-color', 'white');
+  });
+
+  $('.context-menu__choice').mouseenter(function(){
+    $(this).css('background-color','lime');
+  });
+  $('.context-menu__choice').mouseleave(function(){
+    $(this).css('background-color', 'white');
+  });
+}
+
+// menu functions
+function setscmi(elementId, scmi){
+  if(document.getElementById(elementId)){
+    if(scmi){
+      document.getElementById(elementId).classList.remove('hideme');
+    }else{
+      document.getElementById(elementId).classList.add('hideme');
+    }
+  }
+}
+
+
+function toggleMenuOn() {
+  if ( menuState !== 1 ) {
+    menuState = 1;
+    menu.classList.add(contextMenuActive);
+  }
+}
+
+function toggleMenuOff() {
+  if ( menuState !== 0 ) {
+    menuState = 0;
+    menu.classList.remove(contextMenuActive);
+  }
+}
+
+function toggleTMenuOn() {
+  if ( tmenuState !== 1 ) {
+    tmenuState = 1;
+    tmenu.classList.add(tertiaryMenuActive);
+  }
+}
+
+function toggleTMenuOff() {
+  if ( tmenuState !== 0 ) {
+    tmenuState = 0;
+    tmenu.classList.remove(tertiaryMenuActive);
+  }
+}
+
+// Listens for keyup events on escape key.
+// Simply removes the menus.
+function keyupListener() {
+  window.onkeyup = function(e) {
+    if ( e.keyCode === 27 ) {
+      toggleMenuOff();
+      toggleTMenuOff();
+    }
+  };
+}
+
+
+//On windows screen resize, hides the menu - start selection again 
+function resizeListener() {
+  window.onresize = function(e) {
+    toggleMenuOff();
+    toggleTMenuOff();
+
+  };
+}
+
+// check if clicked element or element in the parent chain 
+// is of the class provided in the list.
+function clickInsideElementClassList( e, classNameList ) {
+  var el = e.srcElement || e.target;
+  return clickInsideElementClassList2( el, classNameList );
+}
+
+function clickInsideElementClassList2( el, classNameList ) {
+  if(el.classList){
+    for(var i = classNameList.length; i--; ) {
+      if ( el.classList.contains(classNameList[i]) ) {
+        return el;
+      }
+    }
+  }
+  while ( (el = el.parentNode) ) {
+    if(el.classList){
+      for(i = classNameList.length; i--; ) {
+        if ( el.classList.contains(classNameList[i]) ) {
+          return el;
+        }
+      }
+    }
+  }
+  return false;
+}
+
+function objectidToObjecttype(myobjectid){
+  var parseId = myobjectid.match(/(\w)\d+$/ );
+  switch(parseId[1]) {
+    case 's':
+      return 'student';
+    case 't':
+      return 'tutor';
+    case 'n':
+      return 'lesson';
+    case 'l':
+      return 'slot';
+    default:
+      return '';
+  }
+}
+
+// returns context of 'index' or 'lesson'
+function objectidToContext(myobjectid){
+  var parseId = myobjectid.match(/^[st]\d+$/);
+  if(parseId) {
+    return 'index';
+  }else{
+    return 'lesson';
+  }
+}
+
+// determine if a user has dropped/copied/moved into the same parent.
+// Need for persons (tutors or students) and lessons.
+function isParentSame(checkdomchange){
+  // only relevant to move and copy.
+  if( checkdomchange['action'] == 'move' || checkdomchange['action'] == 'copy'    ) {
+    if( checkdomchange['object_type'] == 'lesson') { //copy & move must be either a lesson
+      var parseToParent     = checkdomchange['to'].match(/^(\w+\d+)[nl]/);          // slot is parent   
+      var parseObjectParent = checkdomchange['object_id'].match(/^(\w+\d+)[nl]/);   // slot is parent   
+    }else{                         // or tutor / student.
+      if(checkdomchange['object_id'].match(/^[st]\d+$/)){  // index area is parent of object   
+        return false;
+      }
+      parseToParent     = checkdomchange['to'].match(/^(\w+\d+n\d+)/);         // lesson is parent
+      parseObjectParent = checkdomchange['object_id'].match(/^(\w+\d+n\d+)/);  // lesson is parent   
+    }
+    if( parseToParent[1]  ==  parseObjectParent[1]){  // have same parents
+      return true;                                         // do nothing
+    }
+  }
+  return false;
+}
+
+// get position on screen of where the event occurred - point of clicking
+function getPosition(e) {
+  var posx = 0;
+  var posy = 0;
+
+  if (!e) e = window.event;
+
+  // Notes:
+  // pageY    vertical coordiante according to document
+  // clientY  vertical coordiante according to client area = current window
+  // screenY  vertical coordiante according to user's computer screen
+  if (e.pageX || e.pageY) {
+    console.log("*** detected page positions ***");
+    posx = e.pageX;
+    posy = e.pageY;
+  } else if (e.clientX || e.clientY) {
+    console.log("*** using client positions ***");
+    posx = e.clientX + document.body.scrollLeft + 
+                       document.documentElement.scrollLeft;
+    posy = e.clientY + document.body.scrollTop + 
+                       document.documentElement.scrollTop;
+  }
+  return { x: posx, y: posy };
+}
+
+// Put menu in correct position - where the click event was triggered.
+// can be called using menu, tmenu or historydisplay
+// clickPosition is a global variable.
+//function positionMenu(clickPosition, thismenu) {
+function positionMenu(thismenu) {
+  var clickCoords = clickPosition;
+  var clickCoordsX = clickCoords.x;
+  var clickCoordsY = clickCoords.y;
+  
+  var menuWidth = thismenu.offsetWidth + 4;
+  var menuHeight = thismenu.offsetHeight + 4;
+  var windowWidth = window.innerWidth;
+  // This relates to window height which fails when document is higher than window
+  //var windowHeight = window.innerHeight;
+  // Hopefully this will be better!!!!
+  var windowHeight = document.documentElement.scrollHeight;
+  thismenu.style.position="absolute";
+  if ( (windowWidth - clickCoordsX) < menuWidth ) {
+    thismenu.style.left = windowWidth - menuWidth + "px";
+  } else {
+    thismenu.style.left = clickCoordsX + "px";
+  }
+  
+  if ( (windowHeight - clickCoordsY) < menuHeight ) {
+    thismenu.style.top = windowHeight - menuHeight + "px";
+  } else {
+    thismenu.style.top = clickCoordsY + "px";
+  }
+  console.log(thismenu);
+}
+
+
+
 
 
 //$(document).ready(ready);

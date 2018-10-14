@@ -101,11 +101,40 @@ class RolesController < ApplicationController
     logger.debug "@domchange: " + @domchange.inspect
     
     # to / destination
-    result = /^(([A-Z]+\d+)n(\d+))/.match(params[:domchange][:to])
-    if result 
-      new_lesson_id = result[3]
-      new_slot_id = result[2]
-      @domchange['to'] = result[1]
+    # destination is normally a session, however, there is the special case
+    # of moving a catchup to a slot into a 'allocate' session. An 'allocate' 
+    # session may or  may not be present - if not present, then we need to
+    # create one. From this to_slot parameter, we must derive the 'allocate'
+    # session_id.
+    byebug
+    if(params[:domchange].has_key?("to_slot"))
+      logger.debug "to_slot present in parameters"
+      result = /^(([A-Z]+\d+)l(\d+))/.match(params[:domchange][:to_slot])
+      if result 
+        new_slot_dbId = result[3]
+        new_slot_id = result[2]
+        # Need to find the 'allocate' lesson for this slot.
+        @lesson_new = Lesson
+                            .where(:slot_id => new_slot_dbId, :status => "allocate" )
+                            .first
+        unless @lesson_new
+          logger.debug "lesson not found"
+          # need to create a new session with status 'allocatae'
+          @lesson_new = Lesson.new(slot_id: new_slot_dbId, status: "allocate")
+          #@lesson_new.save
+        end
+        new_lesson_id = @lesson_new.id
+        
+        @domchange['to'] = new_slot_id + 'n' + @lesson_new.id.to_s
+      end
+      
+    else  
+      result = /^(([A-Z]+\d+)n(\d+))/.match(params[:domchange][:to])
+      if result 
+        new_lesson_id = result[3]
+        new_slot_id = result[2]
+        @domchange['to'] = result[1]
+      end
     end
 
     if( @domchange['action'] == 'move')
@@ -261,7 +290,6 @@ class RolesController < ApplicationController
   # We then copy the '@role' to '@copied_role' to be saved into '@global_lesson'.
   # Web sockets is used to send the updates to the browsers.
   def action_to_away_controller(thisrole)
-    
     logger.debug("+++++++++++++++++++role status has changed" )
     thisrole_lesson = Lesson.includes(:slot).find(thisrole.lesson_id)
     #new_slot_time = @self_lesson.slot.datetime
@@ -338,23 +366,23 @@ class RolesController < ApplicationController
   end
 
 
-    # Use callbacks to share common setup or constraints between actions.
-    def set_role
-      @role = Role.find(params[:id])
-    end
+  # Use callbacks to share common setup or constraints between actions.
+  def set_role
+    @role = Role.find(params[:id])
+  end
 
-    def set_user_for_models
-      Thread.current[:current_user_id] = current_user.id
-    end
-    
-    def reset_user_for_models
-      Thread.current[:current_user_id] = nil
-    end
+  def set_user_for_models
+    Thread.current[:current_user_id] = current_user.id
+  end
+  
+  def reset_user_for_models
+    Thread.current[:current_user_id] = nil
+  end
 
-    # Never trust parameters from the scary internet, only allow the white list through.
-    def role_params
-      params.require(:role).permit(:lesson_id, :student_id, :new_sesson_id, :old_lesson_id, :status, :kind,
-        :domchange => [:action, :ele_new_parent_id, :ele_old_parent_id, :move_ele_id, :element_type]
-      )
-    end
+  # Never trust parameters from the scary internet, only allow the white list through.
+  def role_params
+    params.require(:role).permit(:lesson_id, :student_id, :new_sesson_id, :old_lesson_id, :status, :kind,
+      :domchange => [:action, :ele_new_parent_id, :ele_old_parent_id, :move_ele_id, :element_type, :to, :to_slot]
+    )
+  end
 end
