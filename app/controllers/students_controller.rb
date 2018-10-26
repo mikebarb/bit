@@ -1,5 +1,6 @@
 class StudentsController < ApplicationController
   include Historyutilities
+  include Calendarutilities
   before_action :set_student, only: [:show, :showsessions, :edit, :update, :destroy]
   before_filter :authenticate_user!, :set_user_for_models
   after_filter :reset_user_for_models
@@ -99,7 +100,7 @@ class StudentsController < ApplicationController
     end
 
     @student = Student.find(student_dbId)
-    flagupdate = false
+    flagupdate = flagupdatestats = false
     case @domchange['updatefield']
     when 'comment'
       if @student.comment != @domchange['updatevalue']
@@ -109,7 +110,7 @@ class StudentsController < ApplicationController
     when 'status'
       if @student.status != @domchange['updatevalue']
         @student.status = @domchange['updatevalue']
-        flagupdate = true
+        flagupdatestats = flagupdate = true
       end
     when 'study'
       if @student.study != @domchange['updatevalue']
@@ -121,6 +122,36 @@ class StudentsController < ApplicationController
       if @student.save
         format.json { render json: @domchange, status: :ok }
         ActionCable.server.broadcast "calendar_channel", { json: @domchange }
+        # Need to get all the slots that these students are in.
+        if flagupdatestats
+          ##------------------------------- hints ------------------
+          ## For includes (and joins):
+          ## 1. Names are association names (not the table names!)
+          ## 2. to load multiple associations, use an array
+          ## 3. to load associations with children, use a hash => 
+          ##      key is parent association name, 
+          ##      value is description of child association
+          ##--------------------------------------------------------
+          #this_start_date = Time.now()
+          this_start_date = Time.strptime("2018-06-25", "%Y-%m-%d")
+          #this_end_date = this_start_date + 3.days
+          stats_slots = Slot
+                        .select('id', 'timeslot', 'location')
+                        .joins({lessons: :roles})
+                        .where('student_id = :sid AND
+                                timeslot > :sd', {sid: @student.id, sd: this_start_date})
+          stats_slot_domids = stats_slots.map do |o| 
+            o.location[0,3].upcase + o.timeslot.strftime('%Y%m%d%H%M') +
+                                    'l' + o.id.to_s.rjust(@sf, "0")
+          end
+          logger.debug "=============stats_slot_domids: " + stats_slot_domids.inspect 
+          stats_slot_domids.each do |this_domid|
+            # need to pass in slot_dom_id, however only extracts slot db id,
+            # so do a fudge here so extraction of db_id works.
+            get_slot_stats(this_domid)  # need to pass in slot_dom_id
+            logger.debug "***************calling get_slot_stats: " + this_domid.inspect
+          end
+        end
       else
         logger.debug("errors.messages: " + @student.errors.messages.inspect)
         format.json { render json: @student.errors.messages, status: :unprocessable_entity }

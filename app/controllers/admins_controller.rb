@@ -57,7 +57,8 @@ class AdminsController < ApplicationController
     @options[:startdate] = mystartdeletedate
     @options[:enddate]   = myenddeletedate
     #@cal = calendar_read_display1f(sf, mystartdeletedate, myenddeletedate, {})
-    @cal = calendar_read_display1f(sf, @options)
+    #@cal = calendar_read_display1f(sf, @options)
+    @cal = calendar_read_display1f(@options)
     if @cal.empty?
       # these days are empty - show error and return
       flash[:notice] = "These days are empty - nothing to delete!!!"
@@ -194,7 +195,8 @@ class AdminsController < ApplicationController
     @options = Hash.new
     @options[:startdate] = mystartcopytodate
     @options[:enddate]   = myendcopytodate
-    @cal = calendar_read_display1f(sf, @options)
+    #@cal = calendar_read_display1f(sf, @options)
+    @cal = calendar_read_display1f(@options)
     unless @cal.empty?
       # destination is not empty - show error and return
       flash[:notice] = "Destination days are not empty - will not copy!!!"
@@ -204,7 +206,8 @@ class AdminsController < ApplicationController
     #@cal = calendar_read_display1f(sf, mystartcopyfromdate, myendcopyfromdate, {})
     @options[:startdate] = mystartcopyfromdate
     @options[:enddate]   = myendcopyfromdate
-    @cal = calendar_read_display1f(sf, @options)
+    #@cal = calendar_read_display1f(sf, @options)
+    @cal = calendar_read_display1f(@options)
     if @cal.empty?
       # source is empty - show error and return
       flash[:notice] = "Source days are empty - nothing to copy!!!"
@@ -2306,7 +2309,8 @@ else      # Not to test.
                 .order('pname')
     
     #@cal = calendar_read_display1f(@sf, mystartdate, myenddate, {})
-    @cal = calendar_read_display1f(@sf, @options)
+    #@cal = calendar_read_display1f(@sf, @options)
+    @cal = calendar_read_display1f(@options)
     # Clear the first sheet - the rest are deleted.
     googleClearSheet.call(sheet_id)
     #googleVertAlignAll.call("TOP")

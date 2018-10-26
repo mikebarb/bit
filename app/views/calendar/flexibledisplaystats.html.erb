@@ -11,6 +11,9 @@
   <div class="formatstats selectshowstats">
     <input id=hidestats onclick="showstats()" type="checkbox" >Stats</input>
   </div>
+  <div class="formatslotlessons selectshowstats">
+    <input id=hideslotlessons onclick="showslotlessons()" type="checkbox" >Lesson</input>
+  </div>
 </div>
 <div>
   <div class="selectdayofweek">
@@ -66,7 +69,10 @@
         </div>
         <div class=personlessons>
           <% v['dom_ids'].each do |dom_id| %>
-            <div class="personlesson"><%= dom_id %></div>
+            <div class="personlesson">
+              <div class='global' data-domid=<%= dom_id %> ><%= dom_id %></div>
+              <div class='allocate' data-domid='' ></div>
+            </div>
           <% end %>
         </div>
       </div>
@@ -100,7 +106,9 @@
           celldow = 'dow' + celldatetime.wday.to_s
         end
         if cells.key?("slotid") then
-          %><td class="cell slot <%= celldow %>"  id=<%= cells["id_dom"] + "l" + cells["slotid"].rjust(@sf, "0") %>  >
+          #cell_id_dom = cells["id_dom"] + "l" + cells["slotid"].rjust(@sf, "0")
+          cell_id_dom = cells["id_dom"] + "l" + cells["slotid"].rjust(@sf, "0")
+          %><td class="cell slot <%= celldow %>"  id=<%= cell_id_dom %>  >
         <% elsif cells.key?("value") then %>
           <% if firsttablecolumn == true then
             firsttablecolumn = false %>
@@ -120,31 +128,14 @@
              <% end %>
         <% end %>
         <% if cells.key?('stats') %>
-          <div class='stats'>
-            <% if cells['stats'].key?('routine') %>
-                <b>routine:</b><br>
-                <% cells['stats']['routine'].each { |k, v| %>
-                  <%= k + ': ' + v.to_s %> <br>
-                <% } %>
-            <% end %>
-            <% if cells['stats'].key?('flexible') %>
-                <b>flexible:</b><br>
-                <% cells['stats']['flexible'].each { |k, v| %>
-                  <%= k + ': ' + v.to_s %> <br>
-                <% } %>
-            <% end %>
-            <% 
-               if @slotAllocateLessonDom_id.key?(cells["slotid"].to_i) 
-                 allocate_dom_id = @slotAllocateLessonDom_id[cells["slotid"].to_i] %>
-              Dom_id: <%= allocate_dom_id %><br>
-            <% end %>
-
-          </div>
-          <% if cells['stats'].key?('allocate') %>
-            <div class="free"><%= cells['stats']['allocate']['free'] %></div>
-            <div class="catchup"><%= cells['stats']['allocate']['catchup'] %></div>
-          <% end %>
+          <div class='statistics' ><%= 
+            render partial: "stats_slot", locals: {stats: cells['stats']} 
+          %></div>
         <% end %>
+        <% if @slotAllocateLessonDom_id.key?(cells["slotid"].to_i) 
+                 allocate_dom_id = @slotAllocateLessonDom_id[cells["slotid"].to_i]
+              %><div class=slotlessons ><%= allocate_dom_id %><br></div><%
+        end %>
         </td>
       <% end %>
       </tr>

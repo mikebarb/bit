@@ -18,23 +18,30 @@
 
     <div id="selectshows">
         <div class="checklisttutors">
-          <input id=hidetutors class=selectshow onclick="selectshows()" type="checkbox" >Tutors
-          <input id=hidestudents class=selectshow onclick="selectshows()" type="checkbox" >Students;
-          Hide Comments=>(<input id=hidecomments class=selectshow onclick="selectshows()" type="checkbox" >All;
+          <input id=hidetutors class=selectshow onclick="selectshows(this)" type="checkbox" >Tutors
+          <input id=hidestudents class=selectshow onclick="selectshows(this)" type="checkbox" >Students;
+          Hide Comments=>(<input id=hidecomments class=selectshow onclick="selectshows(this)" type="checkbox" >All;
         </div>
         <div class=checklistlesson>
-        Lesson=>(<input id=hidetutorlessoncomments class=selectshow onclick="selectshows()" type="checkbox" >tutors, 
-        <input id=hidestudentlessoncomments class=selectshow onclick="selectshows()" type="checkbox" >students ), 
+        Lesson=>(<input id=hidetutorlessoncomments class=selectshow onclick="selectshows(this)" type="checkbox" >tutors, 
+        <input id=hidestudentlessoncomments class=selectshow onclick="selectshows(this)" type="checkbox" >students ), 
         </div>
         
         <div class=checklistpersonal>
-        Personal=>(<input id=hidetutorcomments class=selectshow onclick="selectshows()" type="checkbox" >tutors,
-        <input id=hidestudentcomments class=selectshow onclick="selectshows()" type="checkbox" >students )
+        Personal=>(<input id=hidetutorcomments class=selectshow onclick="selectshows(this)" type="checkbox" >tutors,
+        <input id=hidestudentcomments class=selectshow onclick="selectshows(this)" type="checkbox" >students )
         </div>)
         
         <div class=checklistlessons>
-        Hide=>(<input id=hidelessonsOnsetup class=selectshow onclick="selectshows()" type="checkbox" >onSetup,
-        <input id=hidelessonsOncall class=selectshow onclick="selectshows()" type="checkbox" >onCall )
+        Hide=>(<input id=hidelessonsOnsetup class=selectshow onclick="selectshows(this)" type="checkbox" >onSetup,
+        <input id=hidelessonsOncall   class=selectshow onclick="selectshows(this)" type="checkbox" >onCall
+        <input id=hidelessonsOnBFL   class=selectshow onclick="selectshows(this)" type="checkbox" >onBFL
+        <input id=hidelessonsFree     class=selectshow onclick="selectshows(this)" type="checkbox" >free
+        <input id=hidelessonsStandard class=selectshow onclick="selectshows(this)" type="checkbox" >standard
+        <input id=hidelessonsRoutine  class=selectshow onclick="selectshows(this)" type="checkbox" >routine
+        <input id=hidelessonsFlexible class=selectshow onclick="selectshows(this)" type="checkbox" >flexible
+        <input id=hidelessonsAllocate class=selectshow onclick="selectshows(this)" type="checkbox" >allocate
+        <input id=hidelessonsGlobal   class=selectshow onclick="selectshows(this)" type="checkbox" >global )
         </div>
         
         <br>
@@ -49,9 +56,22 @@
           <option value="Away">Away</option>
         </select>
         <br>
+        <input id=enableQuickKind type="checkbox" > Enable quick setting of kind to
+        <select name="quickKind" id="quickKindValue">
+          <option value="Standard">Standard</option>
+        </select>
+        <br>
+        <input id=enableQuickPersonStatus type="checkbox" > Enable quick setting of student-person-status to
+        <select name="quickPersonStatus" id="quickPersonStatusValue">
+          <option value="standard">Standard</option>
+          <option value="onetoone">OneToOne</option>
+          <option value="fortnightly">Fortnightly</option>
+          <option value="new">New</option>
+        </select>
+        <br>
         <% listofsites.each_with_index do |site, i| %>
         <div class="<%= "selectSite" + site %> jumptosite">
-        <input id=<%= 'hide' + site %> class="selectshow selectsite" onclick="selectshows()" type="checkbox" ><%= site + "  " %> 
+        <input id=<%= 'hide' + site %> class="selectshow selectsite" onclick="selectshows(this)" type="checkbox" ><%= site + "  " %> 
         </div>
         <% end %>
     </div>
@@ -101,8 +121,11 @@
            next
         end 
       end %>
-      <% if cells.key?("slotid") then %>
-        <td class="cell slot" id=<%= cells["id_dom"] + "l" + cells["slotid"].rjust(@sf, "0") %>  >
+      <% if cells.key?("slotid") then 
+          #cell_id_dom = cells["id_dom"] + "l" + cells["slotid"].rjust(@sf, "0")
+          cell_id_dom = cells["id_dom"] + "l" + cells["slotid"].rjust(@sf, "0")
+      %>
+        <td class="cell slot" id=<%= cell_id_dom %>  >
       <% elsif cells.key?("value") then %>
         <% if firsttablecolumn == true then
           firsttablecolumn = false %>
@@ -115,7 +138,9 @@
       <% end %> 
       <% if cells.key?("values") then %>       
         <% if cells["values"].respond_to?(:each) then %>
-          <% slot = cells["id_dom"] %>
+          <% #slot = cells["id_dom"] 
+              slot = cell_id_dom
+          %>
           <% cells["values"].each do |entry| %>
             <%= render partial: "schedule_lesson", 
                 locals: {slot: slot, lesson: entry} %>
@@ -247,6 +272,9 @@
       </li>
       <li id="student-status-away" class="tertiary-menu__choice" data-choice="student-status-away">
         <p>student-status: Away</p>
+      </li>
+      <li id="student-status-queued" class="tertiary-menu__choice" data-choice="student-status-queued">
+        <p>student-status: Queued</p>
       </li>
       <li id="student-kind-free" class="tertiary-menu__choice" data-choice="student-kind-free">
         <p>student-kind: Free</p>

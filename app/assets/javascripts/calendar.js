@@ -16,7 +16,7 @@
 // the order of this class list is important - searches are done from 
 // finest to broadest when looking for relevant elements(divs).
 var taskItemClassList_calendar = ['slot', 'lesson', 'tutor', 'student'];
-var taskItemClassList_stats = ['slot', 'lesson', 'tutor', 'student'];
+var taskItemClassList_stats = ['slot', 'lesson', 'tutor', 'student', 'allocate'];
 
 var taskItemInContext;  
 var contextMenuActive = "context-menu--active";
@@ -63,7 +63,7 @@ var ready_calendar = function() {
   App.calendar = App.cable.subscriptions.create("CalendarChannel", {  
   //App.cable.subscriptions.create("CalendarChannel", {  
     received: function(data) {
-      console.log("calendar.js - entered ws received function");
+      console.log("calendar.js - entered ws received function for calendar");
       console.dir(data);
       //var returnedDomData = JSON.parse(data['json']);
       var returnedDomData = data['json'];
@@ -74,12 +74,16 @@ var ready_calendar = function() {
     }
   });
 
+
   // some global variables for this page
   //var sf = 5;     // significant figures for dom id components e.g.lesson ids, etc.
 
   // These are used in the quick status setting.
-  var validTutorStatuses = ["Away", "Absent", "Deal", "Scheduled", "Notified", "Confirmed", "Attended"];
+  var validTutorStatuses   = ["Away", "Absent", "Deal", "Scheduled", "Notified", "Confirmed", "Attended"];
   var validStudentStatuses = ["Away", "Absent", "Deal", "Bye", "Attended", "Scheduled"];
+  var validTutorKinds    = ["Standard"];
+  var validStudentKinds    = ["Standard"];
+  var validStudentPersonStatuses  = ["new", "fortnightly", "onetoone", "standard"];
 
   // want to set defaults on some checkboxes on page load
   var flagViewOptions = false;
@@ -115,7 +119,7 @@ var ready_calendar = function() {
       showList[0].checked = true;
     }
   }
-  selectshows();  // call the functions that invokes the checkbox values.
+  selectshows(document);  // call the functions that invokes the checkbox values.
 
   $("ui-draggable");
   
@@ -138,6 +142,14 @@ var ready_calendar = function() {
                     document.getElementById('enableQuickStatus').checked;
       passedOptions['v_' + 'quickStatusValue'] = 
                     document.getElementById('quickStatusValue').value;
+      passedOptions['v_' + 'enableQuickKind'] = 
+                    document.getElementById('enableQuickKind').checked;
+      passedOptions['v_' + 'quickKindValue'] = 
+                    document.getElementById('quickKindValue').value;
+      passedOptions['v_' + 'enableQuickPersonStatus'] = 
+                    document.getElementById('enableQuickPersonStatus').checked;
+      passedOptions['v_' + 'quickPersonStatusValue'] = 
+                    document.getElementById('quickPersonStatusValue').value;
       passedOptions['v_' + 'personInput'] = 
                     document.getElementById('personInput').value;
 
@@ -211,6 +223,8 @@ var ready_calendar = function() {
     resizeListener();
   }
   
+  // Sticky header allows us to shrink the index region of the page.
+  // This makes more effective use of teh calendar region.
   if ($('#sticky-header').length) {
     var stickyHeaderTop = $('#sticky-header').offset().top;
     $(window).scroll(function (event) {
@@ -311,6 +325,45 @@ var ready_calendar = function() {
               }
             }
           }
+          if (document.getElementById('enableQuickKind').checked){
+            var newKind = document.getElementById('quickKindValue').value;
+            if (clickEleIsTutor){     // clicked on tutor
+              if (validTutorKinds.indexOf(newKind) >= 0){
+                console.log("set tutor kind to: " + newKind);
+                currentActivity['action'] = "tutor-kind-" + newKind.toLowerCase(); 
+                currentActivity['move_ele_id'] = clickEleIsTutor.id;
+                currentActivity['object_id'] = clickEleIsTutor.id;
+                currentActivity['object_type'] = objectidToObjecttype(currentActivity['object_id']);
+                personupdatestatuskindcomment( currentActivity );
+              }
+            } else {                // clicked on student
+              if (validStudentKinds.indexOf(newKind) >= 0){
+                console.log("set student kind to: " + newKind);
+                currentActivity['action'] = "student-kind-" + newKind.toLowerCase(); 
+                currentActivity['move_ele_id'] = clickEleIsStudent.id;
+                currentActivity['object_id'] = clickEleIsStudent.id;
+                currentActivity['object_type'] = objectidToObjecttype(currentActivity['object_id']);
+                personupdatestatuskindcomment( currentActivity );
+              }
+            }
+          }
+          if (document.getElementById('enableQuickPersonStatus').checked){
+            var newPersonStatus = document.getElementById('quickPersonStatusValue').value;
+            if (clickEleIsStudent){     // clicked on student, ingnore tutor
+              if (validStudentPersonStatuses.indexOf(newPersonStatus) >= 0){
+                console.log("set student persontStatus to: " + newPersonStatus);
+                currentActivity['action'] = "student-personstatus-" + newPersonStatus.toLowerCase(); 
+                currentActivity['move_ele_id'] = clickEleIsStudent.id;
+                currentActivity['object_id']   = clickEleIsStudent.id;
+                currentActivity['object_type'] = objectidToObjecttype(currentActivity['object_id']);
+                personupdatestatuskindcomment( currentActivity );
+              }
+            }
+          }
+          //       <li id="student-personstatus-fortnightly" class="tertiary-menu__choice" data-choice="student-personstatus-fortnightly">
+          //          <p>personStatus: Fortnightly</p>
+          //       </li>
+
       } else {    // clicked anywhere else
         var button = e.which || e.button;
         if ( button === 1 ) {
@@ -711,7 +764,7 @@ var ready_calendar = function() {
     var stmi_tutor_status_deal        = false;   
     var stmi_tutor_status_absent      = false;
     var stmi_tutor_status_away        = false;
-    
+
     var stmi_tutor_kind_oncall        = false;
     var stmi_tutor_kind_onsetup       = false;
     var stmi_tutor_kind_bfl           = false;
@@ -727,6 +780,7 @@ var ready_calendar = function() {
     var stmi_student_status_deal      = false;
     var stmi_student_status_absent    = false;
     var stmi_student_status_away      = false;
+    var stmi_student_status_queued    = false;
 
     var stmi_student_kind_free        = false;
     var stmi_student_kind_first       = false;
@@ -797,6 +851,7 @@ var ready_calendar = function() {
             stmi_student_status_deal      = true;
             stmi_student_status_absent    = true;
             stmi_student_status_away      = true;
+            stmi_student_status_queued    = true;
             break;
           case 'setKind':   // student set Kind options
             stmi_student_kind_free        = true;            
@@ -851,7 +906,7 @@ var ready_calendar = function() {
     setscmi('tutor-status-deal', stmi_tutor_status_deal);
     setscmi('tutor-status-absent', stmi_tutor_status_absent);
     setscmi('tutor-status-away', stmi_tutor_status_away);
-    
+
     setscmi('tutor-kind-bfl', stmi_tutor_kind_bfl);
     setscmi('tutor-kind-oncall', stmi_tutor_kind_oncall);
     setscmi('tutor-kind-onsetup', stmi_tutor_kind_onsetup);
@@ -867,6 +922,7 @@ var ready_calendar = function() {
     setscmi('student-status-deal', stmi_student_status_deal);
     setscmi('student-status-absent', stmi_student_status_absent);
     setscmi('student-status-away', stmi_student_status_away);
+    setscmi('student-status-queued', stmi_student_status_queued);
 
     setscmi('student-kind-free', stmi_student_kind_free);            
     setscmi('student-kind-first', stmi_student_kind_first);
@@ -975,17 +1031,17 @@ var ready_calendar = function() {
     personupdatecommentsubject( currentActivity );
   } 
   
-//***********************************************************************
-// End of performing the actions invoked by the context menu items.     *
-//***********************************************************************
+  //***********************************************************************
+  // End of performing the actions invoked by the context menu items.     *
+  //***********************************************************************
   
 
   init();
 
-//------------------------ End of Context Menu -----------------------------
+  //------------------------ End of Context Menu -----------------------------
 
 
-//----------------- Get history of Tutor or Student ------------------------
+  //----------------- Get history of Tutor or Student ------------------------
   //This function is called to get a student or tutor history
   //Does ajax to get the student or tutor history
   function getHistory(domchange){
@@ -1074,7 +1130,7 @@ var ready_calendar = function() {
     return htmlsegment;
   }
 
-//----- Update Tutor, Student or Lesson -> Comment, subject ----------
+  //----- Update Tutor, Student or Lesson -> Comment, subject ----------
   // This function is called to update: student, tutor, lesson, tutrole, role records
   // with one of comment or subjects. 
   // Called from the tertiary context menu.
@@ -1112,7 +1168,7 @@ var ready_calendar = function() {
      });
   }
 
-//----- Update Tutor, Student or Lesson -> Status, Kind or Comment ----------
+  //----- Update Tutor, Student or Lesson -> Status, Kind or Comment ----------
   //This function is called to update a student or tutor record
   // with one of status, kind or comment. 
   // Called from the tertiary context menu.
@@ -1136,13 +1192,7 @@ var ready_calendar = function() {
     var updatefield = parseaction[2];
     var updatevalue = parseaction[3];
     var controllertype = 'role';
-    if(updatefield == 'personstatus'){ // treated differently - update person record
-      updatefield = 'status';
-      controllertype = 'person';
-    }
-    if (updatefield == 'subject' && object_type == 'tutor') {
-      updatefield = 'subjects';
-    }
+    // this check only applies to status changes in the session
     if(updatefield == 'status' &&
        object_type == 'student')   {
       // if current value is 'away', then need to warn the user
@@ -1157,6 +1207,14 @@ var ready_calendar = function() {
           return;
         }
       }
+    }
+    // can now make teh generic status manipulation - status and person.
+    if(updatefield == 'personstatus'){ // treated differently - update person record
+      updatefield = 'status';
+      controllertype = 'person';
+    }
+    if (updatefield == 'subject' && object_type == 'tutor') {
+      updatefield = 'subjects';
     }
     domchange['updatefield'] = updatefield;
     domchange['updatevalue'] = updatevalue;
@@ -1223,13 +1281,13 @@ var ready_calendar = function() {
       $(this).draggable();
     });
 
-//------------------------ Drag and Drop -----------------------------------
-// This is the drag and drop code
-// which uses ajax to update the database
-// the drag reverts if database update fails.
-// good intro document: 
-// https://www.elated.com/articles/drag-and-drop-with-jquery-your-essential-guide/
-
+  //----------------------- Drag and Drop - Calendar -------------------------
+  // This is the drag and drop code
+  // which uses ajax to update the database
+  // the drag reverts if database update fails.
+  // good intro document: 
+  // https://www.elated.com/articles/drag-and-drop-with-jquery-your-essential-guide/
+  
   // for moving the lessons
   function elementdraggable(myelement){
     $(myelement).draggable({
@@ -1298,7 +1356,7 @@ var ready_calendar = function() {
   elementdraggable(".student, .tutor");
   lessondroppable(".lesson");
   
-//------------------------ End of Drag and Drop ----------------------------
+//---------------------- End of Drag and Drop - calendar ---------------------
 
 //----- Common Functions used by both Drag & Drop and Context Menu ---------
 
@@ -1416,7 +1474,8 @@ var ready_calendar = function() {
         dataType: "json",
         context: domchange,
         success: function(result1, result2, result3){
-            moveelement_update(result1);
+            console.log("lessonupdateslot_Update Ajax response OK");
+            //moveelement_update(result1);
         },
         error: function(request, textStatus, errorThrown){
             console.log("ajax error occured: " + request.status.to_s + " - " + textStatus );
@@ -1539,7 +1598,11 @@ var ready_calendar = function() {
           // Ensure there is a place on the page to put this object
           // as possiblity this user is not viewing the region this object is 
           // being moved to.
-  
+          
+          // get the parent slot for 'to' - needed to update show hide comments etc.
+          var m = ele_parent_to.id.match(/^(\w+\d+l\d+)/);
+          var ele_slot_to = document.getElementById(m[1]);
+
           // place tutor or student into destination
           // map specific tutor or student var names generic for this section.
           if (object_type == 'tutor' || object_type == 'student') {    // person
@@ -1571,6 +1634,7 @@ var ready_calendar = function() {
               ele_parent_to_place.insertBefore(eletoplace, ele_parent_to_place.firstChild);
             }
             elementdraggable(eletoplace);
+            selectshows_scoped(document, ele_slot_to);
           }
           if (object_type == 'lesson') {    // lesson
             // correct placement within the slot arrangment
@@ -1630,8 +1694,11 @@ var ready_calendar = function() {
         if('updatefield' in domchange){     // updatefield is present
           if(object_type == 'tutor' ||
              object_type == 'student'){   
+            m = ele_object.id.match(/^(\w+\d+l\d+)/);
+            var ele_slot_forobject = document.getElementById(m[1]);
             ele_object.parentNode.replaceChild(eletoplace, ele_object);
             elementdraggable(eletoplace);
+            selectshows_scoped(document, ele_slot_forobject);
           }else if(object_type == 'lesson'){   // lesson
             // for the lesson, we will just update the fields
             // = comments or status
@@ -1781,84 +1848,124 @@ function hideshowperson (searchClass ){    // 'student' or 'tutor'
 
 //------ End of Filter by name functions for the tutors and students -------
 
-
-function selectshows() {
-  //console.log("processing selectShows");
-  var myShowList = document.getElementById("selectshows");
-  if (myShowList == null){
-    return;
+function selectshows_scoped(ele_checkbox, ele_scope) {
+  if(ele_checkbox == document) {
+    // Need to process all checklists
+    console.log ('this is called with passed element being document');
+    var myShowList = document.getElementById("selectshows");
+    if (myShowList == null){
+      return;
+    }
+    var showList = document.getElementById("selectshows").getElementsByTagName("input");
+  }else{
+    // Need to only process the one just ticked or unticked.
+    showList = [ele_checkbox];
   }
-  var showList = document.getElementById("selectshows").getElementsByTagName("input");
-  //console.log(showList);
   //var flagcomments = false;
   // if I have hidden both tutors and students, then also hide "index"
-  var flagshowtutorsorstudents = false;
+  var hidetutors_state = document.getElementById("hidetutors").checked;
+  var hidestudents_state = document.getElementById("hidestudents").checked;
   for(var i = 0; i < showList.length; i++){
-    //console.log(showList[i].id);
-    //console.log(showList[i].checked);
     switch(showList[i].id){
       case "hidetutors":
-        //var eleThisParent = document.getElementById("index-tutors");
+        // first check if either students or tutors need to be displayed.
+        if(hidetutors_state || hidestudents_state) {
+          document.getElementById('index-tutor-students').classList.remove("hideme");
+        }else{
+          document.getElementById('index-tutor-students').classList.add("hideme");
+        }
+        // now specific display for tutors
         if (showList[i].checked){
-          filterPeople();
           document.getElementById("index-tutors").classList.remove("hideme");
-          flagshowtutorsorstudents = true;
+          hideshowperson('tutor');
         }else{
           document.getElementById("index-tutors").classList.add("hideme");
         }
         break;
       case "hidestudents":
-        //var eleThisParent = document.getElementById("index-students");
+        // first check if either students or tutors need to be displayed.
+        if(hidetutors_state || hidestudents_state) {
+          document.getElementById('index-tutor-students').classList.remove("hideme");
+        }else{
+          document.getElementById('index-tutor-students').classList.add("hideme");
+        }          
+        // now specific display for students
         if (showList[i].checked){
-          filterPeople();
           document.getElementById("index-students").classList.remove("hideme");
-          flagshowtutorsorstudents = true;
+          hideshowperson('student');
         }else{
           document.getElementById("index-students").classList.add("hideme");
         }
         break;
       case "hidecomments":    // will hide all comments
-        //flagcomments = true;
-        showhidecomments(document.getElementsByClassName("comment"),
+        showhidecomments(ele_scope.getElementsByClassName("comment"),
         showList[i].checked);
-        /*var eleComments = document.getElementsByClassName("comment");
-        if (showList[i].checked){
-          for (var j=eleComments.length; j-- ; ){
-            eleComments[j].classList.add("hideme");
-          }
-        }else{
-          for (var j=eleComments.length; j-- ; ){
-            eleComments[j].classList.remove("hideme");
-          }
-        }*/
         break;
       case "hidetutorlessoncomments":
         //if  (!flagcomments) {   // if all comments selected, stop here
-        showhidecomments(document.getElementsByClassName("tutrolecomment"),
+        showhidecomments(ele_scope.getElementsByClassName("tutrolecomment"),
         showList[i].checked);
         break;
       case "hidestudentlessoncomments":
         //if  (!flagcomments) {   // if all comments selected, stop here
-        showhidecomments(document.getElementsByClassName("rolecomment"),
+        showhidecomments(ele_scope.getElementsByClassName("rolecomment"),
         showList[i].checked);
         break;
       case "hidetutorcomments":
-        showhidecomments(document.getElementsByClassName("tutorcommentdetail"),
+        showhidecomments(ele_scope.getElementsByClassName("tutorcommentdetail"),
         showList[i].checked);
         break;
       case "hidestudentcomments":
-        showhidecomments(document.getElementsByClassName("studentcommentdetail"),
+        showhidecomments(ele_scope.getElementsByClassName("studentcommentdetail"),
         showList[i].checked);
         break;
       case "hidelessonsOncall":
-        showhidecomments(document.querySelectorAll(".lesson.n-status-onCall"),
+        showhidecomments(ele_scope.querySelectorAll(".lesson.n-status-onCall"),
         showList[i].checked);
         break;
       case "hidelessonsOnsetup":
-        showhidecomments(document.querySelectorAll(".lesson.n-status-onSetup"),
+        showhidecomments(ele_scope.querySelectorAll(".lesson.n-status-onSetup"),
+        showList[i].checked);
+        break;
+      case "hidelessonsOnBFL":
+        showhidecomments(ele_scope.querySelectorAll(".lesson.n-status-on_BFL"),
+        showList[i].checked);
+        break;
+      case "hidelessonsFree":
+        showhidecomments(ele_scope.querySelectorAll(".lesson.n-status-free"),
+        showList[i].checked);
+        break;
+      case "hidelessonsStandard":
+        showhidecomments(ele_scope.querySelectorAll(".lesson.n-status-standard"),
+        showList[i].checked);
+        break;
+      case "hidelessonsRoutine":
+        showhidecomments(ele_scope.querySelectorAll(".lesson.n-status-routine"),
+        showList[i].checked);
+        break;
+      case "hidelessonsFlexible":
+        showhidecomments(ele_scope.querySelectorAll(".lesson.n-status-flexible"),
+        showList[i].checked);
+        break;
+      case "hidelessonsAllocate":
+        showhidecomments(ele_scope.querySelectorAll(".lesson.n-status-allocate"),
+        showList[i].checked);
+        break;
+      case "hidelessonsGlobal":
+        showhidecomments(ele_scope.querySelectorAll(".lesson.n-status-global"),
+        showList[i].checked);
+        break;
+      case "hidelessonsPark":
+        showhidecomments(ele_scope.querySelectorAll(".lesson.n-status-park"),
         showList[i].checked);
         break;
       case "enableQuickStatus":
+        // do nothing - ignore.
+        break;
+      case "enableQuickKind":
+        // do nothing - ignore.
+        break;
+      case "enableQuickPersonStatus":
         // do nothing - ignore.
         break;
       default:    // hides sites based on checklists
@@ -1876,13 +1983,14 @@ function selectshows() {
           }
         }
     }
-    if(flagshowtutorsorstudents){
-      document.getElementById('index-tutor-students').classList.remove("hideme");
-    }else{
-      document.getElementById('index-tutor-students').classList.add("hideme");
-    }
   }
 }
+
+function selectshows(ele_checkbox) {
+  console.dir(ele_checkbox);
+  selectshows_scoped(ele_checkbox, document);
+}
+
 
 function showhidecomments(theseelements, tohide) {
   if (tohide){
@@ -1898,10 +2006,26 @@ function showhidecomments(theseelements, tohide) {
 
 
 var ready_stats = function(){
+
+  App.stats = App.cable.subscriptions.create("StatsChannel", {  
+  //App.cable.subscriptions.create("CalendarChannel", {  
+    received: function(data) {
+      console.log("calendar.js - entered ws received function for stats");
+      console.dir(data);
+      //var returnedDomData = JSON.parse(data['json']);
+      var returnedStatsData = data['json'];
+      returnedStatsData['actioncable'] = true;
+      stats_update(returnedStatsData);
+      console.log("stats update done!!!");
+      return;
+    }
+  });
+
   console.log("entered ready_status");
   showcatchup();
   showfree();
   showstats();
+  showslotlessons();
  
   showhidedowone();  
   showhidedowtwo();  
@@ -1933,8 +2057,17 @@ var ready_stats = function(){
   function contextListener_stats() {
     document.addEventListener( "contextmenu", function(e) {
       menu = document.querySelector("#context-menu");
+      // this function passes in the event
       taskItemInContext = clickInsideElementClassList( e, taskItemClassList_stats);
-      if ( taskItemInContext ) {
+      // this caters for the 'allocation' of catchups on the stats screen.
+      // allocate is only populated with the id when it is a valid element to click on.
+      // As such, if allocate is clicked on, but has no id, then we need to
+      // propagate up the ancestry chain till we get the 'student' element.
+      if(taskItemInContext && (taskItemInContext.id == '')){
+        // this function passes in the dom element
+        taskItemInContext = clickInsideElementClassList2( taskItemInContext.parentNode, taskItemClassList_stats);
+      }
+      if( taskItemInContext ) {
         e.preventDefault();
         enableMenuItems_stats();
         toggleMenuOn();
@@ -1968,13 +2101,14 @@ var ready_stats = function(){
     switch(object_type){     // student, tutor, lesson.
       case 'student':   //student
       case 'tutor':   //tutor
+      case 'lesson':
         if(object_context == 'index'){   // index area
           // this element in student and tutor list
           scmi_move = true;
           scmi_paste = false;   //nothing can be pasted into the index space
         }
         break;
-      case 'slot':   //lesson
+      case 'slot':   //slot
         if(object_context == 'lesson'){   // index area
           // this element in student and tutor list
           // You can only paste if a source for copy or move has been identified.
@@ -2035,7 +2169,13 @@ var ready_stats = function(){
     toggleMenuOff();
     var thisAction =  action.getAttribute("data-action");
     // taskItemInContext is a global variable set when context menu first invoked.
+    //var thisEleId = taskItemInContext.id;    // element 'right clicked' on
+    //var parentTaskItemInContext;
+    //if(taskItemInContext.id == null){    // no id so ignore - go to parent with valid class
+    //  taskItemInContext = clickInsideElementClassList( taskItemInContext.parentNode, taskItemClassList_stats);
+    //}
     var thisEleId = taskItemInContext.id;    // element 'right clicked' on
+    
     //var thisEle = document.getElementById((thisEleId));
 
     // 'thisAction' are basically the context menu selectable items.
@@ -2068,11 +2208,25 @@ var ready_stats = function(){
       // need to get the session/student to be copied from thisEleId
       var catchupId = null;
       var thisEle = document.getElementById(thisEleId);
-      var catchupList = thisEle.getElementsByClassName('personlessons');
-      if(catchupList){
-        var catchupEle = catchupList[0].firstElementChild;
-        if(catchupEle){
-          catchupId = catchupEle.innerHTML;
+      // where are we going to copy from - i.e. which session
+      // If a specific lesson is selected, then copy it.
+      // If 'person' is selected generically, then copy the earliest lesson.
+      console.log(" need to select the lesson");
+      if(thisEleId.match(/^allocate/)){    // reallocate an already allocated lesson
+        catchupId = thisEle.getAttribute('data-domid');
+      }else{   // allocate from the global - oldest first
+        var catchupList = thisEle.getElementsByClassName('personlessons')[0].getElementsByClassName('personlesson');
+        if(catchupList){
+          for (var i=0; i < catchupList.length; i++ ){
+            var catchupEle = catchupList[i];
+            //.getAttribute("data-action")
+            //if(catchupEle.getElementsByClassName('allocate')[0].innerHTML == ''){ // empty, need allocating
+            if(catchupEle.getElementsByClassName('allocate')[0].getAttribute("data-domid") == ''){ // empty, need allocating
+              //catchupId = catchupEle.getElementsByClassName('global')[0].innerHTML;
+              catchupId = catchupEle.getElementsByClassName('global')[0].getAttribute("data-domid");
+              break;
+            }
+          }
         }
       }
       currentActivity['move_ele_id'] = catchupId;
@@ -2127,7 +2281,90 @@ var ready_stats = function(){
         break;
       }
   }
+
+
+  //----------------------- Drag and Drop - stats -------------------------
+  // This is the drag and drop code
+  // which uses ajax to update the database
+  // the drag reverts if database update fails.
+
+  // for moving the lessons
+  function elementdraggable_stats(myelement){
+    $(myelement).draggable({
+      revert: true,
+      zIndex: 100,
+      //comments display on click, remove when begin the drag
+      drag: function(event, ui) {
+        console.dir(ui);
+        console.dir(event);
+        $(this).addClass('make-transparent');
+      },
+      start: function(event, ui) {
+        $('#comments').css('visibility', 'hidden');  
+      },
+      stop: function(event, ui) {
+        $(this).removeClass('make-transparent');
+      }
+    });
+  }
+
+  function slotdroppable_stats(myelement){
+    $(myelement).droppable({
+      accept: ".student, .allocate",
+      drop: function( event, ui ) {
+        var dom_change = {};
+        dom_change['action'] = "move";
+        //var ele_moved = ui.draggable;
+        var thisEle = ui.draggable[0];
+        var catchupId;
+        var flagCatchupFound = false;
+        if (thisEle.id.match(/^allocate/)) {
+          catchupId = thisEle.getAttribute('data-domid');
+          flagCatchupFound = true;
+        }else{
+          var catchupList = thisEle.getElementsByClassName('personlessons')[0].getElementsByClassName('personlesson');
+          if(catchupList){
+            for (var i=0; i < catchupList.length; i++ ){
+              var catchupEle = catchupList[i];
+              //.getAttribute("data-action")
+              //if(catchupEle.getElementsByClassName('allocate')[0].innerHTML == ''){ // empty, need allocating
+              if(catchupEle.getElementsByClassName('allocate')[0].getAttribute("data-domid") == ''){ // empty, need allocating
+                //catchupId = catchupEle.getElementsByClassName('global')[0].innerHTML;
+                catchupId = catchupEle.getElementsByClassName('global')[0].getAttribute("data-domid");
+                flagCatchupFound = true;
+                break;
+              }
+            }
+          }
+        }
+        if(flagCatchupFound == false){
+          return;
+        }
+        dom_change['object_id'] = catchupId;
+        dom_change['move_ele_id'] = catchupId;
+        dom_change['object_type'] = objectidToObjecttype(catchupId);
+        dom_change['to_slot'] = this.id;
+        console.log("drag and drop dropped.");
+        personupdateslesson_Update_stats( dom_change );      //**update**
+        $( this )
+          .removeClass( "my-over" );
+      },
+      over: function( event, ui ) {
+        $( this )
+          .addClass( "my-over" );
+      },
+      out: function( event, ui ) {
+        $( this )
+          .removeClass( "my-over" );
+      }
+    });
+  }
+
+  elementdraggable_stats(".student, .allocate");
+  slotdroppable_stats(".slot");
   
+//---------------------- End of Drag and Drop - stats ---------------------
+
   function personupdateslesson_Update_stats( domchange ){
     //var action = domchange['action'];   //move or copy
     var object_type = domchange['object_type'];
@@ -2151,6 +2388,7 @@ var ready_stats = function(){
         context: domchange,
         success: function(result1, result2, result3){
             console.log("personupdateslesson_Update Ajax response OK");
+            stats_student_update(result1);
             //moveelement_update(result1);
         },
         error: function(xhr){
@@ -2163,11 +2401,68 @@ var ready_stats = function(){
         }
      });
   }
-
-
-
-
   
+  // this function updates the student details:
+  // populates the 'allocate' div with the new lesson details
+  // This is caleed from the ajax response NOT a Web Socket propagation.
+  function stats_student_update(domchange){
+    console.log('entered stats_student_update');
+    if(domchange['to_slot']) {   // processing correct move
+      var fromObjectId = domchange['object_id_old'];
+      var toObjectId   = domchange['object_id'];
+        
+      var parseToStudentId     = toObjectId.match(/(s\d+)$/);
+      var student_domid = parseToStudentId[1];
+      if(student_domid){  
+        var thisEle = document.getElementById(student_domid);
+        var catchupList = thisEle.getElementsByClassName('personlessons')[0].getElementsByClassName('personlesson');
+        if(catchupList){
+          for (var i=0; i < catchupList.length; i++ ){
+            var catchupEle = catchupList[i];
+            //.getAttribute("data-domid")
+            //if(catchupEle.getElementsByClassName('global')[0].innerHTML == fromObjectId){ // lesson of interest
+            // could have been copied from either the global or reallocated from the allocate.
+            if((catchupEle.getElementsByClassName('global')[0].getAttribute("data-domid") == fromObjectId) ||
+               (catchupEle.getElementsByClassName('allocate')[0].getAttribute("data-domid") == fromObjectId)){ // lesson of interest
+              //catchupEle.getElementsByClassName('allocate')[0].innerHTML = toObjectId;
+              var eleUpdateDomid = catchupEle.getElementsByClassName('allocate')[0];
+              eleUpdateDomid.setAttribute("data-domid", toObjectId);
+              eleUpdateDomid.innerHTML = toObjectId;
+              eleUpdateDomid.id = 'allocate_' + toObjectId;
+              break;
+            }
+          }
+        }
+      }
+    }
+  }
+
+
+  function stats_update( statschange ){
+    // This approach updates the stats for the slot if they are shown on the page.
+    //
+    // statschange['slot_id']     = dom id of the slot to be updated;
+    // domchange['html_partial']  = the html for this element generated in
+    //                              the controller.
+
+    // ------------- common initialisation for all operations ---------------
+    
+    if( statschange['actioncable'] ){
+      console.log("stats_update processing - passed through action cable");
+    }else{
+      console.log("stats_update processing - did not passed through action cable");
+    }
+    console.log(statschange);
+    var slot_id      = statschange['slot_id'];
+    // build the dom object to be inserted from the html segment
+    var elecreated = document.createElement('div');
+    elecreated.className = 'statistics';
+    elecreated.innerHTML = statschange['html_partial'];
+    var eleslot = document.getElementById(slot_id);
+    var eletoreplace = eleslot.getElementsByClassName('statistics')[0];
+    eletoreplace.parentNode.replaceChild(elecreated, eletoreplace);
+    scoped_showhidestats(eleslot);
+  }
 };
 
 // Filter students in the stats page
@@ -2192,12 +2487,12 @@ function showhidesites(){
   var thispattern = /hide(.*)/;
   var showList = document.getElementsByClassName('selectsite');
   for(var i = 0; i < showList.length; i++){
-    console.log("showList[i].id: " + showList[i].id);
+    //console.log("showList[i].id: " + showList[i].id);
     var m = thispattern.exec(showList[i].id);
     if( m ){
-      console.log("m: " + m[1]);
+      //console.log("m: " + m[1]);
       var siteid = 'site-' + m[1];
-      console.log("siteid: " + siteid);          
+      //console.log("siteid: " + siteid);          
       if (showList[i].checked){
         document.getElementById(siteid).classList.remove("hideme");
       }else{
@@ -2227,11 +2522,40 @@ function showhidedow(day, selectdowday){
   }
 }
 
+function showcatchup(){showhidescopestats(document, 'catchup');}
+function showfree(){showhidescopestats(document, 'free');}
+function showstats(){showhidescopestats(document, 'stats');}
+function showslotlessons(){showhidescopestats(document, 'slotlessons');}
 
+// This function allows us to limit the scope to a single slot.
+// pass in the dom_id for the slot.
+function scoped_showhidestats(scope){
+  showhidescopestats(scope, 'catchup');
+  showhidescopestats(scope, 'free');
+  showhidescopestats(scope, 'stats');
+  showhidescopestats(scope, 'slotlessons');
+}
+
+function showhidescopestats(scope, type){
+  var myobjects = scope.getElementsByClassName(type);
+  if (document.getElementById('hide' + type).checked){
+    for(var i = 0; i < myobjects.length; i++){
+      myobjects[i].classList.remove("hideme");
+    }
+  }else{
+    for(i = 0; i < myobjects.length; i++){
+      myobjects[i].classList.add("hideme");
+    }
+  }
+}
+
+/*
 function showcatchup(){showhidestats('catchup');}
 function showfree(){showhidestats('free');}
 function showstats(){showhidestats('stats');}
-
+function showslotlessons(){showhidestats('slotlessons');}
+*/
+/*
 function showhidestats(type){
   var myobjects = document.getElementsByClassName(type);
   if (document.getElementById('hide' + type).checked){
@@ -2244,7 +2568,7 @@ function showhidestats(type){
     }
   }
 }
-
+*/
 // Common functions called from both scheduling and stats.
 
 // initialisation that is common to both.
@@ -2327,6 +2651,7 @@ function resizeListener() {
   };
 }
 
+
 // check if clicked element or element in the parent chain 
 // is of the class provided in the list.
 function clickInsideElementClassList( e, classNameList ) {
@@ -2355,6 +2680,12 @@ function clickInsideElementClassList2( el, classNameList ) {
 }
 
 function objectidToObjecttype(myobjectid){
+  // first check if this object is from the 'allocate' div in the students
+  // area of the catchup allocations screen.
+  var parseAllocate = myobjectid.match(/^allocate_/);
+  if(myobjectid.match(/^allocate_/)){
+    return 'lesson';
+  }
   var parseId = myobjectid.match(/(\w)\d+$/ );
   switch(parseId[1]) {
     case 's':
@@ -2372,6 +2703,9 @@ function objectidToObjecttype(myobjectid){
 
 // returns context of 'index' or 'lesson'
 function objectidToContext(myobjectid){
+  if(myobjectid.match(/^allocate_/)){
+    return 'index';
+  }
   var parseId = myobjectid.match(/^[st]\d+$/);
   if(parseId) {
     return 'index';

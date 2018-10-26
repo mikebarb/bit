@@ -49,7 +49,7 @@ class TutrolesController < ApplicationController
       @domchange[k] = v
     end
     # need to ensure object passed is just the student dom id 
-    result = /^(([A-Z]+\d+)n(\d+)t(\d+))$/.match(@domchange['object_id'])
+    result = /^(([A-Z]+\d+l\d+)n(\d+)t(\d+))$/.match(@domchange['object_id'])
     if result
       @domchange['object_id'] = result[1]  # student_dom_id where lesson is to be placed
       @domchange['object_type'] = 'tutor'
@@ -81,7 +81,7 @@ class TutrolesController < ApplicationController
     # identified by the id
     # id = t11111     ->  index
     # id = GUN2018... -> schedule
-    if((result = /^([A-Z]+\d+n(\d+))t(\d+)$/.match(params[:domchange][:object_id])))
+    if((result = /^([A-Z]+\d+l\d+n(\d+))t(\d+)$/.match(params[:domchange][:object_id])))
       tutor_id = result[3]
       old_lesson_id = result[2]
       @domchange['object_type'] = 'tutor'
@@ -97,7 +97,7 @@ class TutrolesController < ApplicationController
     logger.debug "@domchange: " + @domchange.inspect
     
     # to / destination
-    result = /^(([A-Z]+\d+)n(\d+))/.match(params[:domchange][:to])
+    result = /^(([A-Z]+\d+l\d+)n(\d+))/.match(params[:domchange][:to])
     if result 
       new_lesson_id = result[3]
       new_slot_id = result[2]
@@ -162,7 +162,7 @@ class TutrolesController < ApplicationController
     # identified by the id
     # id = t11111     ->  index
     # id = GUN2018... -> schedule
-    if((result = /^(([A-Z]+\d+)n(\d+))t(\d+)$/.match(params[:domchange][:object_id])))
+    if((result = /^(([A-Z]+\d+l\d+)n(\d+))t(\d+)$/.match(params[:domchange][:object_id])))
       slot_id = result[2]
       tutor_dbId = result[4].to_i
       lesson_dbId = result[3].to_i

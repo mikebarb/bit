@@ -1,4 +1,6 @@
 class RolesController < ApplicationController
+  include Calendarutilities
+  
   before_action :set_role, only: [:show, :edit, :update, :destroy]
   before_filter :authenticate_user!, :set_user_for_models
   after_filter :reset_user_for_models
@@ -51,18 +53,20 @@ class RolesController < ApplicationController
       @domchange[k] = v
     end
     # need to ensure object passed is just the student dom id 
-    result = /^(([A-Z]+\d+)n(\d+)s(\d+))$/.match(@domchange['object_id'])
+    result = /^(([A-Z]+\d+l\d+)n(\d+)s(\d+))$/.match(@domchange['object_id'])
     if result
       @domchange['object_id'] = result[1]  # student_dom_id where lesson is to be placed
       @domchange['object_type'] = 'student'
       student_id = result[4]
       lesson_id = result[3]
+      slot_id = result[2]
       @role = Role.where(:student_id => student_id, :lesson_id => lesson_id).first
     end
     if @role.destroy
       respond_to do |format|
         format.json { render json: @domchange, status: :ok }
         ActionCable.server.broadcast "calendar_channel", { json: @domchange }
+        get_slot_stats(slot_id)
       end
     else
       respond_to do |format|
@@ -86,9 +90,10 @@ class RolesController < ApplicationController
     # identified by the id
     # id = t11111     ->  index
     # id = GUN2018... -> schedule
-    if((result = /^([A-Z]+\d+n(\d+))s(\d+)$/.match(params[:domchange][:object_id])))
-      student_id = result[3]
-      old_lesson_id = result[2]
+    if((result = /^(([A-Z]+\d+l\d+)n(\d+))s(\d+)$/.match(params[:domchange][:object_id])))
+      student_id = result[4]
+      old_lesson_id = result[3]
+      old_slot_id = result[2]
       @domchange['object_type'] = 'student'
       @domchange['from'] = result[1]
     elsif((result = /^s(\d+)/.match(params[:domchange][:object_id])))  #index area
@@ -106,22 +111,21 @@ class RolesController < ApplicationController
     # session may or  may not be present - if not present, then we need to
     # create one. From this to_slot parameter, we must derive the 'allocate'
     # session_id.
-    byebug
+    #byebug
     if(params[:domchange].has_key?("to_slot"))
       logger.debug "to_slot present in parameters"
-      result = /^(([A-Z]+\d+)l(\d+))/.match(params[:domchange][:to_slot])
+      result = /^(([A-Z]+\d+l(\d+)))/.match(params[:domchange][:to_slot])
       if result 
         new_slot_dbId = result[3]
         new_slot_id = result[2]
         # Need to find the 'allocate' lesson for this slot.
-        @lesson_new = Lesson
-                            .where(:slot_id => new_slot_dbId, :status => "allocate" )
+        @lesson_new = Lesson.where(:slot_id => new_slot_dbId, :status => "allocate" )
                             .first
         unless @lesson_new
           logger.debug "lesson not found"
           # need to create a new session with status 'allocatae'
           @lesson_new = Lesson.new(slot_id: new_slot_dbId, status: "allocate")
-          #@lesson_new.save
+          @lesson_new.save
         end
         new_lesson_id = @lesson_new.id
         
@@ -129,7 +133,7 @@ class RolesController < ApplicationController
       end
       
     else  
-      result = /^(([A-Z]+\d+)n(\d+))/.match(params[:domchange][:to])
+      result = /^(([A-Z]+\d+l\d+)n(\d+))/.match(params[:domchange][:to])
       if result 
         new_lesson_id = result[3]
         new_slot_id = result[2]
@@ -175,6 +179,10 @@ class RolesController < ApplicationController
       if @role.save
         format.json { render json: @domchange, status: :ok }
         ActionCable.server.broadcast "calendar_channel", { json: @domchange }
+        get_slot_stats(new_slot_id)
+        if(old_slot_id && (new_slot_id != old_slot_id))
+          get_slot_stats(old_slot_id)
+        end
       else
         format.json { render json: @role.errors.messages, status: :unprocessable_entity }
       end
@@ -196,7 +204,7 @@ class RolesController < ApplicationController
     # identified by the id
     # id = t11111     ->  index
     # id = GUN2018... -> schedule
-    if((result = /^(([A-Z]+\d+)n(\d+))s(\d+)$/.match(params[:domchange][:object_id])))
+    if((result = /^(([A-Z]+\d+l\d+)n(\d+))s(\d+)$/.match(params[:domchange][:object_id])))
       slot_id = result[2]
       student_dbId = result[4].to_i
       lesson_dbId = result[3].to_i
@@ -208,17 +216,17 @@ class RolesController < ApplicationController
                   .where(:student_id => student_dbId, :lesson_id => lesson_dbId)
                   .first
 
-    flagupdate = false
+    flagupdate = flagupdatestats = false
     case @domchange['updatefield']
     when 'status'
       if @role.status != @domchange['updatevalue']
         @role.status = @domchange['updatevalue']
-        flagupdate = true
+        flagupdate = flagupdatestats = true
       end
     when 'kind'
       if @role.kind != @domchange['updatevalue']
         @role.kind = @domchange['updatevalue']
-        flagupdate = true
+        flagupdate = flagupdatestats = true
       end
     when 'comment'
       if @role.comment != @domchange['updatevalue']
@@ -249,6 +257,9 @@ class RolesController < ApplicationController
         #format.json { render :show, status: :ok, location: @role }
         format.json { render json: @domchange, status: :ok }
         ActionCable.server.broadcast "calendar_channel", { json: @domchange }
+        if flagupdatestats
+          get_slot_stats(slot_id)
+        end
       else
         logger.debug("errors.messages: " + @role.errors.messages.inspect)
         format.json { render json: @role.errors.messages, status: :unprocessable_entity }
@@ -324,7 +335,7 @@ class RolesController < ApplicationController
   
         @global_lesson_domchange['html_partial'] = render_to_string("calendar/_schedule_lesson_ajax.html", 
                                     :formats => [:html], :layout => false,
-                                    :locals => {:slot => slot_dom_id_base,
+                                    :locals => {:slot => slot_dom_id,
                                                 :lesson => @global_lesson,
                                                 :thistutroles => [],
                                                 :thisroles => []
@@ -339,13 +350,17 @@ class RolesController < ApplicationController
     #byebug
     @copied_role = @role.dup
     @copied_role.lesson_id = @global_lesson.id
+    # for copied roles when students are changed to away, need to change kind to 'catchup'
+    @copied_role.kind = 'catchup'
+    @copied_role.status = 'queued'
+    ### TO BE UPDATD WHEN DATABASE TABLE IS UPDATED!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
     #@copied_role.copied = @role.id               # remember where copied from.
     if @copied_role.save
-        global_lesson_dom_id = slot_dom_id_base +
+        global_lesson_dom_id = slot_dom_id +
                                'n' + @global_lesson.id.to_s.rjust(@sf, "0")
         @global_lesson_domchange = {
           'action'        => 'copy',
-          'object_id'     => slot_dom_id_base + 
+          'object_id'     => slot_dom_id + 
                              'n' + @global_lesson.id.to_s.rjust(@sf, "0") +
                              's' + @copied_role.id.to_s.rjust(@sf, "0"),
           "object_type"   =>"student", 
@@ -358,7 +373,7 @@ class RolesController < ApplicationController
                                     :formats => [:html], :layout => false,
                                     :locals => {:student => @copied_role.student,
                                                 :thisrole => @copied_role,
-                                                :slot => slot_dom_id_base,
+                                                :slot => slot_dom_id,
                                                 :lesson => @global_lesson.id
                                                })
         ActionCable.server.broadcast "calendar_channel", { json: @global_lesson_domchange }

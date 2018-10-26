@@ -159,6 +159,10 @@
   border:5px solid #afa;
 }
 
+.slot:hover {
+  border: 3px solid blue;
+}
+
 .student:hover {
   border: 5px solid blue;
 }
@@ -443,6 +447,28 @@ table, th, td {
   display: inline-block;
 }
 
+.global, .allocate {
+  display: inline-block;
+  border: 2px solid black;
+}
+.global {
+  display: inline-block;
+  border: 2px solid black;
+  background-color: MistyRose;
+}
+.allocate {
+  display: inline-block;
+  border: 2px solid black;
+  background-color: PaleTurquoise;
+}
+
+.allocate:hover {
+  border: 2px solid green;
+  background-color: MistyRose;
+}
+
+
+
 .tutor .tutrolecomment, .student .rolecomment, .checklistlesson {
   color: green;
 }
@@ -452,6 +478,10 @@ table, th, td {
 
 .tutor, .student {
   background-color: white;   
+}
+
+.make-transparent {
+   background-color: rgba(255, 255, 255, .3);
 }
 
 /*

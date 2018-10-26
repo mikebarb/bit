@@ -6,7 +6,7 @@ module ApplicationCable
     def connect
       logger.debug " in ws connect"
       self.current_user = find_verified_user
-      logger.debug "current_user: " + self.current_user.inspect 
+      logger.debug "current_user: " + self.current_user.inspect
     end
  
     private

@@ -1,0 +1,39 @@
+<% #byebug %>
+<div class='stats'><% 
+  if stats.key?('routine') 
+  %><b>routine:</b><br><%
+    stats['routine'].each { |k, v| 
+      if v != 0 
+        if k == 'Free' || k == 'Catchup'
+          %><%= '*' %><% 
+        end 
+        %><%= k + ': ' + v.to_s  %><br><%
+      end
+    }
+  end
+  if stats.key?('flexible') 
+    %><b>flexible:</b><br><% 
+    stats['flexible'].each { |k, v| 
+      if v != 0 
+        if k == 'Free' || k == 'Catchup'
+          %><%= '*' %><% 
+        end 
+        %><%= k + ': ' + v.to_s  if v != 0 %> <br><%
+      end
+    }
+  end
+  if stats.key?('allocate') 
+    %><b>allocate:</b><br><% 
+    stats['allocate'].each { |k, v| 
+      if v != 0 %><%=
+        k + ': ' + v.to_s if v != 0 %> <br><%
+      end
+    }
+  end
+%></div><%
+if stats.key?('sum')
+  %><div class="free"><%= stats['sum']['free'] %></div>
+  <div class="catchup"><%= stats['sum']['catchup'] %></div><%
+end
+%>
+

@@ -64,7 +64,7 @@ class LessonsController < ApplicationController
     end
     @domchange['object_type'] = 'lesson'
     # need to ensure object passed is just the lesson dom id 
-    result = /^(([A-Z]+\d+)n(\d+))/.match(@domchange['object_id'])
+    result = /^(([A-Z]+\d+l\d+)n(\d+))/.match(@domchange['object_id'])
     if result
       @domchange['object_id'] = result[1]  # slot_dom_id where lesson is to be placed
       @domchange['object_type'] = 'session'
@@ -93,9 +93,12 @@ class LessonsController < ApplicationController
     
     @domchange['object_type'] = 'lesson'
     # object passed which determines the slot the new session is to be placed in.
-    result = /^(([A-Z]+)(\d{4})(\d{2})(\d{2})(\d{2})(\d{2}))/.match(@domchange['object_id'])
+    #result = /^(([A-Z]+)(\d{4})(\d{2})(\d{2})(\d{2})(\d{2}))/.match(@domchange['object_id'])
+    result = /^([A-Z]+\d+l(\d+))/.match(@domchange['object_id'])
     if result
       @domchange['to'] = slot_id_basepart = result[1]  # slot_dom_id where lesson is to be placed
+      slot_dbid = result[2]
+=begin
       slot_location = result[2]
       slot_time = DateTime.new(result[3].to_i, result[4].to_i, result[5].to_i,
                                    result[6].to_i, result[7].to_i)
@@ -105,10 +108,13 @@ class LessonsController < ApplicationController
                             {thisdate: slot_time,
                              thislocation: slot_location + '%'
                             }).first  
+=end
     end
-    @domchange['to'] = slot_id_basepart + 'l' + @slot.id.to_s.rjust(@sf, "0")
+    #@domchange['to'] = slot_id_basepart + 'l' + @slot.id.to_s.rjust(@sf, "0")
+
     @lesson = Lesson.new
-    @lesson.slot_id = @slot.id
+    #@lesson.slot_id = @slot.id
+    @lesson.slot_id = slot_dbid
     @lesson.status = @domchange['status']
     respond_to do |format|
       if @lesson.save
@@ -142,7 +148,7 @@ class LessonsController < ApplicationController
     end
 
     # from / source
-    if((result = /^([A-Z]+\d+)n(\d+)$/.match(params[:domchange][:object_id])))
+    if((result = /^([A-Z]+\d+l\d+)n(\d+)$/.match(params[:domchange][:object_id])))
       #slot_id = result[1]
       lesson_dbId   = result[2].to_i
       @domchange['object_type'] = 'lesson'
@@ -190,16 +196,19 @@ class LessonsController < ApplicationController
     end
     
     # from / source
-    if((result = /^([A-Z]+\d+)n(\d+)$/.match(params[:domchange][:object_id])))
+    if((result = /^([A-Z]+\d+l\d+)n(\d+)$/.match(params[:domchange][:object_id])))
       lesson_id   = result[2]
       @domchange['object_type'] = 'lesson'
       @domchange['from'] = result[1]    # old_slot_dom_id
     end
 
     # to / destination
-    result = /^(([A-Z]+)(\d{4})(\d{2})(\d{2})(\d{2})(\d{2}))/.match(params[:domchange][:to])
+    #result = /^(([A-Z]+)(\d{4})(\d{2})(\d{2})(\d{2})(\d{2}))/.match(params[:domchange][:to])
+    result = /^([A-Z]+\d+(l\d+))/.match(params[:domchange][:to])
     if result 
       @domchange['to'] = new_slot_id = result[1]      # slot_dom_id
+      slot_dbid = result[2]
+=begin
       new_slot_location = result[2]
       new_slot_time = DateTime.new(result[3].to_i, result[4].to_i, result[5].to_i,
                                    result[6].to_i, result[7].to_i)
@@ -210,9 +219,13 @@ class LessonsController < ApplicationController
                              thislocation: new_slot_location + '%'
                             }).first  
       @domchange['to'] = @domchange['to'] + 'l' + @slot.id.to_s.rjust(@sf, "0")
+=end
+
     end
     @lesson = Lesson.find(lesson_id)
-    @lesson.slot_id = @slot.id
+    #@lesson.slot_id = @slot.id
+    @lesson.slot_id = slot_dbid
+    
     #### saved later #### @lesson.save
 
     # the object_id will now change (for both move and copy as the inbuild
