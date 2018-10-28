@@ -702,7 +702,7 @@ module Calendarutilities
             logger.debug "catchupFlexible1: " + catchupFlexible1.inspect
             s[ss]['Catchup'] = catchupFlexible1
             s['sum'] = {'free'=>freeRoutine1, 'catchup'=>catchupRoutine1 + catchupFlexible1 }
-            s['sum']['catchup'] -= s['allocate']['A'] if s.has_key?('allocate')
+            s['sum']['catchup'] -= s['allocate']['RCu'] if s.has_key?('allocate')
             #byebug
             cells["stats"] = s.clone
             # keep counts in the cell/slot data
@@ -820,7 +820,7 @@ module Calendarutilities
     catchupFlexible  = 2 * s[ss]['S']-s[ss]['R']-s[ss]['RoTo'] 
     s[ss]['Catchup'] = catchupFlexible
     s['sum'] = {'free'=>freeRoutine, 'catchup'=>catchupRoutine + catchupFlexible }
-    s['sum']['catchup'] -= s['allocate']['A'] if s.has_key?('allocate')
+    s['sum']['catchup'] -= s['allocate']['RCu'] if s.has_key?('allocate')
 
     slot_html_partial = render_to_string("calendar/_stats_slot.html",
                         :formats => [:html], :layout => false,

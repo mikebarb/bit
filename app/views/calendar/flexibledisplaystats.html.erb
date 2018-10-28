@@ -70,7 +70,7 @@
         <div class=personlessons>
           <% v['dom_ids'].each do |dom_id| %>
             <div class="personlesson">
-              <div class='global' data-domid=<%= dom_id %> ><%= dom_id %></div>
+              <div class='global' data-domid=<%= dom_id %> ><%= dom_id %> = <%= slotDomidToText(dom_id) %></div>
               <div class='allocate' data-domid='' ></div>
             </div>
           <% end %>

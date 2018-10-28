@@ -27,6 +27,8 @@ Rails.application.routes.draw do
   get 'admins/googleroster' => 'admins#googleroster', as: :googleroster
   get 'admins/copydaysedit' => 'admins#copydaysedit', as: :copydaysedit
   get 'admins/copydays' => 'admins#copydays', as: :copydays
+  get 'admins/copytermdaysedit' => 'admins#copytermdaysedit', as: :copytermdaysedit
+  get 'admins/copytermdays' => 'admins#copytermdays', as: :copytermdays
   get 'admins/deletedaysedit' => 'admins#deletedaysedit', as: :deletedaysedit
   get 'admins/deletedays' => 'admins#deletedays', as: :deletedays
 
