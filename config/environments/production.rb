@@ -40,10 +40,10 @@ Rails.application.configure do
 
   ############### tempory use #########################
   # logging
-  if ENV["RAILS_LOG_TO_STDOUT"].present?
-    config.logger = Logger.new(STDOUT)
-    config.logger.level = Logger::DEBUG
-  end
+#  if ENV["RAILS_LOG_TO_STDOUT"].present?
+#    config.logger = Logger.new(STDOUT)
+#    config.logger.level = Logger::DEBUG
+#  end
   ############### tempory use #########################
   
   # Compress JavaScripts and CSS.
