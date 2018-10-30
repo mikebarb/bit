@@ -35,8 +35,17 @@ Rails.application.configure do
   #config.serve_static_assets = false
   #config.serve_static_files = false
   # Deprecision warning for v5.1 - replace above line with below line.
-  config.public_file_server.enabled = false
+  #config.public_file_server.enabled = false
+  config.public_file_server.enabled = ENV['RAILS_SERVE_STATIC_FILES'].present?
 
+  ############### tempory use #########################
+  # logging
+  if ENV["RAILS_LOG_TO_STDOUT"].present?
+    config.logger = Logger.new(STDOUT)
+    config.logger.level = Logger::DEBUG
+  end
+  ############### tempory use #########################
+  
   # Compress JavaScripts and CSS.
   # this failed loading heroku - implemented comemnts from:
   # https://github.com/lautis/uglifier/issues/127
