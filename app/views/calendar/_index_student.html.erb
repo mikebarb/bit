@@ -1,0 +1,20 @@
+<div class= student id=<%= "s" + student.id.to_s.rjust(@sf, "0") %> >
+  <div style=persongroup>
+    <div class="studentname studentinline p-name"><%= student.pname %></div>
+    <div class="studentextras studentinline"><%=
+         student.year == nil ? "   " : student.year.rjust(3) 
+         %> <%=
+         student.sex == nil ? "" :
+              student.sex.downcase.include?("female")?
+              "(F) " : student.sex.downcase.include?("male")?
+              "(M) " : "" 
+    %> (stu)</div>
+    <div class="studentcomment comment studentinline">
+      <div class="studentsubjects p-study"><%= student.study %></div>
+      <div class="studentcommentdetail p-comment"><%= student.comment %></div>
+      <div class="statusinfo">
+        <div class="p-status">Detail: <%= student.status %></div>
+      </div>
+    </div>
+  </div>
+</div>

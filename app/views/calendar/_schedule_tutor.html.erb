@@ -1,0 +1,25 @@
+                      <% #byebug %>
+                      <div class="tutor <%= "ft" + tutor.id.to_s.rjust(@sf, "0") 
+                       %><%=            ' t-status-' + set_class_status_f(thistutrole)
+                       %><%= ' t-kind-'   + set_class_kind_f(  thistutrole)
+                       %>" id=<%= slot + "n" + lesson.to_s.rjust(@sf, "0") + "t" + tutor.id.to_s.rjust(@sf, "0") %> >
+                        <div style=persongroup>
+                          <div class="tutorname tutorinline p-name"><%= tutor.pname %> (tut) <%
+                            if tutor.firstaid == 'yes' 
+                              %><%= "+" %><%
+                            end
+                            if tutor.firstlesson == 'yes'
+                              %><%= "*" %><%
+                            end
+                          %></div>
+                          <div class="tutorcomment comment tutorinline ">
+                            <div class="tutorsubjects p-subjects"><%= tutor.subjects %></div>
+                            <div class="tutrolecomment np-comment"><%= thistutrole.comment %></div>
+                            <div class="tutorcommentdetail p-comment"><%= tutor.comment %></div>
+                            <div class="statusinfo">
+                              <div class="l-status np-status">Status: <%= thistutrole.status %></div>
+                              <div class="l-kind np-kind">Kind: <%= thistutrole.kind %></div>
+                            </div>
+                          </div>
+                        </div>
+                      </div>

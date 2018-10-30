@@ -63,34 +63,28 @@
   width: 74%;
 }
 
-.n-status-onCall {
-  background-color: cornflowerblue;
+.n-status-onCall, #lesson-status-oncall {
+  background-color: aqua;
   border-color: blue;
 }
 
-.n-status-onSetup {
+.n-status-onSetup, #lesson-status-onsetup {
   background-color: aquamarine;
   border-color: green;
 }
 
-.n-status-on_BFL {
+.n-status-on_BFL, #lesson-status-on_BFL {
   background-color: lemonchiffon;
   border-color: yellow;
 }
 
-.n-status-standard {
+.n-status-standard, #lesson-status-standard {
   background-color: lavenderblush;
   border-color: hotpink;
 }
 
-.n-status-free {
-  background-color: #75e052;
-  border-color: #85c270;
-}
-
-
 .tutor {
-  margin: 4px 1px 1px 1px;
+  margin: 1px;
   color: black;
   background-color: #aaf;
   line-height: 18px;
@@ -130,37 +124,21 @@
   vertical-align: top;
 }
 
-
 .tutorname {
-  //display: inline-block;
   width: 100%;
 }
 
-//.grouptutors .tutorname {
-//  display: in-line block;
-//}
-
 .tutorcomment {
-  //display: inline-block;
-  /* background-color: white; */
   width: 100%;
   padding-left: 1%;
 }
-//.grouptutors .tutorcomment {
-//  width: 100%;
-//  padding-left: 1%;
-//}
 
 .student {
-  margin: 4px 1px 1px 1px;
+  margin: 1px;
   color: black;
-  //background-color: #afa;
+  background-color: #afa;
   line-height: 18px;
   border:5px solid #afa;
-}
-
-.slot:hover {
-  border: 3px solid blue;
 }
 
 .student:hover {
@@ -168,23 +146,13 @@
 }
 
 .studentname {
-  //display: inline-block;
   width: 100%;
 }
-//.groupstudents .studentname {
-//  display: none;
-//  width: 100%;
-//}
 
 .studentcomment {
-  //display: inline-block;
-  background-color: white;
+  //background-color: white;
   width: 100%;
 }
-//.groupstudents .studentcomment {
-//  display: none;
-//  width: 100%;
-//}
 
 #edit-comment-button {
     background-color: #4CAF50; /* Green */
@@ -207,7 +175,7 @@ table {
   width: 100%; 
 }
 table, th, td {
-  border: 3px solid black;
+  border: 1px solid black;
 }
 
 .firsttablecolumn {
@@ -231,7 +199,7 @@ table, th, td {
 }
 
 .ui-draggable-dragging {
-  //border: 5px solid red;
+  border: 5px solid green;
 }
 
 .ui-state-highlight {
@@ -241,7 +209,6 @@ table, th, td {
 .ui-droppable-hover {
   border: 5px solid red;
 }
-
 
 .updating {
   background-color: amber;
@@ -332,7 +299,7 @@ table, th, td {
   z-index: 10;
   //padding: 12px 0;
   width: 240px;
-  height: 340px;
+  //height: 340px;
   background-color: #fff;
   border: solid 1px #dfdfdf;
   box-shadow: 1px 1px 2px #cfcfcf;
@@ -447,28 +414,6 @@ table, th, td {
   display: inline-block;
 }
 
-.global, .allocate {
-  display: inline-block;
-  border: 2px solid black;
-}
-.global {
-  display: inline-block;
-  border: 2px solid black;
-  background-color: MistyRose;
-}
-.allocate {
-  display: inline-block;
-  border: 2px solid black;
-  background-color: PaleTurquoise;
-}
-
-.allocate:hover {
-  border: 2px solid green;
-  background-color: MistyRose;
-}
-
-
-
 .tutor .tutrolecomment, .student .rolecomment, .checklistlesson {
   color: green;
 }
@@ -478,10 +423,6 @@ table, th, td {
 
 .tutor, .student {
   background-color: white;   
-}
-
-.make-transparent {
-   background-color: rgba(255, 255, 255, .3);
 }
 
 /*
@@ -521,22 +462,22 @@ table, th, td {
 
 // tutor status
 
-.t-status-scheduled .tutorname   {
+.t-status-scheduled .tutorname, #tutor-status-scheduled  {
   background-color: mediumturquoise;   
 }
-.t-status-notified .tutorname {
+.t-status-notified .tutorname, #tutor-status-notified {
   background-color: mediumaquamarine;   
 }
-.t-status-confirmed .tutorname {
+.t-status-confirmed .tutorname, #tutor-status-confirmed {
   background-color: palegreen;   
 }
-.t-status-attended .tutorname {
+.t-status-attended .tutorname, #tutor-status-attended {
   background-color: yellowgreen;   
 }
-.t-status-deal .tutorname {
+.t-status-deal .tutorname, #tutor-status-deal {
   background-color: fuchsia;   // a highlighter pink 
 }
-.t-status-away .tutorname {
+.t-status-away .tutorname, #tutor-status-away {
   background-color: dimgrey;      // light gray   
 }
 // note: absent defined previously
@@ -549,26 +490,26 @@ table, th, td {
 .t-status-dealtAbsent .tutorname {
   background-color: #666666;   //grey 
 }
-.t-status-absent .tutorname {
+.t-status-absent .tutorname, #tutor-status-absent {
   background-color: #CC0000;   //dark red
 }
 
-.t-kind-standard .statusinfo {
+.t-kind-standard .statusinfo, #tutor-kind-standard {
   background-color: mediumspringgreen;  
 }
-.t-kind-training .statusinfo {
+.t-kind-training .statusinfo, #tutor-kind-training {
   background-color: sandybrown;  
 }
-.t-kind-called .statusinfo {
+.t-kind-called .statusinfo, #tutor-kind-called {
   background-color: lightskyblue;  
 }
-.t-kind-relief .statusinfo {
+.t-kind-relief .statusinfo, #tutor-kind-relief {
   background-color: wheat;  
 }
 
 // already existing kinds - do not want to remove
 // in order to ensure old entries (imported) remain working
-.t-kind-BFL .statusinfo {
+.t-kind-BFL .statusinfo, #tutor-kind-bfl {
   background-color: #ffff00;   //yellow  
 }
 .t-kind-away-action .statusinfo {
@@ -589,10 +530,10 @@ table, th, td {
 .t-kind-awayAction .statusinfo {
   background-color: #CC0000;   //dark rec
 }
-.t-kind-onCall .statusinfo {
+.t-kind-onCall .statusinfo, #tutor-kind-oncall {
   background-color: #00FFFF;   //ligt blue
 }
-.t-kind-onSetup .statusinfo {
+.t-kind-onSetup .statusinfo, #tutor-kind-onsetup {
   background-color: #EAD1DC;   //ligt magneta 3
 }
 
@@ -648,16 +589,16 @@ table, th, td {
 // already existing statuses - do not want to remove
 // in order to ensure old entries (imported) remain working
 
-.s-status-scheduled .studentname {
+.s-status-scheduled .studentname, #student-status-scheduled {
   background-color: mediumturquoise;   
 }
-.s-status-attended .studentname {
+.s-status-attended .studentname, #student-status-attended {
   background-color: yellowgreen;   
 }
-.s-status-deal .studentname {
+.s-status-deal .studentname, #student-status-deal {
   background-color: fuchsia;        // a highlighter pink 
 }
-.s-status-away .studentname {
+.s-status-away .studentname, #student-status-away {
   background-color: dimgrey;      // light gray   
 }
 // absent covered below.
@@ -670,24 +611,24 @@ table, th, td {
   background-color: #666666;   // grey  
 }
 
-.s-status-absent .studentname {
+.s-status-absent .studentname, #student-status-absent {
   background-color: #CC0000;   // grey  
 }
 
 // ------ student kind --------------------
-.s-kind-first .statusinfo {
+.s-kind-first .statusinfo, #student-kind-first {
   background-color: #B6D7A8;   //light green 2  
 }
-.s-kind-catchup .statusinfo {
+.s-kind-catchup .statusinfo, #student-kind-catchup {
   background-color: lightblue;  
 }
-.s-kind-fortnightly .statusinfo {
+.s-kind-fortnightly .statusinfo, #student-kind-fortnightly {
   background-color: steelblue;  
 }
-.s-kind-onetoone .statusinfo {
+.s-kind-onetoone .statusinfo, #student-kind-onetoone {
   background-color: salmon;  
 }
-.s-kind-standard .statusinfo {
+.s-kind-standard .statusinfo, #student-kind-standard {
   background-color: mediumspringgreen;  
 }
 
@@ -698,7 +639,7 @@ table, th, td {
   background-color: #ffff00;   //yellow  
 }
 
-.s-kind-free .statusinfo {
+.s-kind-free .statusinfo, #student-kind-free {
   background-color: #00ff00;   //green  
 }
 
@@ -847,21 +788,6 @@ table, th, td {
 }
 
 
-// statistics specific items
-.formatcatchup, .catchup {
-    color: green; 
-}
-.formatfree, .free {
-    color: blue;  
-}
-.selectshowstats {
-    display: inline-block;
-}
 
-.selectdayofweek{
-    display: inline-block;
-}
 
-.dow1, .dow2, dow3, dow4, dow5 {
-  text-align: center;
-}
+

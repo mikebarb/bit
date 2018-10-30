@@ -1,5 +1,6 @@
 class StudentsController < ApplicationController
   include Historyutilities
+  include Calendarutilities
   before_action :set_student, only: [:show, :showsessions, :edit, :update, :destroy]
   before_filter :authenticate_user!, :set_user_for_models
   after_filter :reset_user_for_models
@@ -80,31 +81,78 @@ class StudentsController < ApplicationController
   # POST /studentdetailupdateskc
   # POST /studentdetailupdateskc.json
   def studentdetailupdateskc
-    @student = Student.find(params[:student_id])
-    flagupdate = false
-    if params[:comment]
-      if @student.comment != params[:comment]
-        @student.comment = params[:comment]
+    @domchange = Hash.new
+    params[:domchange].each do |k, v| 
+      logger.debug "k: " + k.inspect + " => v: " + v.inspect 
+      @domchange[k] = v
+    end
+
+    # from / source
+    # need to check if is from index area or schedule area
+    # identified by the id
+    # id = t11111     ->  index
+    # id = GUN2018... -> schedule
+    if((result = /(s(\d+))$/.match(params[:domchange][:object_id])))
+      student_dbId = result[2].to_i
+      @domchange['object_type'] = 'student'
+      @domchange['object_id_old'] = @domchange['object_id']
+      @domchange['object_id'] = result[1]
+    end
+
+    @student = Student.find(student_dbId)
+    flagupdate = flagupdatestats = false
+    case @domchange['updatefield']
+    when 'comment'
+      if @student.comment != @domchange['updatevalue']
+        @student.comment = @domchange['updatevalue']
+        flagupdate = true
+      end
+    when 'status'
+      if @student.status != @domchange['updatevalue']
+        @student.status = @domchange['updatevalue']
+        flagupdatestats = flagupdate = true
+      end
+    when 'study'
+      if @student.study != @domchange['updatevalue']
+        @student.study = @domchange['updatevalue']
         flagupdate = true
       end
     end
-    if params[:study]
-      if @student.study != params[:study]
-        @student.study = params[:study]
-        flagupdate = true
-      end
-    end
-    if params[:status]
-      if @student.status != params[:status]
-        @student.status = params[:status]
-        flagupdate = true
-      end
-    end
-    
     respond_to do |format|
       if @student.save
-        #format.html { redirect_to @student, notice: 'Student was successfully updated.' }
-        format.json { render :show, status: :ok, location: @student }
+        format.json { render json: @domchange, status: :ok }
+        #ActionCable.server.broadcast "calendar_channel", { json: @domchange }
+        ably_rest.channels.get('calendar').publish('json', @domchange)
+        # Need to get all the slots that these students are in.
+        if flagupdatestats
+          ##------------------------------- hints ------------------
+          ## For includes (and joins):
+          ## 1. Names are association names (not the table names!)
+          ## 2. to load multiple associations, use an array
+          ## 3. to load associations with children, use a hash => 
+          ##      key is parent association name, 
+          ##      value is description of child association
+          ##--------------------------------------------------------
+          #this_start_date = Time.now()
+          this_start_date = Time.strptime("2018-06-25", "%Y-%m-%d")
+          #this_end_date = this_start_date + 3.days
+          stats_slots = Slot
+                        .select('id', 'timeslot', 'location')
+                        .joins({lessons: :roles})
+                        .where('student_id = :sid AND
+                                timeslot > :sd', {sid: @student.id, sd: this_start_date})
+          stats_slot_domids = stats_slots.map do |o| 
+            o.location[0,3].upcase + o.timeslot.strftime('%Y%m%d%H%M') +
+                                    'l' + o.id.to_s.rjust(@sf, "0")
+          end
+          logger.debug "=============stats_slot_domids: " + stats_slot_domids.inspect 
+          stats_slot_domids.each do |this_domid|
+            # need to pass in slot_dom_id, however only extracts slot db id,
+            # so do a fudge here so extraction of db_id works.
+            get_slot_stats(this_domid)  # need to pass in slot_dom_id
+            logger.debug "***************calling get_slot_stats: " + this_domid.inspect
+          end
+        end
       else
         logger.debug("errors.messages: " + @student.errors.messages.inspect)
         format.json { render json: @student.errors.messages, status: :unprocessable_entity }

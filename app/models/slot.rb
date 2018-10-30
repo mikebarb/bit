@@ -1,4 +1,5 @@
-class Slot < ActiveRecord::Base
+#class Slot < ActiveRecord::Base
+class Slot < ApplicationRecord    # required migrating to rails 5.0
   has_many :lessons
 
   validates :timeslot, :location, presence:true

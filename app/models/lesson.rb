@@ -1,4 +1,6 @@
-class Lesson < ActiveRecord::Base
+#class Lesson < ActiveRecord::Base
+class Lesson < ApplicationRecord    # required migrating to rails 5.0
+
   belongs_to :slot
   has_many :roles
   has_many :students, through: :roles

@@ -41,56 +41,110 @@ class TutrolesController < ApplicationController
     end
   end
 
-  # POST /removetutorfromlesson.json
+ # POST /removetutorfromlesson.json
   def removetutorfromlesson
-    logger.debug("removetutorfromlesson")
-    @tutrole = Tutrole.where(:tutor_id => params[:tutor_id], :lesson_id => params[:old_lesson_id]).first
-    logger.debug("found tutrole: " + @tutrole.inspect)
-    #@tutrole1 = Tutrole.find(@tutrole.id)
-    #logger.debug("found tutrole1: " + @tutrole1.inspect)
-    respond_to do |format|
-      #if @tutrole1.destroy
-      if @tutrole.destroy
-        #format.json { render :show, status: :removed, location: @tutrole1 }
-        format.json { head :no_content }
-      else
-        logger.debug("errors.messages: " + @tutrole.errors.messages.inspect)
-        format.json { render json: @tutrole.errors.full_messages, status: :unprocessable_entity }
+    @domchange = Hash.new
+    params[:domchange].each do |k, v| 
+      logger.debug "k: " + k.inspect + " => v: " + v.inspect 
+      @domchange[k] = v
+    end
+    # need to ensure object passed is just the student dom id 
+    result = /^(([A-Z]+\d+l\d+)n(\d+)t(\d+))$/.match(@domchange['object_id'])
+    if result
+      @domchange['object_id'] = result[1]  # student_dom_id where lesson is to be placed
+      @domchange['object_type'] = 'tutor'
+      tutor_id = result[4]
+      lesson_id = result[3]
+      @tutrole = Tutrole.where(:tutor_id => tutor_id, :lesson_id => lesson_id).first
+    end
+    if @tutrole.destroy
+      respond_to do |format|
+        format.json { render json: @domchange, status: :ok }
+        #ActionCable.server.broadcast "calendar_channel", { json: @domchange }
+        ably_rest.channels.get('calendar').publish('json', @domchange)
+      end
+    else
+      respond_to do |format|
+        format.json { render json: @lesson.errors, status: :unprocessable_entity  }
       end
     end
   end
 
-  # Copy a tutor from one lesson to another. Actional just a new tutrole entry with current
-  # student attached to a new parent.
-  # POST /tutorcopylesson.json
-  def tutorcopylesson
-    @tutrole = Tutrole.new(:tutor_id => params[:tutor_id], :lesson_id => params[:new_lesson_id])
-    if params[:old_lesson_id]
-      @tutrole_from = Tutrole.where(:tutor_id => params[:tutor_id],
-                              :lesson_id => params[:old_lesson_id]).first
-      @tutrole.status = @tutrole_from.status
-      @tutrole.kind   = @tutrole_from.kind
+  def tutormovecopylesson
+    @domchange = Hash.new
+    params[:domchange].each do |k, v| 
+      logger.debug "k: " + k.inspect + " => v: " + v.inspect 
+      @domchange[k] = v
     end
-    respond_to do |format|
-      if @tutrole.save
-        format.json { render :show, status: :created, location: @role }
-      else
-        logger.debug("errors.messages: " + @tutrole.errors.messages.inspect)
-        format.json { render json: @tutrole.errors.full_messages, status: :unprocessable_entity }
+    
+    # from / source
+    # need to check if is from index area or schedule area
+    # identified by the id
+    # id = t11111     ->  index
+    # id = GUN2018... -> schedule
+    if((result = /^([A-Z]+\d+l\d+n(\d+))t(\d+)$/.match(params[:domchange][:object_id])))
+      tutor_id = result[3]
+      old_lesson_id = result[2]
+      @domchange['object_type'] = 'tutor'
+      @domchange['from'] = result[1]
+    elsif((result = /^t(\d+)/.match(params[:domchange][:object_id])))  #index area
+      tutor_id = result[1]
+      @domchange['object_type'] = 'tutor'
+      # ONLY a copy allowed when source is in index index area.
+      @domchange['action'] = 'copy' if  @domchange['action'] == 'move'   
+    else
+      return
+    end
+    logger.debug "@domchange: " + @domchange.inspect
+    
+    # to / destination
+    result = /^(([A-Z]+\d+l\d+)n(\d+))/.match(params[:domchange][:to])
+    if result 
+      new_lesson_id = result[3]
+      new_slot_id = result[2]
+      @domchange['to'] = result[1]
+    end
+
+    if( @domchange['action'] == 'move')    # move
+      @tutrole = Tutrole
+                  .includes(:tutor)
+                  .where(:tutor_id => tutor_id, :lesson_id => old_lesson_id)
+                  .first
+      @tutrole.lesson_id = new_lesson_id
+    else    # copy
+      @tutrole = Tutrole.new(:tutor_id => tutor_id, :lesson_id => new_lesson_id)
+      # copy relevant info from old tutrole (status & kind)
+      if old_lesson_id
+        @tutrole_from = Tutrole.where(:tutor_id  => tutor_id,
+                                      :lesson_id => old_lesson_id).first
+        @tutrole.status = @tutrole_from.status
+        @tutrole.kind   = @tutrole_from.kind
       end
     end
-  end
 
-  # PATCH/PUT /tutormovelesson.json
-  def tutormovelesson
-    @tutrole = Tutrole.where(:tutor_id => params[:tutor_id], :lesson_id => params[:old_lesson_id]).first
-    @tutrole.lesson_id = params[:new_lesson_id]
+    @domchange['html_partial'] = render_to_string("calendar/_schedule_tutor.html",
+                                    :formats => [:html], :layout => false,
+                                    :locals => {:tutor => @tutrole.tutor, 
+                                                :thistutrole => @tutrole, 
+                                                :slot => new_slot_id, 
+                                                :lesson => new_lesson_id
+                                               })
+
+    # the object_id will now change (for both move and copy as the inbuild
+    # lesson number will change.
+    @domchange['object_id_old'] = @domchange['object_id']
+    @domchange['object_id'] = new_slot_id + "n" + new_lesson_id.to_s.rjust(@sf, "0") +
+                    "t" + tutor_id.to_s.rjust(@sf, "0")
+            
+    # want to hold the name for sorting purposes in the DOM display
+    @domchange['name'] = @tutrole.tutor.pname
+    
     respond_to do |format|
       if @tutrole.save
-        #format.html { redirect_to @student, notice: 'Student was successfully updated.' }
-        format.json { render :show, status: :ok, location: @tutrole }
+        format.json { render json: @domchange, status: :ok }
+        #ActionCable.server.broadcast "calendar_channel", { json: @domchange }
+        ably_rest.channels.get('calendar').publish('json', @domchange)
       else
-        logger.debug("errors.messages: " + @tutrole.errors.messages.inspect)
         format.json { render json: @tutrole.errors.messages, status: :unprocessable_entity }
       end
     end
@@ -99,40 +153,69 @@ class TutrolesController < ApplicationController
   # PATCH/PUT /tutorupdateskc.json
   # ajax updates skc = status kind comment
   def tutorupdateskc
-    @tutrole = Tutrole.where(:tutor_id => params[:tutor_id], 
-                             :lesson_id => params[:lesson_id]).first
+    @domchange = Hash.new
+    params[:domchange].each do |k, v| 
+      logger.debug "k: " + k.inspect + " => v: " + v.inspect 
+      @domchange[k] = v
+    end
+    
+    # from / source
+    # need to check if is from index area or schedule area
+    # identified by the id
+    # id = t11111     ->  index
+    # id = GUN2018... -> schedule
+    if((result = /^(([A-Z]+\d+l\d+)n(\d+))t(\d+)$/.match(params[:domchange][:object_id])))
+      slot_id = result[2]
+      tutor_dbId = result[4].to_i
+      lesson_dbId = result[3].to_i
+      @domchange['object_type'] = 'tutor'
+      @domchange['from'] = result[1]
+    end
+
+    @tutrole = Tutrole.includes(:tutor)
+                      .where(:tutor_id => tutor_dbId, :lesson_id => lesson_dbId)
+                      .first
+                      
     flagupdate = false
-    if params[:status]
-      if @tutrole.status != params[:status]
-        @tutrole.status = params[:status]
+    case @domchange['updatefield']
+    when 'status'
+      if @tutrole.status != @domchange['updatevalue']
+        @tutrole.status = @domchange['updatevalue']
+        flagupdate = true
+      end
+    when 'kind'
+      if @tutrole.kind != @domchange['updatevalue']
+        @tutrole.kind = @domchange['updatevalue']
+        flagupdate = true
+      end
+    when 'comment'
+      if @tutrole.comment != @domchange['updatevalue']
+        @tutrole.comment = @domchange['updatevalue']
         flagupdate = true
       end
     end
-    if params[:kind]
-      if @tutrole.kind != params[:kind]
-        @tutrole.kind = params[:kind]
-        flagupdate = true
-      end
-    end
-    if params[:comment]
-      if @tutrole.comment != params[:comment]
-        @tutrole.comment = params[:comment]
-        flagupdate = true
-      end
-    end
+    
+    @domchange['html_partial'] = render_to_string("calendar/_schedule_tutor.html",
+                                :formats => [:html], :layout => false,
+                                :locals => {:tutor => @tutrole.tutor, 
+                                            :thistutrole => @tutrole, 
+                                            :slot => slot_id, 
+                                            :lesson => lesson_dbId
+                                           })
+    
     #Thread.current[:current_user_id] = current_user.id
     @updateValues = "test"
     respond_to do |format|
       if @tutrole.save
-        #format.html { redirect_to @tutor, notice: 'Tutor was successfully updated.' }
-        format.json { render :show, status: :ok, location: @tutrole }
+        format.json { render json: @domchange, status: :ok }
+        #ActionCable.server.broadcast "calendar_channel", { json: @domchange }
+        ably_rest.channels.get('calendar').publish('json', @domchange)
       else
         logger.debug("errors.messages: " + @tutrole.errors.messages.inspect)
         format.json { render json: @tutrole.errors.messages, status: :unprocessable_entity }
       end
     end
   end
-
 
   # PATCH/PUT /tutroles/1
   # PATCH/PUT /tutroles/1.json
@@ -179,7 +262,9 @@ class TutrolesController < ApplicationController
                      :old_lesson_id, :status, :kind, :comment,
                      :domchange => [:action, :ele_new_parent_id, 
                                     :ele_old_parent_id, :move_ele_id, 
-                                    :element_type, :new_value]
+                                    :element_type, :new_value, 
+                                    :object_id, :object_type, :to,
+                                    :updatefield, :updatevalue]
       )
     end
 

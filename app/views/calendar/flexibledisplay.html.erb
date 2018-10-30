@@ -1,3 +1,4 @@
+<div id="page_name">calendar</div>
 <div id="sticky-header">
   <h1 class="sticky-header__title"><%= @displayHeader %></h1>
   <img class="sticky-header__icon" src=""/>
@@ -17,23 +18,30 @@
 
     <div id="selectshows">
         <div class="checklisttutors">
-          <input id=hidetutors class=selectshow onclick="selectshows()" type="checkbox" >Tutors
-          <input id=hidestudents class=selectshow onclick="selectshows()" type="checkbox" >Students;
-          Hide Comments=>(<input id=hidecomments class=selectshow onclick="selectshows()" type="checkbox" >All;
+          <input id=hidetutors class=selectshow onclick="selectshows(this)" type="checkbox" >Tutors
+          <input id=hidestudents class=selectshow onclick="selectshows(this)" type="checkbox" >Students;
+          Hide Comments=>(<input id=hidecomments class=selectshow onclick="selectshows(this)" type="checkbox" >All;
         </div>
         <div class=checklistlesson>
-        Lesson=>(<input id=hidetutorlessoncomments class=selectshow onclick="selectshows()" type="checkbox" >tutors, 
-        <input id=hidestudentlessoncomments class=selectshow onclick="selectshows()" type="checkbox" >students ), 
+        Lesson=>(<input id=hidetutorlessoncomments class=selectshow onclick="selectshows(this)" type="checkbox" >tutors, 
+        <input id=hidestudentlessoncomments class=selectshow onclick="selectshows(this)" type="checkbox" >students ), 
         </div>
         
         <div class=checklistpersonal>
-        Personal=>(<input id=hidetutorcomments class=selectshow onclick="selectshows()" type="checkbox" >tutors,
-        <input id=hidestudentcomments class=selectshow onclick="selectshows()" type="checkbox" >students )
+        Personal=>(<input id=hidetutorcomments class=selectshow onclick="selectshows(this)" type="checkbox" >tutors,
+        <input id=hidestudentcomments class=selectshow onclick="selectshows(this)" type="checkbox" >students )
         </div>)
         
         <div class=checklistlessons>
-        Hide=>(<input id=hidelessonsOnsetup class=selectshow onclick="selectshows()" type="checkbox" >onSetup,
-        <input id=hidelessonsOncall class=selectshow onclick="selectshows()" type="checkbox" >onCall )
+        Hide=>(<input id=hidelessonsOnsetup class=selectshow onclick="selectshows(this)" type="checkbox" >onSetup,
+        <input id=hidelessonsOncall   class=selectshow onclick="selectshows(this)" type="checkbox" >onCall
+        <input id=hidelessonsOnBFL   class=selectshow onclick="selectshows(this)" type="checkbox" >onBFL
+        <input id=hidelessonsFree     class=selectshow onclick="selectshows(this)" type="checkbox" >free
+        <input id=hidelessonsStandard class=selectshow onclick="selectshows(this)" type="checkbox" >standard
+        <input id=hidelessonsRoutine  class=selectshow onclick="selectshows(this)" type="checkbox" >routine
+        <input id=hidelessonsFlexible class=selectshow onclick="selectshows(this)" type="checkbox" >flexible
+        <input id=hidelessonsAllocate class=selectshow onclick="selectshows(this)" type="checkbox" >allocate
+        <input id=hidelessonsGlobal   class=selectshow onclick="selectshows(this)" type="checkbox" >global )
         </div>
         
         <br>
@@ -48,9 +56,22 @@
           <option value="Away">Away</option>
         </select>
         <br>
+        <input id=enableQuickKind type="checkbox" > Enable quick setting of kind to
+        <select name="quickKind" id="quickKindValue">
+          <option value="Standard">Standard</option>
+        </select>
+        <br>
+        <input id=enableQuickPersonStatus type="checkbox" > Enable quick setting of student-person-status to
+        <select name="quickPersonStatus" id="quickPersonStatusValue">
+          <option value="standard">Standard</option>
+          <option value="onetoone">OneToOne</option>
+          <option value="fortnightly">Fortnightly</option>
+          <option value="new">New</option>
+        </select>
+        <br>
         <% listofsites.each_with_index do |site, i| %>
         <div class="<%= "selectSite" + site %> jumptosite">
-        <input id=<%= 'hide' + site %> class="selectshow selectsite" onclick="selectshows()" type="checkbox" ><%= site + "  " %> 
+        <input id=<%= 'hide' + site %> class="selectshow selectsite" onclick="selectshows(this)" type="checkbox" ><%= site + "  " %> 
         </div>
         <% end %>
     </div>
@@ -67,45 +88,13 @@
     
         <div class=index-tutors id=index-tutors>
             <% @tutors.each do |tutor| %>
-                <div class=tutor id=<%= "t" + tutor.id.to_s.rjust(@sf, "0") %> >
-                    <div style=persongroup>
-                        <div class="tutorname tutorinline">tutor: <%= tutor.pname %></div>
-                        <div class="tutorcomment comment tutorinline">
-                          <div class="tutorsubjects"><%= tutor.subjects %>
-                            <% if tutor.firstaid == 'yes' %>
-                              <%= "+" %>
-                            <% end %>
-                            <% if tutor.firstlesson == 'yes' %>
-                              <%= "*" %>
-                            <% end %>
-                          </div>
-                          <div class="tutorcommentdetail"><%= tutor.comment %></div>
-                        </div>
-                    </div>
-                </div>
+              <%= render partial: "index_tutor", locals: {tutor: tutor} %>
             <% end %>
         </div>
     
         <div class=index-students id=index-students>
             <% @students.each do |student| %>
-                <div class= student id=<%= "s" + student.id.to_s.rjust(@sf, "0") %> >
-                    <div style=persongroup>
-                        <div class="studentname studentinline">student: <%= student.pname %></div>
-                        <div class="studentcomment comment studentinline">
-    
-                          <div class="studentsubjects"><%= student.sex == nil ? "" :
-                            student.sex.downcase.include?("female")?
-                              "(F) " : student.sex.downcase.include?("male")?
-                              "(M) " : "" 
-                            %> Yr: <%= student.year == nil ? "   " : student.year.rjust(3) %> | <%= student.study %></div>
-                          <br>
-                          <div class="studentcommentdetail"><%= student.comment %></div>
-                          <div class="statusinfo">
-                            <div class="p-status">Detail: <%= student.status %></div>
-                          </div>
-                        </div>
-                    </div>
-                </div>
+              <%= render partial: "index_student", locals: {student: student} %>
             <% end %>
         </div>
     </div>
@@ -132,8 +121,11 @@
            next
         end 
       end %>
-      <% if cells.key?("slotid") then %>
-        <td class="cell slot" id=<%= cells["id_dom"] + "l" + cells["slotid"].rjust(@sf, "0") %>  >
+      <% if cells.key?("slotid") then 
+          #cell_id_dom = cells["id_dom"] + "l" + cells["slotid"].rjust(@sf, "0")
+          cell_id_dom = cells["id_dom"] + "l" + cells["slotid"].rjust(@sf, "0")
+      %>
+        <td class="cell slot" id=<%= cell_id_dom %>  >
       <% elsif cells.key?("value") then %>
         <% if firsttablecolumn == true then
           firsttablecolumn = false %>
@@ -146,91 +138,12 @@
       <% end %> 
       <% if cells.key?("values") then %>       
         <% if cells["values"].respond_to?(:each) then %>
-          <% #cells["values"].sort_by {|obj| [valueOrderStatus(obj),valueOrder(obj)] }.each do |entry| %>
+          <% #slot = cells["id_dom"] 
+              slot = cell_id_dom
+          %>
           <% cells["values"].each do |entry| %>
-            <div class="lesson <%= 'n-status-' + set_class_status_f(entry) %>" id=<%= cells["id_dom"] + "n" + entry.id.to_s.rjust(@sf, "0") %> >
-              
-              <div class="grouptutors">
-                <% #if entry.tutors.respond_to?(:each) then %>
-                <% if @tutrole_lessonindex.has_key? entry.id then %>
-                  <% #entry.tutors.sort_by {|obj| obj.pname }.each do |tutor| %>
-                  <% @tutrole_lessonindex[entry.id].each do |tutroleInfo_index| %>
-                    <% thistutrole = @tutroleinfo[tutroleInfo_index] %>
-                    <% tutor = thistutrole.tutor %> 
-                    <% #if tutor then %>
-                      <div class="tutor <%= "ft" + tutor.id.to_s.rjust(@sf, "0") 
-                       %><%=            ' t-status-' + set_class_status_f(thistutrole)
-                       %><%= ' t-kind-'   + set_class_kind_f(  thistutrole)
-                       %>" id=<%= cells["id_dom"] + "n" + entry.id.to_s.rjust(@sf, "0") + "t" + tutor.id.to_s.rjust(@sf, "0") %> >
-                        <div style=persongroup>
-                          <div class="tutorname tutorinline "><%= tutor.pname %> (tut)</div>
-                          <div class="tutorcomment comment tutorinline ">
-                            <% #thistutrole = entry.tutroles.where(tutor_id: tutor.id).first %>
-                            <div class="tutorsubjects"><%= tutor.subjects %>
-                              <% if tutor.firstaid == 'yes' %>
-                                <%= "+" %>
-                              <% end %>
-                              <% if tutor.firstlesson == 'yes' %>
-                                <%= "*" %>
-                              <% end %>
-                            </div>
-                            <div class="tutrolecomment"><%= thistutrole.comment %></div>
-                            <div class="tutorcommentdetail"><%= tutor.comment %></div>
-                            <div class="statusinfo">
-                              <div class="l-status">Status: <%= thistutrole.status %></div>
-                              <div class="l-kind">Kind: <%= thistutrole.kind %></div>
-                            </div>
-                          </div>
-                        </div>
-                      </div>
-                    <% #end %>
-                  <% end %>
-                <% end %>
-              </div>
-              
-              <div class="groupstudents">
-                <% #if entry.students.respond_to?(:each) then %>
-                <% if @role_lessonindex.has_key? entry.id then %>
-                  <% #entry.students.each do |student| %>
-                  <% @role_lessonindex[entry.id].each do |roleInfo_index| %>
-                    <% thisrole = @roleinfo[roleInfo_index] %>
-                    <% student = thisrole.student %> 
-                    <% if student then %>
-                      <div class="student <%= "fs" + student.id.to_s.rjust(@sf, "0") 
-                        %><%=            ' s-status-' + set_class_status_f(thisrole) 
-                        %><%= ' s-kind-'   + set_class_kind_f(    thisrole) 
-                        %>" id=<%= cells["id_dom"] + "n" + entry.id.to_s.rjust(@sf, "0") + "s" + student.id.to_s.rjust(@sf, "0") %> >
-                        <div style=persongroup>
-                          <div class="studentname studentinline "><%= student.pname %><%= 
-                               student.year == nil ? "   " : student.year.rjust(3) %> (stu)</div>
-                          <div class="studentcomment comment studentinline ">
-                            <% #thisrole = entry.roles.where(student_id: student.id).first %>
-                            <div class="studentsubjects"><%= student.sex == nil ? "" :
-                                student.sex.downcase.include?("female")?
-                                "(F) " : student.sex.downcase.include?("male")?
-                                "(M) " : "" 
-                                %><%= student.study %></div>
-                            <div class="rolecomment"><%= thisrole.comment %></div>
-                            <div class="studentcommentdetail"><%= student.comment %></div>
-                            <div class="statusinfo">
-                              <div class="l-status">Status: <%= thisrole.status %></div>
-                              <div class="l-kind">Kind: <%= thisrole.kind %></div>
-                              <div class="p-status">Detail: <%= student.status %></div>
-                            </div>
-                          </div>
-                        </div>
-                      </div>
-                    <% end %>
-                  <% end %>
-                <% end %>
-              </div>
-
-              <div class="lessoncomment comment commentinline">
-                <div class="lessoncommenttext"><% if entry.comments != nil && entry.comments != "" %><%= entry.comments %><% end %></div>
-                <div class="lessonstatusinfo"><% if entry.status != nil && entry.status != "" %>Status: <%= entry.status %> <% end %></div>
-              </div>
-               
-            </div>
+            <%= render partial: "schedule_lesson", 
+                locals: {slot: slot, lesson: entry} %>
           <% end %>
         <% end %>
       <% elsif cells.key?("value") then %>     
@@ -295,7 +208,7 @@
   </nav>
   
   <nav id="tertiary-menu" class="tertiary-menu">
-    <div id="tertiary=menu-title"> Tertiary Menu Title</div>
+    <div id="tertiary-menu-title"> Tertiary Menu Title</div>
     <ul class="tertiary-menu__choices">
       <li id="tutor-status-scheduled" class="tertiary-menu__choice" data-choice="tutor-status-scheduled">
         <p>tutor-status: Scheduled</p>
@@ -359,6 +272,9 @@
       </li>
       <li id="student-status-away" class="tertiary-menu__choice" data-choice="student-status-away">
         <p>student-status: Away</p>
+      </li>
+      <li id="student-status-queued" class="tertiary-menu__choice" data-choice="student-status-queued">
+        <p>student-status: Queued</p>
       </li>
       <li id="student-kind-free" class="tertiary-menu__choice" data-choice="student-kind-free">
         <p>student-kind: Free</p>
@@ -430,13 +346,7 @@
           <textarea id="edit-comment-text">Test Only.</textarea>
           <button id="edit-comment-button">Update</button>
           <div id="edit-comment-elementid" class="hideme"></div>
-      </li>
-      <li id="edit-subject" class="tertiary-menu__choice" data-choice="edit-subject">
-          <textarea id="edit-subject-text">Test Only.</textarea>
-          <button id="edit-subject-button">Update</button>
-          <div id="edit-subject-elementid" class="hideme">
-            
-          </div>
+          <div id="edit-comment-action" class="hideme"></div>
       </li>
     </ul>
   </nav>
@@ -446,7 +356,7 @@
     <div class="groupstudents"></div>
     <div class="lessoncomment comment commentinline">
       <div class="lessoncommenttext"></div>
-      <div class="lessonstatusinfo">Status: standard </div>
+      <div class="lessonstatusinfo status">Status: standard </div>
   </div>
   </div>
 

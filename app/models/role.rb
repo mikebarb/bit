@@ -1,4 +1,5 @@
-class Role < ActiveRecord::Base
+#class Role < ActiveRecord::Base
+class Role < ApplicationRecord    # required migrating to rails 5.0
   belongs_to :lesson
   belongs_to :student
   
@@ -22,7 +23,7 @@ class Role < ActiveRecord::Base
         @mychange.modified = my_changed_attributes.delete('updated_at')
       else
         @mychange.modified = self['created_at']
-      end        
+      end       
       my_changed_attributes.delete_if do |k, v|
         if ['status', 'kind', 'comment'].include?(k)
           @mychange1 = @mychange.dup

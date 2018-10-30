@@ -1,4 +1,5 @@
-class User < ActiveRecord::Base
+#class User < ActiveRecord::Base
+class User < ApplicationRecord    # required migrating to rails 5.0
   # Include default devise modules. Others available are:
   # :timeoutable and :omniauthable
   devise :database_authenticatable, :registerable,

@@ -3,8 +3,11 @@ class AdminsController < ApplicationController
   include Calendarutilities
 
   #skip_before_action :authenticate_user!, only: [:home]
-  before_filter :set_user_for_models
-  after_filter :reset_user_for_models
+  #before_filter :set_user_for_models
+  #after_filter :reset_user_for_models
+  # before_filter is depreciated in rails 5.1
+  before_action :set_user_for_models
+  after_action :reset_user_for_models
 
 #---------------------------------------------------------------------------
 #
@@ -54,7 +57,8 @@ class AdminsController < ApplicationController
     @options[:startdate] = mystartdeletedate
     @options[:enddate]   = myenddeletedate
     #@cal = calendar_read_display1f(sf, mystartdeletedate, myenddeletedate, {})
-    @cal = calendar_read_display1f(sf, @options)
+    #@cal = calendar_read_display1f(sf, @options)
+    @cal = calendar_read_display1f(@options)
     if @cal.empty?
       # these days are empty - show error and return
       flash[:notice] = "These days are empty - nothing to delete!!!"
@@ -72,8 +76,6 @@ class AdminsController < ApplicationController
 #                                    values[] -> [0] = object #<Lesson>
 #                                                [1] = object #<Lesson>
 #                                                 ....
-#                                   }
-                   
     @cal.each do |site, sitevalue| 
       # Now work through the slots for this site and day
       siteName = siteDate = ""    # control scope
@@ -174,7 +176,11 @@ class AdminsController < ApplicationController
 
 #---------------------------------------------------------------------------
 #
-#   Copy Scheduler Days - select days you want to copy
+#   Copy Scheduler Days 
+#   - select days you want to copy in the copydaysedit menu
+#   - copies ALL content for the selected days.
+#
+#   An alternate copy is available for coping term data (selectable copy).
 #
 #---------------------------------------------------------------------------
   # GET /admins/copydays
@@ -191,7 +197,8 @@ class AdminsController < ApplicationController
     @options = Hash.new
     @options[:startdate] = mystartcopytodate
     @options[:enddate]   = myendcopytodate
-    @cal = calendar_read_display1f(sf, @options)
+    #@cal = calendar_read_display1f(sf, @options)
+    @cal = calendar_read_display1f(@options)
     unless @cal.empty?
       # destination is not empty - show error and return
       flash[:notice] = "Destination days are not empty - will not copy!!!"
@@ -201,7 +208,8 @@ class AdminsController < ApplicationController
     #@cal = calendar_read_display1f(sf, mystartcopyfromdate, myendcopyfromdate, {})
     @options[:startdate] = mystartcopyfromdate
     @options[:enddate]   = myendcopyfromdate
-    @cal = calendar_read_display1f(sf, @options)
+    #@cal = calendar_read_display1f(sf, @options)
+    @cal = calendar_read_display1f(@options)
     if @cal.empty?
       # source is empty - show error and return
       flash[:notice] = "Source days are empty - nothing to copy!!!"
@@ -310,6 +318,213 @@ class AdminsController < ApplicationController
       end
     end
   end
+
+#---------------------------------------------------------------------------
+#
+#   Copy Scheduler Days 
+#   - select days you want to copy in the copydaysedit menu
+#   - copies ALL content for the selected days.
+#
+#   An alternate copy is available for coping term data (selectable copy).
+#
+#---------------------------------------------------------------------------
+  # GET /admins/copytermdays
+  def copytermdays
+    logger.debug "entering copytermdays"
+    #logger.debug "copytermdays_params: " + copytermdays_params.inspect
+    sf = 5    # signigicant figures
+    mystartcopyfromdate = copytermdays_params["from"].to_date
+    myendcopyfromdate = copytermdays_params["from"].to_date + copytermdays_params["num_days"].to_i
+    mystartcopytodate = copytermdays_params["to"].to_date
+    myendcopytodate = copytermdays_params["to"].to_date + copytermdays_params["num_days"].to_i
+    #@cal = calendar_read_display2(sf, mystartcopytodate, myendcopytodate)
+    #@cal = calendar_read_display1f(sf, mystartcopytodate, myendcopytodate, {})
+    @options = Hash.new
+    @options[:startdate] = mystartcopytodate
+    @options[:enddate]   = myendcopytodate
+    #@cal = calendar_read_display1f(sf, @options)
+    @cal = calendar_read_display1f(@options)
+    unless @cal.empty?
+      # destination is not empty - show error and return
+      flash[:notice] = "Destination days are not empty - will not copy!!!"
+      redirect_to copytermdaysedit_path(copytermdays_params)
+    end
+    @options[:startdate] = mystartcopyfromdate
+    @options[:enddate]   = myendcopyfromdate
+    @cal = calendar_read_display1f(@options)
+    if @cal.empty?
+      # source is empty - show error and return
+      flash[:notice] = "Source days are empty - nothing to copy!!!"
+      redirect_to copytermdaysedit_path(copytermdays_params)
+    end
+    # get to here, we are set up to do a copy
+    # @cal contains the info to be copied.
+    # First get the number of dayes to advance by ( + or - is valid)
+    adddays = mystartcopytodate - mystartcopyfromdate
+    logger.debug "adddays: " + adddays.inspect
+    @results = Array.new
+#      Each site has an array
+#      @cal{sitename}[0][] -> [0] = {value = site name}
+#                             [1] = {value = date}
+#      @cal{sitename}[1][] -> [0] = {value = session_time}  e.g. "03-3- PM"
+#                             [1] = {slotid = nnnn
+#                                    id_dom = "CAL201804041530"
+#                                    values[] -> [0] = object #<Lesson>
+#                                                [1] = object #<Lesson>
+#                                                 ....
+#                                   }
+    @cal.each do |site, sitevalue| 
+      # Now work through the slots for this site and day
+      siteName = siteDate = ""    # control scope
+      sitevalue.each_with_index do |bankslots, bankslotindex|
+        if bankslotindex == 0 
+          siteName = bankslots[0]['value']
+          siteDate = siteDateBankFrom = bankslots[1]['value']
+          n = siteDate.match(/(\d+.*)/)
+          siteDate = n[1]
+          if bankslots[2] == nil
+            @results.push "processing #{siteName} #{siteDateBankFrom}"
+          else
+            siteDateBankTo = bankslots[2]['value']
+            @results.push "processing #{siteName} #{siteDateBankFrom} to #{siteDateBankTo}"
+          end
+        else
+          bankslots.each_with_index do |slot, slotindex|
+            if slotindex == 0
+              next        # simply holds the slot time - will get from found slot
+            end
+            thisslotid = slot['slotid']
+            # if not a valid slot, go to next iteration.
+            if thisslotid == nil
+              next
+            end
+            @results.push "Slotid: #{thisslotid}"
+            thisslot = Slot.find(thisslotid)
+            mytimeslotTo = thisslot.timeslot + adddays.to_i * 86400
+            myslotTo = Slot.new(timeslot: mytimeslotTo, location: thisslot.location)
+            if myslotTo.save
+              @results.push "created slot " + myslotTo.inspect
+            else
+              @results.push "FAILED creating slot " + myslotTo.inspect + 
+                            "ERROR: " + myslotTo.errors.messages.inspect
+            end
+            #-------------------------------------------------------------------
+            # For copying term info,
+            # 1. Slots are always copied.
+            # 2. Determine what tutors and students need to be copied.
+            # Logic is:
+            # Lesson status | copy lesson  | copy tutors  | copy students
+            # routine       |    yes       |    yes if    |      yes if
+            # (=standard)   |              | - rostered   |  - rostered
+            #               |              | - away       |  - away
+            #               |              | - absent     |  - absent
+            #               |              |              |  - bye
+            #               |              |    no if     |      no if
+            #               |              | - deal       |  - deal
+            #               |              | - kind=called| 
+            # flexible      |    yes       |    yes if    |     no always
+            #               |              | - rostered   | 
+            #               |              | - away       | 
+            #               |              | - absent     |  
+            #               |              |    no if     |      
+            #               |              | - deal       | 
+            #               |              | - kind=called| 
+            # on_BFL        |    yes       |   yes if     |     no always
+            #               |              | - rostered   | 
+            #               |              | - away       |  
+            #               |              | - absent     | 
+            #               |              |    no if     | 
+            #               |              | - deal       | 
+            #               |              | - kind=called| 
+            # onSetup       |    yes       |   yes if     |     no always
+            #               |              | - rostered   | 
+            #               |              | - away       |  
+            #               |              | - absent     | 
+            #               |              |    no if     | 
+            #               |              | - deal       | 
+            #               |              | - kind=called| 
+            # onCall        |    yes       |   yes if     |     no always
+            #               |              | - rostered   | 
+            #               |              | - away       |  
+            # free          |    yes       |  no always   |     no always
+            # global        |    no        |              |     
+            # allocate      |    no        |              |     
+            # park          |    no        |              |
+            #-------------------------------------------------------------------
+            # Now to look at each lession in each slot
+            if slot['values'].respond_to?(:each) then
+              slot['values'].each do |lesson|
+                logger.debug "lesson: " + lesson.inspect
+                # is this a valid lesson to copy
+                next if ['global', 'allocate', 'park'].include?(lesson.status)               
+                mylesson = Lesson.new(slot_id: myslotTo.id, status: lesson.status)
+                if mylesson.save
+                  @results.push "created lesson " + mylesson.inspect
+                else
+                  @results.push "FAILED creating lesson " + mylesson.inspect + 
+                            "ERROR: " + mylesson.errors.messages.inspect
+                end
+                # for free lesson, do not copy any tutors or students
+                next if lesson.status == 'free'
+                # At this point, decision to copy tutors or students depends
+                # on their kind and status.
+                # Now find all the tutors in this lesson
+                if lesson.tutors.respond_to?(:each) then
+                  lesson.tutors.sort_by {|obj| obj.pname }.each do |tutor|
+                    thistutrole = tutor.tutroles.where(lesson_id: lesson.id).first
+                    # Check if this tutor-lesson should be copied
+                    flagtutorcopy = false
+                    flagtutorcopy = true if ['scheduled', 'confirmed', 'notified',
+                        'attended', 'away', 'absent'].include?(thistutrole.status)
+                    flagtutorcopy = false if thistutrole.kind == 'called'
+                    next unless flagtutorcopy
+                    mytutrole = Tutrole.new(lesson_id: mylesson.id,
+                                            tutor_id: tutor.id, 
+                                            status: thistutrole.status,
+                                            kind: thistutrole.kind)
+                    if mytutrole.save
+                      @results.push "created tutrole #{tutor.pname} " + mytutrole.inspect 
+                    else
+                      @results.push "FAILED creating tutrole " + mytutrole.inspect + 
+                                    "ERROR: " + mytutrole.errors.messages.inspect
+                    end
+                  end
+                end
+  
+                # Now find all the students in this lesson
+                if lesson.students.respond_to?(:each) then
+                  lesson.students.sort_by {|obj| obj.pname }.each do |student|
+                    thisrole = student.roles.where(lesson_id: lesson.id).first
+                    # check if this student should be copied.
+                    # for some lesson types, students are never copied
+                    next if ['flexible', 'on_BFL', 'onSetup', 'onCall',
+                             'free'].include?(lesson.status)
+                    # others depend on their student-lesson status/
+                    flagstudentcopy = false
+                    flagstudentcopy = true if ['scheduled', 'attended', 'away',
+                                      'absent', 'bye'].include?(thisrole.status)
+                    next unless flagstudentcopy
+                    # if so, copy  this student-lesson
+                    myrole = Role.new(lesson_id: mylesson.id,
+                                            student_id: student.id, 
+                                            status: thisrole.status,
+                                            kind: thisrole.kind)
+                    if myrole.save
+                      @results.push "created role #{student.pname} " + myrole.inspect
+                    else
+                      @results.push "FAILED creating role " + myrole.inspect + 
+                                    "ERROR: " + myrole.errors.messages.inspect
+                    end
+                  end
+                end
+              end
+            end
+          end
+        end        
+      end
+    end
+  end
+
 
 
 #---------------------------------------------------------------------------
@@ -2303,7 +2518,8 @@ else      # Not to test.
                 .order('pname')
     
     #@cal = calendar_read_display1f(@sf, mystartdate, myenddate, {})
-    @cal = calendar_read_display1f(@sf, @options)
+    #@cal = calendar_read_display1f(@sf, @options)
+    @cal = calendar_read_display1f(@options)
     # Clear the first sheet - the rest are deleted.
     googleClearSheet.call(sheet_id)
     #googleVertAlignAll.call("TOP")
@@ -2611,6 +2827,11 @@ end           # end of testing option.
 
 
   private
+
+    # Never trust parameters from the scary internet, only allow the white list through.
+    def copytermdays_params
+      params.require(:copy).permit(:from, :to, :num_days)
+    end
 
     # Never trust parameters from the scary internet, only allow the white list through.
     def copydays_params

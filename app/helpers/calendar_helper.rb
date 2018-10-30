@@ -85,4 +85,12 @@ module CalendarHelper
     end
   end
 
+  def slotDomidToText(domid)
+    #m = domid.match(/^([A-Za-z]+)(\d\d\d\d)(\d\d)(\d\d)(\d\d)(\d\d)l/)
+    mm = domid.match(/^(\w+)(\d\d\d\d)(\d\d)(\d\d)(\d\d)(\d\d)l/)
+    myslottime = DateTime.new(mm[2].to_i, mm[3].to_i, mm[4].to_i, mm[5].to_i, mm[6].to_i)
+    return mm[1] + " " + myslottime.strftime('%a %Y-%-m-%e %I:%M')    
+  end
+
+
 end
