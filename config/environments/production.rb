@@ -33,7 +33,9 @@ Rails.application.configure do
   ### this is depreciated by Heroku, now renamed to 
   ### `config.serve_static_files`
   #config.serve_static_assets = false
-  config.serve_static_files = false
+  #config.serve_static_files = false
+  # Deprecision warning for v5.1 - replace above line with below line.
+  config.public_file_server.enabled = false
 
   # Compress JavaScripts and CSS.
   # this failed loading heroku - implemented comemnts from:
