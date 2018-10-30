@@ -60,7 +60,8 @@ class TutrolesController < ApplicationController
     if @tutrole.destroy
       respond_to do |format|
         format.json { render json: @domchange, status: :ok }
-        ActionCable.server.broadcast "calendar_channel", { json: @domchange }
+        #ActionCable.server.broadcast "calendar_channel", { json: @domchange }
+        ably_rest.channels.get('calendar').publish('json', @domchange)
       end
     else
       respond_to do |format|
@@ -141,7 +142,8 @@ class TutrolesController < ApplicationController
     respond_to do |format|
       if @tutrole.save
         format.json { render json: @domchange, status: :ok }
-        ActionCable.server.broadcast "calendar_channel", { json: @domchange }
+        #ActionCable.server.broadcast "calendar_channel", { json: @domchange }
+        ably_rest.channels.get('calendar').publish('json', @domchange)
       else
         format.json { render json: @tutrole.errors.messages, status: :unprocessable_entity }
       end
@@ -206,7 +208,8 @@ class TutrolesController < ApplicationController
     respond_to do |format|
       if @tutrole.save
         format.json { render json: @domchange, status: :ok }
-        ActionCable.server.broadcast "calendar_channel", { json: @domchange }
+        #ActionCable.server.broadcast "calendar_channel", { json: @domchange }
+        ably_rest.channels.get('calendar').publish('json', @domchange)
       else
         logger.debug("errors.messages: " + @tutrole.errors.messages.inspect)
         format.json { render json: @tutrole.errors.messages, status: :unprocessable_entity }

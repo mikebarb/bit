@@ -65,7 +65,8 @@ class RolesController < ApplicationController
     if @role.destroy
       respond_to do |format|
         format.json { render json: @domchange, status: :ok }
-        ActionCable.server.broadcast "calendar_channel", { json: @domchange }
+        #ActionCable.server.broadcast "calendar_channel", { json: @domchange }
+        ably_rest.channels.get('calendar').publish('json', @domchange)
         get_slot_stats(slot_id)
       end
     else
@@ -178,7 +179,8 @@ class RolesController < ApplicationController
     respond_to do |format|
       if @role.save
         format.json { render json: @domchange, status: :ok }
-        ActionCable.server.broadcast "calendar_channel", { json: @domchange }
+        #ActionCable.server.broadcast "calendar_channel", { json: @domchange }
+        ably_rest.channels.get('calendar').publish('json', @domchange)
         get_slot_stats(new_slot_id)
         if(old_slot_id && (new_slot_id != old_slot_id))
           get_slot_stats(old_slot_id)
@@ -256,7 +258,8 @@ class RolesController < ApplicationController
       if @role.save
         #format.json { render :show, status: :ok, location: @role }
         format.json { render json: @domchange, status: :ok }
-        ActionCable.server.broadcast "calendar_channel", { json: @domchange }
+        #ActionCable.server.broadcast "calendar_channel", { json: @domchange }
+        ably_rest.channels.get('calendar').publish('json', @domchange)
         if flagupdatestats
           get_slot_stats(slot_id)
         end
@@ -342,7 +345,8 @@ class RolesController < ApplicationController
                                                })
   
         
-        ActionCable.server.broadcast "calendar_channel", { json: @global_lesson_domchange }
+        #ActionCable.server.broadcast "calendar_channel", { json: @global_lesson_domchange }
+        ably_rest.channels.get('calendar').publish('json', @global_lesson_domchange)
       else
         return      # if no global, then no point continuing.
       end
@@ -377,6 +381,7 @@ class RolesController < ApplicationController
                                                 :lesson => @global_lesson.id
                                                })
         ActionCable.server.broadcast "calendar_channel", { json: @global_lesson_domchange }
+        ably_rest.channels.get('calendar').publish('json', @global_lesson_domchange)
     end
   end
 

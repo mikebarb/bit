@@ -7,8 +7,17 @@ source 'https://rubygems.org'
 # backlevel to this as a know working active cable connection.
 # see https://github.com/rails/rails/issues/27421 
 #gem 'rails', '5.0.0.1'
-gem 'rails', '5.0.6'
-
+# ***** remove action-cable *******
+#gem 'rails', '5.0.6'
+gem "activerecord", '5.0.6'
+gem "activemodel", '5.0.6'
+gem "actionpack", '5.0.6'
+gem "actionview", '5.0.6'
+gem "actionmailer", '5.0.6'
+gem "activejob", '5.0.6'
+gem "activesupport", '5.0.6'
+gem "railties", '5.0.6'
+gem "sprockets-rails", '>=2.0.0'
 
 # force active support version to make bundle updat work
 # was not in here before rails 5.
@@ -103,3 +112,7 @@ gem 'figaro', '~> 1.0'
 # A Scope & Engine based, clean, powerful, customizable and sophisticated
 # paginator for modern web app frameworks and ORMs.
 gem 'kaminari'
+
+# ably gem for web-socket messaging
+gem 'ably-rest', '~>1.0'
+

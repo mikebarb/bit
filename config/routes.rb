@@ -16,6 +16,8 @@ Rails.application.routes.draw do
   
   resources :googles
 
+  get '/auth' => 'auth#issue_token_request'
+
   get 'admins/home' => 'admins#home', as: :home
   get 'admins/load' => 'admins#load', as: :load
   get 'admins/loadtutors' => 'admins#loadtutors', as: :loadtutors

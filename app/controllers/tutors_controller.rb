@@ -116,7 +116,8 @@ class TutorsController < ApplicationController
     respond_to do |format|
       if @tutor.save
         format.json { render json: @domchange, status: :ok }
-        ActionCable.server.broadcast "calendar_channel", { json: @domchange }
+        #ActionCable.server.broadcast "calendar_channel", { json: @domchange }
+        ably_rest.channels.get('calendar').publish('json', @domchange)
       else
         logger.debug("errors.messages: " + @tutor.errors.messages.inspect)
         format.json { render json: @tutor.errors.messages, status: :unprocessable_entity }

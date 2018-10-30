@@ -121,7 +121,8 @@ class StudentsController < ApplicationController
     respond_to do |format|
       if @student.save
         format.json { render json: @domchange, status: :ok }
-        ActionCable.server.broadcast "calendar_channel", { json: @domchange }
+        #ActionCable.server.broadcast "calendar_channel", { json: @domchange }
+        ably_rest.channels.get('calendar').publish('json', @domchange)
         # Need to get all the slots that these students are in.
         if flagupdatestats
           ##------------------------------- hints ------------------

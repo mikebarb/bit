@@ -52,6 +52,7 @@ Rails.application.configure do
   #config.action_cable.url = 'ws:bit3-micmac.c9users.io:3000/cable'
   
   # refer https://github.com/rails/rails/issues/31524 
-  config.action_cable.allowed_request_origins = [/http:\/\/*/, /https:\/\/*/]
+  # **** remove-action-cable
+  ###config.action_cable.allowed_request_origins = [/http:\/\/*/, /https:\/\/*/]
   
 end

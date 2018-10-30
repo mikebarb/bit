@@ -831,7 +831,8 @@ module Calendarutilities
     @statschange['slot_id']      = slot_id
     @statschange['html_partial'] = slot_html_partial
     
-    ActionCable.server.broadcast "stats_channel", { json: @statschange }
+    #ActionCable.server.broadcast "stats_channel", { json: @statschange }
+    ably_rest.channels.get('stats').publish('json', @statschange)
     
   end
   

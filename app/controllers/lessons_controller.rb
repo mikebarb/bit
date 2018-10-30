@@ -74,7 +74,8 @@ class LessonsController < ApplicationController
       logger.debug "Lesson destroyed"
       respond_to do |format|
         format.json { render json: @domchange, status: :ok }
-        ActionCable.server.broadcast "calendar_channel", { json: @domchange }
+        #ActionCable.server.broadcast "calendar_channel", { json: @domchange }
+        ably_rest.channels.get('calendar').publish('json', @domchange)
       end
     else
       respond_to do |format|
@@ -131,7 +132,8 @@ class LessonsController < ApplicationController
                                                })
 
         format.json { render json: @domchange, status: :ok }
-        ActionCable.server.broadcast "calendar_channel", { json: @domchange }
+        #ActionCable.server.broadcast "calendar_channel", { json: @domchange }
+        ably_rest.channels.get('calendar').publish('json', @domchange)
       else
         format.json { render json: @lesson.errors, status: :unprocessable_entity }
       end
@@ -178,7 +180,8 @@ class LessonsController < ApplicationController
         #format.html { redirect_to @student, notice: 'Student was successfully updated.' }
         #format.json { render :show, status: :ok, location: @lesson }
         format.json { render json: @domchange, status: :ok }
-        ActionCable.server.broadcast "calendar_channel", { json: @domchange }
+        #ActionCable.server.broadcast "calendar_channel", { json: @domchange }
+        ably_rest.channels.get('calendar').publish('json', @domchange)
       else
         logger.debug("errors.messages: " + @lesson.errors.messages.inspect)
         format.json { render json: @lesson.errors.messages, status: :unprocessable_entity }
@@ -261,7 +264,8 @@ class LessonsController < ApplicationController
     respond_to do |format|
       if @lesson.save
         format.json { render json: @domchange, status: :ok }
-        ActionCable.server.broadcast "calendar_channel", { json: @domchange }
+        #ActionCable.server.broadcast "calendar_channel", { json: @domchange }
+        ably_rest.channels.get('calendar').publish('json', @domchange)
       else
         format.json { render json: @lesson.errors.messages, status: :unprocessable_entity }
       end

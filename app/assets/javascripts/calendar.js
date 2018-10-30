@@ -4,6 +4,7 @@
 */
 
 /* global $ */
+/* global Ably */
 
 // Web Socket receives a new message - calendar updates received.
 
@@ -32,6 +33,7 @@ var eleClickedOn;
 var currentActivity = {};
 var stackActivity = [];
 var myhost = window.location.protocol + '//' + window.location.hostname;   // base url for ajax
+var ably;             // messaging global identifier
 
 var ready = function() {
   if(document.getElementById('page_name')){
@@ -52,28 +54,53 @@ var ready = function() {
 
 
 var ready_common = function() {
-
-
-  
+/*
+  ably = new Ably.Realtime({ authUrl: '/auth' });
+  ably.connection.on('connecting', function() { showStatus('Connecting to Ably...'); });
+  ably.connection.on('connected', function() { clearStatus(); });
+  ably.connection.on('disconnected', function() { showStatus('Disconnected from Ably...'); });
+  ably.connection.on('suspended', function() { showStatus('Disconnected from Ably for a while...'); });
+   
+  var $status = $('#status');
+  function showStatus(text) {
+    $status.text(text).show();
+  }
+  function clearStatus() {
+    $status.hide();
+  }
+*/
 };
-
 
 var ready_calendar = function() {
 
-  App.calendar = App.cable.subscriptions.create("CalendarChannel", {  
+/* No longer needed with Ably
   //App.cable.subscriptions.create("CalendarChannel", {  
+  App.calendar = App.cable.subscriptions.create("CalendarChannel", {  
     received: function(data) {
       console.log("calendar.js - entered ws received function for calendar");
       console.dir(data);
       //var returnedDomData = JSON.parse(data['json']);
       var returnedDomData = data['json'];
       returnedDomData['actioncable'] = true;
-      moveelement_update(returnedDomData);
-      console.log("dom update done!!!");
+      //moveelement_update(returnedDomData);
+      //console.log("dom update done!!!");
       return;
     }
   });
+*/
 
+  // Set up to subscribe to the Ably messages
+  ably = new Ably.Realtime({ authUrl: '/auth' });
+  var calendarChannel = ably.channels.get('calendar');
+  calendarChannel.subscribe(function(message){
+    console.log("calendar.js - entered ably subscribe function for calendar");
+    //console.log(JSON.parse(message.data));
+    var returnedDomData = message.data;
+    console.log(message.data);
+    returnedDomData['ably'] = true;
+    moveelement_update(returnedDomData);
+    console.log("dom update done!!!");
+  });
 
   // some global variables for this page
   //var sf = 5;     // significant figures for dom id components e.g.lesson ids, etc.
@@ -1485,7 +1512,7 @@ var ready_calendar = function() {
   }
 
   function addLesson_Update(domchange){
-    domchange["status"] = "flexible";  // make default for new session.
+    domchange["status"] = "free";  // make default for new session.
     var myurl = myhost + "/lessonadd/";
     $.ajax({
         type: "POST",
@@ -2007,8 +2034,9 @@ function showhidecomments(theseelements, tohide) {
 
 var ready_stats = function(){
 
-  App.stats = App.cable.subscriptions.create("StatsChannel", {  
+/*//No longer needed with Ably
   //App.cable.subscriptions.create("CalendarChannel", {  
+  App.stats = App.cable.subscriptions.create("StatsChannel", {  
     received: function(data) {
       console.log("calendar.js - entered ws received function for stats");
       console.dir(data);
@@ -2019,6 +2047,19 @@ var ready_stats = function(){
       console.log("stats update done!!!");
       return;
     }
+  });
+*/
+
+  ably = new Ably.Realtime({ authUrl: '/auth' });
+  // Set up to subscribe to the Ably messages
+  var statsChannel = ably.channels.get('stats');
+  statsChannel.subscribe(function(message){
+    console.log("calendar.js - entered ably subscribe function for stats");
+    console.dir(message.data);
+    var returnedStatsData = message.data;
+    returnedStatsData['ably'] = true;
+    stats_update(returnedStatsData);
+    console.log("stats update done!!!");
   });
 
   console.log("entered ready_status");
