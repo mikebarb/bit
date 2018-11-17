@@ -44,7 +44,6 @@
         <input id=hidelessonsGlobal   class=selectshow onclick="selectshows(this)" type="checkbox" >global )
         </div>
         
-        <br>
         <input id=enableQuickStatus type="checkbox" > Enable quick setting of status to
         <select name="quickStatus" id="quickStatusValue">
           <option value="Attended">Attended</option>
@@ -54,13 +53,11 @@
           <option value="Deal">Deal</option>
           <option value="Absent">Absent</option>
           <option value="Away">Away</option>
-        </select>
-        <br>
+        </select><br>
         <input id=enableQuickKind type="checkbox" > Enable quick setting of kind to
         <select name="quickKind" id="quickKindValue">
           <option value="Standard">Standard</option>
-        </select>
-        <br>
+        </select><br>
         <input id=enableQuickPersonStatus type="checkbox" > Enable quick setting of student-person-status to
         <select name="quickPersonStatus" id="quickPersonStatusValue">
           <option value="standard">Standard</option>
@@ -68,7 +65,24 @@
           <option value="fortnightly">Fortnightly</option>
           <option value="new">New</option>
         </select>
-        <br>
+
+        <div>
+          <div class="selectdayofweek">
+            <input id=selectdowone class=selectshow onclick="showhidedowone()" type="checkbox" checked>Monday</input>
+          </div>
+          <div class="selectdayofweek">
+            <input id=selectdowtwo class=selectshow onclick="showhidedowtwo()" type="checkbox" checked>Tuesday</input>
+          </div>
+          <div class="selectdayofweek">
+            <input id=selectdowthree class=selectshow onclick="showhidedowthree()" type="checkbox" checked>Wednesday</input>
+          </div>
+          <div class="selectdayofweek">
+            <input id=selectdowfour class=selectshow onclick="showhidedowfour()" type="checkbox" checked>Thursday</input>
+          </div>
+          <div class="selectdayofweek">
+            <input id=selectdowfive class=selectshow onclick="showhidedowfive()" type="checkbox" checked>Friday</input>
+          </div>
+        </div>
         <% listofsites.each_with_index do |site, i| %>
         <div class="<%= "selectSite" + site %> jumptosite">
         <input id=<%= 'hide' + site %> class="selectshow selectsite" onclick="selectshows(this)" type="checkbox" ><%= site + "  " %> 
@@ -113,28 +127,32 @@
   end %>
   <% firsttablecolumn = true %>
   <table id=site-<%= location %> >
-  <% calLocation.each do |rows| %>
+  <% calLocation.each_with_index do |rows, rowIndex| %>
     <tr>
     <% rows.each_with_index do |cells, cellIndex|
       if @compress      
         unless usedColumnsIndex.include?(cellIndex) then
            next
         end 
-      end %>
-      <% if cells.key?("slotid") then 
+      end
+      
+      if(cellIndex != 0)
+        celldatetime = calLocation[0][cellIndex]['datetime']
+        celldow = 'dow' + celldatetime.wday.to_s
+      end
+      if cells.key?("slotid") then 
           #cell_id_dom = cells["id_dom"] + "l" + cells["slotid"].rjust(@sf, "0")
           cell_id_dom = cells["id_dom"] + "l" + cells["slotid"].rjust(@sf, "0")
-      %>
-        <td class="cell slot" id=<%= cell_id_dom %>  >
+      %><td class="cell slot <%= celldow %>" id=<%= cell_id_dom %>  >
       <% elsif cells.key?("value") then %>
         <% if firsttablecolumn == true then
           firsttablecolumn = false %>
           <td class="cell firsttablecolumn" %>
         <% else %>
-          <td class="cell" %>
+          <td class="cell <%= celldow %>" %>
         <% end %>
       <% else %>
-         <td class="cell no-slot" %>
+         <td class="cell no-slot <%= celldow %>" %>
       <% end %> 
       <% if cells.key?("values") then %>       
         <% if cells["values"].respond_to?(:each) then %>
@@ -162,6 +180,9 @@
       <li id="context-move" class="context-menu__item" data-action="move">
         <p>Move</p>
       </li>
+      <li id="context-moverun" class="context-menu__item" data-action="moverun">
+        <p>Move run</p>
+      </li>
       <li id="context-copy" class="context-menu__item" data-action="copy">
         <p>Copy</p>
       </li>
@@ -170,6 +191,12 @@
       </li>
       <li id="context-remove" class="context-menu__item" data-action="remove">
         <p>Remove</p>
+      </li>
+      <li id="context-removerun" class="context-menu__item" data-action="removerun">
+        <p>Remove run</p>
+      </li>
+      <li id="context-extendrun" class="context-menu__item" data-action="extendrun">
+        <p>Extend run</p>
       </li>
       <li id="context-addLesson" class="context-menu__item" data-action="addLesson">
         <p>Add Lesson</p>

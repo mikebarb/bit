@@ -13,6 +13,14 @@ class StudentsController < ApplicationController
     .page(params[:page])
   end
 
+  # GET /allstudents
+  # GET /allstudents.json
+  def allstudents
+    @students = Student
+    .order(:pname)
+  end
+
+
   # GET /students/1
   # GET /students/1.json
   def show

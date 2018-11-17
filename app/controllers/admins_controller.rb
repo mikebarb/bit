@@ -321,18 +321,20 @@ class AdminsController < ApplicationController
 
 #---------------------------------------------------------------------------
 #
-#   Copy Scheduler Days 
+#   Copy Term Days 
 #   - select days you want to copy in the copydaysedit menu
-#   - copies ALL content for the selected days.
+#   - copies content for the selected days based on:
+#       . session type 
+#       . student/session type
 #
-#   An alternate copy is available for coping term data (selectable copy).
+#   An alternate copy is available for coping all data.
 #
 #---------------------------------------------------------------------------
   # GET /admins/copytermdays
   def copytermdays
     logger.debug "entering copytermdays"
     #logger.debug "copytermdays_params: " + copytermdays_params.inspect
-    sf = 5    # signigicant figures
+    #sf = 5    # signigicant figures
     mystartcopyfromdate = copytermdays_params["from"].to_date
     myendcopyfromdate = copytermdays_params["from"].to_date + copytermdays_params["num_days"].to_i
     mystartcopytodate = copytermdays_params["to"].to_date
@@ -451,7 +453,7 @@ class AdminsController < ApplicationController
             # allocate      |    no        |              |     
             # park          |    no        |              |
             #-------------------------------------------------------------------
-            # Now to look at each lession in each slot
+            # Now to look at each lesson in each slot
             if slot['values'].respond_to?(:each) then
               slot['values'].each do |lesson|
                 logger.debug "lesson: " + lesson.inspect
@@ -480,7 +482,7 @@ class AdminsController < ApplicationController
                     next unless flagtutorcopy
                     mytutrole = Tutrole.new(lesson_id: mylesson.id,
                                             tutor_id: tutor.id, 
-                                            status: thistutrole.status,
+                                            status: 'scheduled',
                                             kind: thistutrole.kind)
                     if mytutrole.save
                       @results.push "created tutrole #{tutor.pname} " + mytutrole.inspect 
@@ -507,7 +509,7 @@ class AdminsController < ApplicationController
                     # if so, copy  this student-lesson
                     myrole = Role.new(lesson_id: mylesson.id,
                                             student_id: student.id, 
-                                            status: thisrole.status,
+                                            status: 'scheduled',
                                             kind: thisrole.kind)
                     if myrole.save
                       @results.push "created role #{student.pname} " + myrole.inspect
@@ -525,7 +527,412 @@ class AdminsController < ApplicationController
     end
   end
 
+#---------------------------------------------------------------------------
+#
+#   Copy Term Weeks 
+#   - select week (start & end day) you want to copy in the copydaysedit menu
+#   - copies content for the selected days based on:
+#       . session type 
+#       . student/session type
+#
+#   This will copy the week into a number of consective weeks +
+#   plus add one week into the following term at the provided date
+#
+#---------------------------------------------------------------------------
+#-------------------------------------------------------------------
+# For copying term info,
+# 1. Slots are always copied.
+# 2. Determine what tutors and students need to be copied.
+# Logic is:
+# Lesson status | copy lesson  | copy tutors  | copy students
+# routine       |    yes       |    yes if    |      yes if
+# (=standard)   |              | - rostered   |  - rostered
+#               |              | - away       |  - away
+#               |              | - absent     |  - absent
+#               |              |              |  - bye
+#               |              |    no if     |      no if
+#               |              | - deal       |  - deal
+#               |              | - kind=called| 
+# flexible      |    yes       |    yes if    |     no always
+#               |              | - rostered   | 
+#               |              | - away       | 
+#               |              | - absent     |  
+#               |              |    no if     |      
+#               |              | - deal       | 
+#               |              | - kind=called| 
+# on_BFL        |    yes       |   yes if     |     no always
+#               |              | - rostered   | 
+#               |              | - away       |  
+#               |              | - absent     | 
+#               |              |    no if     | 
+#               |              | - deal       | 
+#               |              | - kind=called| 
+# onSetup       |    yes       |   yes if     |     no always
+#               |              | - rostered   | 
+#               |              | - away       |  
+#               |              | - absent     | 
+#               |              |    no if     | 
+#               |              | - deal       | 
+#               |              | - kind=called| 
+# onCall        |    yes       |   yes if     |     no always
+#               |              | - rostered   | 
+#               |              | - away       |  
+# free          |    yes       |  no always   |     no always
+# global        |    no        |              |     
+# allocate      |    no        |              |     
+# park          |    no        |              |
+#-------------------------------------------------------------------
+#      Each site has an array
+#      @cal{sitename}[0][] -> [0] = {value = site name}
+#                             [1] = {value = date}
+#      @cal{sitename}[1][] -> [0] = {value = session_time}  e.g. "03-3- PM"
+#                             [1] = {slotid = nnnn
+#                                    id_dom = "CAL201804041530"
+#                                    values[] -> [0] = object #<Lesson>
+#                                                [1] = object #<Lesson>
+#                                                 ....
+#                                   }
+#-------------------------------------------------------------------
+  # GET /admins/copytermweeks
+  def copytermweeks
+    logger.debug "entering copytermweeks"
+    #logger.debug "copytermweeks_params: " + copytermweeks_params.inspect
+    #sf = 5    # signigicant figures
+    mystartcopyfromdate = copytermweeks_params["from"].to_date
+    myendcopyfromdate   = copytermweeks_params["from"].to_date + copytermweeks_params["num_days"].to_i
+    mycopynumweeks      = copytermweeks_params["num_weeks"].to_i
+    mystartcopytodate   = copytermweeks_params["to"].to_date
+    myendcopytodate     = copytermweeks_params["to"].to_date +
+                          copytermweeks_params["num_days"].to_i + (mycopynumweeks + 1) * 7
+    myfirstweekdate     = copytermweeks_params["first_week"].to_date
+    logger.debug "First week starts on " + myfirstweekdate.to_s
+    @options = Hash.new
+    @options[:startdate] = mystartcopytodate
+    @options[:enddate]   = myendcopytodate
+    @cal = calendar_read_display1f(@options)
+    unless @cal.empty?
+      # destination is not empty - show error and return
+      flash[:notice] = "Destination days are not empty - will not copy!!!"
+      redirect_to copytermweeksedit_path(copytermweeks_params)
+      return
+    end
+    @options[:startdate] = mystartcopyfromdate
+    @options[:enddate]   = myendcopyfromdate
+    @cal = calendar_read_display1f(@options)
+    if @cal.empty?
+      # source is empty - show error and return
+      flash[:notice] = "Source days are empty - nothing to copy!!!"
+      redirect_to copytermweeksedit_path(copytermweeks_params)
+    end
+    #--------------------------------------------------------------------
+    #---- check that all slots contains a global and allocate lesson ----
+    flagAddedLesson = false         # track if one has been added.
+    @cal.each do |site, sitevalue| 
+      # Now work through the slots for this site and day
+      #---- for each  row of slots (all days - each row being a lesson timeslot ----
+      sitevalue.each_with_index do |bankslots, bankslotindex|
+        if bankslotindex == 0               # column title 
+        else
+          #---- for each slot in the row - ( one days with one lesson timeslot) ----
+          bankslots.each_with_index do |slot, slotindex|
+            if slotindex == 0         # row title
+              next        # simply holds the slot time - will get from found slot
+            end
+            thisslotid = slot['slotid']
+            # if not a valid slot, go to next iteration.
+            if thisslotid == nil
+              next
+            end
+            #---- processing a valid slot (not just a cell in the table) ----
+            #---- check this slot ----
+            #---- check existing lessons ----
+            # Now to look at each lesson in each slot
+            # Also check that each slot has lesson types of 'global' and 'allocate'
+            if slot['values'].respond_to?(:each) then
+              flagMissingGlobal = flagMissingAllocate = true
+              slot['values'].each do |lesson|
+                flagMissingGlobal   = false if lesson.status == 'global'
+                flagMissingAllocate = false if lesson.status == 'allocate'
+              end
+            end
+            # Add lesson if missing global lesson or allocate lesson.
+            #result = /^(([A-Z]+\d+l(\d+)))/.match(thisslotid)
+            #if result 
+            #  slot_dbId = result[3]
+            #end
+            if flagMissingGlobal
+              @lesson_new = Lesson.new(slot_id: thisslotid, status: "global")
+              @lesson_new.save
+              flagAddedLesson = true
+            end
+            if flagMissingAllocate
+              @lesson_new = Lesson.new(slot_id: thisslotid, status: "allocate")
+              @lesson_new.save
+              flagAddedLesson = true
+            end
+          end
+        end        
+      end
+    end
+    # if lessons added, then refetch! - should be a rare occurence!
+    @cal = calendar_read_display1f(@options)
+    #--------------------------------------------------------------------
+    #---- copy this week into following weeks ----
+    # get to here, we are set up to do a copy
+    # @cal contains the info to be copied.
+    # First get the number of dayes to advance by ( + or - is valid)
+    adddays = mystartcopytodate - mystartcopyfromdate
+    adddaysforweekplusone = myfirstweekdate - mystartcopyfromdate
+    logger.debug "adddays: " + adddays.inspect
+    @results = Array.new   # store detailed feedback to be displayed on user browser.
+    #keep track of all copied entities - slots, lessons, roles, tutroles.
+    # Used later - to break block links.
+    @allCopiedSlotsIds    = Array.new
+    @allCopiedLessonsIds  = Array.new
+    @allCopiedRolesIds    = Array.new
+    @allCopiedTutrolesIds = Array.new
+    #---- for each site ----
+    @cal.each do |site, sitevalue| 
+      # Now work through the slots for this site and day
+      siteName = siteDate = ""    # control scope
+      #---- for each  row of slots (all days - each row being a lesson timeslot ----
+      sitevalue.each_with_index do |bankslots, bankslotindex|
+        if bankslotindex == 0               # column title 
+          siteName = bankslots[0]['value']
+          siteDate = siteDateBankFrom = bankslots[1]['value']
+          n = siteDate.match(/(\d+.*)/)
+          siteDate = n[1]
+          if bankslots[2] == nil
+            @results.push "processing #{siteName} #{siteDateBankFrom}"
+          else
+            siteDateBankTo = bankslots[2]['value']
+            @results.push "processing #{siteName} #{siteDateBankFrom} to #{siteDateBankTo}"
+          end
+        else
+          #---- for each slots in the row - ( one days with one lesson timeslot) ----
+          bankslots.each_with_index do |slot, slotindex|
+            if slotindex == 0         # row title
+              next        # simply holds the slot time - will get from found slot
+            end
+            thisslotid = slot['slotid']
+            # if not a valid slot, go to next iteration.
+            if thisslotid == nil
+              next
+            end
+            #---- processing a valid slot (not just a cell in the table) ----
+            @allCopiedSlotsIds.push thisslotid    # track all copied slots 
+            @results.push "Slotid: #{thisslotid}"
+            #---- copy run this slot ----
+            @blockSlots = Array.new
+            @blockSlots[0] = Slot.find(thisslotid)
+            @blockSlots[0].first = thisslotid
+            # Now need to copy this to the following mycopynumweeks weeks.
+            # we are forming a chain with first = first id in chain &
+            # next = the following id in the chain.
+            slotLocation = @blockSlots[0].location 
+            nextTimeslotTo = @blockSlots[0].timeslot + (adddays.to_i - 7) * 86400
+            ### adddaysforweekplusone
+            (1..mycopynumweeks+1).each do |i|
+              nextTimeslotTo += 7 * 86400
+              # cater for the week plus one entries
+              nextTimeslotTo = @blockSlots[0].timeslot + adddaysforweekplusone * 86400 if i == mycopynumweeks + 1 
+              @blockSlots[i] = Slot.new(timeslot: nextTimeslotTo, 
+                                        location: slotLocation,
+                                        first: thisslotid )
+            end
+            (0..mycopynumweeks+1).reverse_each do |i|
+              # the last entity in chain will have next = nil by default, do not populate.
+              @blockSlots[i].next = @blockSlots[i+1].id unless i == mycopynumweeks+1  
+              if @blockSlots[i].save
+                @results.push "created slot " + @blockSlots[i].inspect
+              else
+                @results.push "FAILED creating slot " + @blockSlots[i].inspect + 
+                              "ERROR: " + @blockSlots[i].errors.messages.inspect
+              end
+            end
+            #---- copy any existing lesson that have the desired status ----
+            # Now to look at each lession in each slot
+            # Also check that each slot has lesson types of 'global' and 'allocate'
+            if slot['values'].respond_to?(:each) then
+              slot['values'].each do |lesson|
+                logger.debug "lesson: " + lesson.inspect
+                # is this a valid lesson to copy
+                ###next if ['global', 'allocate', 'park'].include?(lesson.status)
+                next if ['park'].include?(lesson.status)
+                thislessonid = lesson.id
+                #---- copy run this lesson ----
+                @allCopiedLessonsIds.push thislessonid    # track all copied slots 
+                @blockLessons = Array.new
+                @blockLessons[0] = lesson
+                @blockLessons[0].first = thislessonid
+                # Now need to copy this to the following mycopynumweeks weeks.
+                # we are forming a chain with first = first id in chain &
+                # next = the following id in the chain.
+                ### adddaysforweekplusone
+                (1..mycopynumweeks+1).each do |i|
+                  parentSlotId = @blockSlots[i].id
+                  # cater for the week plus one entries
+                  @blockLessons[i] = Lesson.new(slot_id: parentSlotId, 
+                                            status: lesson.status,
+                                            first: thislessonid )
+                end
+                (0..mycopynumweeks+1).reverse_each do |i|
+                  # the last entity in chain will have next = nil by default, do not populate.
+                  @blockLessons[i].next = @blockLessons[i+1].id unless i == mycopynumweeks+1  
+                  if @blockLessons[i].save
+                    @results.push "created lesson " + @blockLessons[i].inspect
+                  else
+                    @results.push "FAILED creating lesson " + @blockLessons[i].inspect + 
+                                  "ERROR: " + @blockLessons[i].errors.messages.inspect
+                  end
+                end
+                #---- some lessons are copied but not their tutor/student content ----
+                # for free lesson, do not copy any tutors or students
+                next if lesson.status == 'free'
+                # At this point, decision to copy tutors or students depends
+                # on their kind and status.
+                # Now find all the tutors in this lesson
+                #---- copy any existing tutors that have the desired status & kind ----
+                if lesson.tutors.respond_to?(:each) then
+                  lesson.tutors.sort_by {|obj| obj.pname }.each do |tutor|
+                    #thistutrole = tutor.tutroles.where(lesson_id: lesson.id).first
+                    @blockTutroles = Array.new
+                    @blockTutroles[0] = tutor.tutroles.where(lesson_id: lesson.id).first
+                    # Check if this tutor-lesson should be copied
+                    flagtutorcopy = false
+                    flagtutorcopy = true if ['scheduled', 'confirmed', 'notified',
+                        'attended', 'away', 'absent'].include?(@blockTutroles[0].status)
+                    # do not copy certain kinds!
+                    flagtutorcopy = false if ['called', 'training', 'relief'].include?(@blockTutroles[0].kind)
+                    #flagtutorcopy = false if @blockTutroles[0].kind == 'called'
+                    next unless flagtutorcopy
+                    thistutroleid = @blockTutroles[0].id
+                    @allCopiedTutrolesIds.push thistutroleid    # track all copied slots 
+                    @blockTutroles[0].block = @blockTutroles[0].first = thistutroleid
+                    # Now need to copy this to the following mycopynumweeks weeks.
+                    # we are forming a chain with first = first id in chain &
+                    # next = the following id in the chain.
+                    (1..mycopynumweeks+1).each do |i|
+                      parentLessonId = @blockLessons[i].id
+                      # cater for the week plus one entries
+                      @blockTutroles[i] = Tutrole.new(lesson_id: parentLessonId,
+                                                      tutor_id: tutor.id, 
+                                                      status: 'scheduled',
+                                                      kind: @blockTutroles[0].kind,
+                                                      first: thistutroleid,
+                                                      block: thistutroleid)
+                    end
+                    (0..mycopynumweeks+1).reverse_each do |i|
+                      # the last entity in chain will have next = nil by default, do not populate.
+                      @blockTutroles[i].next = @blockTutroles[i+1].id unless i == mycopynumweeks+1  
+                      if @blockTutroles[i].save
+                        @results.push "created tutrole " + @blockTutroles[i].inspect
+                      else
+                        @results.push "FAILED creating tutrole " + @blockTutroles[i].inspect + 
+                                      "ERROR: " + @blockTutroles[i].errors.messages.inspect
+                      end
+                      # the last entity in chain is the week + 1 entry. 
+                      # block will be set to self. 
+                      if i == mycopynumweeks+1
+                        @blockTutroles[i].block = @blockTutroles[i].id   
+                        if @blockTutroles[i].save
+                          @results.push "updated tutrole :block " + @blockTutroles[i].inspect
+                        else
+                          @results.push "FAILED updating tutrole block " + @blockTutroles[i].inspect + 
+                                        "ERROR: " + @blockTutroles[i].errors.messages.inspect
+                        end
+                      end
+                    end
+                  end
+                end
+                #---- copy any existing students that have the desired status & kind ----
+                # Now find all the students in this lesson
+                if lesson.students.respond_to?(:each) then
+                  lesson.students.sort_by {|obj| obj.pname }.each do |student|
+                    @blockRoles = Array.new
+                    @blockRoles[0] = student.roles.where(lesson_id: lesson.id).first
+                    # check if this student should be copied.
+                    # for some lesson types, students are never copied
+                    next if ['flexible', 'on_BFL', 'onSetup', 'onCall',
+                             'free'].include?(lesson.status)
+                    # others depend on their student-lesson status/
+                    flagstudentcopy = false
+                    # do not copy certain kinds!
+                    flagstudentcopy = true if ['scheduled', 'attended', 'away',
+                                      'absent', 'bye'].include?(@blockRoles[0].status)
+                    flagstudentcopy = false if ['catchup', 'bonus', 'free'].include?(@blockRoles[0].kind)
+                    next unless flagstudentcopy
+                    # if so, copy  this student-lesson
+                    thisroleid = @blockRoles[0].id
+                    @allCopiedRolesIds.push thisroleid    # track all copied slots 
+                    @blockRoles[0].block = @blockRoles[0].first = thisroleid
+                    # Now need to copy this to the following mycopynumweeks weeks.
+                    # we are forming a chain with first = first id in chain &
+                    # next = the following id in the chain.
+                    (1..mycopynumweeks+1).each do |i|
+                      parentLessonId = @blockLessons[i].id
+                      # cater for the week plus one entries
+                      @blockRoles[i] = Role.new(lesson_id: parentLessonId,
+                                                      student_id: student.id, 
+                                                      status: 'scheduled',
+                                                      kind: @blockRoles[0].kind,
+                                                      first: thisroleid,
+                                                      block: thisroleid)
+                      
+                      #byebug
+                      if @blockRoles[0].student.status == 'fortnightly'
+                        if @blockRoles[0].status == 'bye'
+                          @blockRoles[i].status = i.even? ? 'bye' : 'scheduled' 
+                        else
+                          @blockRoles[i].status = i.odd? ? 'bye' : 'scheduled' 
+                        end
+                      end
+                      logger.debug "@blockRoles ( " + i.to_s + "): " + @blockRoles[i].inspect
+                    end
+                    (0..mycopynumweeks+1).reverse_each do |i|
+                      # the last entity in chain will have next = nil by default, do not populate.
+                      @blockRoles[i].next = @blockRoles[i+1].id unless i == mycopynumweeks+1  
+                      if @blockRoles[i].save
+                        @results.push "created role " + @blockRoles[i].inspect
+                      else
+                        @results.push "FAILED creating role " + @blockRoles[i].inspect + 
+                                      "ERROR: " + @blockRoles[i].errors.messages.inspect
+                      end
+                      # the last entity in chain is the week + 1 entry. 
+                      # block will be set to self. 
+                      if i == mycopynumweeks+1
+                        @blockRoles[i].block = @blockRoles[i].id if i == mycopynumweeks+1  
+                        if @blockRoles[i].save
+                          @results.push "updated role :block " + @blockTutroles[i].inspect
+                        else
+                          @results.push "FAILED updating role block " + @blockTutroles[i].inspect + 
+                                        "ERROR: " + @blockRoles[i].errors.messages.inspect
+                        end
+                      end
+                    end
+                  end
+                end
+              end
+            end
+          end
+        end        
+      end
+    end
 
+    # Now need to break the chains 
+    # Remember that week + 1 is in the old chain.
+    # Need to find previous link in the chain and set entity.next to nil.
+    #@allCopiedSlotsIds    = Array.new
+    #@allCopiedLessonsIds  = Array.new
+    #@allCopiedRolesIds    = Array.new
+    #@allCopiedTutrolesIds = Array.new
+=begin
+    Slot.where(next: @allCopiedSlotsIds).update_all(next: nil)
+    Lesson.where(next: @allCopiedLessonsIds).update_all(next: nil)
+    Role.where(next: @allCopiedRolesIds).update_all(next: nil)
+    Tutrole.where(next: @allCopiedTutrolesIds).update_all(next: nil)
+=end
+  end
 
 #---------------------------------------------------------------------------
 #
@@ -2827,8 +3234,11 @@ end           # end of testing option.
 
 
   private
-
     # Never trust parameters from the scary internet, only allow the white list through.
+    def copytermweeks_params
+      params.require(:copy).permit(:from, :to, :num_days, :num_weeks, :first_week)
+    end
+
     def copytermdays_params
       params.require(:copy).permit(:from, :to, :num_days)
     end

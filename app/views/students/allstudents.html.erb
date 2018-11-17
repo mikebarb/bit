@@ -1,8 +1,6 @@
 <h1>Listing students</h1>
 <%= link_to "all student history", students_history_path %><br>
 <%= link_to 'New Student', new_student_path %>
-<%= paginate @students %>
-<%= page_entries_info @students %>
 <table>
   <thead>
     <tr>
@@ -52,8 +50,6 @@
     <% end %>
   </tbody>
 </table>
-<%= page_entries_info @students %>
-<%= paginate @students %>
 <br>
 
 <%= link_to 'New Student', new_student_path %>

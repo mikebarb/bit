@@ -1,0 +1,52 @@
+<h1>Admin Controller - Copy term weeks in the scheduler</h1>
+<p>This copies weeks suitable for propagating relevant sessions, tutors and students for populating term information.</p>
+<br>
+    <%
+    # Love this very straight forward tutorial on forms
+    # https://www.theodinproject.com/courses/ruby-on-rails/lessons/form-basics
+    %>
+    
+    <% #byebug %>
+    
+    <%= form_tag("copytermweeks", method: "get") do %>
+      The schedule will be copied from an already populated week:<br>
+      <%= label_tag("copy[from]", "Date to copy from:") %>
+      <% if params["from"].nil? %>
+        <%= date_field_tag("copy[from]") %>
+      <% else %>
+        <%= date_field_tag("copy[from]", params["from"]) %>
+      <% end %><br>  
+      picking up this number of days in the copied from week:<br>
+      <%= label_tag("copy[num_days]", "Number of days to copy:") %>
+      <% if params["num_days"].nil? %>
+        <%= number_field_tag("copy[num_days]", '1', min:1) %>
+      <% else %>
+        <%= number_field_tag("copy[num_days]", params["num_days"]) %>
+      <% end %><br>  
+
+      The schedule will be copied to the weeks beginning at this date:<br>
+      <%= label_tag("copy[to]", "Date to copy to:") %>
+      <% if params["to"].nil? %>
+        <%= date_field_tag("copy[to]") %>
+      <% else %>
+        <%= date_field_tag("copy[to]", params["to"]) %>
+      <% end %><br>
+
+      And copied repeately into this many continuous weeks:<br>
+      <%= label_tag("copy[num_weeks]", "Number of weeks to populate:") %>
+      <% if params["num_weeks"].nil? %>
+        <%= number_field_tag("copy[num_weeks]", '1', min:1) %>
+      <% else %>
+        <%= number_field_tag("copy[num_weeks]", params["num_weeks"]) %>
+      <% end %><br>  
+      
+      Then it will be copied into one more week for the beginning of the following term:<br> 
+      <%= label_tag("copy[first_week]", "Start date of next term:") %>
+      <% if params["first_week"].nil? %>
+        <%= date_field_tag("copy[first_week]") %>
+      <% else %>
+        <%= date_field_tag("copy[first_week]", params["first_week"]) %>
+      <% end %><br>  
+      <%= submit_tag("Copy") %>
+    <% end %>
+    

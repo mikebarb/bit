@@ -36,8 +36,10 @@ var myhost = window.location.protocol + '//' + window.location.hostname;   // ba
 var ably;             // messaging global identifier
 
 var ready = function() {
+  console.log("called ready");
   if(document.getElementById('page_name')){
     var page_name = document.getElementById('page_name').innerHTML;
+    console.log("page name: " + page_name);
     if((page_name == 'calendar') ||
         (page_name == 'stats')){
       ready_common();
@@ -52,8 +54,8 @@ var ready = function() {
   }
 };
 
-
-var ready_common = function() {
+//var ready_common = function() {
+function ready_common() {
 /*
   ably = new Ably.Realtime({ authUrl: '/auth' });
   ably.connection.on('connecting', function() { showStatus('Connecting to Ably...'); });
@@ -71,8 +73,9 @@ var ready_common = function() {
 */
 };
 
-var ready_calendar = function() {
-
+//var ready_calendar = function() {
+function ready_calendar() {
+  console.log("called ready_calendar");
 /* No longer needed with Ably
   //App.cable.subscriptions.create("CalendarChannel", {  
   App.calendar = App.cable.subscriptions.create("CalendarChannel", {  
@@ -93,14 +96,22 @@ var ready_calendar = function() {
   ably = new Ably.Realtime({ authUrl: '/auth' });
   var calendarChannel = ably.channels.get('calendar');
   calendarChannel.subscribe(function(message){
-    console.log("calendar.js - entered ably subscribe function for calendar");
+    console.log("calendar.js - entered ably subscribe function for calendar - about to call moveelement_update");
     //console.log(JSON.parse(message.data));
     var returnedDomData = message.data;
     console.log(message.data);
     returnedDomData['ably'] = true;
     moveelement_update(returnedDomData);
-    console.log("dom update done!!!");
+    console.log("ably_receiver - dom update done!!!");
   });
+    var calendarChannelListener = function(stateChange) {
+    console.log('stats channel state is ' + stateChange.current);
+    console.log('previous state was ' + stateChange.previous);
+    if(stateChange.reason) {
+      console.log('the reason for the state change was: ' + stateChange.reason.toString());
+    }
+  };
+  calendarChannel.on(calendarChannelListener);
 
   // some global variables for this page
   //var sf = 5;     // significant figures for dom id components e.g.lesson ids, etc.
@@ -147,6 +158,7 @@ var ready_calendar = function() {
     }
   }
   selectshows(document);  // call the functions that invokes the checkbox values.
+  
 
   $("ui-draggable");
   
@@ -330,6 +342,9 @@ var ready_calendar = function() {
           //var validStudentStatuses = ["Deal", "Dealt", "Attended"];
           // clickEleIsTutor = tutor element to be manipulated.
           // clickEleIsStudent = student element to be manipulated.
+          // This time delay is inserted to avoid critical races at the server!
+          var timedelay = 10;
+          var timedelayinterval = 250;
           if (document.getElementById('enableQuickStatus').checked){
             var newStatus = document.getElementById('quickStatusValue').value;
             if (clickEleIsTutor){     // clicked on tutor
@@ -340,6 +355,8 @@ var ready_calendar = function() {
                 currentActivity['object_id'] = clickEleIsTutor.id;
                 currentActivity['object_type'] = objectidToObjecttype(currentActivity['object_id']);
                 personupdatestatuskindcomment( currentActivity );
+                console.log("testing: " + new Date().toLocaleTimeString() + " no delay.");
+                timedelay = timedelay + timedelayinterval;
               }
             } else {                // clicked on student
               if (validStudentStatuses.indexOf(newStatus) >= 0){
@@ -349,6 +366,8 @@ var ready_calendar = function() {
                 currentActivity['object_id'] = clickEleIsStudent.id;
                 currentActivity['object_type'] = objectidToObjecttype(currentActivity['object_id']);
                 personupdatestatuskindcomment( currentActivity );
+                console.log("testing: " + new Date().toLocaleTimeString() + " no delay.");
+                timedelay = timedelay + timedelayinterval;
               }
             }
           }
@@ -361,7 +380,11 @@ var ready_calendar = function() {
                 currentActivity['move_ele_id'] = clickEleIsTutor.id;
                 currentActivity['object_id'] = clickEleIsTutor.id;
                 currentActivity['object_type'] = objectidToObjecttype(currentActivity['object_id']);
-                personupdatestatuskindcomment( currentActivity );
+                //personupdatestatuskindcomment( currentActivity );
+                var currentActivity_hold1 = JSON.parse(JSON.stringify(currentActivity));
+                setTimeout(personupdatestatuskindcomment.bind(null, currentActivity_hold1 ), timedelay);
+                setTimeout(function(){ console.log("testing: " + new Date().toLocaleTimeString() )}, timedelay);
+                timedelay = timedelay + timedelayinterval;
               }
             } else {                // clicked on student
               if (validStudentKinds.indexOf(newKind) >= 0){
@@ -370,7 +393,11 @@ var ready_calendar = function() {
                 currentActivity['move_ele_id'] = clickEleIsStudent.id;
                 currentActivity['object_id'] = clickEleIsStudent.id;
                 currentActivity['object_type'] = objectidToObjecttype(currentActivity['object_id']);
-                personupdatestatuskindcomment( currentActivity );
+                //personupdatestatuskindcomment( currentActivity );
+                var currentActivity_hold2 = JSON.parse(JSON.stringify(currentActivity));
+                setTimeout(personupdatestatuskindcomment.bind(null, currentActivity_hold2 ), timedelay);
+                setTimeout(function(){ console.log("testing: " + new Date().toLocaleTimeString() )}, timedelay);
+                timedelay = timedelay + timedelayinterval;
               }
             }
           }
@@ -383,10 +410,14 @@ var ready_calendar = function() {
                 currentActivity['move_ele_id'] = clickEleIsStudent.id;
                 currentActivity['object_id']   = clickEleIsStudent.id;
                 currentActivity['object_type'] = objectidToObjecttype(currentActivity['object_id']);
-                personupdatestatuskindcomment( currentActivity );
+                //personupdatestatuskindcomment( currentActivity );
+                var currentActivity_hold3 = JSON.parse(JSON.stringify(currentActivity));
+                setTimeout(personupdatestatuskindcomment.bind(null, currentActivity_hold3 ), timedelay);
+                setTimeout(function(){ console.log("testing: " + new Date().toLocaleTimeString() )}, timedelay);
               }
             }
           }
+          console.log ("end timedelay: " + timedelay.toString());
           //       <li id="student-personstatus-fortnightly" class="tertiary-menu__choice" data-choice="student-personstatus-fortnightly">
           //          <p>personStatus: Fortnightly</p>
           //       </li>
@@ -437,10 +468,14 @@ var ready_calendar = function() {
     var object_type    = objectidToObjecttype(object_id); // 'lesson' 'tutor' or 'student'
     var object_context = objectidToContext(object_id); //'index' or 'lesson'
     var thisEle = document.getElementById(object_id);
-    var scmi_copy = false;  //scmi - set comtext menu items.
-    var scmi_move = false;  // to show or not show in menu
-    var scmi_paste = false;  // set the dom display value at end.
+    var object_run = taskItemInContext.classList.contains('run'); // true or false
+    var scmi_copy = false;     //scmi - set comtext menu items.
+    var scmi_move = false;     // to show or not show in menu
+    var scmi_moverun = false;  // set the dom display value at end.  
+    var scmi_paste = false;  
     var scmi_remove = false;
+    var scmi_removerun = false;
+    var scmi_extendrun = false;
     var scmi_addLesson = false;
     var scmi_removeLesson = false;
     var scmi_setStatus = false;
@@ -453,10 +488,18 @@ var ready_calendar = function() {
     var scmi_editSubject = false;
     var scmi_editEntry = false;
 
-    // You can only paste if a source for copy or move has been identified.
-    if(currentActivity.action  == 'move' || // something has been copied,
-       currentActivity.action  == 'copy'){  // ready to be pasted
+    // You can only paste if a source for copy, moverrun or move has been identified.
+    if(currentActivity.action  == 'move' ||     // something has been copied,
+       currentActivity.action  == 'copy'){      // ready to be pasted
       scmi_paste = true;
+    }else if(currentActivity.action  == 'moverun') {
+      // also need to check that the source and target element are in the same week
+      // compare object_id(destination element) to currentActivity.object_id(source element)
+      //testSuiteForWeekOfYear();   // for testing day of week function
+      if(getWeekOfYear(currentActivity.object_id.substring(3,11)).substring(0, 8) == 
+         getWeekOfYear(object_id.substring(3,11)).substring(0, 8)){
+        scmi_paste = true;
+      }
     }
 
     switch(object_type){     // student, tutor, lesson.
@@ -474,6 +517,12 @@ var ready_calendar = function() {
           //scmi_setPersonStatus = true;     // only in index area for tutors 
         }else{  // in the main schedule area (lesson)
           scmi_copy = scmi_move = scmi_remove = scmi_addLesson = true;
+          // can only do a moverun if this element contains a class of 'run'
+          if(taskItemInContext.classList.contains('run')){
+            scmi_moverun = true;
+            scmi_removerun = true;
+            scmi_extendrun = true;
+          }
           scmi_setStatus = scmi_setKind = scmi_editComment = scmi_editDetail = true;
           scmi_history = true;
           scmi_changes = true;
@@ -497,9 +546,12 @@ var ready_calendar = function() {
     
     // Here we simply hide or show the menu items based on above settings.
     setscmi('context-move', scmi_move);
+    setscmi('context-moverun', scmi_moverun);
     setscmi('context-copy', scmi_copy);
     setscmi('context-paste', scmi_paste);
     setscmi('context-remove', scmi_remove);
+    setscmi('context-moverun', scmi_removerun);
+    setscmi('context-moverun', scmi_extendrun);
     setscmi('context-addLesson', scmi_addLesson);
     setscmi('context-removeLesson', scmi_removeLesson);
     setscmi('context-setStatus', scmi_setStatus);
@@ -513,6 +565,92 @@ var ready_calendar = function() {
     setscmi('context-editEntry', scmi_editEntry);
   }
   
+
+  //***********************************************************************
+  // Helper function                                                      *
+  // Pass: date in text format "yyyymmdd"                                 *
+  // Return: Week of year in format yyyy-Wdd                              *
+  //***********************************************************************
+
+function testSuiteForWeekOfYear(){
+      // for testing only!!!!
+      // https://en.wikipedia.org/wiki/ISO_week_date
+      testWeekOfYear("20050101", '2004-W53-6');
+      testWeekOfYear("20050102", '2004-W53-7');
+      testWeekOfYear("20051231", '2005-W52-6');
+      testWeekOfYear("20060101", '2005-W52-7');
+      testWeekOfYear("20060102", '2006-W01-1');
+      testWeekOfYear("20061231", '2006-W52-7');
+      testWeekOfYear("20070101", '2007-W01-1');
+      testWeekOfYear("20071230", '2007-W52-7');
+      testWeekOfYear("20071231", '2008-W01-1');
+      testWeekOfYear("20080101", '2008-W01-2');
+      testWeekOfYear("20081228", '2008-W52-7');
+      testWeekOfYear("20081229", '2009-W01-1');
+      testWeekOfYear("20081230", '2009-W01-2');
+      testWeekOfYear("20081231", '2009-W01-3');
+      testWeekOfYear("20090101", '2009-W01-4');
+      testWeekOfYear("20091231", '2009-W53-4');
+      testWeekOfYear("20100101", '2009-W53-5');
+      testWeekOfYear("20100102", '2009-W53-6');
+      testWeekOfYear("20100103", '2009-W53-7');
+      testWeekOfYear("20100104", '2010-W01-1');
+}
+
+  function testWeekOfYear(mydate, expect){
+    var outputtext = mydate + "=>" + expect; 
+    var myresult = getWeekOfYear(mydate); 
+    if (myresult == expect){
+      console.log(outputtext + "  OK" );
+    }else{
+      console.log(outputtext + "  FAILED got " + myresult);
+    }
+  }
+
+  function getWeekOfYear(stringDate){
+    var mySourceDate = new Date(stringDate.substring(0,4) + '-' +
+                                stringDate.substring(4,6) + '-' + 
+                                stringDate.substring(6,8));
+    var myyear = parseInt(stringDate.substring(0,4), 10);
+    // determine start of dow (day of week) year.
+    var temp = new Date(myyear + '-01-04');    // must occur in first week
+    var mydow = temp.getUTCDay();              // get day of week for this date
+    mydow = mydow == 0 ? 7 : mydow;            // convert from java dow - Sunday becomes day 7.
+    var SourceStartCurrentYear = new Date(temp.getTime() - ((mydow - 1) * 24 * 3600000)); // first day of dow year
+    //console.log("SourceStartCurrentYear: " + SourceStartCurrentYear.toUTCString());
+    var myDiff = mySourceDate.getTime() - SourceStartCurrentYear.getTime();
+    var weekOfYear = myDiff / (7 * 24 * 3600000);   // still one week out!!! adjusted later
+    var weekYear = myyear;                          // track the week_of_year year.
+    var weekday = mySourceDate.getUTCDay();
+    weekday = weekday == 0 ? 7 : weekday;
+    if( myDiff < 0 ){          // check if the last week in the prevous year
+      temp = new Date((myyear - 1) + '-01-04');
+      mydow = temp.getUTCDay();
+      mydow = mydow == 0 ? 7 : mydow; 
+      var SourceStartPrevYear = new Date(temp.getTime() - ((mydow - 1) * 24 * 3600000));
+      //console.log("SourceStartPrevYear: " + SourceStartPrevYear.toUTCString());
+      weekOfYear = (mySourceDate.getTime() - SourceStartPrevYear.getTime()) / (7 * 24 * 3600000);
+      weekYear = myyear - 1;
+    }else if (weekOfYear > 50){
+      // check if it is in the first week in the next year
+      temp = new Date((myyear + 1) + '-01-04');
+      mydow = temp.getUTCDay();
+      mydow = mydow == 0 ? 7 : mydow; 
+      var SourceStartNextYear = new Date(temp.getTime() - ((mydow - 1) * 24 * 3600000));
+      //console.log("SourceStartNextYear: " + SourceStartNextYear.toUTCString());
+      myDiff = mySourceDate.getTime() - SourceStartNextYear.getTime();
+      if(myDiff >= 0){
+        weekOfYear = myDiff / (7 * 24 * 3600000);
+        weekYear = myyear + 1;
+      }
+    }
+    weekOfYear= Number(String(1 + weekOfYear).replace(/\..*/,""));    // truncate
+    var weekYearWeek = weekYear + (weekOfYear < 10 ? '-W0' : '-W') + weekOfYear + '-' + weekday;
+    //console.log(stringDate + "=>" + weekYearWeek);
+    //console.log("week of year: " + weekOfYear);
+    //console.log("week of year: " + weekYearWeek);
+    return weekYearWeek;
+  }
 
   //***********************************************************************
   // Perform the actions invoked by the context menu items.                *
@@ -569,25 +707,22 @@ var ready_calendar = function() {
       currentActivity['object_id']   = thisEleId;     
       currentActivity['object_type'] = objectidToObjecttype(currentActivity['object_id']);
       thisEle = document.getElementById(thisEleId);
-      //currentActivity['ele_old_parent_id'] = document.getElementById(thisEleId).parentElement.id;
-
-/*      switch (currentActivity['object_type']) {
-        case 'student':   //student
-        case 'tutor':   //tutor
-          currentActivity['ele_old_parent_id'] = clickInsideElementClassList2(thisEle, ['lesson']).id;
-          break;
-        case 'lesson':   //lesson
-          currentActivity['ele_old_parent_id'] = clickInsideElementClassList2(thisEle, ['slot']).id;
-          break;
-      }
-*/
     }
 
     switch( thisAction ) {     
       case "copy":
       case "move":
+      case "moverun":
         // Nothing else to do, need a paste before any action can be taken!!!
         
+        break;
+      case "extendrun":
+          switch (currentActivity['object_type']) {
+            case 'student':   //student
+            case 'tutor':   //tutor
+              personupdateslesson_Update( currentActivity );      //**update**
+              break;
+          }
         break;
       case "paste":
         //Note, we need the action for the move/copy, not paste.
@@ -632,6 +767,7 @@ var ready_calendar = function() {
         // Of course, if there is no currentActivity on a paste, then ignore.
         break;
       case "remove":
+      case "removerun":
         // This removed the selected element
         // Actually deletes the mapping record for tutor and student
         deleteentry_Update(currentActivity);
@@ -1089,13 +1225,26 @@ var ready_calendar = function() {
           showhistory(data);
         },
         error: function(xhr){
+          var error_message = "";
+          if (typeof xhr.responseText == 'string'){
+            error_message = xhr.responseText;
+          }else{
             var errors = $.parseJSON(xhr.responseText);
-            var error_message = "";
-            for (var error in (errors['person_id'])){
+            for (var error in (errors['person_id'])){     // lesson_id ??????
               error_message += " : " + errors['person_id'][error];
             }
-            alert('error fetching history for ' + 
-                   domchange['object_type'] + ': ' + error_message);
+          }
+          alert('error fetching history for ' + domchange['object_type'] +
+                error_message);
+                
+            // old verions
+            //var errors = $.parseJSON(xhr.responseText);
+            //var error_message = "";
+            //for (var error in (errors['person_id'])){
+            //  error_message += " : " + errors['person_id'][error];
+            //}
+            //alert('error fetching history for ' + 
+            //       domchange['object_type'] + ': ' + error_message);
         }
      });
   }
@@ -1184,13 +1333,24 @@ var ready_calendar = function() {
             //moveelement_update( result1 );
         },
         error: function(xhr){
+          var error_message = "";
+          if (typeof xhr.responseText == 'string'){
+            error_message = xhr.responseText;
+          }else{
             var errors = $.parseJSON(xhr.responseText);
-            var error_message = "";
-            for (var error in (errors['person_id'])){
+            for (var error in (errors['person_id'])){     // lesson_id ??????
               error_message += " : " + errors['person_id'][error];
             }
-            alert('error updating ' + domchange['object_type'] +
-                  ' '  + domchange['updatefield'] + ': ' + error_message);
+          }
+          alert('error updating ' + domchange['object_type'] +
+                ' '  + domchange['updatefield'] + ': ' + error_message);
+            //var errors = $.parseJSON(xhr.responseText);
+            //var error_message = "";
+            //for (var error in (errors['person_id'])){
+            //  error_message += " : " + errors['person_id'][error];
+            //}
+            //alert('error updating ' + domchange['object_type'] +
+            //      ' '  + domchange['updatefield'] + ': ' + error_message);
         }
      });
   }
@@ -1203,6 +1363,8 @@ var ready_calendar = function() {
   function personupdatestatuskindcomment( domchange ){
     // domchange['action']    = thisChoice;  // in tertiary menu
     // domchange['object_id'] = thisEleId; //=moveEleId
+    console.log( "personupdatestatuskindcomment: " + new Date().toLocaleTimeString() );
+    console.dir(domchange);
     var mydata = {'domchange' : domchange};
     var action = domchange['action'];   //update status or kind with value
     var object_type = domchange['object_type'];
@@ -1235,7 +1397,7 @@ var ready_calendar = function() {
         }
       }
     }
-    // can now make teh generic status manipulation - status and person.
+    // can now make the generic status manipulation - status and person.
     if(updatefield == 'personstatus'){ // treated differently - update person record
       updatefield = 'status';
       controllertype = 'person';
@@ -1291,13 +1453,17 @@ var ready_calendar = function() {
           //moveelement_update( result1 );
         },
         error: function(xhr){
+          var error_message = "";
+          if (typeof xhr.responseText == 'string'){
+            error_message = xhr.responseText;
+          }else{
             var errors = $.parseJSON(xhr.responseText);
-            var error_message = "";
-            for (var error in (errors['person_id'])){
-              error_message += " : " + errors['person_id'][error];
+            for (var error in (errors['person_id'])){     // lesson_id ??????
+              error_message += " : " + errors['lesson_id'][error];
             }
-            alert('error updating ' + domchange['object_type'] +
-                  ' '  + updatefield + ': ' + error_message);
+          }
+          alert('error updating ' + domchange['object_type'] +
+                ' '  + updatefield + ': ' + error_message);
         }
      });
   }
@@ -1412,10 +1578,23 @@ var ready_calendar = function() {
             //moveelement_update(domchange);
             console.log("deleteentry_Update Ajax response OK");
         },
-        error: function(request, textStatus, errorThrown){
-            console.log("ajax error occured: " + request.status.to_s + " - " + textStatus );
-            alert("ajax error occured: " + request.status.to_s + " - " + textStatus );
+        error: function(xhr){
+            var error_message = "";
+            if (typeof xhr.responseText == 'string'){
+              error_message = xhr.responseText;
+            }else{
+              var errors = $.parseJSON(xhr.responseText);
+              for (var error in (errors['lesson_id'])){     // lesson_id ??????
+                error_message += " : " + errors['lesson_id'][error];
+              }
+            }
+            alert("error deleting entries: \n" + error_message);
         }
+        // old version
+        //error: function(request, textStatus, errorThrown){
+        //    console.log("ajax error occured: " + request.status.to_s + " - " + textStatus );
+        //    alert("ajax error occured: " + request.status.to_s + " - " + textStatus );
+        //}
     });
   }
 
@@ -1459,8 +1638,10 @@ var ready_calendar = function() {
     var object_type = domchange['object_type'];
     var myurl;
     var mydata;
-    if(isParentSame(domchange)){  // ignore if dropped in same location
-      return;
+    if(domchange['action'] != 'extendrun'){
+      if(isParentSame(domchange)){  // ignore if dropped in same location
+        return;
+      }
     }
     mydata =  { 'domchange' : domchange  };
     if( 'student' == object_type || 'tutor'  == object_type){
@@ -1479,12 +1660,28 @@ var ready_calendar = function() {
             //moveelement_update(result1);
         },
         error: function(xhr){
+          var error_message = "";
+          if (typeof xhr.responseText == 'string'){
+            error_message = xhr.responseText;
+          }else{
             var errors = $.parseJSON(xhr.responseText);
-            var error_message = "";
-            for (var error in (errors['lesson_id'])){
+            for (var error in (errors['lesson_id'])){     // lesson_id ??????
               error_message += " : " + errors['lesson_id'][error];
             }
-            alert("error moving student or tutor to another lesson: " + error_message);
+          }
+          alert("error moving student or tutor to another lesson: \n" + 
+                domchange['object_type'] + ' '  + 
+                domchange['updatefield'] + ': ' + error_message);
+            //var errors = $.parseJSON(xhr.responseText);
+            //var error_message = "";
+            //if (typeof errors == 'string'){
+            //  error_message = errors;
+            //}else{
+            //  for (var error in (errors['lesson_id'])){
+            //    error_message += " : " + errors['lesson_id'][error];
+            //  }
+            //}
+            //alert("error moving student or tutor to another lesson: \n" + error_message);
         }
      });
   }
@@ -1573,12 +1770,12 @@ var ready_calendar = function() {
 
     // ------------- common initialisation for all operations ---------------
     
-    if( domchange['actioncable'] ){
-      console.log("moveelement_update processing - passed through action cable");
-    }else{
-      console.log("moveelement_update processing - passed through action cable");
-    }
-    console.log(domchange);
+    //if( domchange['actioncable'] ){
+    //  console.log("moveelement_update processing - passed through action cable");
+    //}else{
+    //  console.log("moveelement_update processing - passed through Ably");
+    //}
+    //console.log(domchange);
     var action      = domchange['action'];
     var object_type = domchange['object_type'];
     var ele_object  = document.getElementById(domchange['object_id']);
@@ -1749,7 +1946,6 @@ var ready_calendar = function() {
           }
         }
       }
-      
       // special case - on how to check if updates are required.
       // setdetail is updating info on the tutor or student
       // this can occur multiple times on a page!
@@ -1876,6 +2072,7 @@ function hideshowperson (searchClass ){    // 'student' or 'tutor'
 //------ End of Filter by name functions for the tutors and students -------
 
 function selectshows_scoped(ele_checkbox, ele_scope) {
+  console.log("called selectshows_scoped");
   if(ele_checkbox == document) {
     // Need to process all checklists
     console.log ('this is called with passed element being document');
@@ -1893,6 +2090,7 @@ function selectshows_scoped(ele_checkbox, ele_scope) {
   var hidetutors_state = document.getElementById("hidetutors").checked;
   var hidestudents_state = document.getElementById("hidestudents").checked;
   for(var i = 0; i < showList.length; i++){
+    //console.log("case: " + showList[i].id);
     switch(showList[i].id){
       case "hidetutors":
         // first check if either students or tutors need to be displayed.
@@ -1995,14 +2193,29 @@ function selectshows_scoped(ele_checkbox, ele_scope) {
       case "enableQuickPersonStatus":
         // do nothing - ignore.
         break;
+      case "selectdowone":
+        showhidedowone();
+        break;
+      case "selectdowtwo":
+        showhidedowtwo();
+        break;
+      case "selectdowthree":
+        showhidedowthree();
+        break;
+      case "selectdowfour":
+        showhidedowfour();
+        break;
+      case "selectdowfive":
+        showhidedowfive();
+        break;
       default:    // hides sites based on checklists
         var thispattern = /hide(.*)/;
-        console.log("showList[i].id: " + showList[i].id);
+        //console.log("showList[i].id: " + showList[i].id);
         var m = thispattern.exec(showList[i].id);
         if( m ){
-          console.log("m: " + m[1]);
+          //console.log("m: " + m[1]);
           var siteid = 'site-' + m[1];
-          console.log("siteid: " + siteid);          
+          //console.log("siteid: " + siteid);          
           if (showList[i].checked){
             document.getElementById(siteid).classList.remove("hideme");
           }else{
@@ -2014,6 +2227,7 @@ function selectshows_scoped(ele_checkbox, ele_scope) {
 }
 
 function selectshows(ele_checkbox) {
+  console.log("called selectshows");
   console.dir(ele_checkbox);
   selectshows_scoped(ele_checkbox, document);
 }
@@ -2032,7 +2246,8 @@ function showhidecomments(theseelements, tohide) {
 }
 
 
-var ready_stats = function(){
+//var ready_stats = function(){
+function ready_stats(){
 
 /*//No longer needed with Ably
   //App.cable.subscriptions.create("CalendarChannel", {  
@@ -2061,7 +2276,15 @@ var ready_stats = function(){
     stats_update(returnedStatsData);
     console.log("stats update done!!!");
   });
-
+  var statsChannelListener = function(stateChange) {
+    console.log('stats channel state is ' + stateChange.current);
+    console.log('previous state was ' + stateChange.previous);
+    if(stateChange.reason) {
+      console.log('the reason for the state change was: ' + stateChange.reason.toString());
+    }
+  };
+  statsChannel.on(statsChannelListener);
+  
   console.log("entered ready_status");
   showcatchup();
   showfree();
@@ -2138,7 +2361,6 @@ var ready_stats = function(){
     var scmi_copy = false;  //scmi - set comtext menu items.
     var scmi_move = false;  // to show or not show in menu
     var scmi_paste = false;  // set the dom display value at end.
-
     switch(object_type){     // student, tutor, lesson.
       case 'student':   //student
       case 'tutor':   //tutor
@@ -2160,7 +2382,6 @@ var ready_stats = function(){
         }
         break;
     }
-    
     // Here we simply hide or show the menu items based on above settings.
     setscmi('context-move', scmi_move);
     setscmi('context-copy', scmi_copy);
@@ -2415,6 +2636,8 @@ var ready_stats = function(){
     //if(isParentSame(domchange)){  // ignore if dropped in same location
     //  return;
     //}
+    // show that this is initiated in stats page
+    domchange['allocation'] = 'stats';
     mydata =  { 'domchange' : domchange  };
     if( 'student' == object_type || 'tutor'  == object_type){
       myurl = myhost + '/' + object_type + 'movecopylesson/'; 
@@ -2428,7 +2651,7 @@ var ready_stats = function(){
         dataType: "json",
         context: domchange,
         success: function(result1, result2, result3){
-            console.log("personupdateslesson_Update Ajax response OK");
+            console.log("personupdateslesson_Update_Stats Ajax response OK");
             stats_student_update(result1);
             //moveelement_update(result1);
         },
@@ -2451,10 +2674,16 @@ var ready_stats = function(){
     if(domchange['to_slot']) {   // processing correct move
       var fromObjectId = domchange['object_id_old'];
       var toObjectId   = domchange['object_id'];
-        
+      var m = toObjectId.match(/^([A-Za-z]+)(\d{4})(\d{2})(\d{2})(\d{2})(\d{2})/);
+      var h = m[5];
+      if(m[5] > 12) {h = m[5] - 12 }
+      var d = new Date(m[2],m[3]-1,m[4],h,m[6]);
+      var toObjectText = m[1];
+          m = d.toString().match(/^(.*)\:\d\d\s+GMT/);
+          toObjectText = toObjectText + ' ' + m[1];
       var parseToStudentId     = toObjectId.match(/(s\d+)$/);
       var student_domid = parseToStudentId[1];
-      if(student_domid){  
+      if(student_domid){
         var thisEle = document.getElementById(student_domid);
         var catchupList = thisEle.getElementsByClassName('personlessons')[0].getElementsByClassName('personlesson');
         if(catchupList){
@@ -2468,7 +2697,7 @@ var ready_stats = function(){
               //catchupEle.getElementsByClassName('allocate')[0].innerHTML = toObjectId;
               var eleUpdateDomid = catchupEle.getElementsByClassName('allocate')[0];
               eleUpdateDomid.setAttribute("data-domid", toObjectId);
-              eleUpdateDomid.innerHTML = toObjectId;
+              eleUpdateDomid.innerHTML = toObjectId + ' = ' + toObjectText;
               eleUpdateDomid.id = 'allocate_' + toObjectId;
               break;
             }

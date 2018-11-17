@@ -1,6 +1,7 @@
                       <div class="student <%= "fs" + student.id.to_s.rjust(@sf, "0") 
-                        %><%=            ' s-status-' + set_class_status_f(thisrole) 
-                        %><%= ' s-kind-'   + set_class_kind_f(    thisrole) 
+                        %><%= ' s-status-' + set_class_status_f(thisrole) 
+                        %><%= ' s-kind-'   + set_class_kind_f(  thisrole) 
+                        %><%= ' '          + set_class_run_f(   thisrole) 
                         %>" id=<%= slot + "n" + lesson.to_s.rjust(@sf, "0") + "s" + student.id.to_s.rjust(@sf, "0") %> >
                         <div style=persongroup>
                           <div class="studentname studentinline p-name"><%= student.pname %><%= 

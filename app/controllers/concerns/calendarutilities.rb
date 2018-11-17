@@ -504,10 +504,10 @@ module Calendarutilities
  # -----------------------------------------------------------------------------
   def generate_stats
     # Want all the global lessons with their students
-    @global_students = Student.includes(:lessons)
+    @global_students = Student.includes(:lessons, :roles)
                        .where(:lessons => {status: 'global'})
     
-    logger.debug "@global_students: " + @global_students.inspect
+    #logger.debug "@global_students: " + @global_students.inspect
 
     @alllessons = Hash.new
     @global_students.each do |student|
@@ -532,9 +532,10 @@ module Calendarutilities
         @students_stats[student.id] = Hash.new
         @students_stats[student.id]['total'] = 0
         @students_stats[student.id]['dom_ids'] = Array.new
+        @students_stats[student.id]['role_kind'] = Array.new
       end
       @students_stats[student.id]['student_object'] = student
-      student.lessons.each do |lesson|
+      student.lessons.each_with_index do |lesson, i|
         unless(@students_stats[student.id].key?(lesson.id))
           @students_stats[student.id][lesson.id] = Hash.new
         end
@@ -548,6 +549,7 @@ module Calendarutilities
                  'n' + lesson.id.to_s.rjust(@sf, "0") + 
                  's' + student.id.to_s.rjust(@sf, "0")
         @students_stats[student.id]['dom_ids'].push(dom_id)
+        @students_stats[student.id]['role_kind'].push(student.roles[i].kind)
       end
     end
     #byebug

@@ -31,9 +31,10 @@ Rails.application.routes.draw do
   get 'admins/copydays' => 'admins#copydays', as: :copydays
   get 'admins/copytermdaysedit' => 'admins#copytermdaysedit', as: :copytermdaysedit
   get 'admins/copytermdays' => 'admins#copytermdays', as: :copytermdays
+  get 'admins/copytermweeksedit' => 'admins#copytermweeksedit', as: :copytermweeksedit
+  get 'admins/copytermweeks' => 'admins#copytermweeks', as: :copytermweeks
   get 'admins/deletedaysedit' => 'admins#deletedaysedit', as: :deletedaysedit
   get 'admins/deletedays' => 'admins#deletedays', as: :deletedays
-
 
   post 'removetutorfromlesson' => 'tutroles#removetutorfromlesson', as: :removetutorfromlesson
   post 'tutorcopylesson'       => 'tutroles#tutorcopylesson',       as: :tutorcopylesson
@@ -69,8 +70,9 @@ Rails.application.routes.draw do
   resources :tutors
 
   get 'students/history/:id' => 'students#history', as: :student_history
-  get 'students/history' => 'students#allhistory', as: :students_history
-  get 'students/change/:id' => 'students#change', as: :student_change
+  get 'students/history'     => 'students#allhistory', as: :students_history
+  get 'students/change/:id'  => 'students#change', as: :student_change
+  get 'allstudents'          => 'students#allstudents', as: :allstudents
   post 'studentdetailupdateskc' => 'students#studentdetailupdateskc', as: :students_studentdetailupdateskc
   resources :students
 

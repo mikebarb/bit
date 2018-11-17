@@ -1,0 +1,11 @@
+<h1>Admin Controller - Copying Term Weeks completed.</h1>
+
+<br>
+
+<% @results.each do |result| %>
+ <p><%= result %></p>
+<% end %>
+
+<ul>
+ <%= link_to "copytermweeks", copytermweeksedit_path %>
+</ul>

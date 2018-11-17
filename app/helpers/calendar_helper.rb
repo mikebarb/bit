@@ -54,6 +54,7 @@ module CalendarHelper
     end
     result
   end
+
   
   def set_class_kind_f(personRole)
     kind = personRole.kind
@@ -64,6 +65,17 @@ module CalendarHelper
     end
     result
   end
+
+  def set_class_run_f(personRole)
+    block = personRole.first
+    if block != nil && block != ''
+      result = 'run'
+    else
+      result = ''  
+    end
+    result
+  end
+
   
 
   # Sort the values in display2 (cell of lessons/sessions) by status and then by tutor name
