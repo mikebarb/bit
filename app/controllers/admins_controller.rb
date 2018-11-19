@@ -1496,7 +1496,271 @@ class AdminsController < ApplicationController
     end
   end
 
+#---------------------------------------------------------------------------
+#
+#   Load Students  Updates  ---    version to manage updates
+#   A spreadsheet has been extracted from the Students index page
+#   Michael and Megan has put in their desired updates.
+#
+#---------------------------------------------------------------------------
+  # GET /admins/loadstudentsUpdate
+  def loadstudentsUpdates
+    @flagDbUpdateRun = false
+    if params.has_key?('flagDbUpdate')
+      if params['flagDbUpdate']  == 'run'
+        @flagDbUpdateRun = true
+      end
+    end
+    logger.debug "@flagDbUpdateRun: " + @flagDbUpdateRun.inspect
+    #service = googleauthorisation(request)
+    returned_authorisation = googleauthorisation(request)
+    if returned_authorisation["authorizationurl"]
+      redirect_to returned_authorisation["authorizationurl"] and return
+    end
+    service = returned_authorisation["service"]
+    #spreadsheet_id = '1CbtBqeHyYb9jRmROCgItS2eEaYSwzOMpQZdUWLMvjng'
+    spreadsheet_id = current_user[:ssurl].match(/spreadsheets\/d\/(.*?)\//)[1]
+    sheet_name = current_user[:sstab]
 
+    #---------------------- Read the spreadsheet --------------------
+    logger.debug 'about to read spreadsheet'
+    startrow = 1
+    # first get the 3 columns - Student's Name + Year, Focus, study percentages
+    #This is now all that we get
+    range = sheet_name + "!A#{startrow}:T"
+    response = service.get_spreadsheet_values(spreadsheet_id, range)
+    @students_raw = Array.new(response.values.length){Array.new(11)}
+    #logger.debug "students: " + @students_raw.inspect
+    basecolumncount = 1    #index for loading array - 0 contains spreadsheet row number
+    rowcount = 0			   
+    response.values.each do |r|
+        #logger.debug "============ row #{rowcount} ================"
+        #logger.debug "row: " + r.inspect
+        colcount = 0
+        @students_raw[rowcount][0] = rowcount + startrow
+        r.each do |c|
+          #logger.debug "============ cell value for column #{colcount} ================"
+    	    #logger.debug "cell value: " + c.inspect
+    	    @students_raw[rowcount][basecolumncount + colcount] = c
+    		  colcount = colcount + 1
+        end
+        rowcount = rowcount + 1
+    end
+    #------------------------ Verify spreadsheet --------------------
+    sheetheader = @students_raw[0]
+    flagHeaderOK = true
+    expectedheader = [1, "ID", "Given Name", "Family Name", "MERGE",
+                      "Preferred Name", "UPDATE NAME", "Initials", "Sex",
+                      "Comment", "UPDATE COMMENT", "Status", "UPDATE STATUS",
+                      "Year", "UPDATE YEAR", "Study Percentages",
+                      "UPDATE STUDY PERCENTAGES", "Email", "Phone",
+                      "Inv Code", "Day Code"]
+    
+    headermessage = "Failed headers: "
+    expectedheader.each_with_index do |o, i|
+      if o != sheetheader[i]
+        flagHeaderOK = false  
+        headermessage += "#{i.to_s} => expected (#{o}) got (#{sheetheader[i]})     "
+      end
+    end
+    if flagHeaderOK == false
+      @students = Array.new
+      @students[0] = Hash.new
+      @students[0]['message'] = "spreadsheet error - header is not correct. " +
+                               "You have selected the wrong spreadsheet or " +
+                               "you have not set it up correctly."
+      @students[1] = Hash.new
+      @students[1]['message'] = "Correct headers are: " + expectedheader.inspect  
+      @students[2] = Hash.new
+      @students[2]['message'] = headermessage  
+      return
+    end
+    #---------------------- Scan spreadsheet rows --------------------
+    # now build a student hash of field names with field values
+    @students = Array.new
+    @students_raw.each_with_index do |s, j|
+      #logger.debug "j:: " + j.inspect
+      next if j == 0      # don't want the header
+      #break if j > 4      # DEBUG ONLY
+      i = j-1
+      @students[i] = Hash.new
+      @students[i]['row']        = s[0]
+      if s[1] == ""       # no record in the db according to the spreadsheet
+        # Will need to be created. Need main values as opposed to
+        # update primary values (ignore spreadsheet 'update' values).
+        @students[i]['pname']      = s[5]
+        @students[i]['comment']    = s[9]
+        @students[i]['status']     = s[11]
+        @students[i]['year']       = s[13]
+        @students[i]['study']      = s[15]
+      else  # we only want to update the database
+        # this loads the update columns only and only if spreadsheet has content.
+        @students[i]['id']         = s[1].to_i    # already know it is there
+        @students[i]['pname']      = s[6]  if s[6]  && s[6].match(/\w+/)  
+        @students[i]['comment']    = s[10] if s[10] && s[10].match(/\w+/)  
+        @students[i]['status']     = s[12] if s[12] && s[12].match(/\w+/)  
+        @students[i]['year']       = s[14] if s[14] && s[14].match(/\w+/)
+        @students[i]['study']      = s[16] if s[16] && s[16].match(/\w+/)
+        # possibly a merge is required
+        @students[i]['merge']      = s[4] if s[4].match(/\w+/)
+      end
+      # need to store message for display to the user.
+      @students[i]['message']    = ""
+    end
+    #logger.debug "students: " + @students.inspect
+    #
+    # --------------- Now to work through database creation or update -------------
+    #@students is a hash of all records from the spreadsheets
+    @students.each_with_index do |s, i|
+      #logger.debug "i: " + i.inspect + "   s[id]: " + s['id'].inspect
+      #break if i > 1     # DEBUGGING ONLY
+      # --------------- create record -------------
+      if s['id'] == nil  || s['id'] == ""     # not yet created according to the spreadsheet
+        logger.debug "creating a record"
+        # better check to see if it has been created in a previous run
+        if @students[i].has_key?('pname')  # pname field is mandatory
+          @checkstudents = Student.where(pname: @students[i]['pname'])
+          if @checkstudents.count == 0    # confirmed not in database as spreadsheet expects
+            # simply do nothing and let update proceed.
+          else
+            @students[i]['message'] += "ERROR - record already in the database - row #{(i+1).to_s}"            
+            next   # ERROR - record already in the database
+          end
+        else     # no pname value - ABORT this record!!!
+          @students[i]['message'] += "no pname provided to allow db record creation - row #{(i+1).to_s}"            
+          next   # ERROR in spreadsheet - cannot do any more with this
+        end
+        # All OK for record creation
+        @student = Student.new(pname: @students[i]['pname'])
+        @student.comment =  @students[i]['comment'] if @students[i].has_key?('comment')
+        @student.status  =  @students[i]['status']  if @students[i].has_key?('status')
+        @student.year    =  @students[i]['year']    if @students[i].has_key?('year')
+        @student.study   =  @students[i]['study']   if @students[i].has_key?('study')
+        #logger.debug "create student #{i.to_s}: " + @student.inspect
+        if @flagDbUpdateRun
+          logger.debug "update option selected - creating record"
+          if @student.save
+            @students[i]['message'] = "OK - Record created - row #{i.to_s}" + @students[i]['message']
+            logger.debug "saved changes to " + @students[i]['message']
+          else
+            @students[i]['message'] += "ERROR - row #{i.to_s} - problem saving changes to db for " + @students[i]['message']
+            logger.debug "problem saving changes to db for " + @students[i]['message']
+          end
+        else
+          @students[i]['message'] = "OK - Record created - row #{i.to_s}" + @students[i]['message']
+        end
+      else        # spreadsheet says record should be in th database
+        # --------------- update record -------------
+        #logger.debug "updating the database"
+        @student = Student.find(s['id'])   # get the record & update
+        if @student    # record exists - now to update
+          if s['pname'] && @student.pname != s['pname']
+            @students[i]['message'] += "update pname:" + @student.pname.inspect + "=>" + s['pname']
+            @student.pname = s['pname']
+          end
+          if s['comment'] && @student.comment != s['comment']
+            @students[i]['message'] += "update comment:" + @student.study.inspect + "=>" + s['comment']
+            @student.comment = s['comment']
+          end
+          if s['status'] && @student.status != s['status']
+            @students[i]['message'] += "update status:" + @student.status.inspect + "=>" + s['status']
+            @student.status = s['status']
+          end
+          if s['year'] && @student.year != s['year']
+            @students[i]['message'] += "update year:" + @student.year.inspect + "=>" + s['year']
+            @student.year = s['year']
+          end
+          if s['study'] && @student.study != s['study']
+            @students[i]['message'] += "update study:" + @student.study.inspect + "=>" + s['study']
+            @student.study = s['study']
+          end
+          if @students[i]['message'].length > 0
+            #logger.debug "saved changes row #{(i+1).to_s} " + @students[i]['message']
+            logger.debug "update student #{i.to_s}: " + @student.inspect
+            if @flagDbUpdateRun
+              logger.debug "update option selected - updating record"
+              if @student.save
+                #logger.debug "OK - saved changes to " + @students[i]['message']
+                @students[i]['message'] = "OK record updated  - row #{i.to_s} " + @students[i]['message']
+              else
+                logger.debug "ERROR - row #{i.to_s} - problem saving changes to db for " + @students[i]['message']
+              end
+            end
+          else
+            @students[i]['message'] = "INFO no updates required as record is already correct  - row #{i.to_s}" + @students[i]['message']
+          end
+        else   # record not in database - which was expected.
+          @students[i]['message'] += "ERROR - no record found for this entry - row #{(i+1).to_s}"            
+          # ABORT this record.
+        end
+      end
+    end
+    #--------------------------------------merge------------------------------
+    # Merge requires:
+    #  1. check both records exist
+    #  2. find all roles for the student record being merged
+    #  3. Update the student numbers in these to reference the merged_into student
+    #  4. Set status of merged student to "inactive"
+    #  5. Prepend comment to this student "MERGED into student id xxx pname yyy"
+    #  6. Set pname to "zzzMERGED " + pname.
+    #---------------------------------------------------------------------=--
+    count_merges = 0
+    @students.each_with_index do |s, i|
+      #logger.debug "i: " + i.to_s  + "   =>   " + s.inspect
+      if s.has_key?('merge')     # merge requested
+        count_merges += 1          # count the number of merges encounted in the spreadsheet
+        #break if count_merges > 1  # DEBUGGING ONLY
+        next if s['id'] == 0       # Not a record in the database accordingto the spreadsheet. 
+        merge_id = s['id']         # record to be merged
+        #logger.debug "merge_id: " + merge_id.inspect + s['merge'].inspect
+        m = s['merge'].match(/^Merge.+?(\d+)$/)
+        if m[1]   # ensure relevenant info
+          merge_into_id = m[1]
+        else
+          @students[i]['message'] += "  \nError - requesting merge but merge info invalid"
+          return
+        end
+        # now check both records exist
+        @student_merge = Student.find(merge_id)
+        @students[i]['message'] += "Error - merge record not in db" unless @student_merge
+        @student_merge_into = Student.find(merge_into_id)
+        @students[i]['message'] += "Error - merge_into record not in db" unless @student_merge_into
+        # find all the relevant roles
+        @roles = Role.where(student_id: @student_merge)
+        # Now check to see if the merge has already been done
+        if @student_merge.pname.match(/^zzzMERGED/)
+          @students[i]['message'] = "INFO - already merged." + @students[i]['message'] + "   "
+          next
+        end
+        logger.debug "Number of roles found for " + @student_merge.pname + " :" + @roles.count.to_s
+        # update the student_id in these roles to now reference merge_into
+        @roles.each{|o| o.student_id = @student_merge_into.id}
+        # Set merged student with status, comment and pname
+        @student_merge.status = "inactive"
+        @student_merge.comment = "MERGED into student (#{@student_merge_into.id.to_s})" +
+                                      " #{@student_merge_into.pname} " +  
+                                      @student_merge_into.comment 
+        @student_merge.pname = "zzzMERGED " + @student_merge_into.pname
+        # ensure each student stuff is done as a set.
+        if @flagDbUpdateRun
+          logger.debug "update option selected - merging record"
+          begin
+            Role.transaction do
+              @roles.each do |myrole|
+                myrole.save!
+              end
+              @student_merge.save!
+            end
+            rescue ActiveRecord::RecordInvalid => exception
+              logger.debug "Transaction failed row #{i._to_s} rollback exception: " + exception.inspect
+              @students[i]['message'] = "ERROR - Transaction failed!!!" + exception.inspect + @students[i]['message'] + "   "
+              next
+          end
+        end
+        @students[i]['message'] = "  OK Record Merged - row #{i.to_s}." + @students[i]['message'] + "   "
+      end
+    end
+  end
 
 #---------------------------------------------------------------------------
 #

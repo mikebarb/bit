@@ -13,9 +13,20 @@ and you are loading new data.</p>
       <%= link_to "loadtutors", loadtutors_path %>
       <%= link_to "loadstudents", loadstudents_path %>
       <%= link_to "loadstudents2", loadstudents2_path %>
-      <%= link_to "loadschedule", loadschedule_path %>
+      <%= link_to "loadschedule", loadschedule_path %>  -> Tutoring rosting spradsheets in Google sheets.
+      <br>
       <%= link_to "loadtest", loadtest_path %>
-      <%= link_to "loadtest2", loadtest2_path %>
+      <%= link_to "loadtest2", loadtest2_path %>  -> Testing
+      <br>
+      <br>
+      <p><b>Megans Updates</b></p>
+      <p> This is to load updates for students into the database. Strongly recommend that you do a test run before you do the update. Check very carefully test results. THE UPDATE OPERATATION CANNOT BE REVERSED!!!!</p>
+      <%= link_to "test_megan's_updates - Run first and check results",
+          loadstudentsUpdates_path(:flagDbUpdate => "test") %>
+      <br>
+      <br>
+      <%= link_to "load megan's updates - CANNOT BE REVERSED.",
+          loadstudentsUpdates_path(:flagDbUpdate => "run") %>
     </ul>
     
     

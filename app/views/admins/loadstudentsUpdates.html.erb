@@ -1,0 +1,19 @@
+<h1>Admin Controller - Load Students Updates Data from Google Spreadsheet</h1>
+<p>Loads the changes provided by Megan & Michael.</p>
+<p>The student list was extracted from schedules (student index) and they loaded into Google Sheets.</p>
+<% unless @flagDbUpdateRun %>
+  <p><b>Test of update only - database does not get updated!!!</b></p>
+  <p>Choose the update link (without testing) to do the actual update.</p>
+<% end %>
+<table>
+    <% @students.each do |r| %>
+        <tr>
+            <% r.each do |c| %>
+                <td><%= c %></td>
+            <% end %>
+        </tr>
+    <% end %>
+</table>
+<br>
+
+<%= link_to 'New Google', new_google_path %>

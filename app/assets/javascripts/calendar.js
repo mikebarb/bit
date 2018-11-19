@@ -265,7 +265,7 @@ function ready_calendar() {
   // Sticky header allows us to shrink the index region of the page.
   // This makes more effective use of teh calendar region.
   if ($('#sticky-header').length) {
-    var stickyHeaderTop = $('#sticky-header').offset().top;
+    /*var stickyHeaderTop = $('#sticky-header').offset().top;
     $(window).scroll(function (event) {
       var y = $(this).scrollTop();
       if (y >= stickyHeaderTop)
@@ -273,7 +273,7 @@ function ready_calendar() {
       else
         $('#sticky-header').removeClass('fixed');
       $('#sticky-header').width($('#sticky-header').parent().width());
-    });
+    });*/
     
     $('.sticky-header__title').click(function() {
       $('#sticky-header__collapsible').slideToggle();
