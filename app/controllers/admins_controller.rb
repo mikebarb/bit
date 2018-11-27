@@ -1578,6 +1578,7 @@ class AdminsController < ApplicationController
     #---------------------- Scan spreadsheet rows --------------------
     # now build a student hash of field names with field values
     @students = Array.new
+    @studentsIndexById = Hash.new
     @students_raw.each_with_index do |s, j|
       #logger.debug "j:: " + j.inspect
       next if j == 0      # don't want the header
@@ -1596,6 +1597,7 @@ class AdminsController < ApplicationController
       else  # we only want to update the database
         # this loads the update columns only and only if spreadsheet has content.
         @students[i]['id']         = s[1].to_i    # already know it is there
+        @students[i]['oldpname']   = s[5]  if s[5]  && s[5].match(/\w+/)
         @students[i]['pname']      = s[6]  if s[6]  && s[6].match(/\w+/)  
         @students[i]['comment']    = s[10] if s[10] && s[10].match(/\w+/)  
         @students[i]['status']     = s[12] if s[12] && s[12].match(/\w+/)  
@@ -1606,8 +1608,62 @@ class AdminsController < ApplicationController
       end
       # need to store message for display to the user.
       @students[i]['message']    = ""
+      # Build index to be used for finding merged entries.
+      @studentsIndexById[@students[i]['id']] = @students[i] if @students[i].has_key?('id')  
     end
     #logger.debug "students: " + @students.inspect
+    # --------------- Check ids match pnames in dbvs spreadsheet -------------
+    @allDbStudents = Student.all
+    @allDbStudentsIndex = Hash.new
+    @allDbStudents.each do |a|
+      @allDbStudentsIndex[a.id] = a
+    end
+    idErrors = ""
+    flagIdOK = true
+    @students.each do |s|
+      if s.has_key?('id') && s.has_key?('oldpname')
+        if s['oldpname'] != @allDbStudentsIndex[s['id']].pname    # Still possibly OK
+          # May have already been updated with new pname on previous run
+          if s.has_key?('pname') # potentially still OK - check updated pname
+            if s['pname'] != @allDbStudentsIndex[s['id']].pname    # not OK unless merged 
+                flagIdOK = false
+                idErrors += "Failed id check row #{s['row']} db: #{@allDbStudentsIndex[s['id']].pname} - update pname #{s['pname']}"
+            end
+          elsif s.has_key?('merge') # potentially still OK - check if merged
+            m = s['merge'].match(/^Merge.+?(\d+)$/)
+            if m[1]   # ensure relevenant info
+              merge_into_id = m[1].to_i
+              unless @studentsIndexById.has_key?(merge_into_id)  # merge in entry not present
+                flagIdOK = false
+                idErrors += "Failed id check - merged_into row not present row #{s['row']} db: #{@allDbStudentsIndex[s['id']].pname} - #{s['oldpname']} -> merged "
+              else
+                mergedPname = "zzzMERGED " + @studentsIndexById[merge_into_id]['oldpname']
+                if mergedPname != @allDbStudentsIndex[s['id']].pname    # not OK unless merged 
+                  flagIdOK = false
+                  idErrors += "Failed id check - not previously merged either row #{s['row']} db: #{@allDbStudentsIndex[s['id']].pname} - #{s['oldpname']} -> merged "
+                end
+              end
+            else
+              flagIdOK = false
+              idErrors += "Failed id check row on merged pname not present #{s['row']} db: #{@allDbStudentsIndex[s['id']].pname} - #{s['oldpname']} "
+            end
+          else
+            flagIdOK = false
+            idErrors += "Failed id check row #{s['row']} db: #{@allDbStudentsIndex[s['id']].pname} - #{s['oldpname']} "
+          end
+        end
+      end
+    end
+    if flagIdOK == false
+      @students = Array.new
+      @students[0] = Hash.new
+      @students[0]['message'] = "spreadsheet error - ids do not match with pnames. " +
+                               "You have selected the wrong spreadsheet or " +
+                               "you have downloaded the wrong database."
+      @students[1] = Hash.new
+      @students[1]['message'] = idErrors  
+      return
+    end
     #
     # --------------- Now to work through database creation or update -------------
     #@students is a hash of all records from the spreadsheets
