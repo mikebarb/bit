@@ -1622,6 +1622,11 @@ class AdminsController < ApplicationController
     flagIdOK = true
     @students.each do |s|
       if s.has_key?('id') && s.has_key?('oldpname')
+        unless @allDbStudentsIndex.has_key?(s['id'])  # this spreadsheet id not in the database
+                flagIdOK = false
+                idErrors += "Failed spreadsheet id not in database row #{s['row']} - #{s['id']}"
+                next
+        end
         if s['oldpname'] != @allDbStudentsIndex[s['id']].pname    # Still possibly OK
           # May have already been updated with new pname on previous run
           if s.has_key?('pname') # potentially still OK - check updated pname
