@@ -1818,7 +1818,7 @@ class AdminsController < ApplicationController
               next
           end
         end
-        @students[i]['message'] = "  OK Record Merged - row #{@student_merge_into['row']}." + @students[i]['message'] + "   "
+        @students[i]['message'] = "  OK Record Merged. " + @students[i]['message'] + "   "
       end
     end
   end
