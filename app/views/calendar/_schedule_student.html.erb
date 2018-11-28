@@ -4,9 +4,9 @@
                         %><%= ' '          + set_class_run_f(   thisrole) 
                         %>" id=<%= slot + "n" + lesson.to_s.rjust(@sf, "0") + "s" + student.id.to_s.rjust(@sf, "0") %> >
                         <div style=persongroup>
-                          <div class="studentname studentinline p-name"><%= student.pname %><%= 
+                          <div class="studentname studentinline p-name"><%= student.pname %><%=
                                student.year == nil ? "   " : student.year.rjust(3)
-                               student.sex == nil ? "" :
+                               %><%=student.sex == nil ? "" :
                                 student.sex.downcase.include?("female")?
                                 "(F) " : student.sex.downcase.include?("male")?
                                 "(M) " : "" 
