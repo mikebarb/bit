@@ -26,6 +26,10 @@ Rails.application.configure do
     :domain               => ENV['MAILGUN_DOMAIN']
   }
 
+  # Disable Action View Logger in production for Ruby on Rails
+  # see http://www.jakobbeyer.de/disable-action-view-logger-in-production-for-ruby-on-rails
+  config.action_view.logger = nil
+
   # Print deprecation notices to the Rails logger.
   config.active_support.deprecation = :log
 

@@ -846,6 +846,16 @@ table, th, td {
   border: 5px solid #999999;   //light orange 3  
 }
 
+// borders to indicate element is a chain
+.run {
+  border-top-style: dotted;
+}
+.runf {
+  border-left-style: dotted;
+}
+.runl {
+  border-right-style: dotted;
+}
 
 // statistics specific items
 .formatcatchup, .catchup {

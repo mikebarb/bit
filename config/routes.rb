@@ -57,7 +57,8 @@ Rails.application.routes.draw do
   get  'lessons/:id/move' => 'lessons#move',            as: :move_lesson
   post 'lessonmoveslot'   => 'lessons#lessonmoveslot',  as: :lessonmoveslot
   post 'lessonadd'        => 'lessons#lessonadd',       as: :lessonadd
-  delete 'lessonremove'     => 'lessons#lessonremove',    as: :lessonremove
+  post 'lessonextend'     => 'lessons#lessonextend',    as: :lessonextend
+  delete 'lessonremove'   => 'lessons#lessonremove',    as: :lessonremove
   post 'lessons/:id'      => 'lessons#update',          as: :update_lesson
   post 'lessonupdateskc'  => 'lessons#lessonupdateskc', as: :lessonupdateskc
   resources :lessons

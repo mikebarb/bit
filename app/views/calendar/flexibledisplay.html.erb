@@ -94,7 +94,7 @@
     </div>
     
     
-    <div class=index id=index-tutor-students>
+    <div class="index hideme" id=index-tutor-students>
         <div class="selectbox floating-box">
             <h2>Select person</h2>
             <input type="text" id="personInput" placeholder="Shorten list by keying in meaningful characters .." title="Type in characters to reduce name list">
@@ -114,7 +114,7 @@
     </div>
   </div>
 </div>
-<div class=schedule>
+<div class="schedule hideme">
 <% @cal.each do |location, calLocation| 
   if @compress   # remove days with no valid slot for this site
    usedColumns = calLocation[0][0]["days"].keys
@@ -183,6 +183,9 @@
       <li id="context-moverun" class="context-menu__item" data-action="moverun">
         <p>Move run</p>
       </li>
+      <li id="context-moverunsingle" class="context-menu__item" data-action="moverunsingle">
+        <p>Move run Single</p>
+      </li>
       <li id="context-copy" class="context-menu__item" data-action="copy">
         <p>Copy</p>
       </li>
@@ -201,8 +204,14 @@
       <li id="context-addLesson" class="context-menu__item" data-action="addLesson">
         <p>Add Lesson</p>
       </li>    
+      <li id="context-extendLessonrun" class="context-menu__item" data-action="extendLessonrun">
+        <p>Extend Lesson run</p>
+      </li>    
       <li id="context-removeLesson" class="context-menu__item" data-action="removeLesson">
         <p>Remove Lesson</p>
+      </li>    
+      <li id="context-removeLessonrun" class="context-menu__item" data-action="removeLessonrun">
+        <p>Remove Lesson run</p>
       </li>    
       <li id="context-setStatus" class="context-menu__item" data-action="setStatus">
         <p>Set Status</p>

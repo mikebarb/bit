@@ -543,6 +543,7 @@ module Calendarutilities
         @students_stats[student.id][lesson.id]['lesson_object'] = lesson
         glws = @global_lessons_with_slots_index[lesson.id]
         #dom_id = location + datetime + slot + lesson + student
+        logger.debug "i: " + i.inspect + " glws:" + glws.inspect
         dom_id = glws.slot.location[0..2].upcase + 
                  glws.slot.timeslot.strftime("%Y%m%d%H%M") +
                  'l' + glws.slot.id.to_s.rjust(@sf, "0") +
@@ -557,7 +558,6 @@ module Calendarutilities
     ##?##@global_lessons_with_slots = Lesson.where(id: @alllessons_ids ).includes(:slot)
                                
     logger.debug "********************@students_stats: " + @students_stats.inspect
-    #byebug
     siv = {'S'=>0,'R'=>0,'A'=>0,'AoTo'=>0,'RoTo'=>0,'RCu'=>0,'RCoTo'=>0,'B'=>0}
     #O# si = {'routine'=>siv.clone, 'flexible'=>siv.clone}
     
@@ -839,3 +839,6 @@ module Calendarutilities
   end
   
 end
+
+
+

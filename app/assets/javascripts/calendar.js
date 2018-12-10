@@ -260,6 +260,8 @@ function ready_calendar() {
     clickListener_calendar();
     keyupListener();
     resizeListener();
+    // disply the up to now hidden scheduler
+    document.getElementsByClassName('schedule')[0].classList.remove('hideme');
   }
   
   // Sticky header allows us to shrink the index region of the page.
@@ -469,15 +471,18 @@ function ready_calendar() {
     var object_context = objectidToContext(object_id); //'index' or 'lesson'
     var thisEle = document.getElementById(object_id);
     var object_run = taskItemInContext.classList.contains('run'); // true or false
-    var scmi_copy = false;     //scmi - set comtext menu items.
-    var scmi_move = false;     // to show or not show in menu
-    var scmi_moverun = false;  // set the dom display value at end.  
+    var scmi_copy = false;          //scmi - set comtext menu items.
+    var scmi_move = false;          // to show or not show in menu
+    var scmi_moverun = false;       // set the dom display value at end.  
+    var scmi_moverunsingle = false;  
     var scmi_paste = false;  
     var scmi_remove = false;
     var scmi_removerun = false;
     var scmi_extendrun = false;
     var scmi_addLesson = false;
+    var scmi_extendLessonrun = false;
     var scmi_removeLesson = false;
+    var scmi_removeLessonrun = false;
     var scmi_setStatus = false;
     var scmi_setKind = false;
     var scmi_setPersonStatus = false;
@@ -492,7 +497,8 @@ function ready_calendar() {
     if(currentActivity.action  == 'move' ||     // something has been copied,
        currentActivity.action  == 'copy'){      // ready to be pasted
       scmi_paste = true;
-    }else if(currentActivity.action  == 'moverun') {
+    }else if(currentActivity.action  == 'moverun' ||
+             currentActivity.action  == 'moverunsingle') {
       // also need to check that the source and target element are in the same week
       // compare object_id(destination element) to currentActivity.object_id(source element)
       //testSuiteForWeekOfYear();   // for testing day of week function
@@ -508,20 +514,25 @@ function ready_calendar() {
       case 'tutor':   //tutor
         if(object_context == 'index'){   // index area
           // this element in student and tutor list
-          scmi_copy = true;
+          scmi_copy  = true;
           scmi_paste = false;   //nothing can be pasted into the index space
           //scmi_editComment = true;
-          scmi_editDetail = true; // consistency in context menu naming for user.
+          scmi_editDetail  = true; // consistency in context menu naming for user.
           scmi_editSubject = true;
           scmi_editEntry   = true;
           //scmi_setPersonStatus = true;     // only in index area for tutors 
         }else{  // in the main schedule area (lesson)
-          scmi_copy = scmi_move = scmi_remove = scmi_addLesson = true;
+          scmi_addLesson        = true;
+          scmi_extendLessonrun  = true;
           // can only do a moverun if this element contains a class of 'run'
+          scmi_extendrun        = true;
           if(taskItemInContext.classList.contains('run')){
-            scmi_moverun = true;
-            scmi_removerun = true;
-            scmi_extendrun = true;
+            scmi_moverun        = true;
+            scmi_moverunsingle  = true;
+            scmi_removerun      = true;
+            //scmi_extendrun    = true;
+          }else{
+            scmi_copy = scmi_move = scmi_remove = true;
           }
           scmi_setStatus = scmi_setKind = scmi_editComment = scmi_editDetail = true;
           scmi_history = true;
@@ -530,12 +541,14 @@ function ready_calendar() {
         break;
       case 'lesson':   //lesson which is always in the main scheduling area.
           scmi_move = scmi_addLesson = scmi_setStatus = true;
+          scmi_extendLessonrun    = true;
           // if there are no tutors or students in this lesson, can remove
           var mytutors = thisEle.getElementsByClassName('tutor'); 
           var mystudents = thisEle.getElementsByClassName('student');
           if( (mytutors && mytutors.length == 0 )  &&
               (mystudents && mystudents.length == 0 )  ){
             scmi_removeLesson = true;
+            scmi_removeLessonrun = true;
           }
           scmi_editComment = true;
           break;
@@ -547,13 +560,16 @@ function ready_calendar() {
     // Here we simply hide or show the menu items based on above settings.
     setscmi('context-move', scmi_move);
     setscmi('context-moverun', scmi_moverun);
+    setscmi('context-moverunsingle', scmi_moverunsingle);
     setscmi('context-copy', scmi_copy);
     setscmi('context-paste', scmi_paste);
     setscmi('context-remove', scmi_remove);
-    setscmi('context-moverun', scmi_removerun);
-    setscmi('context-moverun', scmi_extendrun);
+    setscmi('context-removerun', scmi_removerun);
+    setscmi('context-extendrun', scmi_extendrun);
     setscmi('context-addLesson', scmi_addLesson);
+    setscmi('context-extendLessonRun', scmi_addLesson);
     setscmi('context-removeLesson', scmi_removeLesson);
+    setscmi('context-removeLessonrun', scmi_removeLessonrun);
     setscmi('context-setStatus', scmi_setStatus);
     setscmi('context-setKind', scmi_setKind);
     setscmi('context-setPersonStatus', scmi_setPersonStatus);
@@ -713,8 +729,8 @@ function testSuiteForWeekOfYear(){
       case "copy":
       case "move":
       case "moverun":
+      case "moverunsingle":
         // Nothing else to do, need a paste before any action can be taken!!!
-        
         break;
       case "extendrun":
           switch (currentActivity['object_type']) {
@@ -777,8 +793,15 @@ function testSuiteForWeekOfYear(){
         // Will add a new lesson record with this slot value.
         addLesson_Update(currentActivity);
         break;
+      case "extendLessonrun":
+        // This will extend the clicked on lesson to the end of the parent slot chain.
+        extendLessonrun_Update(currentActivity);
+        break;
       case "removeLesson":
-        // This will remove a lesson clicked on.
+      case "removeLessonrun":
+        // For removeLesson - This will remove a lesson clicked on.
+        // For removeLessonrun - This will remove the lessons in the chain including and followig 
+        // the lesson clicked on.
         // Will delete the lesson record for a lesson only if empty 
         // i.e. not tutors or students.
         // This is needed as no matter what element was clicked on, we still need
@@ -1610,15 +1633,29 @@ function testSuiteForWeekOfYear(){
             console.log("removeLesson_Update Ajax response OK");
             //moveelement_update(result1);
         },
-        error: function(request, textStatus, errorThrown){
-            var temp = request.responseJSON.base;
-            var errorText = "";
-            for(var i=0; i<temp.length; i++){
-              errorText += temp[i] + "\n";
+        error: function(xhr){
+            var error_message = "";
+            if (typeof xhr.responseText == 'string'){
+              error_message = xhr.responseText;
+            }else{
+              var errors = $.parseJSON(xhr.responseText);
+              for (var error in (errors['lesson_id'])){     // lesson_id ??????
+                error_message += " : " + errors['lesson_id'][error];
+              }
             }
-            console.log("ajax error occured: " + request.status.to_s + " - " + textStatus  + "\n" + errorText);
-            alert("ajax error occured\n" + request.status.to_s + " - " + textStatus + "\n" + errorText);
+            alert("error deleting lessons: \n" + error_message);
         }
+
+        //error: function(request, textStatus, errorThrown){
+            //alert("ajax error occured: " + request.status.to_s + " - " + textStatus );
+            //var temp = request.responseJSON.base;
+            //var errorText = "";
+            //for(var i=0; i<temp.length; i++){
+            //  errorText += temp[i] + "\n";
+            //}
+            //console.log("ajax error occured: " + request.status.to_s + " - " + textStatus  + "\n" + errorText);
+            //alert("ajax error occured\n" + request.status.to_s + " - " + textStatus + "\n" + errorText);
+        //}
     });
   }
 
@@ -1728,6 +1765,26 @@ function testSuiteForWeekOfYear(){
     });
   }
 
+  function extendLessonrun_Update(domchange){
+    var myurl = myhost + "/lessonextend/";
+    $.ajax({
+        type: "POST",
+        url: myurl,
+        data: {'domchange' : domchange },
+        dataType: "json",
+        context: domchange,
+        success: function(result1, result2, result3){
+            console.log("addLesson_Update Ajax response OK");
+            //moveelement_update(result1);
+        },
+        error: function(request, textStatus, errorThrown){
+            //$(this).addClass( "processingerror" );
+            alert("ajax error occured: " + request.status.to_s + " - " + textStatus );
+        }
+    });
+  }
+
+
   //********************* END AJAX ***************************************
 
 
@@ -1785,7 +1842,20 @@ function testSuiteForWeekOfYear(){
       elecreated.innerHTML = domchange['html_partial'];
       var eletoplace = elecreated.getElementsByClassName(object_type)[0]; 
     }
-    
+    // ------------- if replacement of element required ---------------
+    // if this is a replace, we simply find the element and replace with
+    // the html_partial.
+    var ele_to_replace = null;
+    if (action == 'replace'){
+      if('object_id' in domchange){    // dom object to replace
+        ele_to_replace = document.getElementById(domchange['object_id']);
+        if (eletoplace){
+          ele_to_replace.parentNode.replaceChild(eletoplace, ele_to_replace);
+          elementdraggable(eletoplace);
+          selectshows_scoped(document, eletoplace);
+        }
+      }
+    }
     // ------------- if removal of element required ---------------
     // if this is a move, we need to make use of object_old for removal.
     // For copy, nothing is removed.
@@ -1901,10 +1971,12 @@ function testSuiteForWeekOfYear(){
             var mytutors = eletoplace.getElementsByClassName('tutor');
             for (let i = 0; i < mytutors.length; i++){
               elementdraggable(mytutors[i]);
+              selectshows_scoped(document, mytutors[i]);
             }
             var mystudents = eletoplace.getElementsByClassName('student');
             for (let i = 0; i < mystudents.length; i++){
               elementdraggable(mystudents[i]);
+              selectshows_scoped(document, mystudents[i]);
             }
           }
         }

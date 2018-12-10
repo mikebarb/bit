@@ -180,7 +180,7 @@ class AdminsController < ApplicationController
 #   - select days you want to copy in the copydaysedit menu
 #   - copies ALL content for the selected days.
 #
-#   An alternate copy is available for coping term data (selectable copy).
+#   An alternate copy is available for copying term data (selectable copy).
 #
 #---------------------------------------------------------------------------
   # GET /admins/copydays
@@ -327,7 +327,7 @@ class AdminsController < ApplicationController
 #       . session type 
 #       . student/session type
 #
-#   An alternate copy is available for coping all data.
+#   An alternate copy is available for copying all data.
 #
 #---------------------------------------------------------------------------
   # GET /admins/copytermdays
@@ -744,6 +744,11 @@ class AdminsController < ApplicationController
               # the last entity in chain will have next = nil by default, do not populate.
               @blockSlots[i].next = @blockSlots[i+1].id unless i == mycopynumweeks+1  
               if @blockSlots[i].save
+                # weekPlusOne (wpo) will have the wpo field set to self
+                if i == mycopynumweeks+1  
+                  @blockSlots[i].wpo = @blockSlots[i].id
+                  @blockSlots[i].save
+                end
                 @results.push "created slot " + @blockSlots[i].inspect
               else
                 @results.push "FAILED creating slot " + @blockSlots[i].inspect + 
@@ -833,15 +838,20 @@ class AdminsController < ApplicationController
                       end
                       # the last entity in chain is the week + 1 entry. 
                       # block will be set to self. 
-                      if i == mycopynumweeks+1
-                        @blockTutroles[i].block = @blockTutroles[i].id   
-                        if @blockTutroles[i].save
-                          @results.push "updated tutrole :block " + @blockTutroles[i].inspect
-                        else
-                          @results.push "FAILED updating tutrole block " + @blockTutroles[i].inspect + 
-                                        "ERROR: " + @blockTutroles[i].errors.messages.inspect
-                        end
-                      end
+                      ### This strategy is now changed.
+                      ### Week Plus One (WPO) is now identified in the slots
+                      ### Block now picks up all the items in the chain as first
+                      ### will change often as moves are done. Block is the only way
+                      ### to pick up all historical entries in the chain.
+                      ###if i == mycopynumweeks+1
+                      ###  @blockTutroles[i].block = @blockTutroles[i].id   
+                      ###  if @blockTutroles[i].save
+                      ###    @results.push "updated tutrole :block " + @blockTutroles[i].inspect
+                      ###  else
+                      ###    @results.push "FAILED updating tutrole block " + @blockTutroles[i].inspect + 
+                      ###                  "ERROR: " + @blockTutroles[i].errors.messages.inspect
+                      ###  end
+                      ###end
                     end
                   end
                 end
@@ -899,16 +909,21 @@ class AdminsController < ApplicationController
                                       "ERROR: " + @blockRoles[i].errors.messages.inspect
                       end
                       # the last entity in chain is the week + 1 entry. 
-                      # block will be set to self. 
-                      if i == mycopynumweeks+1
-                        @blockRoles[i].block = @blockRoles[i].id if i == mycopynumweeks+1  
-                        if @blockRoles[i].save
-                          @results.push "updated role :block " + @blockTutroles[i].inspect
-                        else
-                          @results.push "FAILED updating role block " + @blockTutroles[i].inspect + 
-                                        "ERROR: " + @blockRoles[i].errors.messages.inspect
-                        end
-                      end
+                      # block will be set to self.
+                      ### This strategy is now changed.
+                      ### Week Plus One (WPO) is now identified in the slots
+                      ### Block now picks up all the items in the chain as first
+                      ### will change often as moves are done. Block is the only way
+                      ### to pick up all historical entries in the chain.
+                      ###if i == mycopynumweeks+1
+                      ###  @blockRoles[i].block = @blockRoles[i].id if i == mycopynumweeks+1  
+                      ###  if @blockRoles[i].save
+                      ###    @results.push "updated role :block " + @blockTutroles[i].inspect
+                      ###  else
+                      ###    @results.push "FAILED updating role block " + @blockTutroles[i].inspect + 
+                      ###                  "ERROR: " + @blockRoles[i].errors.messages.inspect
+                      ###  end
+                      ###end
                     end
                   end
                 end
@@ -1499,6 +1514,10 @@ class AdminsController < ApplicationController
 #---------------------------------------------------------------------------
 #
 #   Load Students  Updates  ---    version to manage updates
+#   This can be used on multiple occassions e.g. end of term, end of year
+#   to do bulk updtes on students.
+#   Also has a student merge capability.
+#
 #   A spreadsheet has been extracted from the Students index page
 #   Michael and Megan has put in their desired updates.
 #

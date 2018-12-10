@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema.define(version: 20181105025635) do
+ActiveRecord::Schema.define(version: 20181202211428) do
 
   # These are extensions that must be enabled in order to support this database
   enable_extension "plpgsql"
@@ -70,6 +70,7 @@ ActiveRecord::Schema.define(version: 20181105025635) do
     t.datetime "updated_at"
     t.integer  "first"
     t.integer  "next"
+    t.integer  "wpo"
     t.index ["first"], name: "index_slots_on_first", using: :btree
     t.index ["next"], name: "index_slots_on_next", using: :btree
   end

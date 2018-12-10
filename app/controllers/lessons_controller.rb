@@ -1,4 +1,7 @@
 class LessonsController < ApplicationController
+  include Calendarutilities
+  include ChainUtilities
+    
   before_action :set_lesson, only: [:show, :edit, :update, :destroy, :move]
   before_filter :authenticate_user!, :set_user_for_models
   after_filter :reset_user_for_models
@@ -62,7 +65,7 @@ class LessonsController < ApplicationController
       logger.debug "k: " + k.inspect + " => v: " + v.inspect 
       @domchange[k] = v
     end
-    @domchange['object_type'] = 'lesson'
+    #@domchange['object_type'] = 'lesson'
     # need to ensure object passed is just the lesson dom id 
     result = /^(([A-Z]+\d+l\d+)n(\d+))/.match(@domchange['object_id'])
     if result
@@ -70,17 +73,32 @@ class LessonsController < ApplicationController
       @domchange['object_type'] = 'session'
       @lesson = Lesson.find(result[3])
     end
-    if @lesson.destroy
-      logger.debug "Lesson destroyed"
-      respond_to do |format|
-        format.json { render json: @domchange, status: :ok }
-        #ActionCable.server.broadcast "calendar_channel", { json: @domchange }
-        ably_rest.channels.get('calendar').publish('json', @domchange)
+    if( @domchange['action'] == 'removeLessonrun')   # multiple deletions.
+      # Processing the chain.
+      this_error = runremovelessonfromslot(@lesson)
+    else  # single deletion
+      if @lesson.first != nil
+        this_error = "You cannot individually delete a lesson in a chain"
+      elsif @lesson.destroy
+        logger.debug "Lesson destroyed"
+        respond_to do |format|
+          format.json { render json: @domchange, status: :ok }
+          #ActionCable.server.broadcast "calendar_channel", { json: @domchange }
+          ably_rest.channels.get('calendar').publish('json', @domchange)
+        end
+      else
+        # report the db related error
+        respond_to do |format|
+          format.json { render json: @lesson.errors, status: :unprocessable_entity  }
+        end
+        return
       end
-    else
+    end
+    if this_error.length > 0  # handle any other errors
       respond_to do |format|
-        format.json { render json: @lesson.errors, status: :unprocessable_entity  }
+        format.json { render json: this_error, status: :unprocessable_entity }
       end
+      logger.debug "unprocessable entity(line 78): " + this_error 
     end
   end
 
@@ -91,7 +109,6 @@ class LessonsController < ApplicationController
       logger.debug "k: " + k.inspect + " => v: " + v.inspect 
       @domchange[k] = v
     end
-    
     @domchange['object_type'] = 'lesson'
     # object passed which determines the slot the new session is to be placed in.
     #result = /^(([A-Z]+)(\d{4})(\d{2})(\d{2})(\d{2})(\d{2}))/.match(@domchange['object_id'])
@@ -99,17 +116,6 @@ class LessonsController < ApplicationController
     if result
       @domchange['to'] = slot_id_basepart = result[1]  # slot_dom_id where lesson is to be placed
       slot_dbid = result[2]
-=begin
-      slot_location = result[2]
-      slot_time = DateTime.new(result[3].to_i, result[4].to_i, result[5].to_i,
-                                   result[6].to_i, result[7].to_i)
-      # need to find the slot record to match.
-      @slot = Slot.where("timeslot = :thisdate AND
-                            location like :thislocation", 
-                            {thisdate: slot_time,
-                             thislocation: slot_location + '%'
-                            }).first  
-=end
     end
     #@domchange['to'] = slot_id_basepart + 'l' + @slot.id.to_s.rjust(@sf, "0")
 
@@ -137,6 +143,29 @@ class LessonsController < ApplicationController
       else
         format.json { render json: @lesson.errors, status: :unprocessable_entity }
       end
+    end
+  end
+
+  # POST /lessonextend.json
+  def lessonextend
+    @domchange = Hash.new
+    params[:domchange].each do |k, v| 
+      logger.debug "k: " + k.inspect + " => v: " + v.inspect 
+      @domchange[k] = v
+    end
+    @domchange['object_type'] = 'lesson'
+    this_error = doExtendLessonRun(@domchange['object_id'])
+    # If an error, simply report it and end
+    if this_error.length > 0
+      respond_to do |format|
+        format.json { render json: this_error, status: :unprocessable_entity }
+      end
+      logger.debug "unprocessable entity(line 478): " + this_error.inspect 
+      return
+    end
+    # All OK if you get to here.
+    respond_to do |format|
+      format.json { render json: @domchange, status: :ok }
     end
   end
 
@@ -192,6 +221,7 @@ class LessonsController < ApplicationController
   
   # POST /lessonmoveslot.json
   def lessonmoveslot
+    this_error = ""
     @domchange = Hash.new
     params[:domchange].each do |k, v| 
       logger.debug "k: " + k.inspect + " => v: " + v.inspect 
@@ -203,11 +233,12 @@ class LessonsController < ApplicationController
       lesson_id   = result[2]
       @domchange['object_type'] = 'lesson'
       @domchange['from'] = result[1]    # old_slot_dom_id
+    else
+      this_error += "invalid from paramenter " + params[:domchange][:object_id]
     end
-
     # to / destination
     #result = /^(([A-Z]+)(\d{4})(\d{2})(\d{2})(\d{2})(\d{2}))/.match(params[:domchange][:to])
-    result = /^([A-Z]+\d+(l\d+))/.match(params[:domchange][:to])
+    result = /^([A-Z]+\d+l(\d+))/.match(params[:domchange][:to])
     if result 
       @domchange['to'] = new_slot_id = result[1]      # slot_dom_id
       slot_dbid = result[2]
@@ -223,7 +254,12 @@ class LessonsController < ApplicationController
                             }).first  
       @domchange['to'] = @domchange['to'] + 'l' + @slot.id.to_s.rjust(@sf, "0")
 =end
-
+    else
+      this_error += "invalid to paramenter: " + params[:domchange][:to]
+    end
+    if this_error.length > 0
+      format.json { render json: this_error, status: :unprocessable_entity }
+      return
     end
     @lesson = Lesson.find(lesson_id)
     #@lesson.slot_id = @slot.id
@@ -234,9 +270,8 @@ class LessonsController < ApplicationController
     # the object_id will now change (for both move and copy as the inbuild
     # slot number will change.
     @domchange['object_id_old'] = @domchange['object_id']
-    @domchange['object_id'] = new_slot_id + "n" + lesson_id.to_s.rjust(@sf, "0")
-
-    
+    @domchange['object_id'] = "l" + new_slot_id + 
+                              "n" + lesson_id.to_s.rjust(@sf, "0")
     # Need to generate the html partial for this session.
     @tutroles = Tutrole
                 .includes(:tutor)

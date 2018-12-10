@@ -67,16 +67,21 @@ module CalendarHelper
   end
 
   def set_class_run_f(personRole)
-    block = personRole.first
-    if block != nil && block != ''
-      result = 'run'
-    else
-      result = ''  
+    result = ''
+    block_id = personRole.id
+    block_f = personRole.first
+    block_n = personRole.next
+    if block_f != nil && block_f != ''
+      result += 'run'
+      if block_f == block_id
+        result += " runf"
+      end
+      if block_n == nil || block_n == ''
+        result += " runl"
+      end
     end
     result
   end
-
-  
 
   # Sort the values in display2 (cell of lessons/sessions) by status and then by tutor name
   # as some lessons have no tutor, this returns the tutor name if available.

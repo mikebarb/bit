@@ -73,6 +73,10 @@ Rails.application.configure do
   # Set to :debug to see everything in the log.
   config.log_level = :info
 
+  # Disable Action View Logger in production for Ruby on Rails
+  # see http://www.jakobbeyer.de/disable-action-view-logger-in-production-for-ruby-on-rails
+  config.action_view.logger = nil
+  
   # Prepend all log lines with the following tags.
   # config.log_tags = [ :subdomain, :uuid ]
 
