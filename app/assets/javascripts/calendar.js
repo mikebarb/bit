@@ -1553,6 +1553,19 @@ function testSuiteForWeekOfYear(){
         dom_change['object_id'] = ui.draggable.attr('id');
         dom_change['object_type'] = objectidToObjecttype(dom_change['object_id']);
         dom_change['to'] = this.id;
+        //
+        //m = ele_object.id.match(/^(\w+\d+l\d+)/);
+        //var ele_slot_forobject = document.getElementById(m[1]);
+        if( dom_change['object_id'].match(/^[st]/)){  // drag from the index area
+          dom_change['action'] = "copy";
+        } else {                                      // from calendar area
+          var eleFrom = document.getElementById(dom_change['object_id']);
+          if(eleFrom.classList.contains("run")){       // a chain element
+            dom_change['action'] = "moverun";
+          }else{
+            dom_change['action'] = "move";
+          }
+        }
         personupdateslesson_Update( dom_change );
 
         $( this )

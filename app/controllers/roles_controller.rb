@@ -101,7 +101,7 @@ class RolesController < ApplicationController
         respond_to do |format|
           format.json { render json: @lesson.errors, status: :unprocessable_entity  }
         end
-        logger.debug "unprocessable entity(line 142): " + @role.errors.inspect 
+        logger.debug "unprocessable entity(line 142): " + @role.errors.inspect
       end
     end
   end
@@ -582,8 +582,8 @@ class RolesController < ApplicationController
     # id = GUN2018... -> schedule
     if((result = /^(([A-Z]+\d+l\d+)n(\d+))s(\d+)$/.match(@domchange['object_id'])))
       student_id = result[4].to_i
-      ###old_lesson_id = result[3].to_i
-      ###old_slot_id = result[2]
+      old_lesson_id = result[3].to_i
+      old_slot_id = result[2]
       @domchange['object_type'] = 'student'
       @domchange['from'] = result[1]
     elsif((result = /^s(\d+)/.match(@domchange['object_id'])))  #index area
@@ -620,7 +620,6 @@ class RolesController < ApplicationController
         @lesson_new = Lesson.where(:slot_id => new_slot_dbId, :status => "allocate" )
                             .first
         unless @lesson_new
-          logger.debug "lesson not found"
           # need to create a new lesson with status 'allocatae'
           @lesson_new = Lesson.new(slot_id: new_slot_dbId, status: "allocate")
           @lesson_new.save
@@ -636,8 +635,14 @@ class RolesController < ApplicationController
         new_slot_id = result[2]
         @domchange['to'] = result[1]
       end
-      #mm = /^[A-Za-z]+(\d\d\d\d)(\d\d)(\d\d)/.match(@domchange['to'])
-      #new_parent_date = DateTime.new(mm[1].to_i, mm[2].to_i, mm[3].to_i);
+    end
+    if new_lesson_id != nil && 
+       old_lesson_id == new_lesson_id
+      # Nothing to do - just say OK to caller.
+      respond_to do |format|
+        format.json { render json: @domchange, status: :ok }
+      end
+      return
     end
     #------------------------------------------------------------------------
     # Now handle the different types of moves or copies.
