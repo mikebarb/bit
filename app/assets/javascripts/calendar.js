@@ -1897,6 +1897,11 @@ function testSuiteForWeekOfYear(){
     }
     
     // ------------- if adding element required ---------------
+    // For MOVE - There is a scenario where an element may be moved within
+    // the same parent.
+    // Should not happen normally but my occur if not picked up previously.
+    // In that case, it has been removed so need to recheck if currently present. 
+    ele_object  = document.getElementById(domchange['object_id']);
     if (ele_object == null) {   // this element is not on this page
       if (action == 'move' ||   // if this is a move or copy
           action == 'copy'  ||

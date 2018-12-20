@@ -125,7 +125,8 @@ module Calendarutilities
                    .where(lesson_id: @sessinfo.map {|o| o.id})
                    .order('students.pname')
                    .includes(:student, :lesson)
-    
+                   #.select("student_id", "students.pname", "students.status", "students.kind")
+
     # Some code to reduce tutrole and role arrays
     # - eliminate categories of people that are not of interest.
     # This reduces tutors to ones with 

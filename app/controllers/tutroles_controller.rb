@@ -110,7 +110,7 @@ class TutrolesController < ApplicationController
     # id = GUN2018... -> schedule
     if((result = /^([A-Z]+\d+l\d+n(\d+))t(\d+)$/.match(params[:domchange][:object_id])))
       tutor_id = result[3]
-      old_lesson_id = result[2]
+      old_lesson_id = result[2].to_i
       @domchange['object_type'] = 'tutor'
       @domchange['from'] = result[1]
     elsif((result = /^t(\d+)/.match(params[:domchange][:object_id])))  #index area
@@ -137,9 +137,18 @@ class TutrolesController < ApplicationController
       result = /^(([A-Z]+\d+l\d+)n(\d+))/.match(@domchange['to'])
       if result 
         new_lesson_id = result[3].to_i
-        new_slot_id = result[2]
+        #new_slot_id = result[2]
         @domchange['to'] = result[1]
       end
+    end
+    # Intercept and do nothing if parent is the same.
+    if new_lesson_id != nil && 
+       old_lesson_id == new_lesson_id
+      # Nothing to do - just say OK to caller.
+      respond_to do |format|
+        format.json { render json: @domchange, status: :ok }
+      end
+      return
     end
     #------------------------------------------------------------------------
     # Now handle the different types of moves or copies.
@@ -246,9 +255,9 @@ class TutrolesController < ApplicationController
     elsif((result = /^t(\d+)/.match(params[:domchange][:object_id])))  #index area
       tutor_id = result[1]
       @domchange['object_type'] = 'tutor'
-      # ONLY a copy allowed when source is in index index area.
-      @domchange['action'] = 'copy' if  @domchange['action'] == 'move'   
+      @domchange['action'] = 'copy' # ONLY a copy allowed from index area.  
     else
+      logger.debug "neither index or schedule found!!!"
       return
     end
     logger.debug "@domchange: " + @domchange.inspect

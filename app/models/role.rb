@@ -2,6 +2,8 @@
 class Role < ApplicationRecord    # required migrating to rails 5.0
   belongs_to :lesson
   belongs_to :student
+  #belongs_to :student_small, -> {select(:id, :pname, :sex, :comment, :status, :year, :study)}, 
+  #                              class_name: 'Student'
   
   validates :lesson_id, uniqueness: {scope: :student_id}
 

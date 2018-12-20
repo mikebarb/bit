@@ -28,7 +28,7 @@ module ChainUtilities
     # Build the @domchange(domchangerun for each element in the block)
     @domchangerun = Array.new
     @block_roles.each_with_index do |o, i|
-      logger.debug "block_role (" + i.to_s + "): " + o.inspect
+      #logger.debug "block_role (" + i.to_s + "): " + o.inspect
       @domchangerun[i] = Hash.new
       @domchangerun[i]['action']         = 'move'                 # moverun of individual elements. 
       @domchangerun[i]['object_type']    = @domchange['object_type']
@@ -237,7 +237,8 @@ module ChainUtilities
                                        })
           @domchangerun[i]['object_id'] = @domchangerun[i]['to'] +
                                               's' + @domchangerun[i]['tutor'].id.to_s.rjust(@sf, "0")
-      end      
+      end
+      #logger.debug "domchangerun (" + i.to_s + "): " + @domchangerun[i].inspect
     end
     pre_post_dom_processing = lambda do |o|
       logger.debug "processing dom for pre \ post role:" + o.inspect

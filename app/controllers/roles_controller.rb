@@ -636,6 +636,7 @@ class RolesController < ApplicationController
         @domchange['to'] = result[1]
       end
     end
+    # Intercept and do nothing if parent is the same.
     if new_lesson_id != nil && 
        old_lesson_id == new_lesson_id
       # Nothing to do - just say OK to caller.
