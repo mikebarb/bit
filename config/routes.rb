@@ -1,4 +1,24 @@
+require 'api_constraints'
+
 Rails.application.routes.draw do
+  # Api definition
+  #namespace :api, defaults: { format: :json }, constraints: { subdomain: 'api' }, path: '/' do
+  #  scope module: :v1,  constraints: ApiConstraints.new(version: 1, default: true) do
+  namespace :api, defaults: {format: :json} do
+    #namespace :v1 do
+    scope module: :v1,  constraints: ApiConstraints.new(version: 1, default: true) do
+      # We are going to list our resources here
+      #resources :users, :only => [:show]
+      resources :users,    :only => [:show, :index]
+      resources :sessions, :only => [:create, :destroy]
+    end
+    scope module: :v2,  constraints: ApiConstraints.new(version: 1, default: false) do
+      # We are going to list our resources here
+      #resources :users, :only => [:show]
+      resources :users, :only => [:show, :index]
+    end
+  end
+  
   resources :changes
   devise_for :users, controllers: {registrations: 'registrations' } 
   devise_scope :user do

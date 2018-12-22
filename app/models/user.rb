@@ -1,13 +1,21 @@
 #class User < ActiveRecord::Base
 class User < ApplicationRecord    # required migrating to rails 5.0
+  #validates :auth_token, uniqueness:true    # used in api
   # Include default devise modules. Others available are:
   # :timeoutable and :omniauthable
   devise :database_authenticatable, :registerable,
          :recoverable, :rememberable, :trackable, :validatable,
          :confirmable, :lockable
          
-  before_create :set_defaults
+  before_create :set_defaults, :generate_authentication_token!
   
+
+  def generate_authentication_token!
+    begin
+      self.auth_token = Devise.friendly_token
+    end while self.class.exists?(auth_token: auth_token)
+  end
+
   private
 
     def set_defaults
@@ -21,5 +29,6 @@ class User < ApplicationRecord    # required migrating to rails 5.0
         self.role = 'student'
       end
     end
-    
+
+
 end

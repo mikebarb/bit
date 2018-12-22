@@ -85,6 +85,12 @@ gem 'google-api-client', '~> 0.19', require: 'google/apis/sheets_v4'
 group :development, :test do
   # debugging gem
   gem 'byebug'
+  ###gem "rspec-rails", "~> 2.14"
+  gem "rspec-rails", "~> 3.7.0"
+  #gem "factory_girl_rails"
+  gem "factory_bot_rails"
+  gem 'ffaker'
+
 end
 
 # Devise gems
