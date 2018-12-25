@@ -22,6 +22,7 @@ class Api::V1::SessionsController < ApiController
       sign_in user, store: false
       user.generate_authentication_token!
       user.save
+      logger.debug "session create after save - user is " + user.inspect
       #byebug
       response.headers['Authorization'] =  user.auth_token
       ### The following two lines would place the token in the body
@@ -35,10 +36,17 @@ class Api::V1::SessionsController < ApiController
     end
   end
   
+  # this will log the api user out of the session.
   def destroy
-    user = User.find_by(auth_token: params[:id])
-    user.generate_authentication_token!
-    user.save
+    #+#my_authenticate_token = request.headers['Authorization']
+    #user = User.find_by(auth_token: params[:id])
+    #+#user = User.find_by(auth_token: my_authenticate_token)
+    ###user.generate_authentication_token!
+    ###user.save
+    logger.debug "session destroy before generate - current user is " + @current_user.inspect
+    @current_user.generate_authentication_token!
+    @current_user.save
+    logger.debug "session destroy after save - current user is " + @current_user.inspect
     head 204
   end
 

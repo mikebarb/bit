@@ -6,10 +6,13 @@ module Authenticable
   end
   
   def authenticate_with_token!
+    #byebug
     unless current_user.present?
+      logger.debug "failed current user is " + @current_user.inspect
       render json: { errors: "Not authenticated" },
-                  status: :unauthorized unless current_user.present?
+                  status: :unauthorized
     end
+    logger.debug "current user is " + @current_user.inspect
   end  
   
 end

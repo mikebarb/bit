@@ -9,8 +9,13 @@ Rails.application.routes.draw do
     scope module: :v1,  constraints: ApiConstraints.new(version: 1, default: true) do
       # We are going to list our resources here
       #resources :users, :only => [:show]
-      resources :users,    :only => [:show, :index]
-      resources :sessions, :only => [:create, :destroy]
+      resources :users,        :only => [:show, :index]
+      resources :sessions,     :only => [:create]
+      delete 'sessions'          => '/api/v1/sessions#destroy'
+      
+      resources :students, :only => [:show]
+      get 'allstudents'          => '/api/v1/students#allstudents'
+      get 'students/history/:id' => '/api/v1/students#history'
     end
     scope module: :v2,  constraints: ApiConstraints.new(version: 1, default: false) do
       # We are going to list our resources here
