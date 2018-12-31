@@ -19,11 +19,15 @@ class Api::V1::UsersController < ApiController
 
 
   def show
-    respond_with User.find(params[:id])
+    respond_with User
+                 .select('id','email','daystart','daydur','history_back','history_forward')
+                 .find(params[:id])
   end
 
   def index
-    respond_with User.all
+    respond_with User
+                 .select('id','email','daystart','daydur','history_back','history_forward')
+                 .all
   end
 
 end
