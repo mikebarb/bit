@@ -3,7 +3,7 @@ class ApiConstraints
     @version = options[:version]
     @default = options[:default]
   end
-
+  
   def matches?(req)
     @default || req.headers['Accept'].include?("application/vnd.bit3.v#{@version}")
   end

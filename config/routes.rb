@@ -17,7 +17,7 @@ Rails.application.routes.draw do
       get 'allstudents'          => '/api/v1/students#allstudents'
       get 'students/history/:id' => '/api/v1/students#history'
     end
-    scope module: :v2,  constraints: ApiConstraints.new(version: 1, default: false) do
+    scope module: :v2,  constraints: ApiConstraints.new(version: 2, default: false) do
       # We are going to list our resources here
       #resources :users, :only => [:show]
       resources :users, :only => [:show, :index]
