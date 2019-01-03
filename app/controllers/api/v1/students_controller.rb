@@ -29,23 +29,34 @@ class Api::V1::StudentsController < ApiController
     respond_with @student
   end
   
-  # GET /students/history
-  # GET /students/history.json
-  def allhistory
-    @students_history = Array.new
-    students = Student.all.order("pname")
-    students.each do |thisstudent|
-      @students_history.push(student_history(thisstudent.id))
+  # GET /students/history/1
+  # GET /students/history/1.json
+  def history
+    options = Hash.new
+    if params.has_key?('startdate')
+      options['startdate'] = params['startdate'].to_date
+    end
+    if params.has_key?('enddate')
+      options['enddate'] = params['enddate'].to_date
+    end
+    logger.debug "options: " + options.inspect
+    @student_history =  student_history(params[:id], options)
+
+    respond_to do |format|
+      format.html
+      # helpful reference for jbuilder is
+      # https://devblast.com/b/jbuilder
+      format.json { render :history, status: :ok }
     end
   end
-
+=begin
   # GET /students/history/1
   # GET /students/history/1.json
   def history
     @student_history =  student_history(params[:id])
     respond_with @student_history
   end
-
+=end
   # GET /students/change/1
   # GET /students/change/1.json
   def change

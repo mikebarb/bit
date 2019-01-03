@@ -280,24 +280,31 @@ module ChainUtilities
     end
     #----------------------- update screens  ---------------------------------
     # saved safely, now need to update the browser display (using calendar messages)
+    # collect the set of screen updates and send through Ably as single message
+    domchanges = Array.new
     (0..@block_roles.length-1).each do |i|
-      ably_rest.channels.get('calendar').publish('json', @domchangerun[i])
+      domchanges.push(@domchangerun[i])
     end
     if @flag_pre_block_role_unlink  || @flag_pre_block_role_relink
-      ably_rest.channels.get('calendar').publish('json', @domchangepreblock) if @pre_block_role != nil 
+      domchanges.push(@domchangepreblock)
     end
     if @flag_post_block_role_unlink  || @flag_post_block_role_relink
-      ably_rest.channels.get('calendar').publish('json', @domchangepostblock)
+      domchanges.push(@domchangepostblock)
     end
+    ably_rest.channels.get('calendar').publish('json', domchanges)
     # Now send out the updates to the stats screen
     # no change in stats for preblock
+    # collect the set of stat updates and send through Ably as single message
     if @block_roles[0].is_a?(Role)
+      statschanges = Array.new
       (0..@block_roles.length-1).each do |i|
-        get_slot_stats(@domchangerun[i]['new_slot_domid'])
+        statschanges.push(get_slot_stats(@domchangerun[i]['new_slot_domid']))
         if(@domchangerun[i]['new_slot_domid'] != @domchangerun[i]['old_slot_domid'])
-          get_slot_stats(@domchangerun[i]['old_slot_domid'])
+          statschanges.push(get_slot_stats(@domchangerun[i]['old_slot_domid']))
         end
       end
+      #ActionCable.server.broadcast "stats_channel", { json: @statschange }
+      ably_rest.channels.get('stats').publish('json', statschanges)
     end
     # everything is completed successfully - just need to let the caller know.
     return ""
@@ -461,12 +468,19 @@ module ChainUtilities
       return @role.errors.messages
     end
     ably_rest.channels.get('calendar').publish('json', @domchange)
+
+    # collect the set of stat updates and send through Ably as single message
     if @role.is_a?(Role)
-      get_slot_stats(new_slot_id)
+      statschanges = Array.new
+      #get_slot_stats(new_slot_id)
+      statschanges.push(get_slot_stats(new_slot_id))
       if(old_slot_id && (new_slot_id != old_slot_id))
-        get_slot_stats(old_slot_id)
+        #get_slot_stats(old_slot_id)
+        statschanges.push(get_slot_stats(old_slot_id))
       end
+      ably_rest.channels.get('stats').publish('json', statschanges)
     end
+    
     # everything is completed successfully.
     #respond_to do |format|
     #  format.json { render json: @domchange, status: :ok }
@@ -816,7 +830,12 @@ module ChainUtilities
       woy_lesson = @block_lessons[i].slot.timeslot.to_datetime.cweek
       if @role_chain_index_date.has_key?(woy_lesson)
         # we already have a role in this week - not valid.
-        this_error = "error extendrun -  already an entry for this role in this week (week #{woy_lesson})"
+        #byebug
+        this_error = "error extendrun -  already an entry for this role in " +
+                     "this week (week #{woy_lesson} in parent lesson ) " +
+                     @block_lessons[i].slot.timeslot.to_datetime.to_s + " " +
+                    @block_lessons[i].slot.location
+        
         break
       end
       # build the new entries
@@ -922,17 +941,24 @@ module ChainUtilities
                                         't' + @role.tutor_id.to_s.rjust(@sf, "0")
       end
     end
-    # saved safely, now need to update the browserb 1001 display (using calendar messages)
+    # saved safely, now need to update the browser display (using calendar messages)
+    # collect the set of screen updates and send through Ably as single message
+    domchanges = Array.new
     (0..@block_roles.length-1).each do |i|
-      ably_rest.channels.get('calendar').publish('json', @domchangerun[i])
+      domchanges.push(@domchangerun[i])
     end
+    ably_rest.channels.get('calendar').publish('json', domchanges)
     ### ably_rest.channels.get('calendar').publish('json', @domchangepreblock) if @pre_block_role != nil
     # Now send out the updates to the stats screen
     # no change in stats for preblock
+    # collect the set of stat updates and send through Ably as single message
     if @role.is_a?(Role)   # No stats update for tutors
+      statschanges = Array.new
       (1..@block_roles.length-1).each do |i|
-        get_slot_stats(@domchangerun[i]['new_slot_domid'])
+        statschanges.push(get_slot_stats(@domchangerun[i]['new_slot_domid']))
+        #get_slot_stats(@domchangerun[i]['new_slot_domid'])
       end
+      ably_rest.channels.get('stats').publish('json', statschanges)
     end
     # everything is completed successfully.
     return ""
@@ -1273,17 +1299,26 @@ module ChainUtilities
     end
     #---------------------------  update screens ------------------------------
     # saved safely, now need to update the browser display (using calendar messages)
+    # collect the set of screen updates and send through Ably as single message
+    domchanges = Array.new
     (0..@block_roles.length-1).each do |i|
-      ably_rest.channels.get('calendar').publish('json', @domchangerun[i])
+      domchanges.push(@domchangerun[i])
+      #ably_rest.channels.get('calendar').publish('json', @domchangerun[i])
     end
     if @role_breakchainlast # break the chain.
-      ably_rest.channels.get('calendar').publish('json', @domchangebreakchainlast)
+      domchanges.push(@domchangebreakchainlast)
+      #ably_rest.channels.get('calendar').publish('json', @domchangebreakchainlast)
     end
+    ably_rest.channels.get('calendar').publish('json', domchanges)
+    # Now send out the updates to the stats screen
+    # collect the set of stat updates and send through Ably as single message
     if role.is_a?(Role)    # status only require updating if students change
-      # Now send out the updates to the stats screen
+      statschanges = Array.new
       (0..@block_roles.length-1).each do |i|
-        get_slot_stats(@domchangerun[i]['new_slot_domid'])
+        statschanges.push(get_slot_stats(@domchangerun[i]['new_slot_domid']))
+        #get_slot_stats(@domchangerun[i]['new_slot_domid'])
       end
+      ably_rest.channels.get('stats').publish('json', statschanges)
     end
     # everything is completed successfully.
     respond_to do |format|

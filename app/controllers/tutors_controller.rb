@@ -24,14 +24,23 @@ class TutorsController < ApplicationController
     @tutors_history = Array.new
     tutors = Tutor.all.order("pname")
     tutors.each do |thistutor|
-      @tutors_history.push(tutor_history(thistutor.id))
+      @tutors_history.push(tutor_history(thistutor.id, {}))
     end
   end
 
   # GET /tutors/history/1
   # GET /tutors/history/1.json
   def history
-    @tutor_history =  tutor_history(params[:id])
+    byebug
+    options = Hash.new
+    if params.has_key?('startdate')
+      options['startdate'] = params['startdate'].to_date
+    end
+    if params.has_key?('enddate')
+      options['startdate'] = params['enddate'].to_date
+    end
+    logger.debug "options: " + options.inspect
+    @tutor_history =  tutor_history(params[:id], {})
 
     respond_to do |format|
       format.html
@@ -179,4 +188,5 @@ class TutorsController < ApplicationController
                                     :email, :phone, :firstaid, :firstlesson
                                    )
     end
+
 end

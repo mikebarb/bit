@@ -44,15 +44,20 @@ module Calendarutilities
     # tip: 'joins' does lazy load, 'include' minimises sql calls
 
     # @tutors and @students are used by the cal
-    @slotsinfo     = Slot 
-                   .select('id, timeslot, location')
-                   .where("timeslot >= :start_date AND
-                          timeslot < :end_date",
-                          {start_date: mystartdate,
-                           end_date: myenddate
-                          })
-
-      @sessinfo      = Lesson
+    if options.has_key?(:slot_ids)
+      @slotsinfo     = Slot 
+                     .select('id, timeslot, location')
+                     .where(id: options[:slot_ids])
+    else   # slots controlled by date range
+      @slotsinfo     = Slot 
+                     .select('id, timeslot, location')
+                     .where("timeslot >= :start_date AND
+                            timeslot < :end_date",
+                            {start_date: mystartdate,
+                             end_date: myenddate
+                            })
+    end
+    @sessinfo      = Lesson
                      .joins(:slot)
                      .where(slot_id: @slotsinfo.map {|o| o.id})
                      .order(:status)
@@ -507,9 +512,6 @@ module Calendarutilities
     # Want all the global lessons with their students
     @global_students = Student.includes(:lessons, :roles)
                        .where(:lessons => {status: 'global'})
-    
-    #logger.debug "@global_students: " + @global_students.inspect
-
     @alllessons = Hash.new
     @global_students.each do |student|
       student.lessons.each do |lesson|
@@ -543,8 +545,6 @@ module Calendarutilities
         @students_stats[student.id]['total'] += 1
         @students_stats[student.id][lesson.id]['lesson_object'] = lesson
         glws = @global_lessons_with_slots_index[lesson.id]
-        #dom_id = location + datetime + slot + lesson + student
-        logger.debug "i: " + i.inspect + " glws:" + glws.inspect
         dom_id = glws.slot.location[0..2].upcase + 
                  glws.slot.timeslot.strftime("%Y%m%d%H%M") +
                  'l' + glws.slot.id.to_s.rjust(@sf, "0") +
@@ -554,35 +554,20 @@ module Calendarutilities
         @students_stats[student.id]['role_kind'].push(student.roles[i].kind)
       end
     end
-    #byebug
-    ##?##@alllessons_ids = @alllessons.keys
-    ##?##@global_lessons_with_slots = Lesson.where(id: @alllessons_ids ).includes(:slot)
-                               
-    logger.debug "********************@students_stats: " + @students_stats.inspect
+
+    #logger.debug "********************@students_stats: " + @students_stats.inspect
     siv = {'S'=>0,'R'=>0,'A'=>0,'AoTo'=>0,'RoTo'=>0,'RCu'=>0,'RCoTo'=>0,'B'=>0}
-    #O# si = {'routine'=>siv.clone, 'flexible'=>siv.clone}
-    
+
     # step through each site
     @all_sites_ratio = {'tutor_count'=>0, 'student_count'=>0}
     @cal.each do |location, calLocation|
       calLocation.each_with_index do |rows, rowindex|
-        #logger.debug "next row - " + rowindex.to_s
         rows.each_with_index do |cells, colindex|
-          #logger.debug "next cell - " + colindex.to_s 
           if cells.key?("values") then  # in a slot with lessons
-            #O# rS = rR = rA = rAoTo = rRoTo = rRCu = rRCoTo = rB = 0
-            #O# fS = fR = fRoTo = fRCu = fRCoTo = 0
             siv = {'S'=>0,'R'=>0,'A'=>0,'AoTo'=>0,'RoTo'=>0,'RCu'=>0,'RCoTo'=>0,'B'=>0}
             s = {'routine'=>siv.clone, 'flexible'=>siv.clone}
-
-            #s = si.clone
-            #byebug
-            #flagFlexible = flagRoutine = false
-            #O# flagRostered = false
             slottutorcount = slotstudentcount = 0
             cells["values"].each do |entry|  # go through each lesson
-              #logger.debug "entry: " + entry.inspect
-              #O# flagRoutine = flagFlexible = false
               # si = stats initiation parameters
               # ss = session status
               # s  = stats
@@ -590,68 +575,40 @@ module Calendarutilities
               ss = 'routine' if entry.status == 'standard'
               s[ss] = siv.clone unless s.has_key?(ss)
                 s[ss]['S'] += 1
-              #O# if(entry.status == "standard" ||
-              #O#    entry.status == "routine")
-                #O# flagRoutine = true
-              #O#   rS += 1
-              #O# elsif entry.status == "flexible"
-                #O# flagFlexible = true
-              #O#   fS += 1
-              #O# end
               if @tutrole_lessonindex.has_key? entry.id then  # check for tutroles linked to this lesson
                 # could be multiple tutors in this lesson, a tutrole for each - need to step through each one
-                #logger.debug "tutroles_lessonindex has an entry for this lesson with tutrole indexes into the array of: " +
-                #             @tutrole_lessonindex[entry.id].inspect
                 @tutrole_lessonindex[entry.id].each do |thistutorrole|  # check each tutrole for diagnostics
                   # slottutorcount is for ratio calculations
                   # Ratios are only calculated using BFL, Routine and Flexible lessons
-                  #slottutorcount += @tutrole_lessonindex[entry.id].count
                   if(["scheduled", "notified", "confirmed", "attended"].include?@tutroleinfo[thistutorrole].status)  # valid statuses for ratio calculations
                     slottutorcount += 1 if(['on_BFL', 'standard', 'routine', 'flexible'].include?entry.status) # valid lessons for rations
                   end
-                  #logger.debug "tutor found - tutrole: " + @tutroleinfo[thistutorrole].inspect
                 end
               end
               if @role_lessonindex.has_key? entry.id then  # check for students
-                #logger.debug "student found: " + @role_lessonindex[entry.id].inspect
                 # for ratio calculation
-                # slotstudentcount += @role_lessonindex[entry.id].count
                 @role_lessonindex[entry.id].each do |thisstudentrole|  # check each tutrole for diagnostics
-                  #logger.debug "student found - role: " + @roleinfo[thisstudentrole].inspect
                   thisstudent = @roleinfo[thisstudentrole].student
-                  #logger.debug "thisstudent: " + thisstudent.inspect
                   thisrole = @roleinfo[thisstudentrole]
                   thisstudent = thisrole.student
                   if(["scheduled", "attended"].include?thisrole.status)     # rostered
-                    #O# flagRostered = true
                     slotstudentcount += 1  if(['on_BFL', 'standard', 'routine', 'flexible'].include?entry.status)  # supporting ratio status
                     s[ss]['R'] += 1
-                    #O# rR += 1 if flagRoutine
-                    #O# fR += 1 if flagFlexible
                     if(["onetoone"].include?thisstudent.status)
                       s[ss]['RoTo'] += 1
-                      #O# rRoTo += 1 if flagRoutine
-                      #O# fRoTo += 1 if flagFlexible
                     end
                     if(["catchup"].include?thisrole.kind)
                       s[ss]['RCu'] += 1
-                      #O# rRCu += 1 if flagRoutine
-                      #O# fRCu += 1 if flagFlexible
                       if(["onetoone"].include?thisstudent.status)
                         s[ss]['RCoTo'] += 1
-                        #O# rRCoTo += 1 if flagRoutine
-                        #O# fRCoTo += 1 if flagFlexible
                       end        
                     end
                   elsif(["bye"].include?thisrole.status)
                     s[ss]['B'] += 1
-                    #O# rB += 1 if flagRoutine
                   elsif(["away", "absent"].include?thisrole.status)
                     s[ss]['A'] += 1
-                    #O# rA += 1 if flagRoutine
                     if(["onetoone"].include?thisstudent.status)
                       s[ss]['AoTo'] += 1
-                      #O# rAoTo += 1 if flagRoutine
                     end        
                   end
                 end
@@ -659,54 +616,17 @@ module Calendarutilities
             end
             logger.debug "statistics: " + s.inspect
             # keep stats in the cell/slot data
-            #O# freeRoutine = 2*rS-rA-rR+rRCu-rRoTo-rAoTo+rRCoTo-rB
-            #O# catchupRoutine = rA+rAoTo+rB-rRCu-rRCoTo
-            #O# catchupFlexible = 2*fS-fR-fRoTo
-            #O# cells["stats"] = {
-            #O#                   "routine"=>{
-            #O#                                'S'       =>rS,
-            #O#                                'R'       =>rR,
-            #O#                                'RoTo'    =>rRoTo,
-            #O#                                'A'       =>rA,
-            #O#                                'AoTo'    =>rAoTo,
-            #O#                                'RCu'     =>rRCu,
-            #O#                                'RCoTo'   =>rRCoTo,
-            #O#                                'B'       =>rB,
-            #O#                                'Free'    =>freeRoutine,
-            #O#                                'Catchup' =>catchupRoutine
-            #O#                              },
-            #O#                   "flexible"=>{
-            #O#                                'S'       =>fS,
-            #O#                                'R'       =>fR,
-            #O#                                'RoTo'    =>fRoTo,
-            #O#                                'RCu'     =>fRCu,
-            #O#                                'RCoTo'   =>fRCoTo,
-            #O#                                'Catchup' =>catchupFlexible
-            #O#                              },
-            #O#                     "sum"=>{
-            #O#                                'free'    =>freeRoutine,
-            #O#                                'catchup' =>catchupRoutine + catchupFlexible
-            #O#                     }
-            #O#                   }
-            
             ss = 'routine'
-            #O# freeRoutine = 2*rS-rA-rR+rRCu-rRoTo-rAoTo+rRCoTo-rB
             freeRoutine1 = 2*s[ss]['S']-s[ss]['A']-s[ss]['R']+s[ss]['RCu']-
                           s[ss]['RoTo']-s[ss]['AoTo']+s[ss]['RCoTo']-s[ss]['B']
-            logger.debug "freeRoutine1: " + freeRoutine1.inspect
-            #O# catchupRoutine = rA+rAoTo+rB-rRCu-rRCoTo
             catchupRoutine1 = s[ss]['A']+s[ss]['RoTo']+s[ss]['B']-s[ss]['RCu']-s[ss]['RCoTo']
-            logger.debug "catchupRoutine1: " + catchupRoutine1.inspect
             s[ss]['Free'] = freeRoutine1
             s[ss]['Catchup'] = catchupRoutine1
             ss = 'flexible'
-            #O# catchupFlexible = 2*fS-fR-fRoTo
             catchupFlexible1 = 2 * s[ss]['S']-s[ss]['R']-s[ss]['RoTo'] 
-            logger.debug "catchupFlexible1: " + catchupFlexible1.inspect
             s[ss]['Catchup'] = catchupFlexible1
             s['sum'] = {'free'=>freeRoutine1, 'catchup'=>catchupRoutine1 + catchupFlexible1 }
             s['sum']['catchup'] -= s['allocate']['RCu'] if s.has_key?('allocate')
-            #byebug
             cells["stats"] = s.clone
             # keep counts in the cell/slot data
             cells["ratio"] = {'tutor_count'=>slottutorcount, 'student_count'=>slotstudentcount}
@@ -768,8 +688,8 @@ module Calendarutilities
     # Need to get all relevant lessons for this slot
     #slot_lessons = Lesson.includes(:students, :roles, :slot).where(:slot_id => slot_dbid)
     #byebug
-    @slot_lessons = Lesson.where(slot_id: slot_dbid).includes(roles:[:student])
-
+    @slot_lessons = Lesson.where(slot_id: slot_dbid)
+                          .includes(roles:[:student])
     # step through each lesson in this slot
     #O# rS = rR = rA = rAoTo = rRoTo = rRCu = rRCoTo = rB = 0
     #O# fS = fR = fRoTo = fRCu = fRCoTo = 0
@@ -835,7 +755,8 @@ module Calendarutilities
     @statschange['html_partial'] = slot_html_partial
     
     #ActionCable.server.broadcast "stats_channel", { json: @statschange }
-    ably_rest.channels.get('stats').publish('json', @statschange)
+    #ably_rest.channels.get('stats').publish('json', @statschange)
+    return @statschange.dup
     
   end
   

@@ -32,14 +32,14 @@ class StudentsController < ApplicationController
     @students_history = Array.new
     students = Student.all.order("pname")
     students.each do |thisstudent|
-      @students_history.push(student_history(thisstudent.id))
+      @students_history.push(student_history(thisstudent.id, {}))
     end
   end
 
   # GET /students/history/1
   # GET /students/history/1.json
   def history
-    @student_history =  student_history(params[:id])
+    @student_history =  student_history(params[:id], {})
   end
 
   # GET /students/change/1

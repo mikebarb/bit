@@ -1815,7 +1815,19 @@ function testSuiteForWeekOfYear(){
 /*************************************************************************** 
    This is the major function for manipulation of DOM.
 ****************************************************************************/
-  function moveelement_update( domchange ){
+  // Covering function to determine if we are processing an array
+  // or a single entity. Make repetitive calls if appropriate.
+  function moveelement_update( domchanges ){
+    if( Array.isArray(domchanges) ){
+      for (let i = 0; i < domchanges.length; i++){
+        moveelement_update2( domchanges[i] );
+      }
+    }else{
+      moveelement_update2( domchanges );
+    }
+  }
+  // Main function - either called singually or multiple times.
+  function moveelement_update2( domchange ){
     // This approach allows for the source element not being present on the page
     // or even the destination element may not reside on this page.
     // Web sockets allows all pages to be updated indepent of the dates choosen.
@@ -2756,9 +2768,10 @@ function ready_stats(){
      });
   }
   
+  //----------------- stats_student_update ----------------------
   // this function updates the student details:
   // populates the 'allocate' div with the new lesson details
-  // This is caleed from the ajax response NOT a Web Socket propagation.
+  // This is called from the ajax response NOT a Web Socket propagation.
   function stats_student_update(domchange){
     console.log('entered stats_student_update');
     if(domchange['to_slot']) {   // processing correct move
@@ -2797,8 +2810,20 @@ function ready_stats(){
     }
   }
 
-
-  function stats_update( statschange ){
+  //----------------- stats_update ----------------------
+  // Covering function to determine if we are processing an array
+  // or a single entity. Make repetitive calls if appropriate.
+  function stats_update( statschanges ){
+    if( Array.isArray(statschanges) ){
+      for (let i = 0; i < statschanges.length; i++){
+        stats_update2( statschanges[i] );
+      }
+    }else{
+      stats_update2( statschanges );
+    }
+  }
+  // Main function - either called singually or multiple times.
+  function stats_update2( statschange ){
     // This approach updates the stats for the slot if they are shown on the page.
     //
     // statschange['slot_id']     = dom id of the slot to be updated;

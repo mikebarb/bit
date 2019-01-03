@@ -8,7 +8,7 @@ module Historyutilities
 
   # Obtain the history for a single tutor
   # @tutorhistory holds everything required in the view
-  def tutor_history(tutor_id)
+  def tutor_history(tutor_id, options)
     # put everything in a hash for use in the view.
     @tutorhistory = Hash.new
     # keep the tutor details
@@ -16,6 +16,14 @@ module Historyutilities
     # control how much history to provide
     startdate = Date.today - (Integer(current_user.history_back) rescue 100)
     enddate = Date.today + (Integer(current_user.history_forward) rescue 7)
+    #provide the capability to override the start and end dates by
+    # passing them as options
+    if options.has_key?('startdate')
+      startdate = options['startdate']
+    end
+    if options.has_key?('enddate')
+      startdate = options['enddate']
+    end
     @tutorhistory["startdate"] = startdate
     @tutorhistory["enddate"]   = enddate
     # get all lessons this tutor is in - all history
@@ -41,7 +49,7 @@ module Historyutilities
 
   # Obtain the history for a single student
   # @studenthistory holds everything required in the view
-  def student_history(student_id)
+  def student_history(student_id, options)
     # put everything in a hash for use in the view.
     @studenthistory = Hash.new
     # keep the student details
@@ -49,6 +57,14 @@ module Historyutilities
     # control how much history to provide
     startdate = Date.today - (Integer(current_user.history_back) rescue 100)
     enddate = Date.today + (Integer(current_user.history_forward) rescue 7)
+    #provide the capability to override the start and end dates by
+    # passing them as options
+    if options.has_key?('startdate')
+      startdate = options['startdate']
+    end
+    if options.has_key?('enddate')
+      enddate = options['enddate']
+    end
     @studenthistory["startdate"] = startdate
     @studenthistory["enddate"]   = enddate
     # get all lessons this student is in - all history
