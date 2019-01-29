@@ -470,7 +470,8 @@ function ready_calendar() {
     var object_type    = objectidToObjecttype(object_id); // 'lesson' 'tutor' or 'student'
     var object_context = objectidToContext(object_id); //'index' or 'lesson'
     var thisEle = document.getElementById(object_id);
-    var object_run = taskItemInContext.classList.contains('run'); // true or false
+    var object_run      = taskItemInContext.classList.contains('run'); // true or false
+    var object_run_last = taskItemInContext.classList.contains('runl'); // true or false
     var scmi_copy = false;          //scmi - set comtext menu items.
     var scmi_move = false;          // to show or not show in menu
     var scmi_moverun = false;       // set the dom display value at end.  
@@ -481,6 +482,7 @@ function ready_calendar() {
     var scmi_extendrun = false;
     var scmi_addLesson = false;
     var scmi_extendLessonrun = false;
+    var scmi_toSingleChainLesson = false
     var scmi_removeLesson = false;
     var scmi_removeLessonrun = false;
     var scmi_setStatus = false;
@@ -489,6 +491,7 @@ function ready_calendar() {
     var scmi_editComment = false;
     var scmi_editDetail = false;
     var scmi_history = false;
+    var scmi_chain = false;
     var scmi_changes = false;
     var scmi_editSubject = false;
     var scmi_editEntry = false;
@@ -508,6 +511,7 @@ function ready_calendar() {
       }
     }
 
+
     switch(object_type){     // student, tutor, lesson.
       case 'student':   //student
           scmi_setPersonStatus = true;     // done in both index and main schedule area for student 
@@ -522,35 +526,63 @@ function ready_calendar() {
           scmi_editEntry   = true;
           //scmi_setPersonStatus = true;     // only in index area for tutors 
         }else{  // in the main schedule area (lesson)
-          scmi_addLesson        = true;
-          scmi_extendLessonrun  = true;
-          // can only do a moverun if this element contains a class of 'run'
-          scmi_extendrun        = true;
-          if(taskItemInContext.classList.contains('run')){
-            scmi_moverun        = true;
-            scmi_moverunsingle  = true;
-            scmi_removerun      = true;
-            //scmi_extendrun    = true;
-          }else{
-            scmi_copy = scmi_move = scmi_remove = true;
-          }
+          // first what contextmenu item to display for persons
           scmi_setStatus = scmi_setKind = scmi_editComment = scmi_editDetail = true;
           scmi_history = true;
           scmi_changes = true;
+          // select actions depending of if a chain element or not
+          if(object_run){   // chain element
+            scmi_moverun        = true;
+            scmi_moverunsingle  = true;
+            scmi_removerun      = true;
+            scmi_chain          = true;
+            if(object_run_last){   // chain element
+              scmi_extendrun    = true;
+            }
+          }else{  // not a chain element
+            scmi_copy = scmi_move = scmi_remove = true;
+            scmi_extendrun        = true;
+          }
+          // Now what menu items need to be displayed for the parent lesson
+          // First ones that are always shown
+          scmi_addLesson           = true;  // can always add a lesson
+          // get parent lesson so can determine what contect menu items to show
+          var parseParentId = object_id.match( /^(.*)[st]\d+$/);
+          var parent_lesson_id =  parseParentId[1];        
+          var parent_lesson_object = document.getElementById(parent_lesson_id);
+          var parent_run      = parent_lesson_object.classList.contains('run'); // true or false
+          var parent_run_last = parent_lesson_object.classList.contains('runl'); // true or false
+          if (!parent_run){  // lesson is NOT a chain
+            scmi_toSingleChainLesson = true;
+          }
+          if(parent_run_last){               // last element in lesson chain
+            scmi_extendLessonrun     = true;  
+          }
         }
         break;
       case 'lesson':   //lesson which is always in the main scheduling area.
-          scmi_move = scmi_addLesson = scmi_setStatus = true;
-          scmi_extendLessonrun    = true;
+          scmi_editComment = true;
+          scmi_addLesson = true;
+          scmi_setKind = true;
+          if(taskItemInContext.classList.contains('runl')){   // last chain element
+            scmi_extendLessonrun = true;
+          }
+          if(!object_run){   // not a chain element
+            scmi_toSingleChainLesson = true;
+            scmi_move = true; 
+          }
           // if there are no tutors or students in this lesson, can remove
           var mytutors = thisEle.getElementsByClassName('tutor'); 
           var mystudents = thisEle.getElementsByClassName('student');
+          // When there are no tutors or students in the lesson
           if( (mytutors && mytutors.length == 0 )  &&
               (mystudents && mystudents.length == 0 )  ){
-            scmi_removeLesson = true;
-            scmi_removeLessonrun = true;
+            if(object_run){   // chain element
+              scmi_removeLessonrun = true;
+            }else{     // not a chain
+              scmi_removeLesson = true;
+            }
           }
-          scmi_editComment = true;
           break;
       case 'slot':   //slot which is always in the main scheduling area.
           scmi_addLesson = true;
@@ -567,7 +599,8 @@ function ready_calendar() {
     setscmi('context-removerun', scmi_removerun);
     setscmi('context-extendrun', scmi_extendrun);
     setscmi('context-addLesson', scmi_addLesson);
-    setscmi('context-extendLessonRun', scmi_addLesson);
+    setscmi('context-extendLessonrun', scmi_extendLessonrun);
+    setscmi('context-toSingleChainLesson', scmi_toSingleChainLesson);
     setscmi('context-removeLesson', scmi_removeLesson);
     setscmi('context-removeLessonrun', scmi_removeLessonrun);
     setscmi('context-setStatus', scmi_setStatus);
@@ -577,6 +610,7 @@ function ready_calendar() {
     setscmi('context-editDetail', scmi_editDetail);
     setscmi('context-editSubject', scmi_editSubject);
     setscmi('context-history', scmi_history);
+    setscmi('context-chain', scmi_chain);
     setscmi('context-changes', scmi_changes);
     setscmi('context-editEntry', scmi_editEntry);
   }
@@ -797,6 +831,10 @@ function testSuiteForWeekOfYear(){
         // This will extend the clicked on lesson to the end of the parent slot chain.
         extendLessonrun_Update(currentActivity);
         break;
+      case "toSingleChainLesson":
+        // This will convert this lesson to a single element chain.
+        toSingleChainLesson_Update(currentActivity);
+        break;
       case "removeLesson":
       case "removeLessonrun":
         // For removeLesson - This will remove a lesson clicked on.
@@ -816,6 +854,14 @@ function testSuiteForWeekOfYear(){
         enableTertiaryMenu(currentActivity);
         break;
       case "setKind":
+        //***************************************************
+        // WARNING - for lessons, the user sees 'set kind'
+        //          BUT the system processes 'set status'
+        // This is more meaningful to the user!!!
+        if(currentActivity['object_type'] == 'lesson'){
+          currentActivity['action'] = 'setStatus';
+        }
+        //***************************************************
         // Set Kind has been selected on an element.
         // It will open up another menu to select the status requried.
         // This will set the status of this item (tutor, student, lesson).
@@ -896,10 +942,12 @@ function testSuiteForWeekOfYear(){
         enableTertiaryMenu(currentActivity);
         break;
       case "history":
-        // Edit Comment has been selected on an element.
-        // It will open up a text field to key in your updates.
-        // This will update the relevant comment.
+        // This will show the history for this person.
         getHistory(currentActivity);        
+        break;
+      case "chain":
+        // This will show all the roles in this chain relating to this person.
+        getChain(currentActivity);        
         break;
       case "changes":
         // Display changes has been selected on an element.
@@ -1227,6 +1275,50 @@ function testSuiteForWeekOfYear(){
   //------------------------ End of Context Menu -----------------------------
 
 
+
+  //----------------- Show chain for selected Tutor or Student ------------------------
+  //This function is called to get a student or tutor history
+  //Does ajax to get the student or tutor history
+  function getChain(domchange){
+    // domchange['action']      = thisChoice;
+    // domchange['object_id'] = thisEleId;
+    var parseid = currentActivity['object_id'].match(/\w(\d+)$/);
+    var lessonid = currentActivity['object_id'].match(/n(\d+)[st]\d+$/);
+    //var mydata = {'domchange' : domchange};
+    // url format: myhost + "/students/history/" + personid;
+    var myurl = myhost + "/" + domchange['object_type'] + "s/chain/" + parseid[1];
+    $.ajax({
+        type: "GET",
+        url: myurl,
+        data: {
+          lesson_id: lessonid[1]
+        },
+        dataType: "json",
+        context: domchange,
+
+        success: function(data, textStatus, xhr){
+          showhistory(data);
+        },
+        error: function(xhr){
+          var error_message = "";
+          if (typeof xhr.responseText == 'string'){
+            error_message = xhr.responseText;
+          }else{
+            var errors = $.parseJSON(xhr.responseText);
+            for (var error in (errors['person_id'])){     // lesson_id ??????
+              error_message += " : " + errors['person_id'][error];
+            }
+          }
+          alert('error fetching history for ' + domchange['object_type'] +
+                error_message);
+        }
+     });
+  }
+
+
+
+
+
   //----------------- Get history of Tutor or Student ------------------------
   //This function is called to get a student or tutor history
   //Does ajax to get the student or tutor history
@@ -1259,15 +1351,6 @@ function testSuiteForWeekOfYear(){
           }
           alert('error fetching history for ' + domchange['object_type'] +
                 error_message);
-                
-            // old verions
-            //var errors = $.parseJSON(xhr.responseText);
-            //var error_message = "";
-            //for (var error in (errors['person_id'])){
-            //  error_message += " : " + errors['person_id'][error];
-            //}
-            //alert('error fetching history for ' + 
-            //       domchange['object_type'] + ': ' + error_message);
         }
      });
   }
@@ -1300,29 +1383,45 @@ function testSuiteForWeekOfYear(){
     var htmlsegment = "<h4>" + role + ': ' + hd['pname'] + "</h4>";
     htmlsegment += '<div id="closehistory"><svg height="300" width="300"><line x1="1" y1="1" x2="15" y2="15" style="stroke:#000; stroke-width:4" /><line x1="15" y1="1" x2="1" y2="15" style="stroke:#000; stroke-width:4" /></svg></div>';
     htmlsegment += "<table>";
-    htmlsegment += "<tr><td>Kind</td><td>Status</td><td>Day Time</td><td>Site</td><td>With</td></tr>";
+    htmlsegment += "<tr><td>Kind</td><td>Status</td><td>Day Time</td><td>Site</td>"; 
+    if(role == 'student'){
+      htmlsegment += "<td>Tutor</td><td>Other Students</td></tr>";
+    }else{  // role is a tutor
+      htmlsegment += "<td>Students</td><td>Other Tutors</td></tr>";
+    }
     hd['lessons'].forEach( function(lesson){
         htmlsegment += "<td>" + lesson['kind'] + "</td>";
         htmlsegment += "<td>" + lesson['status'] + "</td>";
         htmlsegment += "<td>" + lesson['daytime'] + "</td>";
         htmlsegment += "<td>" + lesson['site'] + "</td>";
-
-        if(role == 'student'){
-          htmlsegment += "<td>";
-            lesson['tutors'].forEach( function(tutor){
-              htmlsegment += tutor.tutor + "<br>";
-            });
-          htmlsegment += "</td>";
-        }
-
-        if(role == 'tutor'){
-          htmlsegment += "<td>";
-            lesson['students'].forEach( function(student){
-              htmlsegment += student.student + "<br>";
-            });
-          htmlsegment += "</td>";
-        }
         
+        // get students - ensure only other students if displaying a student
+        var htmlstudents = "<td>";
+        lesson['students'].forEach( function(student){
+          if((role == 'student') && (student.student == hd['pname'])){
+            // don't add this student to html list.
+          }else{
+            htmlstudents += student.student + "<br>";
+          }
+        });
+        htmlstudents += "</td>";
+        
+        // get tutors - ensure only other tutors if displaying a tutor
+        var htmltutors = "<td>";
+        lesson['tutors'].forEach( function(tutor){
+          if((role == 'tutor') && (tutor.tutor == hd['pname'])){
+            // don't add this student to html list.
+          }else{
+            htmltutors += tutor.tutor + "<br>";
+          }
+        });
+        htmltutors += "</td>";
+        // now place them in the html output in the correct order
+        if(role == 'student'){
+          htmlsegment += htmltutors + htmlstudents;
+        }else{  // role is a tutor
+          htmlsegment += htmlstudents + htmltutors;
+        }
       htmlsegment += "</tr>";
     });
     htmlsegment += "</table>";
@@ -1797,6 +1896,25 @@ function testSuiteForWeekOfYear(){
     });
   }
 
+  function toSingleChainLesson_Update(domchange){
+    var myurl = myhost + "/lessontosinglechain/";
+    $.ajax({
+        type: "POST",
+        url: myurl,
+        data: {'domchange' : domchange },
+        dataType: "json",
+        context: domchange,
+        success: function(result1, result2, result3){
+            console.log("toSingleChainLesson_Update Ajax response OK");
+            //moveelement_update(result1);
+        },
+        error: function(request, textStatus, errorThrown){
+            //$(this).addClass( "processingerror" );
+            alert("ajax error occured: " + request.status.to_s + " - " + textStatus );
+        }
+    });
+  }
+
 
   //********************* END AJAX ***************************************
 
@@ -2031,7 +2149,7 @@ function testSuiteForWeekOfYear(){
             // overhead on regenerating the lesson object is quite high!
             if(domchange['updatefield'] == 'status'){    // do lesson status
               var eleStatus = ele_object.getElementsByClassName('n-status')[0];
-              eleStatus.innerHTML = 'Status: ' + domchange['updatevalue'];
+              eleStatus.innerHTML = 'Kind: ' + domchange['updatevalue'];
               var these_classes = ele_object.classList;
               // scan these classes for our class of interest
               these_classes.forEach(function(thisClass, index, array){

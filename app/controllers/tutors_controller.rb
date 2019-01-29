@@ -31,7 +31,7 @@ class TutorsController < ApplicationController
   # GET /tutors/history/1
   # GET /tutors/history/1.json
   def history
-    byebug
+    #byebug
     options = Hash.new
     if params.has_key?('startdate')
       options['startdate'] = params['startdate'].to_date
@@ -48,6 +48,12 @@ class TutorsController < ApplicationController
       # https://devblast.com/b/jbuilder
       format.json { render :history, status: :ok }
     end
+  end
+
+  # GET /tutors/history/1
+  # GET /tutors/history/1.json
+  def chain
+    @tutor_history =  tutor_chain(params[:id], params[:lesson_id], {})
   end
 
   # GET /tutors/change/1

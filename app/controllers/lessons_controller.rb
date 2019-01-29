@@ -79,17 +79,17 @@ class LessonsController < ApplicationController
     else  # single deletion
       if @lesson.first != nil
         this_error = "You cannot individually delete a lesson in a chain"
-      elsif @lesson.destroy
-        logger.debug "Lesson destroyed"
-        respond_to do |format|
-          format.json { render json: @domchange, status: :ok }
-          #ActionCable.server.broadcast "calendar_channel", { json: @domchange }
-          ably_rest.channels.get('calendar').publish('json', @domchange)
-        end
       else
-        # report the db related error
         respond_to do |format|
-          format.json { render json: @lesson.errors, status: :unprocessable_entity  }
+          if @lesson.destroy
+            logger.debug "Lesson destroyed"
+            format.json { render json: @domchange, status: :ok }
+            #ActionCable.server.broadcast "calendar_channel", { json: @domchange }
+            ably_rest.channels.get('calendar').publish('json', @domchange)
+          else
+            # report the db related error
+            format.json { render json: @lesson.errors, status: :unprocessable_entity  }
+          end
         end
         return
       end
@@ -127,8 +127,6 @@ class LessonsController < ApplicationController
       if @lesson.save
         @domchange['object_id'] = slot_id_basepart + 'n' + @lesson.id.to_s.rjust(@sf, "0")
         
-        #@domchange['html_partial'] = render_to_string("calendar/_schedule_lesson_update.html", 
-        #@domchange['html_partial'] = render_to_string("calendar/_schedule_lesson.html", 
         @domchange['html_partial'] = render_to_string("calendar/_schedule_lesson_ajax.html", 
                                     :formats => [:html], :layout => false,
                                     :locals => {:slot => slot_id_basepart,
@@ -144,6 +142,65 @@ class LessonsController < ApplicationController
         format.json { render json: @lesson.errors, status: :unprocessable_entity }
       end
     end
+  end
+
+  # PATCH/PUT /lessonupdateskc.json
+  # ajax updates skc = status comment (kind not valid for sessions)
+  def lessonupdateskc
+    @domchange = Hash.new
+    params[:domchange].each do |k, v| 
+      logger.debug "k: " + k.inspect + " => v: " + v.inspect 
+      @domchange[k] = v
+    end
+
+    # from / source
+    if((result = /^([A-Z]+\d+l\d+)n(\d+)$/.match(params[:domchange][:object_id])))
+      #slot_id = result[1]
+      lesson_dbId   = result[2].to_i
+      @domchange['object_type'] = 'lesson'
+      @domchange['from'] = result[1]    # old_slot_dom_id
+    end
+    logger.debug "@domchange: " + @domchange.inspect
+
+    @lesson = Lesson.find(lesson_dbId)
+    logger.debug "@lesson: " + @lesson.inspect
+
+    flagupdate = false
+    case @domchange['updatefield']
+    when 'status'
+      if @lesson.status != @domchange['updatevalue']
+        @lesson.status = @domchange['updatevalue']
+        flagupdate = true
+      end
+    when 'comments'
+      if @lesson.comments != @domchange['updatevalue']
+        @lesson.comments = @domchange['updatevalue']
+        flagupdate = true
+      end
+    end
+
+    respond_to do |format|
+      if @lesson.save
+        #format.html { redirect_to @student, notice: 'Student was successfully updated.' }
+        #format.json { render :show, status: :ok, location: @lesson }
+        format.json { render json: @domchange, status: :ok }
+        #ActionCable.server.broadcast "calendar_channel", { json: @domchange }
+        ably_rest.channels.get('calendar').publish('json', @domchange)
+      else
+        logger.debug("errors.messages: " + @lesson.errors.messages.inspect)
+        format.json { render json: @lesson.errors.messages, status: :unprocessable_entity }
+      end
+    end
+  end  
+
+  # POST /lessontosinglechain.json
+  def lessontosinglechain
+    @domchange = Hash.new
+    params[:domchange].each do |k, v| 
+      #logger.debug "k: " + k.inspect + " => v: " + v.inspect 
+      @domchange[k] = v
+    end
+    toSingleChainLesson() # @domchange instance variable is used
   end
 
   # POST /lessonextend.json

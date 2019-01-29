@@ -79,24 +79,27 @@ Rails.application.routes.draw do
   get 'calendar/displayoptions/'  => 'calendar#displayoptions',  as: :displayoptions
   get 'calendar/flexibledisplay/' => 'calendar#flexibledisplay', as: :flexibledisplay
 
-  get  'lessons/:id/move' => 'lessons#move',            as: :move_lesson
-  post 'lessonmoveslot'   => 'lessons#lessonmoveslot',  as: :lessonmoveslot
-  post 'lessonadd'        => 'lessons#lessonadd',       as: :lessonadd
-  post 'lessonextend'     => 'lessons#lessonextend',    as: :lessonextend
-  delete 'lessonremove'   => 'lessons#lessonremove',    as: :lessonremove
-  post 'lessons/:id'      => 'lessons#update',          as: :update_lesson
-  post 'lessonupdateskc'  => 'lessons#lessonupdateskc', as: :lessonupdateskc
+  get  'lessons/:id/move'     => 'lessons#move',                as: :move_lesson
+  post 'lessonmoveslot'       => 'lessons#lessonmoveslot',      as: :lessonmoveslot
+  post 'lessonadd'            => 'lessons#lessonadd',           as: :lessonadd
+  post 'lessonextend'         => 'lessons#lessonextend',        as: :lessonextend
+  post 'lessontosinglechain'  => 'lessons#lessontosinglechain', as: :lessontosinglechain
+  delete 'lessonremove'       => 'lessons#lessonremove',        as: :lessonremove
+  post 'lessons/:id'          => 'lessons#update',              as: :update_lesson
+  post 'lessonupdateskc'      => 'lessons#lessonupdateskc',     as: :lessonupdateskc
   resources :lessons
 
   resources :slots
 
   get 'tutors/history/:id' => 'tutors#history', as: :tutor_history
+  get 'tutors/chain/:id' => 'tutors#chain', as: :tutor_chain
   get 'tutors/history' => 'tutors#allhistory', as: :tutors_history
   get 'tutors/change/:id' => 'tutors#change', as: :tutor_change
   post 'tutordetailupdateskc' => 'tutors#tutordetailupdateskc', as: :tutors_tutordetailupdateskc
   resources :tutors
 
   get 'students/history/:id' => 'students#history', as: :student_history
+  get 'students/chain/:id' => 'students#chain', as: :student_chain
   get 'students/history'     => 'students#allhistory', as: :students_history
   get 'students/change/:id'  => 'students#change', as: :student_change
   get 'allstudents'          => 'students#allstudents', as: :allstudents

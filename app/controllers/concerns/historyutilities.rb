@@ -33,6 +33,35 @@ module Historyutilities
     lesson_ids = tutrole_objs.map { |obj| obj.lesson_id }.uniq
     lesson_objs = Lesson.includes(:slot, :students, :tutors)
                         .where( id: lesson_ids, slots: { timeslot: startdate..enddate})
+                        .order('slots.timeslot').reverse_order
+    @tutorhistory["lessons"] = lesson_objs.map { |obj| [
+                                            obj.id,
+                                            obj.status,
+                                            obj.slot.timeslot,
+                                            obj.slot.location,
+                                            obj.tutors.map {|t| t.pname },
+                                            obj.students.map{|s| s.pname },
+                                            obj.tutroles.where(tutor_id: tutor_id).first.status == nil ?
+                                              "" : obj.tutroles.where(tutor_id: tutor_id).first.status
+                                            ] }
+    @tutorhistory
+  end
+
+  # Obtain all the details about the current chain this tutor is in.
+  # @tutorhistory holds everything required in the view
+  # From the passed in student/lesson, obtail all the links in the chain.
+  def tutor_chain(tutor_id, lesson_id, options)
+    # put everything in a hash for use in the view.
+    @tutorhistory = Hash.new
+    # keep the tutor details
+    @tutorhistory["tutor"] = Tutor.find(tutor_id)
+    # get this role
+    tutrole  = Tutrole.where(tutor_id: tutor_id, lesson_id: lesson_id).first
+    tutroles = Tutrole.where(block: tutrole.block)
+    # link to lessons for these roles
+    lesson_ids = tutroles.map { |obj| obj.lesson_id }.uniq
+    lesson_objs = Lesson.includes(:slot, :students, :tutors, :roles)
+                        .where( id: lesson_ids)
                         .order('slots.timeslot')
     @tutorhistory["lessons"] = lesson_objs.map { |obj| [
                                             obj.id,
@@ -45,6 +74,38 @@ module Historyutilities
                                               "" : obj.tutroles.where(tutor_id: tutor_id).first.status
                                             ] }
     @tutorhistory
+  end
+
+
+
+
+  # Obtain all the details about the current chaing the student is in.
+  # @studenthistory holds everything required in the view
+  # From the passed in student/lesson, obtail all the links in the chain.
+  def student_chain(student_id, lesson_id, options)
+    # put everything in a hash for use in the view.
+    @studenthistory = Hash.new
+    # keep the student details
+    @studenthistory["student"] = Student.find(student_id)
+    # get this role
+    role  = Role.where(student_id: student_id, lesson_id: lesson_id).first
+    roles = Role.where(block: role.block)
+    # link to lessons for these roles
+    lesson_ids = roles.map { |obj| obj.lesson_id }.uniq
+    lesson_objs = Lesson.includes(:slot, :students, :tutors, :roles)
+                        .where( id: lesson_ids)
+                        .order('slots.timeslot')
+    @studenthistory["lessons"] = lesson_objs.map { |obj| [
+                                            obj.id,
+                                            obj.status,
+                                            obj.slot.timeslot,
+                                            obj.slot.location,
+                                            obj.tutors.map {|t| t.pname },
+                                            obj.students.map{|s| s.pname },
+                                            obj.roles.where(student_id: student_id).first.status == nil ?
+                                              "" : obj.roles.where(student_id: student_id).first.status
+                                            ] }
+    @studenthistory
   end
 
   # Obtain the history for a single student
@@ -74,7 +135,7 @@ module Historyutilities
     lesson_ids = role_objs.map { |obj| obj.lesson_id }.uniq
     lesson_objs = Lesson.includes(:slot, :students, :tutors)
                         .where( id: lesson_ids, slots: { timeslot: startdate..enddate})
-                        .order('slots.timeslot')
+                        .order('slots.timeslot').reverse_order
     @studenthistory["lessons"] = lesson_objs.map { |obj| [
                                             obj.id,
                                             obj.status,

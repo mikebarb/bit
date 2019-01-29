@@ -517,7 +517,7 @@ module ChainUtilities
                         .where(block: role.block).where.not(first: nil)
                         .order("slots.timeslot")
     elsif role.is_a?(Lesson)
-      @role_chain = Lesson.includes(:slot, :roles, :tutroles)
+      @role_chain = Lesson.includes(:slot, roles: :student, tutroles: :tutor)
                         .where(first: role.first)
                         .order("slots.timeslot")
     end
@@ -965,12 +965,70 @@ module ChainUtilities
   end
   #-----------------End of Service Function = doExtendRun ---------------------
 
+
+  #***************************************************************************
+  #------------------ Service Function = toSingleChainLesson -----------------
+  # This function will convert a lesson to a single element chain
+  # This became necessary as some work practices required a chained student to 
+  # be moved into a chained lesson that is flexible - these are often not chained.
+  #
+  # Input: dom_id of the clicked on element - the one to be extended.
+  # Output: "" if all OK
+  #         error message if not OK. Calling code to handle the error.
+  #---------------------------------------------------------------------------
+  def toSingleChainLesson      # element to be extended
+    clicked_domid = @domchange['object_id']
+    this_error = ""
+    if(result = /^(([A-Z]+\d+l\d+)n(\d+))$/.match(clicked_domid))
+      old_lesson_id = result[3].to_i
+      slot_id_basepart = result[2]
+      @domchange['object_type'] = 'lesson'
+      @domchange['from'] = result[1]
+    else
+      this_error = "passed parameter to extend run function isincorrect - #{clicked_domid.inspect}"
+      respond_to do |format|
+        format.json { render json: this_error, status: :unprocessable_entity }
+      end
+    end
+    #--------------------------- role ---------------------------------
+    # This is converting a lesson to a chain.
+    @lesson = Lesson.includes(:slot).where(id: old_lesson_id).first
+    # build the chain for lessons.
+    # and the block chain that we propagate as the updated elements (roles)
+    #
+    # First check if this role is part of a chain. Make a chain if not.
+    if @lesson.first == nil
+      @lesson.first = @lesson.id
+      @lesson.next = nil
+      respond_to do |format|
+        if @lesson.save         # write to database.
+          #@domchange['object_id'] = slot_id_basepart + 'n' + @lesson.id.to_s.rjust(@sf, "0")
+          
+          @domchange['html_partial'] = render_to_string("calendar/_schedule_lesson_ajax.html", 
+                                      :formats => [:html], :layout => false,
+                                      :locals => {:slot => slot_id_basepart,
+                                                  :lesson => @lesson,
+                                                  :thistutroles => [],
+                                                  :thisroles => []
+                                                 })
+  
+          @domchange['action'] = 'replace'    # in dom, this is replacing an existing element.
+          format.json { render json: @domchange, status: :ok }
+          #ActionCable.server.broadcast "calendar_channel", { json: @domchange }
+          ably_rest.channels.get('calendar').publish('json', @domchange)
+        else
+          format.json { render json: @lesson.errors, status: :unprocessable_entity }
+        end
+      end
+    end
+  end
+
   #******************************************************************
   #--------------------- Service Function = doExtendLessonRun -----------------------
   # This function will extend a lesson chain from the clicked on element through
   # to the rest of the term and into the week + 1.
   # The chain goes all the way through to week + 1 inclusive
-  # Week +1 is identified by a field (wpo) in the slot.
+  # Week +1 is identified by a field (wpo = week plus one) in the slot.
   #
   # Input: dom_id of the clicked on element - the one to be extended.
   # Output: "" if all OK
@@ -1066,15 +1124,16 @@ module ChainUtilities
     return this_error if this_error.length > 0
     #--------------------------- build the DOMs ----------------------------
     # Build the @domchange(domchangerun for each element in the chain
-    # But as there are no changes to the first link, only the following ones are processed.
+    # All need to be done as chaining indicators need to be updated 
     @domchangerun = Array.new
     #@block_roles.each_with_index do |o, i|
-    (1..@block_roles.length-1).each do |i|
+    (0..@block_roles.length-1).each do |i|
       o = @block_roles[i]
       logger.debug "block_role (" + i.to_s + "): " + o.inspect
       @domchangerun[i] = Hash.new
-      @domchangerun[i]['action']         = 'addLesson'                 # extendrun of individual elements. 
-      @domchangerun[i]['object_type']    = 'lesson'
+      @domchangerun[i]['action'] = 'addLesson'           # extendrun of individual elements except 
+      @domchangerun[i]['action'] = 'replace' if i == 0   # for first element, replace existing dom lesson 
+      @domchangerun[i]['object_type'] = 'lesson'
       @domchangerun[i]['to'] = o.slot.location[0,3] +
                                            o.slot.timeslot.strftime("%Y%m%d%H%M") +
                                     'l' +  o.slot_id.to_s.rjust(@sf, "0")
@@ -1091,16 +1150,27 @@ module ChainUtilities
                                              })
     end
     # saved safely, now need to update the browser display (using calendar messages)
-    # First element has no changes for lessons.
-    (1..@block_roles.length-1).each do |i|
-      ably_rest.channels.get('calendar').publish('json', @domchangerun[i])
+    # collect the set of screen updates and send through Ably as single message
+    domchanges = Array.new
+    (0..@block_roles.length-1).each do |i|
+      domchanges.push(@domchangerun[i])
     end
+    ably_rest.channels.get('calendar').publish('json', domchanges)
+    #(0..@block_roles.length-1).each do |i|
+    #  ably_rest.channels.get('calendar').publish('json', @domchangerun[i])
+    #end
     ### ably_rest.channels.get('calendar').publish('json', @domchangepreblock) if @pre_block_role != nil
     # Now send out the updates to the stats screen
     # no change in stats for first item in block.
+    # collect the set of stat updates and send through Ably as single message
+    statschanges = Array.new
     (1..@block_roles.length-1).each do |i|
-      get_slot_stats(@domchangerun[i]['to'])
+      statschanges.push(get_slot_stats(@domchangerun[i]['to']))
     end
+    ably_rest.channels.get('stats').publish('json', statschanges)
+    #(1..@block_roles.length-1).each do |i|
+    #  get_slot_stats(@domchangerun[i]['to'])
+    #end
     # everything is completed successfully.
     return ""
   end
@@ -1158,7 +1228,7 @@ module ChainUtilities
       logger.debug "block_role (" + i.to_s + "): " + o.inspect
       @domchangerun[i] = Hash.new
       @domchangerun[i]['action']         = 'removeLesson'
-      @domchangerun[i]['object_type']    = 'session'
+      @domchangerun[i]['object_type']    = 'lesson'
       @domchangerun[i]['new_slot_domid'] = o.slot.location[0,3] +
                                            o.slot.timeslot.strftime("%Y%m%d%H%M") +
                                     'l' +  o.slot.id.to_s.rjust(@sf, "0")
@@ -1166,14 +1236,54 @@ module ChainUtilities
                                     'n' +  o.id.to_s.rjust(@sf, "0")
     end
     # No breakchainlast updates necessary for display. 
+    ############ now need to add processing for screen update #################
+    # Now do the breakchainlast
+    if @role_breakchainlast # break the chain.
+      # Need to display the linkage change on the display
+      # @role_breakchainlast is the role
+      # display is an update (not a removal) so must rerender
+      # build using the role
+      o = @role_breakchainlast    # lesson object
+      @domchangebreakchainlast = Hash.new
+      @domchangebreakchainlast['action']      = 'replace' 
+      @domchangebreakchainlast['object_type'] = 'lesson'
+      @domchangebreakchainlast['new_slot_id'] = o.slot.location[0,3] +
+                                                o.slot.timeslot.strftime("%Y%m%d%H%M") +
+                                                'l' + o.slot_id.to_s.rjust(@sf, "0")
+      @domchangebreakchainlast['object_id']   = @domchangebreakchainlast['new_slot_id'] +
+                                                'n' + o.id.to_s.rjust(@sf, "0")
+      # This is rendering a lesson
+      @domchangebreakchainlast['html_partial']  = 
+        render_to_string("calendar/_schedule_lesson_ajax.html",
+                        :formats => [:html], :layout => false,
+                                  :locals => {:slot => @domchangebreakchainlast['new_slot_id'],
+                                              :lesson => o,
+                                              :thistutroles => o.tutroles,
+                                              :thisroles => o.roles
+                                   })
+    end
     #---------------------------  update screens ------------------------------
     # saved safely, now need to update the browser display (using calendar messages)
+    # collect the set of screen updates and send through Ably as single message
+    domchanges = Array.new
     (0..@block_roles.length-1).each do |i|
-      ably_rest.channels.get('calendar').publish('json', @domchangerun[i])
+      domchanges.push(@domchangerun[i])
     end
+    domchanges.push(@domchangebreakchainlast)
+    ably_rest.channels.get('calendar').publish('json', domchanges)
+    #(0..@block_roles.length-1).each do |i|
+    #  ably_rest.channels.get('calendar').publish('json', @domchangerun[i])
+    #end
+    # Now send out the updates to the stats screen
+    # collect the set of stat updates and send through Ably as single message
+    statschanges = Array.new
     (0..@block_roles.length-1).each do |i|
-      get_slot_stats(@domchangerun[i]['new_slot_domid'])
+      statschanges.push(get_slot_stats(@domchangerun[i]['new_slot_domid']))
     end
+    ably_rest.channels.get('stats').publish('json', statschanges)
+    #(0..@block_roles.length-1).each do |i|
+    #  get_slot_stats(@domchangerun[i]['new_slot_domid'])
+    #end
     # everything is completed successfully.
     respond_to do |format|
       format.json { render json: @domchange, status: :ok }

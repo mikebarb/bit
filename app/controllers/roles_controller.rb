@@ -575,24 +575,29 @@ class RolesController < ApplicationController
       @domchange[k] = v
     end
     this_error = ""
+    source_chain = false   # track if source is a chain element
+    dest_chain = false     # track if moving to a chain
     # from / source
-    # need to check if is from index area or schedule area
+    # need to check if it is from index area or schedule area
     # identified by the id
     # id = t11111     ->  index
     # id = GUN2018... -> schedule
     if((result = /^(([A-Z]+\d+l\d+)n(\d+))s(\d+)$/.match(@domchange['object_id'])))
       student_id = result[4].to_i
       old_lesson_id = result[3].to_i
-      old_slot_id = result[2]
+      #old_slot_id = result[2]
       @domchange['object_type'] = 'student'
       @domchange['from'] = result[1]
+      thisrole = Role.where(student_id: student_id, lesson_id: old_lesson_id)
+      source_chain = true if thisrole.first
     elsif((result = /^s(\d+)/.match(@domchange['object_id'])))  #index area
       student_id = result[1].to_i
       @domchange['object_type'] = 'student'
       @domchange['action'] = 'copy'    # ONLY a copy allowed from index area.
     else
+      this_error += "Source area cannot be identified! "
       logger.debug "neither index or schedule found!!!"
-      return
+      #return
     end
     #------------------------------------------------------------------------
     # Handle the different destination scenarios.
@@ -608,8 +613,7 @@ class RolesController < ApplicationController
     # it simply continues the run to the end of the block
     # as defined by the parent.
     if(@domchange['action'] == "extendrun")
-      # Nothing to do here - must ignore.
-      #logger.debug "in extend run - no destination sought."
+      # Nothing to do here - must ignore - no destination sought.
     elsif(@domchange.has_key?("to_slot"))
       #logger.debug "to_slot present in parameters"
       result = /^(([A-Z]+\d+l(\d+)))/.match(@domchange['to_slot'])
@@ -619,6 +623,9 @@ class RolesController < ApplicationController
         # Need to find the 'allocate' lesson for this slot.
         @lesson_new = Lesson.where(:slot_id => new_slot_dbId, :status => "allocate" )
                             .first
+        if @lesson_new.first
+          dest_chain = true
+        end
         unless @lesson_new
           # need to create a new lesson with status 'allocatae'
           @lesson_new = Lesson.new(slot_id: new_slot_dbId, status: "allocate")
@@ -634,6 +641,15 @@ class RolesController < ApplicationController
         new_lesson_id = result[3].to_i
         new_slot_id = result[2]
         @domchange['to'] = result[1]
+        thislesson = Lesson.find(new_lesson_id)
+        dest_chain = true if thislesson.first
+      end
+    end
+    # to prevent user errors, this check legimate move within
+    # the chaining environment. Does impose the expense of a db read.
+    if source_chain     # moving a chain element
+      if dest_chain == false   # destination is not a chain
+        this_error += "Student chain element can only be moved into a parent lesson chain"
       end
     end
     # Intercept and do nothing if parent is the same.
@@ -648,8 +664,10 @@ class RolesController < ApplicationController
     #------------------------------------------------------------------------
     # Now handle the different types of moves or copies.
     #------------------------------------------------------------------------
+    if(this_error.length > 0)
+      # don't do any more processing, skip to error handling
     #---------------------------- start of extendrun ------------------------
-    if( @domchange['action'] == 'extendrun')
+    elsif( @domchange['action'] == 'extendrun')
       # offload extend run to it's own function
       # we must handle any errors here
       this_error = doExtendRun(@domchange['object_id'])

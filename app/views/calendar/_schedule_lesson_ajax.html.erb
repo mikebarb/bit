@@ -1,5 +1,7 @@
 <% #byebug %>
-<div class="lesson <%= 'n-status-' + set_class_status_f(lesson) %>" id=<%= slot + "n" + lesson.id.to_s.rjust(@sf, "0") %> >
+<div class="lesson <%= 'n-status-' + set_class_status_f(lesson) 
+                   %><%= ' '       + set_class_run_f(   lesson)
+                   %>" id=<%= slot + "n" + lesson.id.to_s.rjust(@sf, "0") %> >
 
   <div class="grouptutors">
     <% thistutroles.each do |thistutrole|  %>
@@ -22,7 +24,7 @@
   </div>
 
   <div class="lessoncomment comment commentinline">
-    <div class="lessoncommenttext"><% if lesson.comments != nil && lesson.comments != "" %><%= lesson.comments %><% end %></div>
-    <div class="lessonstatusinfo n-status"><% if lesson.status != nil && lesson.status != "" %>Status: <%= lesson.status %> <% end %></div>
+    <div class="lessoncommenttext n-comments"><% if lesson.comments != nil && lesson.comments != "" %><%= lesson.comments %><% end %></div>
+    <div class="lessonstatusinfo n-status"><% if lesson.status != nil && lesson.status != "" %>Kind: <%= lesson.status %> <% end %></div>
   </div>  
 </div>

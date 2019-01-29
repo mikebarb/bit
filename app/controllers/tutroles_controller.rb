@@ -103,6 +103,8 @@ class TutrolesController < ApplicationController
       @domchange[k] = v
     end
     this_error = ""
+    source_chain = false   # track if source is a chain element
+    dest_chain = false     # track if moving to a chain
     # from / source
     # need to check if is from index area or schedule area
     # identified by the id
@@ -113,13 +115,16 @@ class TutrolesController < ApplicationController
       old_lesson_id = result[2].to_i
       @domchange['object_type'] = 'tutor'
       @domchange['from'] = result[1]
+      thistutrole = Tutrole.where(tutor_id: tutor_id, lesson_id: old_lesson_id)
+      source_chain = true if thistutrole.first
     elsif((result = /^t(\d+)/.match(params[:domchange][:object_id])))  #index area
       tutor_id = result[1]
       @domchange['object_type'] = 'tutor'
       # ONLY a copy allowed when source is in index index area.
       @domchange['action'] = 'copy' if  @domchange['action'] == 'move'   
     else
-      return
+      this_error += "Source area cannot be identified! "
+      #return
     end
     logger.debug "@domchange: " + @domchange.inspect
     #------------------------------------------------------------------------
@@ -131,14 +136,22 @@ class TutrolesController < ApplicationController
     # it simply continues the run to the end of the block
     # as defined by the parent.
     if(@domchange['action'] == "extendrun")
-      # Nothing to do here - must ignore.
-      #logger.debug "in extend run - no destination sought."
+      # Nothing to do here - must ignore - no destination sought.
     else  # the normal to destination
       result = /^(([A-Z]+\d+l\d+)n(\d+))/.match(@domchange['to'])
       if result 
         new_lesson_id = result[3].to_i
         #new_slot_id = result[2]
         @domchange['to'] = result[1]
+        thislesson = Lesson.find(new_lesson_id)
+        dest_chain = true if thislesson.first
+      end
+    end
+    # to prevent user errors, this check legimate move within
+    # the chaining environment. Does impose the expense of a db read.
+    if source_chain     # moving a chain element
+      if dest_chain == false   # destination is not a chain
+        this_error += "Tutor chain element can only be moved into a parent lesson chain"
       end
     end
     # Intercept and do nothing if parent is the same.
@@ -153,8 +166,10 @@ class TutrolesController < ApplicationController
     #------------------------------------------------------------------------
     # Now handle the different types of moves or copies.
     #------------------------------------------------------------------------
+    if(this_error.length > 0)
+      # don't do any more processing, skip to error handling
     #---------------------------- start of extendrun ------------------------
-    if( @domchange['action'] == 'extendrun')
+    elsif( @domchange['action'] == 'extendrun')
       # offload extend run to it's own function
       # we must handle any errors here
       this_error = doExtendRun(@domchange['object_id'])

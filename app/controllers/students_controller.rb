@@ -39,7 +39,27 @@ class StudentsController < ApplicationController
   # GET /students/history/1
   # GET /students/history/1.json
   def history
+    options = Hash.new
+    if params.has_key?('startdate')
+      options['startdate'] = params['startdate'].to_date
+    end
+    if params.has_key?('enddate')
+      options['startdate'] = params['enddate'].to_date
+    end
+    logger.debug "options: " + options.inspect
     @student_history =  student_history(params[:id], {})
+    respond_to do |format|
+      format.html
+      # helpful reference for jbuilder is
+      # https://devblast.com/b/jbuilder
+      format.json { render :history, status: :ok }
+    end
+  end
+
+  # GET /students/chain/1
+  # GET /students/chain/1.json
+  def chain
+    @student_history =  student_chain(params[:id], params[:lesson_id], {})
   end
 
   # GET /students/change/1
