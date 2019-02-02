@@ -15,15 +15,27 @@
   background-color: white;
 }
 
-.sticky-header__title {
-  cursor: pointer;
-  position: relative;
+.flex {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
 }
 
-.sticky-header__title::before {
+.sticky-header__title {
+  position: relative;
+  line-height: 1.5em;
+}
+
+.sticky-header__icon {
+  cursor: pointer;
+  position: relative;
+  height: 25px;
+  width: 25px;
+}
+
+.sticky-header__icon::before {
     position: absolute;
-    top: 5px;
-    right: 17px;
+    top: 0;
     display: block;
     height: 2px;
     width: 20px;
@@ -31,10 +43,9 @@
     content: '';
 }
 
-.sticky-header__title::after {
+.sticky-header__icon::after {
     position: absolute;
-    top: 11px;
-    right: 17px;
+    top: 6px;
     display: block;
     height: 4px;
     width: 20px;
@@ -871,7 +882,40 @@ table, th, td {
 .selectdayofweek{
     display: inline-block;
 }
+.selecttime{
+    display: inline-block;
+}
+
+
 
 .dow1, .dow2, dow3, dow4, dow5 {
   text-align: center;
+}
+
+.blockheader {
+  display: inline-block;
+}
+
+.buttonlink{
+	display:inline-block;
+	border-style:solid;
+	border-color:#bbb #888 #666 #aaa;
+	border-width:3px 4px 4px 3px;
+	background:#ccc;
+	color:#333;
+	line-height:2;
+	text-align:center;
+	text-decoration:none;
+	font-weight:900;
+	font-size: 10px;
+}
+.buttonlink:hover{
+	border-color: #666 #aaa #bbb #888;
+	border-width:4px 3px 3px 4px;
+	color:#000;
+}
+
+.doing{
+  background: red;
+  box-shadow: inset 0 0 2px 2px black;
 }

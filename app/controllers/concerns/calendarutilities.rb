@@ -476,6 +476,63 @@ module Calendarutilities
       end
     end
   end
+
+  # -----------------------------------------------------------------------------
+  # student_stats 
+  # Generate student stats
+  # Obtain stats on all the students in global for display on the stats page.
+  # Pulled out separately so can do a ajax call on it.
+  #
+  # return: @students_stats    - a object hash available to the renderee
+  #                              by stats_students
+  # -----------------------------------------------------------------------------
+  def student_stats
+    # Want all the global lessons with their students
+    global_students = Student.includes(:lessons, :roles)
+                       .where(:lessons => {status: 'global'})
+    alllessons = Hash.new
+    global_students.each do |student|
+      student.lessons.each do |lesson|
+        unless(alllessons.key?(lesson.id))
+          alllessons[lesson.id] = 0         # initialise
+        end
+        alllessons[lesson.id] += 1          # count
+      end
+    end
+    # get all the global lessons containing these students
+    alllessons_ids = alllessons.keys
+    global_lessons_with_slots = Lesson.where(id: alllessons_ids ).includes(:slot)
+    global_lessons_with_slots_index = Hash.new
+    global_lessons_with_slots.each do |l|
+      global_lessons_with_slots_index[l.id] = l 
+    end
+        
+    @students_stats = Hash.new
+    global_students.each do |student|
+      unless(@students_stats.key?(student.id))
+        @students_stats[student.id] = Hash.new
+        @students_stats[student.id]['total'] = 0
+        @students_stats[student.id]['dom_ids'] = Array.new
+        @students_stats[student.id]['role_kind'] = Array.new
+      end
+      @students_stats[student.id]['student_object'] = student
+      student.lessons.each_with_index do |lesson, i|
+        unless(@students_stats[student.id].key?(lesson.id))
+          @students_stats[student.id][lesson.id] = Hash.new
+        end
+        @students_stats[student.id]['total'] += 1
+        @students_stats[student.id][lesson.id]['lesson_object'] = lesson
+        glws = global_lessons_with_slots_index[lesson.id]
+        dom_id = glws.slot.location[0..2].upcase + 
+                 glws.slot.timeslot.strftime("%Y%m%d%H%M") +
+                 'l' + glws.slot.id.to_s.rjust(@sf, "0") +
+                 'n' + lesson.id.to_s.rjust(@sf, "0") + 
+                 's' + student.id.to_s.rjust(@sf, "0")
+        @students_stats[student.id]['dom_ids'].push(dom_id)
+        @students_stats[student.id]['role_kind'].push(student.roles[i].kind)
+      end
+    end
+  end
   
  # -----------------------------------------------------------------------------
  # Generate stats.
@@ -509,52 +566,10 @@ module Calendarutilities
  #  Note: free routine sessions do on exist for flexible sessions.
  # -----------------------------------------------------------------------------
   def generate_stats
-    # Want all the global lessons with their students
-    @global_students = Student.includes(:lessons, :roles)
-                       .where(:lessons => {status: 'global'})
-    @alllessons = Hash.new
-    @global_students.each do |student|
-      student.lessons.each do |lesson|
-        unless(@alllessons.key?(lesson.id))
-          @alllessons[lesson.id] = 0         # initialise
-        end
-        @alllessons[lesson.id] += 1          # count
-      end
-    end
-    # get all the global lessons containing these students
-    @alllessons_ids = @alllessons.keys
-    @global_lessons_with_slots = Lesson.where(id: @alllessons_ids ).includes(:slot)
-    @global_lessons_with_slots_index = Hash.new
-    @global_lessons_with_slots.each do |l|
-      @global_lessons_with_slots_index[l.id] = l 
-    end
-        
-    @students_stats = Hash.new
-    @global_students.each do |student|
-      unless(@students_stats.key?(student.id))
-        @students_stats[student.id] = Hash.new
-        @students_stats[student.id]['total'] = 0
-        @students_stats[student.id]['dom_ids'] = Array.new
-        @students_stats[student.id]['role_kind'] = Array.new
-      end
-      @students_stats[student.id]['student_object'] = student
-      student.lessons.each_with_index do |lesson, i|
-        unless(@students_stats[student.id].key?(lesson.id))
-          @students_stats[student.id][lesson.id] = Hash.new
-        end
-        @students_stats[student.id]['total'] += 1
-        @students_stats[student.id][lesson.id]['lesson_object'] = lesson
-        glws = @global_lessons_with_slots_index[lesson.id]
-        dom_id = glws.slot.location[0..2].upcase + 
-                 glws.slot.timeslot.strftime("%Y%m%d%H%M") +
-                 'l' + glws.slot.id.to_s.rjust(@sf, "0") +
-                 'n' + lesson.id.to_s.rjust(@sf, "0") + 
-                 's' + student.id.to_s.rjust(@sf, "0")
-        @students_stats[student.id]['dom_ids'].push(dom_id)
-        @students_stats[student.id]['role_kind'].push(student.roles[i].kind)
-      end
-    end
-
+    # get the student stats info first which is displayed at the top of 
+    # the stats page.
+    student_stats()     # call the def
+    
     #logger.debug "********************@students_stats: " + @students_stats.inspect
     siv = {'S'=>0,'R'=>0,'A'=>0,'AoTo'=>0,'RoTo'=>0,'RCu'=>0,'RCoTo'=>0,'B'=>0}
 
@@ -614,18 +629,20 @@ module Calendarutilities
                 end
               end
             end
-            logger.debug "statistics: " + s.inspect
+            #logger.debug "statistics: " + s.inspect
             # keep stats in the cell/slot data
             ss = 'routine'
-            freeRoutine1 = 2*s[ss]['S']-s[ss]['A']-s[ss]['R']+s[ss]['RCu']-
+            regularRoutine1 = 2*s[ss]['S']-s[ss]['A']-s[ss]['R']+s[ss]['RCu']-
                           s[ss]['RoTo']-s[ss]['AoTo']+s[ss]['RCoTo']-s[ss]['B']
             catchupRoutine1 = s[ss]['A']+s[ss]['RoTo']+s[ss]['B']-s[ss]['RCu']-s[ss]['RCoTo']
-            s[ss]['Free'] = freeRoutine1
+            #s[ss]['Free'] = freeRoutine1
+            s[ss]['Regular'] = regularRoutine1
             s[ss]['Catchup'] = catchupRoutine1
             ss = 'flexible'
             catchupFlexible1 = 2 * s[ss]['S']-s[ss]['R']-s[ss]['RoTo'] 
             s[ss]['Catchup'] = catchupFlexible1
-            s['sum'] = {'free'=>freeRoutine1, 'catchup'=>catchupRoutine1 + catchupFlexible1 }
+            #s['sum'] = {'free'=>freeRoutine1, 'catchup'=>catchupRoutine1 + catchupFlexible1 }
+            s['sum'] = {'regular'=>regularRoutine1, 'catchup'=>catchupRoutine1 + catchupFlexible1 }
             s['sum']['catchup'] -= s['allocate']['RCu'] if s.has_key?('allocate')
             cells["stats"] = s.clone
             # keep counts in the cell/slot data
@@ -665,7 +682,7 @@ module Calendarutilities
  #
  # Formulas:
  # For routine sessons:-
- #  free Routine = availability of sessions for permanment allocations
+ #  free Regular = availability of sessions for permanment allocations
  #  = 2S-A-R+RCu-RoTo-AoTo+RCoTo-B
  #
  #  free Catch Up = sessions where catch ups can be allocated
@@ -675,12 +692,12 @@ module Calendarutilities
  #  free Catch Up = sessons where catch ups can be allocated
  #  = 2S-R-RoTo
  #
- #  Note: free routine sessions do on exist for flexible sessions.
+ #  Note: free Regular sessions do on exist for flexible sessions.
  # -----------------------------------------------------------------------------
   def get_slot_stats(slot_dom_id)
     # want to get the stats for one slot
     # slot id passed in: GUN201805281530l02424n29192s00520
-    logger.debug "********************get_slot_stats: " + slot_dom_id
+    #logger.debug "********************get_slot_stats: " + slot_dom_id
     if(result = /^([A-Z]+\d+l(\d+))/.match(slot_dom_id))
       slot_id = result[1]
       slot_dbid = result[2].to_i
@@ -697,7 +714,7 @@ module Calendarutilities
     s = {'routine'=>siv.clone, 'flexible'=>siv.clone}
     
     @slot_lessons.each do |entry|
-      #logger.debug "entry: " + entry.inspect
+      # Remember lesson(entry) status is diaplayed as kind.
       ss = entry.status
       ss = 'routine' if entry.status == 'standard'
       s[ss] = siv.clone unless s.has_key?(ss)
@@ -734,22 +751,24 @@ module Calendarutilities
     end
     # keep stats in the cell/slot data
     ss = 'routine'
-    freeRoutine      = 2*s[ss]['S']-s[ss]['A']-s[ss]['R']+s[ss]['RCu']-
+    regularRoutine      = 2*s[ss]['S']-s[ss]['A']-s[ss]['R']+s[ss]['RCu']-
                        s[ss]['RoTo']-s[ss]['AoTo']+s[ss]['RCoTo']-s[ss]['B']
     catchupRoutine   = s[ss]['A']+s[ss]['RoTo']+s[ss]['B']-s[ss]['RCu']-s[ss]['RCoTo']
-    s[ss]['Free']    = freeRoutine
+    #s[ss]['Free']    = freeRoutine
+    s[ss]['Regular'] = regularRoutine
     s[ss]['Catchup'] = catchupRoutine
     ss = 'flexible'
     catchupFlexible  = 2 * s[ss]['S']-s[ss]['R']-s[ss]['RoTo'] 
     s[ss]['Catchup'] = catchupFlexible
-    s['sum'] = {'free'=>freeRoutine, 'catchup'=>catchupRoutine + catchupFlexible }
+    #s['sum'] = {'free'=>freeRoutine, 'catchup'=>catchupRoutine + catchupFlexible }
+    s['sum'] = {'regular'=>regularRoutine, 'catchup'=>catchupRoutine + catchupFlexible }
     s['sum']['catchup'] -= s['allocate']['RCu'] if s.has_key?('allocate')
 
     slot_html_partial = render_to_string("calendar/_stats_slot.html",
                         :formats => [:html], :layout => false,
                         :locals => {:stats => s})
     
-    #logger.debug "slot_html_partial: " + slot_html_partial
+    logger.debug "slot_html_partial: " + slot_html_partial
     @statschange = Hash.new
     @statschange['slot_id']      = slot_id
     @statschange['html_partial'] = slot_html_partial

@@ -95,7 +95,10 @@ class RolesController < ApplicationController
           format.json { render json: @domchange, status: :ok }
           #ActionCable.server.broadcast "calendar_channel", { json: @domchange }
           ably_rest.channels.get('calendar').publish('json', @domchange)
-          get_slot_stats(slot_id)
+          # collect the set of stat updates and send through Ably as single message
+          statschanges = Array.new
+          statschanges.push(get_slot_stats(slot_id))
+          ably_rest.channels.get('stats').publish('json', statschanges)
         end
       else
         respond_to do |format|
@@ -549,14 +552,17 @@ class RolesController < ApplicationController
       ably_rest.channels.get('calendar').publish('json', @domchangerun[i])
     end
     # Now send out the updates to the stats screen - order does not matter.
+    # collect the set of stat updates and send through Ably as single message
+    statschanges = Array.new
     (0..@block_roles.length-1).each do |i|
-      get_slot_stats(@domchangerun[i]['new_slot_domid'])
+      statschanges.push(get_slot_stats(@domchangerun[i]['new_slot_domid']))
       if(@domchangerun[i].has_key?('old_slot_domid'))
         if(@domchangerun[i]['new_slot_domid'] != @domchangerun[i]['old_slot_domid'])
-          get_slot_stats(@domchangerun[i]['old_slot_domid'])
+          statschanges.push(get_slot_stats(@domchangerun[i]['old_slot_domid']))
         end
       end
     end
+    ably_rest.channels.get('stats').publish('json', statschanges)
     # everything is completed successfully.
     return ""
   end
@@ -781,7 +787,10 @@ class RolesController < ApplicationController
     ably_rest.channels.get('calendar').publish('json', @domchange)
     ably_rest.channels.get('calendar').publish('json', away_response['global_lesson_domchange']) if away_response
     if flagupdatestats
-      get_slot_stats(slot_id)
+      # collect the set of stat updates and send through Ably as single message
+      statschanges = Array.new
+      statschanges.push(get_slot_stats(slot_id))
+      ably_rest.channels.get('stats').publish('json', statschanges)
     end
     respond_to do |format|
       format.json { render json: @domchange, status: :ok }

@@ -1,12 +1,22 @@
-<div id="page_name">calendar</div>
+<div id="page_name" class="hideme">calendar</div>
 <div id="sticky-header">
-  <h1 class="sticky-header__title"><%= @displayHeader %></h1>
-  <img class="sticky-header__icon" src=""/>
-  
+    <div class="flex">
+      <div id=refreshcalendar class=buttonlink >Refresh Me</div>
+      <h2 class="sticky-header__title blockheader"><%= @displayHeader %></h2>
+      <span class="sticky-header__icon"></span>
+    </div>
   <div id="sticky-header__collapsible">
     <% listofsites = Array.new
+      listoftimes = Hash.new
        @cal.each do |location, calLocation| 
          listofsites.push(location)
+        calLocation.each_with_index do |o, index|
+          next if index == 0
+          mytime = o[0]['value']
+          mytimeid = mytime.gsub(' ',  '')
+          mytimeid = mytimeid.gsub('-',  '')
+          listoftimes[mytime] = mytimeid 
+        end
        end
     %>
   
@@ -14,34 +24,49 @@
       <%= @options.to_json %>
     </div>
     
-    <div id=refreshthis>Refresh Me</div>
 
     <div id="selectshows">
         <div class="checklisttutors">
-          <input id=hidetutors class=selectshow onclick="selectshows(this)" type="checkbox" >Tutors
-          <input id=hidestudents class=selectshow onclick="selectshows(this)" type="checkbox" >Students;
-          Hide Comments=>(<input id=hidecomments class=selectshow onclick="selectshows(this)" type="checkbox" >All;
+          <input id=hidetutors class=selectshow onclick="selectshows(this)" type="checkbox" >
+          <label id=hidetutorslabel for="hidetutors">Tutors</label>
+          <input id=hidestudents class=selectshow onclick="selectshows(this)" type="checkbox" >
+          <label id=hidestudentslabel for="hidestudents">Students</label>;
+          Hide Comments=>(<input id=hidecomments class=selectshow onclick="selectshows(this)" type="checkbox" >
+                          <label id=hidecommentslabel for="hidecomments">All</label>
         </div>
         <div class=checklistlesson>
-        Lesson=>(<input id=hidetutorlessoncomments class=selectshow onclick="selectshows(this)" type="checkbox" >tutors, 
-        <input id=hidestudentlessoncomments class=selectshow onclick="selectshows(this)" type="checkbox" >students ), 
+          Lesson=>(<input id=hidetutorlessoncomments class=selectshow onclick="selectshows(this)" type="checkbox" >
+                   <label id=hidetutorlessoncommentslabel for="hidetutorlessoncomments">tutors</label>, 
+          <input id=hidestudentlessoncomments class=selectshow onclick="selectshows(this)" type="checkbox" >
+          <label id=hidestudentlessoncommentslabel for="hidestudentlessoncomments">students</label> ), 
         </div>
         
         <div class=checklistpersonal>
-        Personal=>(<input id=hidetutorcomments class=selectshow onclick="selectshows(this)" type="checkbox" >tutors,
-        <input id=hidestudentcomments class=selectshow onclick="selectshows(this)" type="checkbox" >students )
+          Personal=>(<input id=hidetutorcomments class=selectshow onclick="selectshows(this)" type="checkbox" >
+                     <label id=hidetutorcommentslabel for="hidetutorcomments">tutors</label>,
+          <input id=hidestudentcomments class=selectshow onclick="selectshows(this)" type="checkbox" >
+          <label id=hidestudentcommentslabel for="hidestudentcomments">students</label> )
         </div>)
         
         <div class=checklistlessons>
-        Hide=>(<input id=hidelessonsOnsetup class=selectshow onclick="selectshows(this)" type="checkbox" >onSetup,
-        <input id=hidelessonsOncall   class=selectshow onclick="selectshows(this)" type="checkbox" >onCall
-        <input id=hidelessonsOnBFL   class=selectshow onclick="selectshows(this)" type="checkbox" >onBFL
-        <input id=hidelessonsFree     class=selectshow onclick="selectshows(this)" type="checkbox" >free
-        <input id=hidelessonsStandard class=selectshow onclick="selectshows(this)" type="checkbox" >standard
-        <input id=hidelessonsRoutine  class=selectshow onclick="selectshows(this)" type="checkbox" >routine
-        <input id=hidelessonsFlexible class=selectshow onclick="selectshows(this)" type="checkbox" >flexible
-        <input id=hidelessonsAllocate class=selectshow onclick="selectshows(this)" type="checkbox" >allocate
-        <input id=hidelessonsGlobal   class=selectshow onclick="selectshows(this)" type="checkbox" >global )
+          Hide=>(<input id=hidelessonsOnsetup class=selectshow onclick="selectshows(this)" type="checkbox" >
+                 <label id=hidelessonsOnsetuplabel for="hidelessonsOnsetup">onSetup</label>
+          <input id=hidelessonsOncall   class=selectshow onclick="selectshows(this)" type="checkbox" >
+          <label id=hidelessonsOncalllabel for="hidelessonsOncall">onCall</label>
+          <input id=hidelessonsOnBFL   class=selectshow onclick="selectshows(this)" type="checkbox" >
+          <label id=hidelessonsOnBFLlabel for="hidelessonsOnBFL">onBFL</label>
+          <input id=hidelessonsFree     class=selectshow onclick="selectshows(this)" type="checkbox" >
+          <label id=hidelessonsFreelabel for="hidelessonsFree">free</label>
+          <input id=hidelessonsStandard class=selectshow onclick="selectshows(this)" type="checkbox" >
+          <label id=hidelessonsStandardlabel for="hidelessonsStandard">standard</label>
+          <input id=hidelessonsRoutine  class=selectshow onclick="selectshows(this)" type="checkbox" >
+          <label id=hidelessonsRoutinelabel for="hidelessonsRoutine">routine</label>
+          <input id=hidelessonsFlexible class=selectshow onclick="selectshows(this)" type="checkbox" >
+          <label id=hidelessonsFlexiblelabel for="hidelessonsFlexible">flexible</label>
+          <input id=hidelessonsAllocate class=selectshow onclick="selectshows(this)" type="checkbox" >
+          <label id=hidelessonsAllocatelabel for="hidelessonsAllocate">allocate</label>
+          <input id=hidelessonsGlobal   class=selectshow onclick="selectshows(this)" type="checkbox" >
+          <label id=hidelessonsGloballabel for="hidelessonsGlobal">global</label> )
         </div>
         
         <input id=enableQuickStatus type="checkbox" > Enable quick setting of status to
@@ -68,24 +93,39 @@
 
         <div>
           <div class="selectdayofweek">
-            <input id=selectdowone class=selectshow onclick="showhidedowone()" type="checkbox" checked>Monday</input>
+            <input id=selectdowone class=selectshow onclick="showhidedowone()" type="checkbox" checked >
+            <label id=selectdowonelabel for="selectdowone">Monday</label>
           </div>
           <div class="selectdayofweek">
-            <input id=selectdowtwo class=selectshow onclick="showhidedowtwo()" type="checkbox" checked>Tuesday</input>
+            <input id=selectdowtwo class=selectshow onclick="showhidedowtwo()" type="checkbox" checked></input>
+            <label id=selectdowtwolabel for="selectdowtwo">Tuesday</label>
           </div>
           <div class="selectdayofweek">
-            <input id=selectdowthree class=selectshow onclick="showhidedowthree()" type="checkbox" checked>Wednesday</input>
+            <input id=selectdowthree class=selectshow onclick="showhidedowthree()" type="checkbox" checked></input>
+            <label id=selectdowthreelabel for="selectdowthree">Wednesday</label>
           </div>
           <div class="selectdayofweek">
-            <input id=selectdowfour class=selectshow onclick="showhidedowfour()" type="checkbox" checked>Thursday</input>
+            <input id=selectdowfour class=selectshow onclick="showhidedowfour()" type="checkbox" checked></input>
+            <label id=selectdowfourlabel for="selectdowfour">Thursday</label>
           </div>
           <div class="selectdayofweek">
-            <input id=selectdowfive class=selectshow onclick="showhidedowfive()" type="checkbox" checked>Friday</input>
+            <input id=selectdowfive class=selectshow onclick="showhidedowfive()" type="checkbox" checked></input>
+            <label id=selectdowfivelabel for="selectdowfive">Friday</label>
           </div>
+
+          <%  listoftimes.each do |mytime, mytimeid| %>
+              <div class="<%= "selecttime" %> ">
+                <input id=<%= 'select' + mytimeid %> class="selectshow selecttime" 
+                       onclick="showhidetimes()" type="checkbox" checked>
+                <label id=<%= 'select' + mytimeid + 'label' %> for="<%= 'select' + mytimeid %>"><%= mytime %></label>
+              </div>
+          <% end %>
         </div>
+
         <% listofsites.each_with_index do |site, i| %>
         <div class="<%= "selectSite" + site %> jumptosite">
-        <input id=<%= 'hide' + site %> class="selectshow selectsite" onclick="selectshows(this)" type="checkbox" ><%= site + "  " %> 
+          <input id=<%= 'hide' + site %> class="selectshow selectsite" onclick="selectshows(this)" type="checkbox" ><%= site + "  " %> 
+          <span id=<%= 'hide' + site + 'label' %> ></span>
         </div>
         <% end %>
     </div>
@@ -93,10 +133,9 @@
     <div id="selectSetStatus">
     </div>
     
-    
     <div class="index hideme" id=index-tutor-students>
         <div class="selectbox floating-box">
-            <h2>Select person</h2>
+            <h3>Select person</h3>
             <input type="text" id="personInput" placeholder="Shorten list by keying in meaningful characters .." title="Type in characters to reduce name list">
         </div>
     
@@ -128,14 +167,18 @@
   <% firsttablecolumn = true %>
   <table id=site-<%= location %> >
   <% calLocation.each_with_index do |rows, rowIndex| %>
-    <tr>
     <% rows.each_with_index do |cells, cellIndex|
+        if rowIndex > 0 && cellIndex == 0
+          timeoflessonid = cells["value"]
+          timeoflessonid = timeoflessonid.gsub('-', '')
+          timeoflessonid = timeoflessonid.gsub(' ', '') %>
+          <tr class="<%= timeoflessonid %> " >
+        <% end
       if @compress      
         unless usedColumnsIndex.include?(cellIndex) then
            next
         end 
       end
-      
       if(cellIndex != 0)
         celldatetime = calLocation[0][cellIndex]['datetime']
         celldow = 'dow' + celldatetime.wday.to_s

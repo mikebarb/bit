@@ -126,7 +126,7 @@ class StudentsController < ApplicationController
       @domchange['object_id_old'] = @domchange['object_id']
       @domchange['object_id'] = result[1]
     end
-
+    
     @student = Student.find(student_dbId)
     flagupdate = flagupdatestats = false
     case @domchange['updatefield']
@@ -161,9 +161,16 @@ class StudentsController < ApplicationController
           ##      key is parent association name, 
           ##      value is description of child association
           ##--------------------------------------------------------
-          #this_start_date = Time.now()
-          this_start_date = Time.strptime("2018-06-25", "%Y-%m-%d")
-          #this_end_date = this_start_date + 3.days
+          this_start_date = Time.now()
+##########################################################################
+#
+#       WARNING - next line is for testing with development data
+#
+##########################################################################
+          if Rails.env.development?
+            this_start_date = Time.strptime("2018-06-18", "%Y-%m-%d")
+            #this_end_date = this_start_date + 3.days
+          end
           stats_slots = Slot
                         .select('id', 'timeslot', 'location')
                         .joins({lessons: :roles})
@@ -173,13 +180,15 @@ class StudentsController < ApplicationController
             o.location[0,3].upcase + o.timeslot.strftime('%Y%m%d%H%M') +
                                     'l' + o.id.to_s.rjust(@sf, "0")
           end
-          logger.debug "=============stats_slot_domids: " + stats_slot_domids.inspect 
+          #logger.debug "=============stats_slot_domids: " + stats_slot_domids.inspect 
+          # Now to get all the slot stats and then send the set
+          statschanges = Array.new
           stats_slot_domids.each do |this_domid|
             # need to pass in slot_dom_id, however only extracts slot db id,
             # so do a fudge here so extraction of db_id works.
-            get_slot_stats(this_domid)  # need to pass in slot_dom_id
-            logger.debug "***************calling get_slot_stats: " + this_domid.inspect
+            statschanges.push(get_slot_stats(this_domid))  # need to pass in slot_dom_id
           end
+          ably_rest.channels.get('stats').publish('json', statschanges)
         end
       else
         logger.debug("errors.messages: " + @student.errors.messages.inspect)

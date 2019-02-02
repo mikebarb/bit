@@ -6,6 +6,18 @@ class CalendarController < ApplicationController
   # * the workdesk - flexible display with multiple options.                                   *
   # ********************************************************************************************
   #=============================================================================================
+
+  def globalstudents
+    logger.debug "called calendar conroller - update_stats_students"
+    student_stats()
+    @domchange = Hash.new
+    @domchange['html_partial'] = render_to_string("calendar/_stats_students.html",
+                        :formats => [:html], :layout => false)
+    respond_to do |format|
+      format.json { render json: @domchange, status: :ok }
+    end
+  end
+
   def displayoptions
     logger.debug "called calendar conroller - preferences"
   end

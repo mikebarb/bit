@@ -78,6 +78,7 @@ Rails.application.routes.draw do
 
   get 'calendar/displayoptions/'  => 'calendar#displayoptions',  as: :displayoptions
   get 'calendar/flexibledisplay/' => 'calendar#flexibledisplay', as: :flexibledisplay
+  get 'calendar/globalstudents'   => 'calendar#globalstudents',  as: :globalstudents
 
   get  'lessons/:id/move'     => 'lessons#move',                as: :move_lesson
   post 'lessonmoveslot'       => 'lessons#lessonmoveslot',      as: :lessonmoveslot

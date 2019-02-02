@@ -166,8 +166,8 @@ function ready_calendar() {
   // using the refresh button that has been added to the flexible display.
   // https://stackoverflow.com/questions/17642872/refresh-page-and-keep-scroll-position
 
-  if(document.getElementById('refreshthis')){
-    document.getElementById('refreshthis').onclick = function() {
+  if(document.getElementById('refreshcalendar')){
+    document.getElementById('refreshcalendar').onclick = function() {
       var passedOptions = JSON.parse(document.getElementById('options').innerHTML);
       passedOptions.refresh = true;  // let them know this is our refresh
       // Now find the checked checkboxes
@@ -204,6 +204,8 @@ function ready_calendar() {
     };
   }
   
+/*
+  //----------------- common support functions for 'refresh me' -------------- 
   // check if we should jump to postion.
   var jumpTo = getCookie('jumpToScrollPostion');
   if(jumpTo != "") {
@@ -233,14 +235,14 @@ function ready_calendar() {
     }
     return "";
   }
-  
-  //------------------------ Context Menu - calendar -----------------------------
+  //------------- end of common support functions for 'refresh me' ----------- 
+*/
+  //------------------------ Context Menu - calendar ---------------------------
   // This is the context menu for the lesson, tutor and student elements.
   // It is the first context menu to be displayed when you right click on an
   // element.
   // When some context menu item are selected, a tertiary menu is opened
   // enabling further options to be selected.
-
 
 
   $('.jumptosite').click(function(){
@@ -277,7 +279,7 @@ function ready_calendar() {
       $('#sticky-header').width($('#sticky-header').parent().width());
     });*/
     
-    $('.sticky-header__title').click(function() {
+    $('.sticky-header__icon').click(function() {
       $('#sticky-header__collapsible').slideToggle();
     });
   }
@@ -2303,6 +2305,10 @@ function selectshows_scoped(ele_checkbox, ele_scope) {
     var showList = document.getElementById("selectshows").getElementsByTagName("input");
   }else{
     // Need to only process the one just ticked or unticked.
+    //ele_checkbox.classList.add("doing");
+    //var labelid = ele_checkbox.id + 'label';
+    //var ele_checkboxlabel = document.getElementById(labelid);
+    //ele_checkboxlabel.classList.add("doing");
     showList = [ele_checkbox];
   }
   //var flagcomments = false;
@@ -2444,11 +2450,15 @@ function selectshows_scoped(ele_checkbox, ele_scope) {
         }
     }
   }
+  if(ele_checkbox != document) {
+    //ele_checkbox.classList.remove("doing");
+    //ele_checkboxlabel.classList.remove("doing");
+  }
 }
 
 function selectshows(ele_checkbox) {
-  console.log("called selectshows");
-  console.dir(ele_checkbox);
+  //console.log("called selectshows");
+  //console.dir(ele_checkbox);
   selectshows_scoped(ele_checkbox, document);
 }
 
@@ -2504,8 +2514,32 @@ function ready_stats(){
     }
   };
   statsChannel.on(statsChannelListener);
-  
-  console.log("entered ready_status");
+
+  // want to set defaults on some checkboxes on page load
+  var flagViewOptions = false;
+  if(document.getElementById('options')){
+    //var passedOptions     = document.getElementById('options').innerHTML;
+    var passedOptionsJson = JSON.parse(document.getElementById('options').innerHTML);
+    for(var key in passedOptionsJson){            // loop json through the keys
+      if(passedOptionsJson.hasOwnProperty(key)){
+        if(key.indexOf("v_") == 0){               // initial chars in key
+          flagViewOptions = true;
+          var thisEleId = key.substr(2);
+          var thisEle = document.getElementById(thisEleId);
+          if(thisEle){                            // element is present on this page
+            if(thisEle.type == "checkbox"){
+              thisEle.checked = (passedOptionsJson[key] == "true");
+            }else if(thisEle.id == 'personInput'){
+              thisEle.value = passedOptionsJson[key];
+              hideshowperson('student');
+            }
+          }
+        }
+      }
+    }
+  }
+
+  console.log("entered ready_stats");
   showcatchup();
   showfree();
   showstats();
@@ -2518,6 +2552,7 @@ function ready_stats(){
   showhidedowfive();  
   
   showhidesites();
+  showhidetimes();
 
   $("#personInput").keyup(hideshowstudent);
   
@@ -2531,6 +2566,41 @@ function ready_stats(){
     clickListener_stats();
     keyupListener();
     resizeListener();
+  }
+
+  //------------------ refresh me for stats page ------------------------------
+  // scroll to same location when user refreshes the screen
+  // using the refresh button that has been added to the flexible display.
+  // https://stackoverflow.com/questions/17642872/refresh-page-and-keep-scroll-position
+
+  if(document.getElementById('refreshstats')){
+    document.getElementById('refreshstats').onclick = function() {
+      var passedOptions = JSON.parse(document.getElementById('options').innerHTML);
+      passedOptions.refresh = true;  // let them know this is our refresh
+      // Now find the checked checkboxes
+      var eleAllCheckboxes = document.getElementsByClassName('selectshow');
+      for(var i=0;i<eleAllCheckboxes.length;i++){
+        var mykey   = 'v_' + eleAllCheckboxes[i].id;
+        var myvalue = eleAllCheckboxes[i].checked;
+        passedOptions[mykey] = myvalue;
+      }
+      passedOptions['v_' + 'personInput'] = 
+                    document.getElementById('personInput').value;
+
+      var myurl = window.location.origin + window.location.pathname;
+      var currentYOffset = window.pageYOffset;  // save current page postion.
+      setCookie("jumpToScrollPostion", currentYOffset, 1);
+      var queryString = Object.keys(passedOptions).map(function(key) {
+                          return encodeURIComponent(key) + '=' +
+                                 encodeURIComponent(passedOptions[key]);
+                        }).join('&');
+      myurl = myurl + '?' + queryString;
+      window.open(myurl,"_self");
+    };
+    document.getElementById('refreshstatsstudents').onclick = function() {
+      // call the ajax function to refresh student content only.
+      updatestatsstudents();
+    };
   }
 
   // Listens for contextmenu events.
@@ -2847,6 +2917,31 @@ function ready_stats(){
   
 //---------------------- End of Drag and Drop - stats ---------------------
 
+  function updatestatsstudents(){
+    // this function simply calls the controller
+    // controller returns a list of students from the global lesson
+    var myurl = myhost + '/calendar/globalstudents/'; 
+    $.ajax({
+        type: "GET",
+        url: myurl,
+        dataType: "json",
+        //context: domchange,
+        success: function(result1, result2, result3){
+            console.log("personupdateslesson_Update_Stats Ajax response OK");
+            update_dom_stats_students(result1);
+            //moveelement_update(result1);
+        },
+        error: function(xhr){
+            var errors = $.parseJSON(xhr.responseText);
+            var error_message = "";
+            for (var error in (errors['lesson_id'])){
+              error_message += " : " + errors['lesson_id'][error];
+            }
+            alert("error moving student or tutor to another lesson: " + error_message);
+        }
+     });
+  }
+  
   function personupdateslesson_Update_stats( domchange ){
     //var action = domchange['action'];   //move or copy
     var object_type = domchange['object_type'];
@@ -2886,6 +2981,23 @@ function ready_stats(){
      });
   }
   
+  //----------------- update_dom_stats_students ----------------------
+  // This function updates the students that need to be allocated
+  // located at the top of the stats page.
+  // This is called from the ajax response NOT a Web Socket propagation.
+  function update_dom_stats_students(students_stats){
+    var html_students =  students_stats['html_partial'];
+    console.log('entered update_dom_stats_students');
+    // build the dom object to be inserted from the html segment
+    var elecreated = document.createElement('div');
+    elecreated.classList.add("index-students");
+    elecreated.id = "index-students";
+    elecreated.innerHTML = html_students;
+    var eletoreplace = document.getElementById('index-students');
+    eletoreplace.parentNode.replaceChild(elecreated, eletoreplace);
+    hideshowstudent();
+  }
+
   //----------------- stats_student_update ----------------------
   // this function updates the student details:
   // populates the 'allocate' div with the new lesson details
@@ -3005,6 +3117,33 @@ function showhidesites(){
   }
 }
 
+// hide session time rows based on checkboxes
+function showhidetimes(){
+  var thispattern = /select(.*)/;
+  var showList = document.getElementsByClassName('selecttime');
+  for(var i = 0; i < showList.length; i++){
+    //console.log("showList[i].id: " + showList[i].id);
+    var m = thispattern.exec(showList[i].id);
+    if( m ){
+      //console.log("m: " + m[1]);
+      var sessiontimeid = m[1];
+      //console.log("siteid: " + siteid);
+      var myobjects = document.getElementsByClassName(sessiontimeid);
+      if (showList[i].checked){
+        for(var j = 0; j < myobjects.length; j++){
+          myobjects[j].classList.remove("hideme");
+        }
+      }else{
+        for(j = 0; j < myobjects.length; j++){
+          myobjects[j].classList.add("hideme");
+        }
+      }
+    }
+  }
+}
+
+
+
 
 function showhidedowone()  {showhidedow('1', 'selectdowone'  );}
 function showhidedowtwo()  {showhidedow('2', 'selectdowtwo'  );}
@@ -3024,6 +3163,8 @@ function showhidedow(day, selectdowday){
     }
   }
 }
+
+
 
 function showcatchup(){showhidescopestats(document, 'catchup');}
 function showfree(){showhidescopestats(document, 'free');}
@@ -3295,9 +3436,37 @@ function positionMenu(thismenu) {
   console.log(thismenu);
 }
 
+//----------------- common support functions for 'refresh me' -------------- 
+// check if we should jump to postion.
+var jumpTo = getCookie('jumpToScrollPostion');
+if(jumpTo != "") {
+  window.scrollTo(0, jumpTo);
+  setCookie('jumpToScrollPostion', '', 0);  // and delete cookie so we don't jump again.
+}
 
+function setCookie(cname, cvalue, exdays) {
+  var d = new Date();
+  d.setTime(d.getTime() + (exdays*24*60*60*1000));
+  var expires = "expires="+ d.toUTCString();
+  document.cookie = cname + "=" + cvalue + ";" + expires + ";path=/";
+}
 
-
+function getCookie(cname) {
+  var name = cname + "=";
+  var decodedCookie = decodeURIComponent(document.cookie);
+  var ca = decodedCookie.split(';');
+  for(var i = 0; i <ca.length; i++) {
+      var c = ca[i];
+      while (c.charAt(0) == ' ') {
+          c = c.substring(1);
+      }
+      if (c.indexOf(name) == 0) {
+          return c.substring(name.length, c.length);
+      }
+  }
+  return "";
+}
+//------------- end of common support functions for 'refresh me' ----------- 
 
 //$(document).ready(ready);
 $(document).on('turbolinks:load', ready);

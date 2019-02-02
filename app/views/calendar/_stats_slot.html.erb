@@ -4,7 +4,8 @@
   %><b>routine:</b><br><%
     stats['routine'].each { |k, v| 
       if v != 0 
-        if k == 'Free' || k == 'Catchup'
+        #if k == 'Free' || k == 'Catchup'
+        if k == 'Regular' || k == 'Catchup'
           %><%= '*' %><% 
         end 
         %><%= k + ': ' + v.to_s  %><br><%
@@ -15,7 +16,8 @@
     %><b>flexible:</b><br><% 
     stats['flexible'].each { |k, v| 
       if v != 0 
-        if k == 'Free' || k == 'Catchup'
+        #if k == 'Free' || k == 'Catchup'
+        if k == 'Regular' || k == 'Catchup'
           %><%= '*' %><% 
         end 
         %><%= k + ': ' + v.to_s  if v != 0 %> <br><%
@@ -32,7 +34,9 @@
   end
 %></div><%
 if stats.key?('sum')
-  %><div class="free"><%= stats['sum']['free'] %></div>
+  %><div class="free regular"><%= 
+      #stats['sum']['free']
+      stats['sum']['regular'] %></div>
   <div class="catchup"><%= stats['sum']['catchup'] %></div><%
 end
 %>

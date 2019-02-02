@@ -1,52 +1,89 @@
 <div id="page_name" class="hideme">stats</div>
-<h1><%= @displayHeader %> - statistics for allocations</h1>
 
-<div>
-  <div class="formatcatchup selectshowstats">
-    <input id=hidecatchup onclick="showcatchup()" type="checkbox" checked>Catchup</input>
-  </div>
-  <div class="formatfree selectshowstats">
-    <input id=hidefree onclick="showfree()" type="checkbox" >Free</input>
-  </div>
-  <div class="formatstats selectshowstats">
-    <input id=hidestats onclick="showstats()" type="checkbox" >Stats</input>
-  </div>
-  <div class="formatslotlessons selectshowstats">
-    <input id=hideslotlessons onclick="showslotlessons()" type="checkbox" >Lesson</input>
-  </div>
-</div>
-<div>
-  <div class="selectdayofweek">
-    <input id=selectdowone onclick="showhidedowone()" type="checkbox" checked>Monday</input>
-  </div>
-  <div class="selectdayofweek">
-    <input id=selectdowtwo onclick="showhidedowtwo()" type="checkbox" checked>Tuesday</input>
-  </div>
-  <div class="selectdayofweek">
-    <input id=selectdowthree onclick="showhidedowthree()" type="checkbox" checked>Wednesday</input>
-  </div>
-  <div class="selectdayofweek">
-    <input id=selectdowfour onclick="showhidedowfour()" type="checkbox" checked>Thursday</input>
-  </div>
-  <div class="selectdayofweek">
-    <input id=selectdowfive onclick="showhidedowfive()" type="checkbox" checked>Friday</input>
-  </div>
+<div id=refreshstats class="buttonlink blockheader">Refresh</div>
+<div id=refreshstatsstudents class="buttonlink blockheader">Students</div>
+<h1 class=blockheader><%= @displayHeader %> - statistics for allocations</h1>
+
+<div id="options" class="hideme">
+  <%= @options.to_json %>
 </div>
 
-<div>
-  <% listofsites = Array.new
-    @cal.each do |location, calLocation| 
-      listofsites.push(location)
-    end
+
+<div id="selectshows">
+  <div>
+    <div class="formatcatchup selectshowstats">
+      <input id=hidecatchup class=selectshow onclick="showcatchup()" type="checkbox" checked>
+      <label id=hidecatchuplabel for="hidecatchup">Catchup</label>
+    </div>
+    <div class="formatfree selectshowstats">
+      <input id=hidefree class=selectshow onclick="showfree()" type="checkbox" >
+      <label id=hidefreelabel for="hidefree">Regular</label>
+    </div>
+    <div class="formatstats selectshowstats">
+      <input id=hidestats class=selectshow onclick="showstats()" type="checkbox" >
+      <label id=hidestatslabel for="hidestats">Stats</label>
+    </div>
+    <div class="formatslotlessons selectshowstats">
+      <input id=hideslotlessons class=selectshow onclick="showslotlessons()" type="checkbox" >
+      <label id=hideslotlessonslabel for="hideslotlessons">Lesson</label>
+    </div>
+  </div>
+  <div>
+    <div class="selectdayofweek">
+      <input id=selectdowone class=selectshow onclick="showhidedowone()" type="checkbox" checked>
+      <label id=selectdowonelabel for="selectdowone">Monday</label>
+    </div>
+    <div class="selectdayofweek">
+      <input id=selectdowtwo class=selectshow onclick="showhidedowtwo()" type="checkbox" checked>
+      <label id=selectdowtwolabel for="selectdowtwo">Tuesday</label>
+    </div>
+    <div class="selectdayofweek">
+      <input id=selectdowthree class=selectshow onclick="showhidedowthree()" type="checkbox" checked>
+      <label id=selectdowthreelabel for="selectdowthree">Wednesday</label>
+    </div>
+    <div class="selectdayofweek">
+      <input id=selectdowfour class=selectshow onclick="showhidedowfour()" type="checkbox" checked>
+      <label id=selectdowfourlabel for="selectdowfour">Thursday</label>
+    </div>
+    <div class="selectdayofweek">
+      <input id=selectdowfive class=selectshow onclick="showhidedowfive()" type="checkbox" checked>
+      <label id=selectdowfivelabel for="selectdowfive">Friday</label>
+    </div>
   
-    listofsites.each_with_index do |site, i| %>
-      <div class="<%= "selectSite" + site %> jumptosite">
-      <input id=<%= 'hide' + site %> class="selectshow selectsite" 
-             onclick="showhidesites()" type="checkbox" checked><%= site + "  " %> 
-      </div>
-  <% end %>
+  
+    <% listofsites = Array.new
+       listoftimes = Hash.new
+      @cal.each do |location, calLocation| 
+        listofsites.push(location)
+        calLocation.each_with_index do |o, index|
+          next if index == 0
+          mytime = o[0]['value']
+          mytimeid = mytime.gsub(' ',  '')
+          mytimeid = mytimeid.gsub('-',  '')
+          listoftimes[mytime] = mytimeid 
+        end
+      end
+    %>
+  
+    <%  listoftimes.each do |mytime, mytimeid| %>
+        <div class="<%= "selecttime" %> ">
+          <input id=<%= 'select' + mytimeid %> class="selectshow selecttime" 
+                 onclick="showhidetimes()" type="checkbox" checked> 
+          <label id=<%= 'select' + mytimeid + 'label' %> for="<%= 'select' + mytimeid %>"><%= mytime %></label>
+        </div>
+    <% end %>
+    </div>
+    
+    <div>
+    <%  listofsites.each_with_index do |site, i| %>
+        <div class="<%= "selectSite" + site %> jumptosite">
+          <input id=<%= 'hide' + site %> class="selectshow selectsite" 
+                 onclick="showhidesites()" type="checkbox" checked><%= site + "  " %>
+          <span id=<%= 'hide' + site + 'label' %> ></span>
+        </div>
+    <% end %>
+  </div>
 </div>
-
 
 <div class=index id=index-tutor-students>
   <div class="selectbox floating-box">
@@ -55,29 +92,8 @@
   </div>
 
   <div class=index-students id=index-students>
-    <% #@students_stats[student.id][lesson.id]['lesson_object'] %>
-    <% @students_stats.each do |k, v |
-       student = v['student_object'] %>
-      <div class="student <%= "fs" + student.id.to_s.rjust(@sf, "0") 
-        %>" id=<%= "s" + student.id.to_s.rjust(@sf, "0") %> >
-        <div class=persongroup>
-          <div class="studentname studentinline p-name"><%= student.pname %></div>
-        </div>
-        <div class=personstats>
-          <div class="studentstats"><%= v['total'].to_s %></div>
-        </div>
-        <div class=personlessons>
-          <% v['dom_ids'].each_with_index do |dom_id, i| %>
-            <div class="personlesson">
-              <% #byebug %>
-              <div class='global' data-domid=<%= dom_id %> data-kind=<%= v['role_kind'][i] %> ><%= dom_id %> = <%=
-                   slotDomidToText(dom_id) %> [<%= v['role_kind'][i] %>]</div>
-              <div class='allocate' data-domid='' ></div>
-            </div>
-          <% end %>
-        </div>
-      </div>
-    <% end %>
+    <%= render partial: "stats_students" %> 
+
   </div>
 </div>
 
@@ -95,8 +111,13 @@
     <% firsttablecolumn = true %>
     <table id=site-<%= location %> >
     <% calLocation.each_with_index do |rows, rowindex| %>
-      <tr>
       <% rows.each_with_index do |cells, cellIndex|
+        if rowindex > 0 && cellIndex == 0
+          timeoflessonid = cells["value"]
+          timeoflessonid = timeoflessonid.gsub('-', '')
+          timeoflessonid = timeoflessonid.gsub(' ', '') %>
+          <tr class="<%= timeoflessonid %> " >
+        <% end
         if @compress      
           unless usedColumnsIndex.include?(cellIndex) then
              next
@@ -112,10 +133,14 @@
           %><td class="cell slot <%= celldow %>"  id=<%= cell_id_dom %>  >
         <% elsif cells.key?("value") then %>
           <% if firsttablecolumn == true then
-            firsttablecolumn = false %>
-            <td class="cell firsttablecolumn" %>
-          <% else %>
-            <td class="cell <%= celldow %>" %>
+            firsttablecolumn = false %> 
+            <td class="cell firsttablecolumn "
+          <% else 
+            #byebug if rowindex != 0
+            timeoflessonid = cells["value"]
+            timeoflessonid = timeoflessonid.gsub('-', '')
+            timeoflessonid = timeoflessonid.gsub(' ', '') %>
+            <td class="cell <%= celldow %> <%= timeoflessonid %>" %>
           <% end %>
         <% else %>
            <td class="cell no-slot <%= celldow %>" %>
