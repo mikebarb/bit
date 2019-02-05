@@ -475,8 +475,9 @@ function ready_calendar() {
     var object_run      = taskItemInContext.classList.contains('run'); // true or false
     var object_run_last = taskItemInContext.classList.contains('runl'); // true or false
     var scmi_copy = false;          //scmi - set comtext menu items.
-    var scmi_move = false;          // to show or not show in menu
-    var scmi_moverun = false;       // set the dom display value at end.  
+    var scmi_toglobal = false;      // to show or not show in menu
+    var scmi_move = false;          // set the dom display value at end.
+    var scmi_moverun = false;  
     var scmi_moverunsingle = false;  
     var scmi_paste = false;  
     var scmi_remove = false;
@@ -516,7 +517,10 @@ function ready_calendar() {
 
     switch(object_type){     // student, tutor, lesson.
       case 'student':   //student
-          scmi_setPersonStatus = true;     // done in both index and main schedule area for student 
+        scmi_setPersonStatus = true;     // done in both index and main schedule area for student 
+        if(object_context == 'index'){   // index area
+          scmi_toglobal = true;          // copy this student to next global lesson
+        }
       case 'tutor':   //tutor
         if(object_context == 'index'){   // index area
           // this element in student and tutor list
@@ -596,6 +600,7 @@ function ready_calendar() {
     setscmi('context-moverun', scmi_moverun);
     setscmi('context-moverunsingle', scmi_moverunsingle);
     setscmi('context-copy', scmi_copy);
+    setscmi('context-toglobal', scmi_toglobal);
     setscmi('context-paste', scmi_paste);
     setscmi('context-remove', scmi_remove);
     setscmi('context-removerun', scmi_removerun);
@@ -623,7 +628,7 @@ function ready_calendar() {
   // Pass: date in text format "yyyymmdd"                                 *
   // Return: Week of year in format yyyy-Wdd                              *
   //***********************************************************************
-
+/*
 function testSuiteForWeekOfYear(){
       // for testing only!!!!
       // https://en.wikipedia.org/wiki/ISO_week_date
@@ -658,6 +663,7 @@ function testSuiteForWeekOfYear(){
       console.log(outputtext + "  FAILED got " + myresult);
     }
   }
+*/
 
   function getWeekOfYear(stringDate){
     var mySourceDate = new Date(stringDate.substring(0,4) + '-' +
@@ -848,6 +854,11 @@ function testSuiteForWeekOfYear(){
         // to find the nearest slot - prevous setting could have been tutor 
         // finding lesson as parent.
         removeLesson_Update(currentActivity);
+        break;
+      case "toglobal":
+        // This will copy this student in the index area to the 
+        // global lesson in the nearest slot.
+        enableTertiaryMenu(currentActivity);
         break;
       case "setStatus":
         // Set Status has been selected on an element.
@@ -1045,6 +1056,11 @@ function testSuiteForWeekOfYear(){
 
     var stmi_edit_comment             = false;
     var stmi_edit_subject             = false;
+
+    var stmi_toglobal_free       = false;
+    var stmi_toglobal_first      = false;
+    var stmi_toglobal_bonus      = false;
+    var stmi_toglobal_standard   = false;
     
     // First, identify type of element being actioned e.g. tutor, lesson, etc..
     switch(recordType){
@@ -1109,6 +1125,12 @@ function testSuiteForWeekOfYear(){
           case 'editSubject':
           case 'editDetail':
             stmi_edit_comment             = true;
+            break;
+          case 'toglobal':
+            stmi_toglobal_free      = true;
+            stmi_toglobal_first     = true;
+            stmi_toglobal_bonus     = true;
+            stmi_toglobal_standard  = true;
             break;
         }     // switch(etmAction)
         break;
@@ -1187,6 +1209,11 @@ function testSuiteForWeekOfYear(){
 
     setscmi('edit-comment', stmi_edit_comment);
     setscmi('edit-subject', stmi_edit_subject);
+
+    setscmi('toglobal-free', stmi_toglobal_free);
+    setscmi('toglobal-first', stmi_toglobal_first);
+    setscmi('toglobal-bonus', stmi_toglobal_bonus);
+    setscmi('toglobal-standard', stmi_toglobal_standard);
     
     toggleMenuOff();
     toggleTMenuOn();
@@ -1204,10 +1231,19 @@ function testSuiteForWeekOfYear(){
   function menuChoiceActioner( choice ){
     // choice = the tertiary menu item selected (dom element)
     toggleTMenuOff();
-    currentActivity['action']      = choice.getAttribute("data-choice"); // thisChoice
-    currentActivity['move_ele_id'] = taskItemInContext.id;   // thisEleId
-    currentActivity['object_id']   = taskItemInContext.id;   // thisEleId
-    personupdatestatuskindcomment( currentActivity );
+    if (currentActivity['action'] == 'toglobal'){
+      currentActivity['action'] = 'copy';
+      // e.g. choice.getAttribute("data-choice") = 'toglobal-free'
+      var parseaction = choice.getAttribute("data-choice").match(/^(\w+)-(\w+)$/);
+      currentActivity['to_global'] = parseaction[2];
+      personupdateslesson_Update( currentActivity);
+      //studenttoglobal( currentActivity);
+    }else{
+      currentActivity['action']      = choice.getAttribute("data-choice"); // thisChoice
+      currentActivity['move_ele_id'] = taskItemInContext.id;   // thisEleId
+      currentActivity['object_id']   = taskItemInContext.id;   // thisEleId
+      personupdatestatuskindcomment( currentActivity );
+    }
   }
 
   // This actions the text editing results following the person editing
@@ -1475,6 +1511,46 @@ function testSuiteForWeekOfYear(){
             //}
             //alert('error updating ' + domchange['object_type'] +
             //      ' '  + domchange['updatefield'] + ': ' + error_message);
+        }
+     });
+  }
+
+  //----- studenttoglobal ----------
+  //This function is called to copy a student in the index area
+  // to the next (from this point in time) global lesson (any slot).
+  // The type of lesson required is passed in from the tertiary menu. 
+  // Called from the tertiary context menu.
+  //Does ajax to update the student record
+  function studenttoglobal( domchange ){
+    // domchange['action']    = thisChoice;  // in tertiary menu
+    // domchange['object_id'] = thisEleId; //=moveEleId
+    var mydata = {'domchange' : domchange};
+    // Check the context - index or lesson
+    if(!(domchange['object_id'].match(/^[s]\d+$/))){
+      alert("error - student to global must be called from the index area and must be a student!");
+    }
+    var myurl = myhost + "/toglobal";   // copy this student to a global lesson
+    $.ajax({
+        type: 'POST',
+        url: myurl,
+        data: mydata,
+        dataType: "json",
+        context: domchange,
+        success: function(result1, result2, result3){
+          console.log("toglobal: ajax response OK");
+          //moveelement_update( result1 );
+        },
+        error: function(xhr){
+          var error_message = "";
+          if (typeof xhr.responseText == 'string'){
+            error_message = xhr.responseText;
+          }else{
+            var errors = $.parseJSON(xhr.responseText);
+            for (var error in (errors['person_id'])){     // lesson_id ??????
+              error_message += " : " + errors['lesson_id'][error];
+            }
+          }
+          alert('error moving student to global ' + error_message);
         }
      });
   }
@@ -1969,9 +2045,7 @@ function testSuiteForWeekOfYear(){
     // ele_parent_from/to = the parent of type slot or lesson.
     // ele_parent_from/to_place = the exact parent DOM location to place the html,
     //                            exact location can vary based on the objec type.
-
-    // ------------- common initialisation for all operations ---------------
-    
+    // ------------- common initialisation for all operations --------------
     //if( domchange['actioncable'] ){
     //  console.log("moveelement_update processing - passed through action cable");
     //}else{
@@ -2027,7 +2101,6 @@ function testSuiteForWeekOfYear(){
     if('to' in domchange){
       ele_parent_to = document.getElementById(domchange['to']);
     }
-    
     // ------------- if adding element required ---------------
     // For MOVE - There is a scenario where an element may be moved within
     // the same parent.
@@ -2042,11 +2115,9 @@ function testSuiteForWeekOfYear(){
           // Ensure there is a place on the page to put this object
           // as possiblity this user is not viewing the region this object is 
           // being moved to.
-          
           // get the parent slot for 'to' - needed to update show hide comments etc.
           var m = ele_parent_to.id.match(/^(\w+\d+l\d+)/);
           var ele_slot_to = document.getElementById(m[1]);
-
           // place tutor or student into destination
           // map specific tutor or student var names generic for this section.
           if (object_type == 'tutor' || object_type == 'student') {    // person
@@ -2597,9 +2668,19 @@ function ready_stats(){
       myurl = myurl + '?' + queryString;
       window.open(myurl,"_self");
     };
-    document.getElementById('refreshstatsstudents').onclick = function() {
+    document.getElementById('refreshstatsstudents').onclick = function(this_mouse_event) {
+      var this_ele = this_mouse_event.currentTarget;
+      //this_ele.classList.add('doing');
+      //this_ele.style.color = 'green';
       // call the ajax function to refresh student content only.
+      //setTimeout(function() { 
+      //  alert('Hello');
+      //  updatestatsstudents();
+      //  alert('Goodbye');
+      //}, 4000);
       updatestatsstudents();
+      //this_ele.classList.remove('doing');
+      //this_ele.style.color = 'black';
     };
   }
 

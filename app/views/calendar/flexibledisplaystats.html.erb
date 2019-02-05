@@ -12,42 +12,60 @@
 <div id="selectshows">
   <div>
     <div class="formatcatchup selectshowstats">
-      <input id=hidecatchup class=selectshow onclick="showcatchup()" type="checkbox" checked>
-      <label id=hidecatchuplabel for="hidecatchup">Catchup</label>
+      <label id=hidecatchuplabel class='checkboxzone' for="hidecatchup">
+        <input id=hidecatchup class=selectshow onclick="showcatchup()" type="checkbox" checked>
+        Catchup
+      </label>
     </div>
     <div class="formatfree selectshowstats">
-      <input id=hidefree class=selectshow onclick="showfree()" type="checkbox" >
-      <label id=hidefreelabel for="hidefree">Regular</label>
+      <label id=hidefreelabel class='checkboxzone' for="hidefree">
+        <input id=hidefree class=selectshow onclick="showfree()" type="checkbox" >
+        Regular
+      </label>
     </div>
     <div class="formatstats selectshowstats">
-      <input id=hidestats class=selectshow onclick="showstats()" type="checkbox" >
-      <label id=hidestatslabel for="hidestats">Stats</label>
+      <label id=hidestatslabel class='checkboxzone' for="hidestats">
+        <input id=hidestats class=selectshow onclick="showstats()" type="checkbox" >
+        Stats
+      </label>
     </div>
     <div class="formatslotlessons selectshowstats">
-      <input id=hideslotlessons class=selectshow onclick="showslotlessons()" type="checkbox" >
-      <label id=hideslotlessonslabel for="hideslotlessons">Lesson</label>
+      <label id=hideslotlessonslabel class='checkboxzone' for="hideslotlessons">
+        <input id=hideslotlessons class=selectshow onclick="showslotlessons()" type="checkbox" >
+        Lesson
+      </label>
     </div>
   </div>
   <div>
     <div class="selectdayofweek">
-      <input id=selectdowone class=selectshow onclick="showhidedowone()" type="checkbox" checked>
-      <label id=selectdowonelabel for="selectdowone">Monday</label>
+      <label id=selectdowonelabel class='checkboxzone' for="selectdowone">
+        <input id=selectdowone class=selectshow onclick="showhidedowone()" type="checkbox" checked>
+        Monday
+      </label>
     </div>
     <div class="selectdayofweek">
-      <input id=selectdowtwo class=selectshow onclick="showhidedowtwo()" type="checkbox" checked>
-      <label id=selectdowtwolabel for="selectdowtwo">Tuesday</label>
+      <label id=selectdowtwolabel class='checkboxzone' for="selectdowtwo">
+        <input id=selectdowtwo class=selectshow onclick="showhidedowtwo()" type="checkbox" checked>
+        Tuesday
+      </label>
     </div>
     <div class="selectdayofweek">
-      <input id=selectdowthree class=selectshow onclick="showhidedowthree()" type="checkbox" checked>
-      <label id=selectdowthreelabel for="selectdowthree">Wednesday</label>
+      <label id=selectdowthreelabel class='checkboxzone' for="selectdowthree">
+        <input id=selectdowthree class=selectshow onclick="showhidedowthree()" type="checkbox" checked>
+        Wednesday
+      </label>
     </div>
     <div class="selectdayofweek">
-      <input id=selectdowfour class=selectshow onclick="showhidedowfour()" type="checkbox" checked>
-      <label id=selectdowfourlabel for="selectdowfour">Thursday</label>
+      <label id=selectdowfourlabel class='checkboxzone' for="selectdowfour">
+        <input id=selectdowfour class=selectshow onclick="showhidedowfour()" type="checkbox" checked>
+        Thursday
+      </label>
     </div>
     <div class="selectdayofweek">
-      <input id=selectdowfive class=selectshow onclick="showhidedowfive()" type="checkbox" checked>
-      <label id=selectdowfivelabel for="selectdowfive">Friday</label>
+      <label id=selectdowfivelabel class='checkboxzone' for="selectdowfive">
+        <input id=selectdowfive class=selectshow onclick="showhidedowfive()" type="checkbox" checked>
+        Friday
+      </label>
     </div>
   
   
@@ -67,9 +85,11 @@
   
     <%  listoftimes.each do |mytime, mytimeid| %>
         <div class="<%= "selecttime" %> ">
-          <input id=<%= 'select' + mytimeid %> class="selectshow selecttime" 
+          <label id=<%= 'select' + mytimeid + 'label' %> class='checkboxzone' for="<%= 'select' + mytimeid %>">
+            <input id=<%= 'select' + mytimeid %> class="selectshow selecttime" 
                  onclick="showhidetimes()" type="checkbox" checked> 
-          <label id=<%= 'select' + mytimeid + 'label' %> for="<%= 'select' + mytimeid %>"><%= mytime %></label>
+            <%= mytime %>
+          </label>
         </div>
     <% end %>
     </div>

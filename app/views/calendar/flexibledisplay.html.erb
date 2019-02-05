@@ -27,46 +27,81 @@
 
     <div id="selectshows">
         <div class="checklisttutors">
-          <input id=hidetutors class=selectshow onclick="selectshows(this)" type="checkbox" >
-          <label id=hidetutorslabel for="hidetutors">Tutors</label>
-          <input id=hidestudents class=selectshow onclick="selectshows(this)" type="checkbox" >
-          <label id=hidestudentslabel for="hidestudents">Students</label>;
-          Hide Comments=>(<input id=hidecomments class=selectshow onclick="selectshows(this)" type="checkbox" >
-                          <label id=hidecommentslabel for="hidecomments">All</label>
+          <label id=hidetutorslabel class='checkboxzone' for="hidetutors">
+            <input id=hidetutors class=selectshow onclick="selectshows(this)" type="checkbox" >
+            Tutors
+          </label>
+          <label id=hidestudentslabel class='checkboxzone' for="hidestudents">
+            <input id=hidestudents class=selectshow onclick="selectshows(this)" type="checkbox" >
+            Students
+          </label>;
+          Hide Comments=>(<label id=hidecommentslabel class='checkboxzone' for="hidecomments">
+                            <input id=hidecomments class=selectshow onclick="selectshows(this)" type="checkbox" >
+                            All
+                          </label>
         </div>
         <div class=checklistlesson>
-          Lesson=>(<input id=hidetutorlessoncomments class=selectshow onclick="selectshows(this)" type="checkbox" >
-                   <label id=hidetutorlessoncommentslabel for="hidetutorlessoncomments">tutors</label>, 
-          <input id=hidestudentlessoncomments class=selectshow onclick="selectshows(this)" type="checkbox" >
-          <label id=hidestudentlessoncommentslabel for="hidestudentlessoncomments">students</label> ), 
+          Lesson=>(
+          <label id=hidetutorlessoncommentslabel class='checkboxzone' for="hidetutorlessoncomments">
+            <input id=hidetutorlessoncomments class=selectshow onclick="selectshows(this)" type="checkbox" >
+            tutors
+          </label>, 
+          <label id=hidestudentlessoncommentslabel class='checkboxzone' for="hidestudentlessoncomments">
+            <input id=hidestudentlessoncomments class=selectshow onclick="selectshows(this)" type="checkbox" >
+            students
+          </label> ), 
         </div>
         
         <div class=checklistpersonal>
-          Personal=>(<input id=hidetutorcomments class=selectshow onclick="selectshows(this)" type="checkbox" >
-                     <label id=hidetutorcommentslabel for="hidetutorcomments">tutors</label>,
-          <input id=hidestudentcomments class=selectshow onclick="selectshows(this)" type="checkbox" >
-          <label id=hidestudentcommentslabel for="hidestudentcomments">students</label> )
+          Personal=>(
+          <label id=hidetutorcommentslabel class='checkboxzone' for="hidetutorcomments">
+            <input id=hidetutorcomments class=selectshow onclick="selectshows(this)" type="checkbox" >
+            tutors
+          </label>,
+          <label id=hidestudentcommentslabel class='checkboxzone' for="hidestudentcomments">
+            <input id=hidestudentcomments class=selectshow onclick="selectshows(this)" type="checkbox" >
+            students
+          </label> )
         </div>)
         
         <div class=checklistlessons>
-          Hide=>(<input id=hidelessonsOnsetup class=selectshow onclick="selectshows(this)" type="checkbox" >
-                 <label id=hidelessonsOnsetuplabel for="hidelessonsOnsetup">onSetup</label>
-          <input id=hidelessonsOncall   class=selectshow onclick="selectshows(this)" type="checkbox" >
-          <label id=hidelessonsOncalllabel for="hidelessonsOncall">onCall</label>
-          <input id=hidelessonsOnBFL   class=selectshow onclick="selectshows(this)" type="checkbox" >
-          <label id=hidelessonsOnBFLlabel for="hidelessonsOnBFL">onBFL</label>
-          <input id=hidelessonsFree     class=selectshow onclick="selectshows(this)" type="checkbox" >
-          <label id=hidelessonsFreelabel for="hidelessonsFree">free</label>
-          <input id=hidelessonsStandard class=selectshow onclick="selectshows(this)" type="checkbox" >
-          <label id=hidelessonsStandardlabel for="hidelessonsStandard">standard</label>
-          <input id=hidelessonsRoutine  class=selectshow onclick="selectshows(this)" type="checkbox" >
-          <label id=hidelessonsRoutinelabel for="hidelessonsRoutine">routine</label>
-          <input id=hidelessonsFlexible class=selectshow onclick="selectshows(this)" type="checkbox" >
-          <label id=hidelessonsFlexiblelabel for="hidelessonsFlexible">flexible</label>
-          <input id=hidelessonsAllocate class=selectshow onclick="selectshows(this)" type="checkbox" >
-          <label id=hidelessonsAllocatelabel for="hidelessonsAllocate">allocate</label>
-          <input id=hidelessonsGlobal   class=selectshow onclick="selectshows(this)" type="checkbox" >
-          <label id=hidelessonsGloballabel for="hidelessonsGlobal">global</label> )
+          Hide=>(
+          <label id=hidelessonsOnsetuplabel class='checkboxzone' for="hidelessonsOnsetup">
+            <input id=hidelessonsOnsetup class=selectshow onclick="selectshows(this)" type="checkbox" >
+            onSetup
+          </label>
+          <label id=hidelessonsOncalllabel class='checkboxzone' for="hidelessonsOncall">
+            <input id=hidelessonsOncall   class=selectshow onclick="selectshows(this)" type="checkbox" >
+            onCall
+          </label>
+          <label id=hidelessonsOnBFLlabel class='checkboxzone' for="hidelessonsOnBFL">
+            <input id=hidelessonsOnBFL   class=selectshow onclick="selectshows(this)" type="checkbox" >
+            onBFL
+          </label>
+          <label id=hidelessonsFreelabel class='checkboxzone' for="hidelessonsFree">
+            <input id=hidelessonsFree     class=selectshow onclick="selectshows(this)" type="checkbox" >
+            free
+          </label>
+          <label id=hidelessonsStandardlabel class='checkboxzone' for="hidelessonsStandard">
+            <input id=hidelessonsStandard class=selectshow onclick="selectshows(this)" type="checkbox" >
+            standard
+          </label>
+          <label id=hidelessonsRoutinelabel class='checkboxzone' for="hidelessonsRoutine">
+            <input id=hidelessonsRoutine  class=selectshow onclick="selectshows(this)" type="checkbox" >
+            routine
+          </label>
+          <label id=hidelessonsFlexiblelabel class='checkboxzone' for="hidelessonsFlexible">
+            <input id=hidelessonsFlexible class=selectshow onclick="selectshows(this)" type="checkbox" >
+            flexible
+          </label>
+          <label id=hidelessonsAllocatelabel class='checkboxzone' for="hidelessonsAllocate">
+            <input id=hidelessonsAllocate class=selectshow onclick="selectshows(this)" type="checkbox" >
+            allocate
+          </label>
+          <label id=hidelessonsGloballabel class='checkboxzone' for="hidelessonsGlobal">
+            <input id=hidelessonsGlobal   class=selectshow onclick="selectshows(this)" type="checkbox" >
+            global
+          </label> )
         </div>
         
         <input id=enableQuickStatus type="checkbox" > Enable quick setting of status to
@@ -93,31 +128,43 @@
 
         <div>
           <div class="selectdayofweek">
-            <input id=selectdowone class=selectshow onclick="showhidedowone()" type="checkbox" checked >
-            <label id=selectdowonelabel for="selectdowone">Monday</label>
+            <label id=selectdowonelabel class='checkboxzone' for="selectdowone">
+              <input id=selectdowone class=selectshow onclick="showhidedowone()" type="checkbox" checked >
+              Monday
+            </label>
           </div>
           <div class="selectdayofweek">
-            <input id=selectdowtwo class=selectshow onclick="showhidedowtwo()" type="checkbox" checked></input>
-            <label id=selectdowtwolabel for="selectdowtwo">Tuesday</label>
+            <label id=selectdowtwolabel class='checkboxzone' for="selectdowtwo">
+              <input id=selectdowtwo class=selectshow onclick="showhidedowtwo()" type="checkbox" checked></input>
+              Tuesday
+            </label>
           </div>
           <div class="selectdayofweek">
-            <input id=selectdowthree class=selectshow onclick="showhidedowthree()" type="checkbox" checked></input>
-            <label id=selectdowthreelabel for="selectdowthree">Wednesday</label>
+            <label id=selectdowthreelabel class='checkboxzone' for="selectdowthree">
+              <input id=selectdowthree class=selectshow onclick="showhidedowthree()" type="checkbox" checked></input>
+              Wednesday
+            </label>
           </div>
           <div class="selectdayofweek">
-            <input id=selectdowfour class=selectshow onclick="showhidedowfour()" type="checkbox" checked></input>
-            <label id=selectdowfourlabel for="selectdowfour">Thursday</label>
+            <label id=selectdowfourlabel class='checkboxzone' for="selectdowfour">
+              <input id=selectdowfour class=selectshow onclick="showhidedowfour()" type="checkbox" checked></input>
+              Thursday
+            </label>
           </div>
           <div class="selectdayofweek">
-            <input id=selectdowfive class=selectshow onclick="showhidedowfive()" type="checkbox" checked></input>
-            <label id=selectdowfivelabel for="selectdowfive">Friday</label>
+            <label id=selectdowfivelabel class='checkboxzone' for="selectdowfive">
+              <input id=selectdowfive class=selectshow onclick="showhidedowfive()" type="checkbox" checked></input>
+              Friday
+            </label>
           </div>
 
           <%  listoftimes.each do |mytime, mytimeid| %>
               <div class="<%= "selecttime" %> ">
-                <input id=<%= 'select' + mytimeid %> class="selectshow selecttime" 
-                       onclick="showhidetimes()" type="checkbox" checked>
-                <label id=<%= 'select' + mytimeid + 'label' %> for="<%= 'select' + mytimeid %>"><%= mytime %></label>
+                <label id=<%= 'select' + mytimeid + 'label' %> class='checkboxzone' for="<%= 'select' + mytimeid %>">
+                  <input id=<%= 'select' + mytimeid %> class="selectshow selecttime" 
+                         onclick="showhidetimes()" type="checkbox" checked>
+                  <%= mytime %>
+                </label>
               </div>
           <% end %>
         </div>
@@ -231,6 +278,9 @@
       </li>
       <li id="context-copy" class="context-menu__item" data-action="copy">
         <p>Copy</p>
+      </li>
+      <li id="context-toglobal" class="context-menu__item" data-action="toglobal">
+        <p>to Global</p>
       </li>
       <li id="context-paste" class="context-menu__item" data-action="paste">
         <p>Drop</p>
@@ -426,6 +476,18 @@
       </li>
       <li id="lesson-status-park" class="tertiary-menu__choice" data-choice="lesson-status-park">
         <p>lesson-kind: park</p>
+      </li>
+      <li id="toglobal-free" class="tertiary-menu__choice" data-choice="toglobal-free">
+        <p>to Global: free</p>
+      </li>
+      <li id="toglobal-first" class="tertiary-menu__choice" data-choice="toglobal-first">
+        <p>to Global: first</p>
+      </li>
+      <li id="toglobal-bonus" class="tertiary-menu__choice" data-choice="toglobal-bonus">
+        <p>to Global: bonus</p>
+      </li>
+      <li id="toglobal-standard" class="tertiary-menu__choice" data-choice="toglobal-standard">
+        <p>to Global: standard</p>
       </li>
       <li id="edit-comment" class="tertiary-menu__choice" data-choice="edit-comment">
           <textarea id="edit-comment-text">Test Only.</textarea>

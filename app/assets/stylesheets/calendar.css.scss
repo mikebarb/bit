@@ -931,8 +931,21 @@ table, th, td {
 	border-width:4px 3px 3px 4px;
 	color:#000;
 }
+.buttonlink:active{
+	border-color: #666 #aaa #bbb #888;
+	border-width:4px 3px 3px 4px;
+	color:#000;
+	background: green;
+}
 
 .doing{
   background: red;
   box-shadow: inset 0 0 2px 2px black;
+}
+
+.checkboxzone:hover {
+  background: Azure;
+}
+.checkboxzone:active {
+  background: Green;
 }

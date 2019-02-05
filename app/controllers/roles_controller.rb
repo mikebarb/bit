@@ -569,12 +569,12 @@ class RolesController < ApplicationController
 
   #--------------End of Support Functions for doAllocation -----------------
 
-
   #==================================================================
   # PATCH/PUT /studentmovecopylesson.json
   # this is the ** updated ** function to replace
   # studentmovelesson and studentcopylesson.
   def studentmovecopylesson
+    options = {}       # pass options when necessary
     @domchange = Hash.new
     params[:domchange].each do |k, v| 
       logger.debug "k: " + k.inspect + " => v: " + v.inspect 
@@ -620,6 +620,29 @@ class RolesController < ApplicationController
     # as defined by the parent.
     if(@domchange['action'] == "extendrun")
       # Nothing to do here - must ignore - no destination sought.
+    elsif(@domchange.has_key?("to_global"))
+      #logger.debug "to_global present in parameters"
+      # need to find first global lesson after this point in time
+      if Rails.env.development?
+        nowdate = Date.strptime("18/6/2018", "%d/%m/%Y")
+      end
+      ###myslots = Slot.where('timeslot > :sd', {sd: nowdate}).order(:timeslot)
+      #myslotsids = myslots.map{ |o| o.id}
+      #@lesson_new = Lesson.joins(:slot).where({slot_id: myslots, status: 'global'}).order('timeslot').first
+      ###@lesson_new = Lesson.joins(:slot)
+      ###                    .where({slot_id: myslots, status: 'global'})
+      ###                    .order('timeslot')
+      ###                    .first
+      @lesson_new = Lesson.joins(:slot)
+                          .where('status = :st AND timeslot >= :sd', {st: 'global', sd: nowdate})
+                          .first
+      dest_chain = true if @lesson_new.first   # a chain element
+      @domchange['to'] = @lesson_new.slot.location[0..2].upcase
+      @domchange['to'] += @lesson_new.slot.timeslot.strftime("%Y%m%d%H%M")
+      @domchange['to'] += 'l' + @lesson_new.slot_id.to_s.rjust(@sf, "0")
+      @domchange['to'] += 'n' + @lesson_new.id.to_s.rjust(@sf, "0")
+      options['to_global'] = @domchange['to_global']
+      #new_parent_date = @domchange['to_slot'][3,11]
     elsif(@domchange.has_key?("to_slot"))
       #logger.debug "to_slot present in parameters"
       result = /^(([A-Z]+\d+l(\d+)))/.match(@domchange['to_slot'])
@@ -640,7 +663,6 @@ class RolesController < ApplicationController
         new_lesson_id = @lesson_new.id
         @domchange['to'] = new_slot_id + 'n' + @lesson_new.id.to_s
       end
-      #new_parent_date = @domchange['to_slot'][3,11]
     else  # the normal to destination
       result = /^(([A-Z]+\d+l\d+)n(\d+))/.match(@domchange['to'])
       if result 
@@ -694,7 +716,8 @@ class RolesController < ApplicationController
           @domchange['action'] == 'copy')
       this_error = doSingleMoveCopy(@domchange['action'],     # action - move or copy 
                                     @domchange['object_id'],  # source element
-                                    @domchange['to'])         # destination element
+                                    @domchange['to'],         # destination element
+                                    options)                 # pass any options
     end
     # If an error, simply report it and end
     if this_error.length > 0

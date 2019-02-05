@@ -378,7 +378,7 @@ module ChainUtilities
   #         error message if not OK. Calling code to handle the error.
   #----------------------------------------------------------------------------
   #------------------------ Single Element operation ----------------------
-  def doSingleMoveCopy(action, object_domid, dest_domid)
+  def doSingleMoveCopy(action, object_domid, dest_domid, options)
     #parse source for details
     if((result = /^(([A-Z]+\d+l\d+)n(\d+))([st])(\d+)$/.match(object_domid)))
       #student_id = result[5].to_i
@@ -429,6 +429,11 @@ module ChainUtilities
                                   :lesson_id => old_lesson_id).first
           @role.status = @role_from.status
           @role.kind   = @role_from.kind
+        end
+        # handle the move student to global
+        if options.has_key? 'to_global'
+          @role.kind = options['to_global']
+          @role.status = 'scheduled'
         end
       else      # tutor
         @role = Tutrole.new(:tutor_id => person_id, :lesson_id => new_lesson_id)

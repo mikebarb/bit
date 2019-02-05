@@ -7,8 +7,10 @@ class CalendarController < ApplicationController
   # ********************************************************************************************
   #=============================================================================================
 
+  # globalstudents - obtains all students in the global lessons for use in the 
+  # first section of stats page.
+  # Access by by the adjax functions - refresh students.
   def globalstudents
-    logger.debug "called calendar conroller - update_stats_students"
     student_stats()
     @domchange = Hash.new
     @domchange['html_partial'] = render_to_string("calendar/_stats_students.html",
@@ -66,8 +68,32 @@ class CalendarController < ApplicationController
       myenddate = @options[:startdate] + mydaydur.days
       @options[:enddate] = myenddate
     end
-
-
+    if params.has_key?('default')
+      case params['default']
+      when 'today'
+        mystartdate = (DateTime.now + 10.hours).beginning_of_day
+        myenddate = mystartdate + 1.day
+        @displayHeader = 'Flexible Display of Calendar Workbench - today'
+      when 'tomorrow'
+        mystartdate = ((DateTime.now + 10.hours).beginning_of_day) + 1.day
+        myenddate = mystartdate + 1.day
+        @displayHeader = 'Flexible Display of Calendar Workbench - tomorrow'
+      when 'yesterday'
+        mystartdate = ((DateTime.now + 10.hours).beginning_of_day) - 1.day
+        myenddate = mystartdate + 1.day
+        @displayHeader = 'Flexible Display of Calendar Workbench - yesterday'
+      when 'thisweek'
+        mystartdate = (DateTime.now + 10.hours).beginning_of_week
+        myenddate = mystartdate + 7.days
+        @displayHeader = 'Flexible Display of Calendar Workbench - this week'
+      when 'nextweek'
+        mystartdate = ((DateTime.now + 10.hours).beginning_of_week) + 7.days
+        myenddate = mystartdate + 7.days
+        @displayHeader = 'Flexible Display of Calendar Workbench - next week'
+      end
+      @options[:startdate] = mystartdate 
+      @options[:enddate]   = myenddate 
+    end
     # @tutors and @students are used by the cal
     @tutors = Tutor
               .where.not(status: "inactive")
