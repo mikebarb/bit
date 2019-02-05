@@ -103,8 +103,8 @@ class TutrolesController < ApplicationController
       @domchange[k] = v
     end
     this_error = ""
-    source_chain = false   # track if source is a chain element
-    dest_chain = false     # track if moving to a chain
+    #==#source_chain = false   # track if source is a chain element
+    #==#dest_chain = false     # track if moving to a chain
     # from / source
     # need to check if is from index area or schedule area
     # identified by the id
@@ -115,8 +115,8 @@ class TutrolesController < ApplicationController
       old_lesson_id = result[2].to_i
       @domchange['object_type'] = 'tutor'
       @domchange['from'] = result[1]
-      thistutrole = Tutrole.where(tutor_id: tutor_id, lesson_id: old_lesson_id)
-      source_chain = true if thistutrole.first
+      #==#thistutrole = Tutrole.where(tutor_id: tutor_id, lesson_id: old_lesson_id)
+      #==#source_chain = true if thistutrole.first
     elsif((result = /^t(\d+)/.match(params[:domchange][:object_id])))  #index area
       tutor_id = result[1]
       @domchange['object_type'] = 'tutor'
@@ -136,6 +136,7 @@ class TutrolesController < ApplicationController
     # it simply continues the run to the end of the block
     # as defined by the parent.
     if(@domchange['action'] == "extendrun")
+      
       # Nothing to do here - must ignore - no destination sought.
     else  # the normal to destination
       result = /^(([A-Z]+\d+l\d+)n(\d+))/.match(@domchange['to'])
@@ -143,17 +144,17 @@ class TutrolesController < ApplicationController
         new_lesson_id = result[3].to_i
         #new_slot_id = result[2]
         @domchange['to'] = result[1]
-        thislesson = Lesson.find(new_lesson_id)
-        dest_chain = true if thislesson.first
+        #==#thislesson = Lesson.find(new_lesson_id)
+        #==#dest_chain = true if thislesson.first
       end
     end
     # to prevent user errors, this check legimate move within
     # the chaining environment. Does impose the expense of a db read.
-    if source_chain     # moving a chain element
-      if dest_chain == false   # destination is not a chain
-        this_error += "Tutor chain element can only be moved into a parent lesson chain"
-      end
-    end
+    #==#if source_chain     # moving a chain element
+    #==#  if dest_chain == false   # destination is not a chain
+    #==#    this_error += "Tutor chain element can only be moved into a parent lesson chain"
+    #==#  end
+    #==#end
     # Intercept and do nothing if parent is the same.
     if new_lesson_id != nil && 
        old_lesson_id == new_lesson_id
@@ -186,7 +187,8 @@ class TutrolesController < ApplicationController
           @domchange['action'] == 'copy')
       this_error = doSingleMoveCopy(@domchange['action'],     # action - move or copy 
                                     @domchange['object_id'],  # source element
-                                    @domchange['to'])         # destination element
+                                    @domchange['to'],         # destination element
+                                    {})                       # options
     end
     # If an error, simply report it and end
     if this_error.length > 0

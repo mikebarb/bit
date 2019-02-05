@@ -347,7 +347,7 @@ module ChainUtilities
       #new_slot_id = result[2]
       @domchange['from'] = result[1]
     else
-      return "passed dest parameter to moverun function is incorrect - #{dest_domid.inspect}"
+      return "passed destination parameter to moverun function is incorrect (not a lesson in the schedule area) - #{dest_domid.inspect}"
     end
     # need to produce the matching block chain for the roles
     # get the chain of existing roles - so that we can change the link to the parent
@@ -355,9 +355,9 @@ module ChainUtilities
     #--------------------------- role ---------------------------------
     #@role = Role.where(:student_id => student_id, :lesson_id => old_lesson_id).first
     if @domchange['object_type'] == 'student'
-      @role = Role.where(:student_id => person_id, :lesson_id => old_lesson_id).first
+      @role = Role.includes(:lesson).where(:student_id => person_id, :lesson_id => old_lesson_id).first
     else    # tutor
-      @role = Tutrole.where(:tutor_id => person_id, :lesson_id => old_lesson_id).first
+      @role = Tutrole.includes(:lesson).where(:tutor_id => person_id, :lesson_id => old_lesson_id).first
     end
     this_error += doMoveBlock(@role, new_lesson_id, options)
     return this_error if this_error.length > 0
@@ -412,17 +412,24 @@ module ChainUtilities
                     .includes(:student)
                     .where(:student_id => person_id, :lesson_id => old_lesson_id)
                     .first
-        @role.lesson_id = new_lesson_id
       else      # tutor
         @role = Tutrole
                     .includes(:tutor)
                     .where(:tutor_id => person_id, :lesson_id => old_lesson_id)
                     .first
-        @role.lesson_id = new_lesson_id
       end
+      # Can only do a single move if not a chain element
+      if @role.first != nil
+        return "Cannot perform a single move on a chain element"
+      end
+      @role.lesson_id = new_lesson_id
     elsif( @domchange['action'] == 'copy')    # copy
       if @domchange['object_type'] == 'student'
         @role = Role.new(:student_id => person_id, :lesson_id => new_lesson_id)
+        # Can only do a single copy if not a chain element
+        if @role.first != nil
+          return "Cannot perform a single copy on a chain element"
+        end
         # copy relevant info from old role (status & kind)
         if old_lesson_id
           @role_from = Role.where(:student_id  => person_id,
@@ -437,6 +444,10 @@ module ChainUtilities
         end
       else      # tutor
         @role = Tutrole.new(:tutor_id => person_id, :lesson_id => new_lesson_id)
+        # Can only do a single copy if not a chain element
+        if @role.first != nil
+          return "Cannot perform a single copy on a chain element"
+        end
         # copy relevant info from old role (status & kind)
         if old_lesson_id
           @role_from = Tutrole.where(:tutor_id  => person_id,
@@ -511,6 +522,9 @@ module ChainUtilities
       flagAll = true
     end
     # build the chain for roles.
+    if role.first == nil     # not a chain
+      return "attemping a chain operatioin on an element that is not a chain"
+    end
     this_error = ""
     if role.is_a?(Tutrole)
       @role_chain = Tutrole.includes(:tutor, lesson: :slot)
@@ -643,6 +657,9 @@ module ChainUtilities
       @new_lesson_chain = Lesson.includes(:slot)
                           .where(first: new_lesson.first)
                           .order("slots.timeslot")
+    end
+    if new_lesson.first == nil
+      return "attempting chain operation with a parent that is not a chain."
     end
     # Do a check on chain integity and buld an index
     # integity check - each element should point to the next one
@@ -782,21 +799,26 @@ module ChainUtilities
       @domchange['object_type'] = result[4] == 's' ? 'student' : 'tutor'
       @domchange['from'] = result[1]
     else
-      return "passed parameter to extend run function isincorrect - #{clicked_domid.inspect}"
+      return "passed parameter to extend run function is incorrect (student or tutor in the calendar area) - #{clicked_domid.inspect}"
     end      
     #--------------------------- role ---------------------------------
     # This could be a student or tutor being processed.
     # Thus db query could be on tutrole or role table.
     # .includes([:student , lesson: :slot])
     if person_type == 'student'
-      @role = Role.where(:student_id => person_id, :lesson_id => old_lesson_id).first
+      @role = Role.includes(:lesson).where(:student_id => person_id, :lesson_id => old_lesson_id).first
     else              # tutor
-      @role = Tutrole.where(:tutor_id => person_id, :lesson_id => old_lesson_id).first
+      @role = Tutrole.includes(:lesson).where(:tutor_id => person_id, :lesson_id => old_lesson_id).first
     end
     #@role = @role = Role.where(:student_id => student_id, :lesson_id => old_lesson_id).first
     # build the chain for roles - contains all elements of the original chain - even when fragmented.
     # and the block chain that we propagate as the updated elements (roles)
     #
+    # First check if the parent lesson is a chain - any chain must have a parent chain.
+    if @role.lesson.first == nil   # parent lesson not a chain
+      this_error = "Cannot exten the chain as the parent is not a chain"
+      return this_error
+    end
     # First check if this role is part of a chain. Make a chain if not.
     if @role.block == nil
       @role.block = @role.id
@@ -839,8 +861,7 @@ module ChainUtilities
         this_error = "error extendrun -  already an entry for this role in " +
                      "this week (week #{woy_lesson} in parent lesson ) " +
                      @block_lessons[i].slot.timeslot.to_datetime.to_s + " " +
-                    @block_lessons[i].slot.location
-        
+                     @block_lessons[i].slot.location
         break
       end
       # build the new entries
@@ -1001,6 +1022,10 @@ module ChainUtilities
     # build the chain for lessons.
     # and the block chain that we propagate as the updated elements (roles)
     #
+    # First check if the parent is a chain element
+    if @lesson.slot.first == nil
+      return "Cannot turn lesson into chain when parent slot is not a chain."
+    end
     # First check if this role is part of a chain. Make a chain if not.
     if @lesson.first == nil
       @lesson.first = @lesson.id
@@ -1053,6 +1078,11 @@ module ChainUtilities
     # build the chain for lessons.
     # and the block chain that we propagate as the updated elements (roles)
     #
+    # First check to see if the parent is a chain element
+    # Note that slots should always be chains!!
+    if @lesson.slot.first == nil
+      return "Cannot perform chain operation on element whose parent slot is not a chain"
+    end
     # First check if this role is part of a chain. Make a chain if not.
     if @lesson.first == nil
       @lesson.first = @lesson.id
@@ -1447,6 +1477,7 @@ module ChainUtilities
   #******************************************************************
   #----------------- Helper Function = fix_looping_chain -----------------------
   # Fixes looping chains for tutors and students - not lessons and slots
+=begin
   def fix_looping_chain(chain)
     # this chain is broken - must find the break and fix
     unless (chain[0].is_a?(Role) || chain[0].is_a?(Tutrole))
@@ -1519,11 +1550,13 @@ module ChainUtilities
     end
     return "--- WARNING --- \n looping chain has been fixed.\n"
   end
+=end
   #---------------- End of Helper Function = fix_looping_chain -----------------
 
 
   #******************************************************************
   #----------------- Helper Function = fix_broken_chain -----------------------
+=begin
   def fix_broken_chain(chain)
     # this chain is broken - must find the break and fix
     # by dividing into two chains, one each side of the break
@@ -1592,11 +1625,13 @@ module ChainUtilities
            " Each fragment is now a separate chain.\n" +
            this_error
   end
+=end
   #---------------- End of Helper Function = fix_broken_chain -----------------
 
 
   #******************************************************************
   #------------------- Helper Function = fix_lessonMissingSlot ----------------
+=begin
   def fix_lessonMissingSlot(mylesson)
     myerror = "--- WARNING ---\n"
     myerror += "Lesson #{mylesson.id.to_s} has no slot - created #{mylesson.created_at.to_s}\n"
@@ -1684,6 +1719,7 @@ module ChainUtilities
     end
     return myerror
   end
+=end
   #------------- End of Helper Function = fix_lessonMissingSlot ---------------
 
 end

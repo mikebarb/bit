@@ -581,8 +581,8 @@ class RolesController < ApplicationController
       @domchange[k] = v
     end
     this_error = ""
-    source_chain = false   # track if source is a chain element
-    dest_chain = false     # track if moving to a chain
+    #===#source_chain = false   # track if source is a chain element
+    #===#dest_chain = false     # track if moving to a chain
     # from / source
     # need to check if it is from index area or schedule area
     # identified by the id
@@ -594,8 +594,8 @@ class RolesController < ApplicationController
       #old_slot_id = result[2]
       @domchange['object_type'] = 'student'
       @domchange['from'] = result[1]
-      thisrole = Role.where(student_id: student_id, lesson_id: old_lesson_id)
-      source_chain = true if thisrole.first
+      #===#thisrole = Role.where(student_id: student_id, lesson_id: old_lesson_id)
+      #===#source_chain = true if thisrole.first
     elsif((result = /^s(\d+)/.match(@domchange['object_id'])))  #index area
       student_id = result[1].to_i
       @domchange['object_type'] = 'student'
@@ -619,6 +619,7 @@ class RolesController < ApplicationController
     # it simply continues the run to the end of the block
     # as defined by the parent.
     if(@domchange['action'] == "extendrun")
+      #===#source_chain = true if source_chain     # must be ok to be able to exten
       # Nothing to do here - must ignore - no destination sought.
     elsif(@domchange.has_key?("to_global"))
       #logger.debug "to_global present in parameters"
@@ -636,7 +637,7 @@ class RolesController < ApplicationController
       @lesson_new = Lesson.joins(:slot)
                           .where('status = :st AND timeslot >= :sd', {st: 'global', sd: nowdate})
                           .first
-      dest_chain = true if @lesson_new.first   # a chain element
+      #===#dest_chain = true if @lesson_new.first   # a chain element
       @domchange['to'] = @lesson_new.slot.location[0..2].upcase
       @domchange['to'] += @lesson_new.slot.timeslot.strftime("%Y%m%d%H%M")
       @domchange['to'] += 'l' + @lesson_new.slot_id.to_s.rjust(@sf, "0")
@@ -652,9 +653,9 @@ class RolesController < ApplicationController
         # Need to find the 'allocate' lesson for this slot.
         @lesson_new = Lesson.where(:slot_id => new_slot_dbId, :status => "allocate" )
                             .first
-        if @lesson_new.first
-          dest_chain = true
-        end
+        #===#if @lesson_new.first
+        #===#  dest_chain = true
+        #===#end
         unless @lesson_new
           # need to create a new lesson with status 'allocatae'
           @lesson_new = Lesson.new(slot_id: new_slot_dbId, status: "allocate")
@@ -669,17 +670,17 @@ class RolesController < ApplicationController
         new_lesson_id = result[3].to_i
         new_slot_id = result[2]
         @domchange['to'] = result[1]
-        thislesson = Lesson.find(new_lesson_id)
-        dest_chain = true if thislesson.first
+        #===#thislesson = Lesson.find(new_lesson_id)
+        #===#dest_chain = true if thislesson.first
       end
     end
     # to prevent user errors, this check legimate move within
     # the chaining environment. Does impose the expense of a db read.
-    if source_chain     # moving a chain element
-      if dest_chain == false   # destination is not a chain
-        this_error += "Student chain element can only be moved into a parent lesson chain"
-      end
-    end
+    #===#if source_chain     # moving a chain element
+    #===#  if dest_chain == false   # destination is not a chain
+    #===#    this_error += "Student chain element can only be moved into a parent lesson chain"
+    #===#  end
+    #===#end
     # Intercept and do nothing if parent is the same.
     if new_lesson_id != nil && 
        old_lesson_id == new_lesson_id
