@@ -19,6 +19,7 @@
       <th>Phone</th>
       <th>First Lesson</th>
       <th>First Aid</th>
+      <th>BFL</th>
       <th colspan="5"></th>
     </tr>
   </thead>
@@ -39,6 +40,7 @@
         <td><%= tutor.phone %></td>
         <td><%= tutor.firstlesson %></td>
         <td><%= tutor.firstaid %></td>
+        <td><%= tutor.bfl %></td>
         <td><%= link_to 'History', tutor_history_path(tutor) %></td>
         <td><%= link_to 'Changes', tutor_change_path(tutor) %></td>
         <td><%= link_to 'Show', tutor %></td>
@@ -52,3 +54,4 @@
 <%= page_entries_info @tutors %>
 <br>
 <%= link_to 'New Tutor', new_tutor_path %>
+<%= link_to 'Show all Tutors on one page', alltutors_path %>

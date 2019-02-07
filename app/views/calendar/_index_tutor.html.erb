@@ -7,6 +7,9 @@
                           if tutor.firstlesson == 'yes'
                             %><%= "*" %><%
                           end
+                          if tutor.bfl == 'yes'
+                            %><%= "#" %><%
+                          end
                         %></div>
                         <div class="tutorsubjects p-subjects"><%= tutor.subjects %></div>
                         <div class="tutorcomment comment tutorinline">

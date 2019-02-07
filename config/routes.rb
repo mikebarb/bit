@@ -96,6 +96,7 @@ Rails.application.routes.draw do
   get 'tutors/chain/:id' => 'tutors#chain', as: :tutor_chain
   get 'tutors/history' => 'tutors#allhistory', as: :tutors_history
   get 'tutors/change/:id' => 'tutors#change', as: :tutor_change
+  get 'alltutors'          => 'tutors#alltutors', as: :alltutors
   post 'tutordetailupdateskc' => 'tutors#tutordetailupdateskc', as: :tutors_tutordetailupdateskc
   resources :tutors
 

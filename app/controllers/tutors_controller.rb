@@ -13,6 +13,12 @@ class TutorsController < ApplicationController
               .page(params[:page])
   end
 
+  # GET /alltutors
+  # GET /alltutors.json
+  def alltutors
+    @tutors = Tutor.order(:pname)
+  end
+
   # GET /tutors/1
   # GET /tutors/1.json
   def show
@@ -191,7 +197,8 @@ class TutorsController < ApplicationController
     def tutor_params
       params.require(:tutor).permit(:gname, :sname, :pname, :initials, :sex,
                                     :subjects, :comment, :status, :kind, 
-                                    :email, :phone, :firstaid, :firstlesson
+                                    :email, :phone, :firstaid, :firstlesson,
+                                    :bfl
                                    )
     end
 

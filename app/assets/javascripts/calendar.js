@@ -829,8 +829,13 @@ function testSuiteForWeekOfYear(){
         }  // end of if currentActivity
         // Of course, if there is no currentActivity on a paste, then ignore.
         break;
-      case "remove":
       case "removerun":
+        if(!confirm("Are your sure?  \n" + 
+            "Are so sure you wish to delete everything for the rest of this chain \n" +
+                    " - most likely to the end of the term!.")){
+          return;
+        }
+      case "remove":
         // This removed the selected element
         // Actually deletes the mapping record for tutor and student
         deleteentry_Update(currentActivity);

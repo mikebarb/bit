@@ -60,5 +60,10 @@
   <%= @tutor.firstaid if @tutor.firstaid %>
 </p>
 
+<p>
+  <strong>BFL trained:</strong>
+  <%= @tutor.bfl if @tutor.bfl %>
+</p>
+
 <%= link_to 'Edit', edit_tutor_path(@tutor) %> |
 <%= link_to 'Back', tutors_path %>
