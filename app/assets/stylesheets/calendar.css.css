@@ -313,6 +313,9 @@ table, th, td {
 .t-kind-BFL .statusinfo, #tutor-kind-bfl {
   background-color: #ffff00; }
 
+.t-kind-BFLassist .statusinfo, #tutor-kind-bflassist {
+  background-color: #eeee00; }
+
 .t-kind-away-action .statusinfo {
   background-color: #ff0000; }
 

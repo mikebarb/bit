@@ -37,6 +37,18 @@
     <%= f.number_field :history_forward %>
   </div> 
 
+  <h3>Term - for use in term related displays</h3>
+  <p>This is referenced in displaying specific students in calendar format.</p>
+  <div class="field">
+    <%= f.label "Date of first day of term (Monday)" %><br>
+    <%= f.date_field :termstart %>
+  </div> 
+
+  <div class="field">
+    <%= f.label "Number of week in this  term" %><br>
+    <%= f.number_field :termweeks %>
+  </div> 
+
   <div class="actions">
     <%= f.submit "Update" %>
   </div>

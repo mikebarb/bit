@@ -490,6 +490,7 @@ module Calendarutilities
     # Want all the global lessons with their students
     global_students = Student.includes(:lessons, :roles)
                        .where(:lessons => {status: 'global'})
+                       .order(:pname)
     alllessons = Hash.new
     global_students.each do |student|
       student.lessons.each do |lesson|
@@ -516,12 +517,20 @@ module Calendarutilities
         @students_stats[student.id]['role_kind'] = Array.new
       end
       @students_stats[student.id]['student_object'] = student
-      student.lessons.each_with_index do |lesson, i|
+      studentlessons = Array.new
+      student.lessons.each do |lesson| 
+        studentlessons.push([lesson, lesson.slot.timeslot])
+      end
+      #student.lessons.each_with_index do |lesson, i|
+      studentlessons.sort{|x,y| x[1] <=> y[1]}.each_with_index do |a, i|
+        #byebug if student.pname == 'Vili Fusimalohi'
+        lesson = a[0]
         unless(@students_stats[student.id].key?(lesson.id))
           @students_stats[student.id][lesson.id] = Hash.new
         end
         @students_stats[student.id]['total'] += 1
         @students_stats[student.id][lesson.id]['lesson_object'] = lesson
+        @students_stats[student.id][lesson.id]['lesson_date'] = lesson.slot.timeslot
         glws = global_lessons_with_slots_index[lesson.id]
         dom_id = glws.slot.location[0..2].upcase + 
                  glws.slot.timeslot.strftime("%Y%m%d%H%M") +

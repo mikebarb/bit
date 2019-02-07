@@ -6,7 +6,8 @@
     <%= submit_tag "Display" %>
   </div>
 
-  <p>Complete if you wish to override the default settings<br>
+     <p><b>Override default date settings</b><br>
+     Complete if you wish to override the default settings<br>
      Otherwise, leave blank.</p> 
   <div class="field">
     <%= label_tag "Date of first day to display" %><br>
@@ -16,9 +17,22 @@
     <%= label_tag "Number of days to display" %><br>
     <%= number_field_tag :daydur %>
   </div> 
+
+  <div class="student_calendar"></div>
+    <b>Display selected student in calendar format</b><br>
+    This is a quick selection options and overrides the following sections<br>
+    <%= check_box_tag(:person_calendar) %>
+    <%= label_tag(:person_calendar, "Show only this student in a calendar format") %>
+    <div class="textfield">
+       You may have muliple students - comma separate the entries<br>
+      <%= text_field_tag(:student_name) %>
+      <%= label_tag(:student_name, "Student identifier") %> <br>
+    </div>
+  </div>
+  <br>
   
   <div class="radio_buttons"></div>
-    Choose the purpose of this display.<br>
+    <b>Choose the purpose of this display.</b><br>
     <%= radio_button_tag(:bench, "workbench", true) %>
     <%= label_tag(:Workbench, "Calendar Work Bench") %> <br>
     <%= radio_button_tag(:bench, "roster") %>
@@ -26,16 +40,16 @@
     <%= radio_button_tag(:bench, "ratio") %>
     <%= label_tag(:Roster, "Student to Tutor ratio - reduced items" ) %>
   </div>
-  <br>
+  <p>
   <div>
-    Display Format:<br>
+    <b>Display Format:</b><br>
     <%= check_box_tag(:compress) %>
     <%= label_tag(:compress, "Compressed Format - Display only the days in a site that has slots.") %>
   </div>
-  <br>
-  -------------------- For Rosters or Ratios -------------------------
+  <p>
+  <b>-------------------- For Rosters or Ratios -------------------------</b>
   <div class="select_roster_default">
-    Select default settings for roster and ratio display<br>
+    <b>Use default settings for roster and ratio display</b><br>
     <%= check_box_tag(:select_roster_default) %>
     <%= label_tag(:select_roster_default, "default settings for roster and ratio display") %><br>
   </div>
@@ -44,15 +58,15 @@
   <li>for students: 'attended', 'scheduled', 'deal', 'absent'</li>
   <li>for tutors  : 'attended', 'notified', 'confirmed', 'scheduled', 'deal'<br>
   When displaying ratios, the default settings for tutor "kinds" excludes 'onCall' and 'onSetup.'</li>
-  <br><br>
+  <br>
   <div class="select_firstaid">
-    Display tutors with first aid certification<br>
+    <b>Display tutors with first aid certification<br></b>
     <%= check_box_tag(:select_tutor_firstaid) %>
-    <%= label_tag(:select_tutor_firstaid, "Display TUTORS with first aid certification") %><br>
+    <%= label_tag(:select_tutor_firstaid, "Display TUTORS with first aid certification") %>
   </div>
   <br>
   <div class="select_none">
-    Disable display of tutors or students<br>
+    <b>Disable display of tutors or students</b><br>
     <%= check_box_tag(:select_tutor_none) %>
     <%= label_tag(:select_tutor_none, "DON'T display TUTORS in roster and ratio display:") %><br>
     <%= check_box_tag(:select_student_none) %>
@@ -60,7 +74,7 @@
   </div>
   <br>
   <div class="select_statuses">
-    Select Statuses:<br>
+    <b>Select Statuses:</b><br>
     <%= check_box_tag(:select_tutor_statuses) %>
     <%= label_tag(:select_tutor_statuses, "For TUTORS, Select the STATUSES desired in roster and ratio display:") %><br>
     <%= select_tag(:tutor_statuses, options_for_select([ 
@@ -88,7 +102,7 @@
   </div>
   <br>
   <div class="select_kinds">
-    Select Kinds:<br>
+    <b>Select Kinds:</b><br>
     <%= check_box_tag(:select_tutor_kinds) %>
     <%= label_tag(:select_tutor_kinds, "For TUTORS, Select the KINDS desired in roster and ratio display:") %><br>
     <%= select_tag(:tutor_kinds, options_for_select([ 
@@ -116,6 +130,7 @@
     %>  <br>
   </div>
   <br>
+  <b>Select the tutors and/or students to be displayed.</b><br>
   <div class="radio_buttons">
     <%= check_box_tag(:select_tutors) %>
     <%= label_tag(:select_tutors, "Select tutors used in the roster and ratio display.") %><br>
@@ -138,16 +153,16 @@
     <%= label_tag(:select_students, "Select students used in the roster and ratio display.") %><br>
     Select the type of identifiers for thes entries. <br>
     <%= radio_button_tag(:s_type, "name", true) %>
-    <%= label_tag(:t_type, "Student identification is by name") %> <br>
+    <%= label_tag(:s_type, "Student identification is by name") %> <br>
     <%= radio_button_tag(:s_type, "email") %>
-    <%= label_tag(:t_type, "Student identification is by email") %> <br>
+    <%= label_tag(:s_type, "Student identification is by email") %> <br>
     <%= radio_button_tag(:s_type, "id") %>
-    <%= label_tag(:t_type, "Student identification is by id - a database record id") %> <br>
+    <%= label_tag(:s_type, "Student identification is by id - a database record id") %> <br>
   </div>
   <div class="textfield">
      You may have muliple students - comma separate the entries<br>
     <%= text_field_tag(:student_identifiers) %>
-    <%= label_tag(:student_identifiers, "Tutor identifier") %> <br>
+    <%= label_tag(:student_identifiers, "Student identifier") %> <br>
   </div>
   <br>
   <div class="actions">

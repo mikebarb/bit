@@ -599,6 +599,9 @@ table, th, td {
 .t-kind-BFL .statusinfo {
   background-color: #ffff00;   //yellow  
 }
+.t-kind-BFLassist .statusinfo {
+  background-color: #eeee00;   //yellow  
+}
 .t-kind-away-action .statusinfo {
   background-color: #ff0000;   //red  
 }
@@ -643,6 +646,9 @@ table, th, td {
 // in order to ensure old entries (imported) remain working
 .t-kind-BFL {
   border: 5px solid #ffff00;   //yellow  
+}
+.t-kind-BFL {
+  border: 5px solid #eeee00;   //lighter yellow  
 }
 .t-kind-away-action {
   border: 5px solid #ff0000;   //red  

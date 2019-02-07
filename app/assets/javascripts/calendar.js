@@ -36,10 +36,10 @@ var myhost = window.location.protocol + '//' + window.location.hostname;   // ba
 var ably;             // messaging global identifier
 
 var ready = function() {
-  console.log("called ready");
+  //console.log("called ready");
   if(document.getElementById('page_name')){
     var page_name = document.getElementById('page_name').innerHTML;
-    console.log("page name: " + page_name);
+    //console.log("page name: " + page_name);
     if((page_name == 'calendar') ||
         (page_name == 'stats')){
       ready_common();
@@ -99,19 +99,19 @@ function ready_calendar() {
     console.log("calendar.js - entered ably subscribe function for calendar - about to call moveelement_update");
     //console.log(JSON.parse(message.data));
     var returnedDomData = message.data;
-    console.log(message.data);
+    //console.log(message.data);
     returnedDomData['ably'] = true;
     moveelement_update(returnedDomData);
-    console.log("ably_receiver - dom update done!!!");
+    //console.log("ably_receiver - dom update done!!!");
   });
-    var calendarChannelListener = function(stateChange) {
-    console.log('stats channel state is ' + stateChange.current);
-    console.log('previous state was ' + stateChange.previous);
-    if(stateChange.reason) {
-      console.log('the reason for the state change was: ' + stateChange.reason.toString());
-    }
-  };
-  calendarChannel.on(calendarChannelListener);
+  //var calendarChannelListener = function(stateChange) {
+    //console.log('stats channel state is ' + stateChange.current);
+    //console.log('previous state was ' + stateChange.previous);
+    //if(stateChange.reason) {
+    //  console.log('the reason for the state change was: ' + stateChange.reason.toString());
+    //}
+  //};
+  //calendarChannel.on(calendarChannelListener);
 
   // some global variables for this page
   //var sf = 5;     // significant figures for dom id components e.g.lesson ids, etc.
@@ -154,7 +154,10 @@ function ready_calendar() {
       flagViewOptions == false ){
     var showList = document.getElementsByClassName("selectsite");
     if(showList.length > 0){
-      showList[0].checked = true;
+      // showList[0].checked = true;  // this shows only the first site
+      for(var i=0;i<showList.length;i++){  // this shows all sites.
+        showList[i].checked = true;
+      }
     }
   }
   selectshows(document);  // call the functions that invokes the checkbox values.
@@ -495,8 +498,8 @@ function ready_calendar() {
     var scmi_editDetail = false;
     var scmi_history = false;
     var scmi_chain = false;
-    var scmi_changes = false;
     var scmi_editSubject = false;
+    var scmi_changes = false;
     var scmi_editEntry = false;
 
     // You can only paste if a source for copy, moverrun or move has been identified.
@@ -529,13 +532,15 @@ function ready_calendar() {
           //scmi_editComment = true;
           scmi_editDetail  = true; // consistency in context menu naming for user.
           scmi_editSubject = true;
+          scmi_changes = true;
           scmi_editEntry   = true;
           //scmi_setPersonStatus = true;     // only in index area for tutors 
         }else{  // in the main schedule area (lesson)
           // first what contextmenu item to display for persons
           scmi_setStatus = scmi_setKind = scmi_editComment = scmi_editDetail = true;
-          scmi_history = true;
-          scmi_changes = true;
+          scmi_history   = true;
+          scmi_changes   = true;
+          scmi_editEntry = true;
           // select actions depending of if a chain element or not
           if(object_run){   // chain element
             scmi_moverun        = true;
@@ -969,7 +974,22 @@ function testSuiteForWeekOfYear(){
         if(currentActivity['object_type'] == 'tutor' ||
            currentActivity['object_type'] == 'student' ){
           var parseId = currentActivity['object_id'].match( /\w(\d+)$/);
-          var myurl = myhost + '/' + currentActivity['object_type'] + 's/' + parseId[1] + '/edit';
+          var myurl = myhost + '/' + currentActivity['object_type'] + 's/change/' + parseId[1];
+        }else{
+          return;
+        }
+        window.open(myurl, '_blank');
+        break;
+      case "inCalendar":
+        // Display this on its own in ot's own calendar.
+        // Display in new tab.
+        // url is "https//:myhost/calendar/flexibledisplay?student_calendar=1&student_name=clark
+        if(currentActivity['object_type'] == 'tutor' ||
+           currentActivity['object_type'] == 'student' ){
+          parseId = currentActivity['object_id'].match( /\w(\d+)$/);
+          myurl  = myhost + '/calendar/flexibledisplay?person_calendar=1&';
+          myurl += currentActivity['object_type'] + '_id=';
+          myurl += parseId[1] ;
         }else{
           return;
         }
@@ -1015,6 +1035,7 @@ function testSuiteForWeekOfYear(){
     var stmi_tutor_kind_oncall        = false;
     var stmi_tutor_kind_onsetup       = false;
     var stmi_tutor_kind_bfl           = false;
+    var stmi_tutor_kind_bflassist     = false;
     var stmi_tutor_kind_training      = false;
     var stmi_tutor_kind_standard      = false;
     var stmi_tutor_kind_called        = false;
@@ -1078,6 +1099,7 @@ function testSuiteForWeekOfYear(){
             break;
           case 'setKind':   // tutor set Kind options
             stmi_tutor_kind_bfl         = true;
+            stmi_tutor_kind_bflassist   = true;
             stmi_tutor_kind_oncall      = true;
             stmi_tutor_kind_onsetup     = true;
             stmi_tutor_kind_training    = true;
@@ -1166,6 +1188,7 @@ function testSuiteForWeekOfYear(){
     setscmi('tutor-status-away', stmi_tutor_status_away);
 
     setscmi('tutor-kind-bfl', stmi_tutor_kind_bfl);
+    setscmi('tutor-kind-bflassist', stmi_tutor_kind_bflassist);
     setscmi('tutor-kind-oncall', stmi_tutor_kind_oncall);
     setscmi('tutor-kind-onsetup', stmi_tutor_kind_onsetup);
     setscmi('tutor-kind-training', stmi_tutor_kind_training);
@@ -2669,18 +2692,13 @@ function ready_stats(){
       window.open(myurl,"_self");
     };
     document.getElementById('refreshstatsstudents').onclick = function(this_mouse_event) {
-      var this_ele = this_mouse_event.currentTarget;
+      //var this_ele = this_mouse_event.currentTarget;
+      //var student_header_ele = document.getElementsByClassName('studentheader')[0];
+      //student_header_ele.classList.add('doing');
       //this_ele.classList.add('doing');
-      //this_ele.style.color = 'green';
-      // call the ajax function to refresh student content only.
-      //setTimeout(function() { 
-      //  alert('Hello');
-      //  updatestatsstudents();
-      //  alert('Goodbye');
-      //}, 4000);
       updatestatsstudents();
+      //student_header_ele.classList.remove('doing');
       //this_ele.classList.remove('doing');
-      //this_ele.style.color = 'black';
     };
   }
 
@@ -3159,7 +3177,7 @@ function ready_stats(){
     eletoreplace.parentNode.replaceChild(elecreated, eletoreplace);
     scoped_showhidestats(eleslot);
   }
-};
+}
 
 // Filter students in the stats page
 function hideshowstudent(){

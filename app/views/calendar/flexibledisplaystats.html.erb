@@ -107,7 +107,7 @@
 
 <div class=index id=index-tutor-students>
   <div class="selectbox floating-box">
-      <h2>Select Student</h2>
+      <h2 class='studentheader'>Select Student</h2>
       <input type="text" id="personInput" placeholder="Shorten list by keying in meaningful characters .." title="Type in characters to reduce name list">
   </div>
 
@@ -146,6 +146,13 @@
         if(cellIndex != 0)
           celldatetime = calLocation[0][cellIndex]['datetime']
           celldow = 'dow' + celldatetime.wday.to_s
+          celltermweek = ''
+          if current_user.termstart != nil && current_user.termweeks != nil        
+            termweek = ((celldatetime - current_user.termstart.to_datetime).to_i)/7
+            if termweek >= 0 && termweek < current_user.termweeks
+              celltermweek = 'W' + (termweek + 1).to_s
+            end
+          end
         end
         if cells.key?("slotid") then
           #cell_id_dom = cells["id_dom"] + "l" + cells["slotid"].rjust(@sf, "0")
@@ -168,7 +175,7 @@
         <% if cells.key?("value") then 
              if cells.key?("datetime") then %>
                <div class='ratio <%= celldow %>'><%= 
-               celldatetime.strftime("%a") %><br><%= celldatetime.strftime("%d%b") %></div>
+               celldatetime.strftime("%a") %><br><%= celldatetime.strftime("%d%b") %><br><%= celltermweek %></div>
              <% else  %>
                <div class='ratio <%= celldow %>'><%= cells["value"].to_s %></div>
              <% end %>

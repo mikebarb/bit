@@ -94,6 +94,57 @@ class CalendarController < ApplicationController
       @options[:startdate] = mystartdate 
       @options[:enddate]   = myenddate 
     end
+    #byebug
+    # person_calendar is a special case that is called from multiple places
+    # that diaplays a single student or tutor in the calendar format.
+    flagPersonCalendar = false
+    if params.has_key?('person_calendar') &&
+       params['person_calendar'] == '1'
+      flagPersonCalendar = true
+      # check if override period provided
+      if current_user.termstart != nil && current_user.termstart != ''
+        if (!(params.has_key?(:daystart) && params[:daystart] != ''))
+          @options[:startdate] = current_user.termstart.beginning_of_week
+        end
+        if (!(params.has_key?(:enddate) && params[:enddate] != ''))
+          @options[:enddate] = @options[:startdate] + current_user.termweeks.weeks
+        end
+      end
+      params["bench"]                   = "roster"
+      params["compress"]                = '1'
+      params["select_roster_default"]   = '0'
+      params["select_student_statuses"] = '0'
+      params["select_student_kinds"]    = '0'
+      params["select_tutor_statuses"]   = '0'
+      params["select_tutor_kinds"]      = '0'
+      # do student scenario
+      if params.has_key?(:student_name) && params[:student_name] != ''
+        params["select_tutor_none"]       = '1'
+        params["select_student_none"]     = '0'
+        params["select_students"]         = '1'
+        params["s_type"]                  = "name"
+        params["student_identifiers"]     = params["student_name"]
+      elsif params.has_key?(:student_id) && params[:student_id] != ''
+        params["select_tutor_none"]       = '1'
+        params["select_student_none"]     = '0'
+        params["select_students"]         = '1'
+        params["s_type"]                  = "id"
+        params["student_identifiers"]     = params["student_id"]
+      elsif params.has_key?(:tutor_name) && params[:tutor_name] != ''
+        params["select_tutor_none"]       = '0'
+        params["select_student_none"]     = '1'
+        params["select_tutors"]           = '1'
+        params["t_type"]                  = "name"
+        params["tutor_identifiers"]       = params["tutor_name"]
+      
+      elsif params.has_key?(:tutor_id) && params[:tutor_id] != ''
+        params["select_tutor_none"]       = '0'
+        params["select_student_none"]     = '1'
+        params["select_tutors"]           = '1'
+        params["t_type"]                  = "id"
+        params["tutor_identifiers"]       = params["tutor_id"]
+      end      
+    end    
     # @tutors and @students are used by the cal
     @tutors = Tutor
               .where.not(status: "inactive")
@@ -106,7 +157,7 @@ class CalendarController < ApplicationController
     # There is a choice of many paramters that can be passed.
     if params[:bench] == "roster" || (flagRefresh && params.has_key?(:roster)) 
       @options[:roster] = true
-      @displayHeader = 'Roster' unless flagRefresh
+      @displayHeader = 'Filtered' unless flagRefresh 
     end
     if params[:bench] == "ratio" || (flagRefresh && params.has_key?(:ratio))
       @options[:ratio] = true
@@ -128,9 +179,9 @@ class CalendarController < ApplicationController
           @options[k.intern] = v
         end
       end
-      @options.each do |k, v|
-        logger.debug "options: " + k.inspect + ' => ' + v.inspect
-      end
+      #@options.each do |k, v|
+      #  logger.debug "options: " + k.inspect + ' => ' + v.inspect
+      #end
     end # now override any other settings
     
     unless flagRefresh      # the options are already set
@@ -248,7 +299,7 @@ class CalendarController < ApplicationController
                 @options[:student_statuses] = params[:student_statuses]
               end
             end
-            
+
             # detect if selection by kinds is requested
             # if so, then load the requested kinds - else do not create the option
             # For tutors
@@ -272,7 +323,7 @@ class CalendarController < ApplicationController
                   a
                 }
                 # we only pass into the display utility the [record ids, ...]
-                if params[:t_type] == 'name'   # students will be identified by name
+                if params[:s_type] == 'name'   # students will be identified by name
                   desiredstudents = @students.reduce([]){ |a, o|
                     t.each do |u|
                       if o.pname.downcase.include? u
@@ -283,7 +334,7 @@ class CalendarController < ApplicationController
                     a
                   }
                 end
-                if params[:t_type] == 'email'   # students will be identified by email
+                if params[:s_type] == 'email'   # students will be identified by email
                   desiredstudents = @students.reduce([]){ |a, o|
                     t.each do |u|
                       logger.debug "checking student " + o.inspect
@@ -295,7 +346,7 @@ class CalendarController < ApplicationController
                     a
                   }
                 end
-                if params[:t_type] == 'id'   # clean up students will be identified by id
+                if params[:s_type] == 'id'   # clean up students will be identified by id
                   desiredstudents = @students.reduce([]){ |a, o|
                     t.each do |u|
                       if(/(\D+)/.match(u).nil? && (o.id == u.to_i))

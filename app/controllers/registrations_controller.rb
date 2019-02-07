@@ -57,6 +57,16 @@ class RegistrationsController < Devise::RegistrationsController
         flagupdate = 1
         updatetext = updatetext + " - history_forward"  
       end
+      if @user.termstart != update_preferences_params[:termstart]
+        @user.termstart = update_preferences_params[:termstart]
+        flagupdate = 1
+        updatetext = updatetext + " - termstart"  
+      end
+      if @user.termweeks != update_preferences_params[:termweeks]
+        @user.termweeks = update_preferences_params[:termweeks]
+        flagupdate = 1
+        updatetext = updatetext + " - termweeks"  
+      end
       logger.debug "flagupdate: " + flagupdate.inspect + " user_preferences: " + @user.inspect
       if flagupdate == 1                   # something changed - need to save
         if @user.save
@@ -137,7 +147,8 @@ class RegistrationsController < Devise::RegistrationsController
 
   def update_preferences_params
     params.require(:user).permit(:email, :daystart, :daydur, :ssurl, :sstab,
-                                 :history_back, :history_forward)
+                                 :history_back, :history_forward,
+                                 :termstart, :termweeks)
   end
 
   def sign_up_params

@@ -229,6 +229,13 @@
       if(cellIndex != 0)
         celldatetime = calLocation[0][cellIndex]['datetime']
         celldow = 'dow' + celldatetime.wday.to_s
+        celltermweek = ''
+        if current_user.termstart != nil && current_user.termweeks != nil        
+          termweek = ((celldatetime - current_user.termstart.to_datetime).to_i)/7
+          if termweek >= 0 && termweek < current_user.termweeks
+            celltermweek = 'W' + (termweek + 1).to_s
+          end
+        end
       end
       if cells.key?("slotid") then 
           #cell_id_dom = cells["id_dom"] + "l" + cells["slotid"].rjust(@sf, "0")
@@ -254,8 +261,12 @@
                 locals: {slot: slot, lesson: entry} %>
           <% end %>
         <% end %>
-      <% elsif cells.key?("value") then %>     
-        <%= cells["value"].to_s %>
+      <% elsif cells.key?("value") then %>
+        <% if cellIndex > 0  # not first column %>
+          <%= cells["value"].sub('-', "-#{celltermweek}-") %>
+        <% else %>
+          <%= cells["value"].to_s %>
+        <% end %>
       <% end %>
       </td>
     <% end %>
@@ -333,6 +344,9 @@
       <li id="context-chain" class="context-menu__item" data-action="chain">
         <p>Chain</p>
       </li>    
+      <li id="context-inCalendar" class="context-menu__item" data-action="inCalendar">
+        <p>in own Calendar</p>
+      </li>  
       <li id="context-changes" class="context-menu__item" data-action="changes">
         <p>Changes</p>
       </li>  
@@ -368,6 +382,9 @@
       </li>
       <li id="tutor-kind-bfl" class="tertiary-menu__choice" data-choice="tutor-kind-BFL">
         <p>tutor-kind: BFL</p>
+      </li>
+      <li id="tutor-kind-bflassist" class="tertiary-menu__choice" data-choice="tutor-kind-BFLassist">
+        <p>tutor-kind: BFL assist</p>
       </li>
       <li id="tutor-kind-oncall" class="tertiary-menu__choice" data-choice="tutor-kind-onCall">
         <p>tutor-kind: On Call</p>
