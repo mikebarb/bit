@@ -1620,10 +1620,10 @@ class AdminsController < ApplicationController
         @students[i]['oldpname']   = s[5]  if s[5]  && s[5].match(/\w+/)
         @students[i]['pname']      = s[6]  if s[6]  && s[6].match(/\w+/)  
         @students[i]['sex']        = s[9]  if s[9]  && s[9].match(/\w+/)  
-        @students[i]['comment']    = s[11] if s[10] && s[10].match(/\w+/)  
-        @students[i]['status']     = s[13] if s[12] && s[12].match(/\w+/)  
-        @students[i]['year']       = s[15] if s[14] && s[14].match(/\w+/)
-        @students[i]['study']      = s[17] if s[16] && s[16].match(/\w+/)
+        @students[i]['comment']    = s[11] if s[11] && s[11].match(/\w+/)  
+        @students[i]['status']     = s[13] if s[13] && s[13].match(/\w+/)  
+        @students[i]['year']       = s[15] if s[15] && s[15].match(/\w+/)
+        @students[i]['study']      = s[17] if s[17] && s[17].match(/\w+/)
         # possibly a merge is required
         @students[i]['merge']      = s[4] if s[4].match(/\w+/)
       end
@@ -1738,27 +1738,27 @@ class AdminsController < ApplicationController
         @student = Student.find(s['id'])   # get the record & update
         if @student    # record exists - now to update
           if s['pname'] && @student.pname != s['pname']
-            @students[i]['message'] += "update pname:" + @student.pname.inspect + "=>" + s['pname']
+            @students[i]['message'] += "#update pname:" + @student.pname.inspect + "=>" + s['pname']
             @student.pname = s['pname']
           end
           if s['comment'] && @student.comment != s['comment']
-            @students[i]['message'] += "update comment:" + @student.study.inspect + "=>" + s['comment']
+            @students[i]['message'] += "#update comment:" + @student.comment.inspect + "=>" + s['comment']
             @student.comment = s['comment']
           end
           if s['status'] && @student.status != s['status']
-            @students[i]['message'] += "update status:" + @student.status.inspect + "=>" + s['status']
+            @students[i]['message'] += "#update status:" + @student.status.inspect + "=>" + s['status']
             @student.status = s['status']
           end
           if s['year'] && @student.year != s['year']
-            @students[i]['message'] += "update year:" + @student.year.inspect + "=>" + s['year']
+            @students[i]['message'] += "#update year:" + @student.year.inspect + "=>" + s['year']
             @student.year = s['year']
           end
           if s['study'] && @student.study != s['study']
-            @students[i]['message'] += "update study:" + @student.study.inspect + "=>" + s['study']
+            @students[i]['message'] += "#update study:" + @student.study.inspect + "=>" + s['study']
             @student.study = s['study']
           end
           if s['sex'] && @student.sex != s['sex']
-            @students[i]['message'] += "update sex:" + @student.sex.inspect + "=>" + s['sex']
+            @students[i]['message'] += "#update sex:" + @student.sex.inspect + "=>" + s['sex']
             @student.sex = s['sex']
           end
           if @students[i]['message'].length > 0
