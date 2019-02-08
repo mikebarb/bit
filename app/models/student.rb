@@ -5,11 +5,24 @@ class Student < ApplicationRecord    # required migrating to rails 5.0
   accepts_nested_attributes_for :lessons
 
   validates :pname, presence:true, uniqueness:true
-  validates :sex, allow_blank: true, format: {
-    with: %r{\A(male|female)\z},
-    message: 'must be male, female or blank.'
+  validates :sex, allow_blank: false, format: {
+    with: %r{\A(male|female|unknown)\z},
+    message: 'must be male, female or unknown.'
   }
-  
+  # additional validations as of 8/2/19
+=begin
+  validates :comment, presence:true, format: {
+    with: %r{\w+},
+    message: "You must at least have the free lesson details"
+  }
+  validates :status, presence:true, allow_blank: false, format: {
+    with: %r{\A(inactive|new|standard|fortnightly|onetoone)\z},
+    message: 'must be male, female or unknown.'
+  }
+  validates :year, presence:true, allow_blank: false
+  validates :study, presence:true, allow_blank: false
+=end
+
   before_destroy :ensure_not_referenced_by_lessons
   after_save  :record_change_save
   after_destroy :record_change_destroy

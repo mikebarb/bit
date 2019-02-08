@@ -80,13 +80,29 @@
 }
 
 .n-status-onSetup {
-  background-color: aquamarine;
-  border-color: green;
+  background-color: Wheat;
+  border-color: Tan;
 }
+
+.n-status-allocate {
+  background-color: Orange;
+  border-color: DarkOrange;
+}
+
+.n-status-free {
+  background-color: #75e052;
+  border-color: #85c270;
+}
+
 
 .n-status-on_BFL {
   background-color: lemonchiffon;
   border-color: yellow;
+}
+
+.n-status-routine {
+  background-color: lavenderblush;
+  border-color: hotpink;
 }
 
 .n-status-standard {
@@ -94,9 +110,19 @@
   border-color: hotpink;
 }
 
-.n-status-free {
-  background-color: #75e052;
-  border-color: #85c270;
+.n-status-flexible {
+  background-color: Plum;
+  border-color: MediumOrchid;
+}
+
+.n-status-global {
+  background-color: DarkKhaki;
+  border-color: Olive;
+}
+
+.n-status-park {
+  background-color: DarkGrey;
+  border-color: Grey;
 }
 
 

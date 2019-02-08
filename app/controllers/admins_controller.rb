@@ -1546,7 +1546,7 @@ class AdminsController < ApplicationController
     startrow = 1
     # first get the 3 columns - Student's Name + Year, Focus, study percentages
     #This is now all that we get
-    range = sheet_name + "!A#{startrow}:T"
+    range = sheet_name + "!A#{startrow}:U"
     response = service.get_spreadsheet_values(spreadsheet_id, range)
     @students_raw = Array.new(response.values.length){Array.new(11)}
     #logger.debug "students: " + @students_raw.inspect
@@ -1569,7 +1569,7 @@ class AdminsController < ApplicationController
     sheetheader = @students_raw[0]
     flagHeaderOK = true
     expectedheader = [1, "ID", "Given Name", "Family Name", "MERGE",
-                      "Preferred Name", "UPDATE NAME", "Initials", "Sex",
+                      "Preferred Name", "UPDATE NAME", "Initials", "Sex", "UPDATE SEX",
                       "Comment", "UPDATE COMMENT", "Status", "UPDATE STATUS",
                       "Year", "UPDATE YEAR", "Study Percentages",
                       "UPDATE STUDY PERCENTAGES", "Email", "Phone",
@@ -1609,19 +1609,21 @@ class AdminsController < ApplicationController
         # Will need to be created. Need main values as opposed to
         # update primary values (ignore spreadsheet 'update' values).
         @students[i]['pname']      = s[5]
-        @students[i]['comment']    = s[9]
-        @students[i]['status']     = s[11]
-        @students[i]['year']       = s[13]
-        @students[i]['study']      = s[15]
+        @students[i]['sex']        = s[8]
+        @students[i]['comment']    = s[10]
+        @students[i]['status']     = s[12]
+        @students[i]['year']       = s[14]
+        @students[i]['study']      = s[16]
       else  # we only want to update the database
         # this loads the update columns only and only if spreadsheet has content.
         @students[i]['id']         = s[1].to_i    # already know it is there
         @students[i]['oldpname']   = s[5]  if s[5]  && s[5].match(/\w+/)
         @students[i]['pname']      = s[6]  if s[6]  && s[6].match(/\w+/)  
-        @students[i]['comment']    = s[10] if s[10] && s[10].match(/\w+/)  
-        @students[i]['status']     = s[12] if s[12] && s[12].match(/\w+/)  
-        @students[i]['year']       = s[14] if s[14] && s[14].match(/\w+/)
-        @students[i]['study']      = s[16] if s[16] && s[16].match(/\w+/)
+        @students[i]['sex']        = s[9]  if s[9]  && s[9].match(/\w+/)  
+        @students[i]['comment']    = s[11] if s[10] && s[10].match(/\w+/)  
+        @students[i]['status']     = s[13] if s[12] && s[12].match(/\w+/)  
+        @students[i]['year']       = s[15] if s[14] && s[14].match(/\w+/)
+        @students[i]['study']      = s[17] if s[16] && s[16].match(/\w+/)
         # possibly a merge is required
         @students[i]['merge']      = s[4] if s[4].match(/\w+/)
       end
@@ -1643,7 +1645,7 @@ class AdminsController < ApplicationController
       if s.has_key?('id') && s.has_key?('oldpname')
         unless @allDbStudentsIndex.has_key?(s['id'])  # this spreadsheet id not in the database
                 flagIdOK = false
-                idErrors += "Failed spreadsheet id not in database row #{s['row']} - #{s['id']}"
+                idErrors += "Failed spreadsheet id not in database row #{s['row']} - #{s['id']}   "
                 next
         end
         if s['oldpname'] != @allDbStudentsIndex[s['id']].pname    # Still possibly OK
@@ -1716,6 +1718,7 @@ class AdminsController < ApplicationController
         @student.status  =  @students[i]['status']  if @students[i].has_key?('status')
         @student.year    =  @students[i]['year']    if @students[i].has_key?('year')
         @student.study   =  @students[i]['study']   if @students[i].has_key?('study')
+        @student.sex     =  @students[i]['sex']     if @students[i].has_key?('sex')
         #logger.debug "create student #{i.to_s}: " + @student.inspect
         if @flagDbUpdateRun
           logger.debug "update option selected - creating record"
@@ -1753,6 +1756,10 @@ class AdminsController < ApplicationController
           if s['study'] && @student.study != s['study']
             @students[i]['message'] += "update study:" + @student.study.inspect + "=>" + s['study']
             @student.study = s['study']
+          end
+          if s['sex'] && @student.sex != s['sex']
+            @students[i]['message'] += "update sex:" + @student.sex.inspect + "=>" + s['sex']
+            @student.sex = s['sex']
           end
           if @students[i]['message'].length > 0
             #logger.debug "saved changes row #{(i+1).to_s} " + @students[i]['message']

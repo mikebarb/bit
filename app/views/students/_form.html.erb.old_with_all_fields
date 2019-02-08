@@ -12,8 +12,20 @@
   <% end %>
 
   <div class="field">
+    <%= f.label 'Given Name' %><br>
+    <%= f.text_field :gname %>
+  </div>
+  <div class="field">
+    <%= f.label 'Family Name' %><br>
+    <%= f.text_field :sname %>
+  </div>
+  <div class="field">
     <%= f.label 'Preferred Name' %><br>
     <%= f.text_field :pname %>
+  </div>
+  <div class="field">
+    <%= f.label :initials %><br>
+    <%= f.text_field :initials %>
   </div>
   <div class="field">
     <%= f.label :sex %><br>
@@ -35,7 +47,27 @@
     <%= f.label :study %><br>
     <%= f.text_field :study %>
   </div>
-
+  <div class="field">
+    <%= f.label :email %><br>
+    <%= f.text_field :email %>
+  </div>
+  <div class="field">
+    <%= f.label :phone %><br>
+    <%= f.text_field :phone %>
+  </div>
+  <div class="field">
+    <%= f.label :invcode %><br>
+    <%= f.text_field :invcode %>
+  </div>
+  <div class="field">
+    <%= f.label :daycode %><br>
+    <%= f.text_field :daycode %>
+  </div>
+  <div class="field">
+    <%= f.label :preferences %><br>
+    <%= f.text_field :preferences %>
+  </div>
+  
   <div class="actions">
     <%= f.submit %>
   </div>

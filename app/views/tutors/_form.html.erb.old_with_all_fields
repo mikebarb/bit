@@ -12,8 +12,20 @@
   <% end %>
 
   <div class="field">
+    <%= f.label :gname %><br>
+    <%= f.text_field :gname %>
+  </div>
+  <div class="field">
+    <%= f.label :sname %><br>
+    <%= f.text_field :sname %>
+  </div>
+  <div class="field">
     <%= f.label :pname %><br>
     <%= f.text_field :pname %>
+  </div>
+  <div class="field">
+    <%= f.label :initials %><br>
+    <%= f.text_field :initials %>
   </div>
   <div class="field">
     <%= f.label :sex %><br>

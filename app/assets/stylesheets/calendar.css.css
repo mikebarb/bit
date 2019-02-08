@@ -19,20 +19,56 @@
   width: 74%; }
 
 .n-status-onCall, #lesson-status-oncall {
-  background-color: aqua;
-  border-color: blue; }
+  background-color: cornflowerblue;
+  border-color: blue; 
+}
 
 .n-status-onSetup, #lesson-status-onsetup {
-  background-color: aquamarine;
-  border-color: green; }
+  background-color: Wheat;
+  border-color: Tan;
+}
+
+.n-status-allocate, #lesson-status-allocate {
+  background-color: Orange;
+  border-color: DarkOrange;
+}
+
+.n-status-free, #lesson-status-free {
+  background-color: #75e052;
+  border-color: #85c270;
+}
 
 .n-status-on_BFL, #lesson-status-on_BFL {
   background-color: lemonchiffon;
-  border-color: yellow; }
+  border-color: yellow; 
+}
+
+.n-status-routine, #lesson-status-routine {
+  background-color: lavenderblush;
+  border-color: hotpink;
+}
+
 
 .n-status-standard, #lesson-status-standard {
   background-color: lavenderblush;
-  border-color: hotpink; }
+  border-color: hotpink;
+}
+
+.n-status-flexible, #lesson-status-flexible {
+  background-color: Plum;
+  border-color: MediumOrchid;
+}
+
+.n-status-global, #lesson-status-global {
+  background-color: DarkKhaki;
+  border-color: Olive;
+}
+
+.n-status-park, #lesson-status-park {
+  background-color: DarkGrey;
+  border-color: Grey;
+}
+
 
 .tutor {
   margin: 1px;
