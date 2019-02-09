@@ -1449,46 +1449,68 @@ function testSuiteForWeekOfYear(){
     var htmlsegment = "<h4>" + role + ': ' + hd['pname'] + "</h4>";
     htmlsegment += '<div id="closehistory"><svg height="300" width="300"><line x1="1" y1="1" x2="15" y2="15" style="stroke:#000; stroke-width:4" /><line x1="15" y1="1" x2="1" y2="15" style="stroke:#000; stroke-width:4" /></svg></div>';
     htmlsegment += "<table>";
-    htmlsegment += "<tr><td>Kind</td><td>Status</td><td>Day Time</td><td>Site</td>"; 
+    htmlsegment += "<tr><td>Lesson Kind</td>";
     if(role == 'student'){
-      htmlsegment += "<td>Tutor</td><td>Other Students</td></tr>";
+      htmlsegment += "<td>Student Status</td><td>Day Time</td><td>Site</td><td>Tutor</td><td>Other Students</td></tr>";
     }else{  // role is a tutor
-      htmlsegment += "<td>Students</td><td>Other Tutors</td></tr>";
+      htmlsegment += "<td>Tutor Status</td><td>Day Time</td><td>Site</td><td>Students</td><td>Other Tutors</td></tr>";
     }
+    var htmlrowstart = "";
+    var htmlpersonstatus = "";
     hd['lessons'].forEach( function(lesson){
-        htmlsegment += "<td>" + lesson['kind'] + "</td>";
-        htmlsegment += "<td>" + lesson['status'] + "</td>";
-        htmlsegment += "<td>" + lesson['daytime'] + "</td>";
-        htmlsegment += "<td>" + lesson['site'] + "</td>";
-        
-        // get students - ensure only other students if displaying a student
-        var htmlstudents = "<td>";
-        lesson['students'].forEach( function(student){
-          if((role == 'student') && (student.student == hd['pname'])){
-            // don't add this student to html list.
+      //var htmlsegmentlesson1 = "<td>" + lesson['status'] + "</td>";
+      //var htmlsegmentlesson    += "<td>" + lesson['kind'] + "</td>";
+      var htmlsegmentlesson = "<td>" + lesson['daytime'] + "</td>";
+      htmlsegmentlesson    += "<td>" + lesson['site'] + "</td>";
+      
+      // get students - ensure only other students if displaying a student
+      var htmlstudents = "<td>";
+      lesson['students'].forEach( function(student){
+        if((role == 'student') && (student.name == hd['pname'])){
+          // don't add this student to html list.
+          // however, dull this table row if this student status is not rostered
+          if(['attended', 'scheduled', 'deal'].includes(student.status)){
+            htmlrowstart = "<tr>";
           }else{
-            htmlstudents += student.student + "<br>";
+            htmlrowstart = "<tr class=dullme>";
           }
-        });
-        htmlstudents += "</td>";
-        
-        // get tutors - ensure only other tutors if displaying a tutor
-        var htmltutors = "<td>";
-        lesson['tutors'].forEach( function(tutor){
-          if((role == 'tutor') && (tutor.tutor == hd['pname'])){
-            // don't add this student to html list.
+          htmlpersonstatus = student.status;
+        }else{
+          if(['attended', 'scheduled', 'deal'].includes(student.status)){
+            htmlstudents += student.name + "<br>";
           }else{
-            htmltutors += tutor.tutor + "<br>";
+            htmlstudents += "<span class=dullme>" + student.name + "</span><br>";
           }
-        });
-        htmltutors += "</td>";
-        // now place them in the html output in the correct order
-        if(role == 'student'){
-          htmlsegment += htmltutors + htmlstudents;
-        }else{  // role is a tutor
-          htmlsegment += htmlstudents + htmltutors;
         }
-      htmlsegment += "</tr>";
+      });
+      htmlstudents += "</td>";
+      
+      // get tutors - ensure only other tutors if displaying a tutor
+      var htmltutors = "";
+      lesson['tutors'].forEach( function(tutor){
+        if((role == 'tutor') && (tutor.name == hd['pname'])){
+          // don't add this student to html list.
+          // however, dull this table row if this tutor status is not rostered
+          if(['attended', 'notified', 'confirmed', 'scheduled', 'de1448al'].includes(tutor.status)){
+            htmlrowstart = "<tr>";
+          }else{
+            htmlrowstart = "<tr class=dullme>";
+          }
+          htmlpersonstatus = tutor.status;
+        }else{
+          htmltutors += tutor.name + (htmltutors.length?"<br>":"");
+        }
+      });
+      htmltutors = "<td>" + htmltutors + "</td>";
+      // now place them in the html output in the correct order
+      if(role == 'student'){
+        htmlsegmentlesson += htmltutors + htmlstudents;
+      }else{  // role is a tutor
+        htmlsegmentlesson += htmlstudents + htmltutors;
+      }
+      htmlpersonstatus = "<td>" + htmlpersonstatus + "</td>";
+      htmlsegment += htmlrowstart + "<td>" + lesson['kind'] + "</td>" +
+                     htmlpersonstatus + htmlsegmentlesson +"</tr>";
     });
     htmlsegment += "</table>";
     return htmlsegment;
@@ -2417,6 +2439,12 @@ function selectshows_scoped(ele_checkbox, ele_scope) {
   for(var i = 0; i < showList.length; i++){
     //console.log("case: " + showList[i].id);
     switch(showList[i].id){
+      case "hideAway":
+        showhidecomments(document.getElementsByClassName("s-status-away"),
+                         showList[i].checked);
+        showhidecomments(document.getElementsByClassName("t-status-away"),
+                         showList[i].checked);
+        break;
       case "hidetutors":
         // first check if either students or tutors need to be displayed.
         if(hidetutors_state || hidestudents_state) {

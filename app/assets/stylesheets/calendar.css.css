@@ -268,6 +268,10 @@ table, th, td {
 .hideme {
   display: none; }
 
+.dullme {
+  background:grey; 
+}
+
 #personInput {
   background-position: 10px 12px;
   background-repeat: no-repeat;

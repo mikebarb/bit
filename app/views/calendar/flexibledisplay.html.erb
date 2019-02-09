@@ -102,6 +102,11 @@
             <input id=hidelessonsGlobal   class=selectshow onclick="selectshows(this)" type="checkbox" >
             global
           </label> )
+          <label id=hideAwaylabel class='checkboxzone' for="hideAway">
+            <input id=hideAway class=selectshow onclick="selectshows(this)" type="checkbox" >
+            status-away
+          </label>
+          
         </div>
         
         <input id=enableQuickStatus type="checkbox" > Enable quick setting of status to
@@ -470,23 +475,20 @@
       <li id="lesson-status-onsetup" class="tertiary-menu__choice" data-choice="lesson-status-onSetup">
         <p>lesson-kind: onSetup</p>
       </li>
+      <li id="lesson-status-allocate" class="tertiary-menu__choice" data-choice="lesson-status-allocate">
+        <p>lesson-kind: allocate</p>
+      </li>
       <li id="lesson-status-free" class="tertiary-menu__choice" data-choice="lesson-status-free">
         <p>lesson-kind: free</p>
       </li>
       <li id="lesson-status-on_BFL" class="tertiary-menu__choice" data-choice="lesson-status-on_BFL">
         <p>lesson-kind: on BFL</p>
       </li>
-      <li id="lesson-status-standard" class="tertiary-menu__choice" data-choice="lesson-status-standard">
-        <p>lesson-kind: standard</p>
-      </li>
       <li id="lesson-status-routine" class="tertiary-menu__choice" data-choice="lesson-status-routine">
         <p>lesson-kind: routine</p>
       </li>
       <li id="lesson-status-flexible" class="tertiary-menu__choice" data-choice="lesson-status-flexible">
         <p>lesson-kind: flexible</p>
-      </li>
-      <li id="lesson-status-allocate" class="tertiary-menu__choice" data-choice="lesson-status-allocate">
-        <p>lesson-kind: allocate</p>
       </li>
       <li id="lesson-status-global" class="tertiary-menu__choice" data-choice="lesson-status-global">
         <p>lesson-kind: global</p>

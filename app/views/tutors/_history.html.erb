@@ -3,8 +3,7 @@
   <thead>
     <tr>
       <th>ID</th>
-      <th>Type</th>
-      <th>Status</th>
+      <th>Lesson Kind</th>
       <th>Day & Time</th>
       <th>Location</th>
       <th>Tutors</th>
@@ -17,17 +16,24 @@
     <tr>
       <td><%= r[0] %></td>
       <td><%= r[1] %></td>
-      <td><%= r[6] %></td>
       <td><%= r[2].strftime("%a %l:%M %p %d/%m/%Y") %></td>
       <td><%= r[3] %></td>
       <td>
         <% r[4].each do |t| %>
-          <%= t %><br>
+          <%= t[0] %> 
+          <% if t[1] != "" %>
+            (<%= t[1] %>)
+          <% end %>
+          <br>
         <% end %>
       </td>
       <td>
         <% r[5].each do |s| %>
-          <%= s %><br>
+          <%= s[0] %> 
+          <% if s[1] != "" %>
+            (<%= s[1] %>)
+          <% end %>
+          <br>
         <% end %>
       </td>
     </tr>

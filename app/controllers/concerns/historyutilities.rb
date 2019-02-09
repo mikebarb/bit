@@ -31,7 +31,7 @@ module Historyutilities
     tutrole_objs = Tutrole.where (["tutor_id = ?", tutor_id])
     # get all the lessons found through tutroles 
     lesson_ids = tutrole_objs.map { |obj| obj.lesson_id }.uniq
-    lesson_objs = Lesson.includes(:slot, :students, :tutors)
+    lesson_objs = Lesson.includes(:slot, roles: :student, tutroles: :tutor)
                         .where( id: lesson_ids, slots: { timeslot: startdate..enddate})
                         .order('slots.timeslot').reverse_order
     @tutorhistory["lessons"] = lesson_objs.map { |obj| [
@@ -39,11 +39,9 @@ module Historyutilities
                                             obj.status,
                                             obj.slot.timeslot,
                                             obj.slot.location,
-                                            obj.tutors.map {|t| t.pname },
-                                            obj.students.map{|s| s.pname },
-                                            obj.tutroles.where(tutor_id: tutor_id).first.status == nil ?
-                                              "" : obj.tutroles.where(tutor_id: tutor_id).first.status
-                                            ] }
+                                            obj.tutroles.map {|r| [r.tutor.pname,   r.status]},
+                                            obj.roles.map    {|r| [r.student.pname, r.status]}
+                                          ] }
     @tutorhistory
   end
 
@@ -68,16 +66,23 @@ module Historyutilities
                                             obj.status,
                                             obj.slot.timeslot,
                                             obj.slot.location,
+                                            obj.tutroles.map {|r| [r.tutor.pname,   r.status]},
+                                            obj.roles.map    {|r| [r.student.pname, r.status]}
+                                          ] }
+=begin
+    @tutorhistory["lessons"] = lesson_objs.map { |obj| [
+                                            obj.id,
+                                            obj.status,
+                                            obj.slot.timeslot,
+                                            obj.slot.location,
                                             obj.tutors.map {|t| t.pname },
                                             obj.students.map{|s| s.pname },
                                             obj.tutroles.where(tutor_id: tutor_id).first.status == nil ?
                                               "" : obj.tutroles.where(tutor_id: tutor_id).first.status
                                             ] }
+=end
     @tutorhistory
   end
-
-
-
 
   # Obtain all the details about the current chaing the student is in.
   # @studenthistory holds everything required in the view
@@ -96,15 +101,15 @@ module Historyutilities
                         .where( id: lesson_ids)
                         .order('slots.timeslot')
     @studenthistory["lessons"] = lesson_objs.map { |obj| [
-                                            obj.id,
-                                            obj.status,
-                                            obj.slot.timeslot,
-                                            obj.slot.location,
-                                            obj.tutors.map {|t| t.pname },
-                                            obj.students.map{|s| s.pname },
-                                            obj.roles.where(student_id: student_id).first.status == nil ?
-                                              "" : obj.roles.where(student_id: student_id).first.status
-                                            ] }
+                                  obj.id,
+                                  obj.status,
+                                  obj.slot.timeslot,
+                                  obj.slot.location,
+                                  obj.tutroles.map {|r| [r.tutor.pname,   r.status]},
+                                  obj.roles.map    {|r| [r.student.pname, r.status]},
+                                  obj.roles.where(student_id: student_id).first.status == nil ?
+                                    "" : obj.roles.where(student_id: student_id).first.status
+                                  ] }
     @studenthistory
   end
 
@@ -133,9 +138,18 @@ module Historyutilities
     role_objs = Role.where (["student_id = ?", student_id])
     # get all the lessons found through tutroles 
     lesson_ids = role_objs.map { |obj| obj.lesson_id }.uniq
-    lesson_objs = Lesson.includes(:slot, :students, :tutors)
+    lesson_objs = Lesson.includes(:slot, roles: :student, tutroles: :tutor)
                         .where( id: lesson_ids, slots: { timeslot: startdate..enddate})
                         .order('slots.timeslot').reverse_order
+    @studenthistory["lessons"] = lesson_objs.map { |obj| [
+                                            obj.id,
+                                            obj.status,
+                                            obj.slot.timeslot,
+                                            obj.slot.location,
+                                            obj.tutroles.map {|r| [r.tutor.pname,   r.status]},
+                                            obj.roles.map    {|r| [r.student.pname, r.status]}
+                                          ] }
+=begin
     @studenthistory["lessons"] = lesson_objs.map { |obj| [
                                             obj.id,
                                             obj.status,
@@ -146,6 +160,7 @@ module Historyutilities
                                             obj.roles.where(student_id: student_id).first.status == nil ?
                                               "" : obj.roles.where(student_id: student_id).first.status
                                             ] }
+=end
     @studenthistory
   end
 

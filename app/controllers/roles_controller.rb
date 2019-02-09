@@ -871,7 +871,6 @@ class RolesController < ApplicationController
   # Web sockets is used to send the updates to the browsers.
   def action_to_away_controller(thisrole)
     logger.debug("+++++++++++++++++++role status has changed" )
-    byebug
     thisrole_lesson = Lesson.includes(:slot).find(thisrole.lesson_id)
     #new_slot_time = @self_lesson.slot.datetime
     #new_slot_location = @self_lesson.slot.location
