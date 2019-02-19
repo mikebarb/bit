@@ -10,7 +10,6 @@ class Student < ApplicationRecord    # required migrating to rails 5.0
     message: 'must be male, female or unknown.'
   }
   # additional validations as of 8/2/19
-=begin
   validates :comment, presence:true, format: {
     with: %r{\w+},
     message: "You must at least have the free lesson details"
@@ -21,7 +20,7 @@ class Student < ApplicationRecord    # required migrating to rails 5.0
   }
   validates :year, presence:true, allow_blank: false
   validates :study, presence:true, allow_blank: false
-=end
+  # end of additional validation 
 
   before_destroy :ensure_not_referenced_by_lessons
   after_save  :record_change_save

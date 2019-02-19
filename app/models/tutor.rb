@@ -11,7 +11,6 @@ class Tutor < ApplicationRecord    # required migrating to rails 5.0
   }
 
   # additional validations as of 8/2/19
-=begin
   validates :subjects, presence:true, format: {
     with: %r{\w+},
     message: "You must have english maths and science."
@@ -35,7 +34,7 @@ class Tutor < ApplicationRecord    # required migrating to rails 5.0
     with: %r{\A(yes|no)\z},
     message: 'bfl must be yes or no.'
   }
-=end
+  # end of additional validations
 
   before_destroy :ensure_not_referenced_by_lessons
   after_save  :record_change_save

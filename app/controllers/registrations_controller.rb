@@ -67,6 +67,21 @@ class RegistrationsController < Devise::RegistrationsController
         flagupdate = 1
         updatetext = updatetext + " - termweeks"  
       end
+      if @user.rosterstart != update_preferences_params[:rosterstart]
+        @user.rosterstart = update_preferences_params[:rosterstart]
+        flagupdate = 1
+        updatetext = updatetext + " - rosterstart"  
+      end
+      if @user.rosterdays != update_preferences_params[:rosterdays]
+        @user.rosterdays = update_preferences_params[:rosterdays]
+        flagupdate = 1
+        updatetext = updatetext + " - rosterdays"  
+      end
+      if @user.rosterssurl != update_preferences_params[:rosterssurl]
+        @user.rosterssurl = update_preferences_params[:rosterssurl]
+        flagupdate = 1
+        updatetext = updatetext + " - rosterssurl"  
+      end
       logger.debug "flagupdate: " + flagupdate.inspect + " user_preferences: " + @user.inspect
       if flagupdate == 1                   # something changed - need to save
         if @user.save
@@ -148,7 +163,8 @@ class RegistrationsController < Devise::RegistrationsController
   def update_preferences_params
     params.require(:user).permit(:email, :daystart, :daydur, :ssurl, :sstab,
                                  :history_back, :history_forward,
-                                 :termstart, :termweeks)
+                                 :termstart, :termweeks, :rosterstart, 
+                                 :rosterdays, :rosterssurl)
   end
 
   def sign_up_params

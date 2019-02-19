@@ -16,14 +16,21 @@
     <%= f.number_field :daydur %>
   </div> 
   
+  <h3>Roster - for use exporting roster to google sheets</h3>
+  <p>This provides the period to display in the roster.</p>
   <div class="field">
-    <%= f.label "Google Spreadsheet URL" %><br>
-    <%= f.url_field :ssurl %>
+    <%= f.label "Date of first day of roster" %><br>
+    <%= f.date_field :rosterstart %>
   </div> 
 
   <div class="field">
-    <%= f.label "Google spreadsheet TAB name" %><br>
-    <%= f.text_field :sstab %>
+    <%= f.label "Number of days to display in roster" %><br>
+    <%= f.number_field :rosterdays %>
+  </div> 
+
+  <div class="field">
+    <%= f.label "Roster Google Spreadsheet URL" %><br>
+    <%= f.url_field :rosterssurl %>
   </div> 
 
   <h3>History - days to display</h3>
@@ -48,6 +55,20 @@
     <%= f.label "Number of week in this  term" %><br>
     <%= f.number_field :termweeks %>
   </div> 
+
+  <h3>Google Sheets Selections - for use when importing data from google sheets.</h3>
+  <p>This is for use by administrators only.</p>
+
+  <div class="field">
+    <%= f.label "Google Spreadsheet URL" %><br>
+    <%= f.url_field :ssurl %>
+  </div> 
+
+  <div class="field">
+    <%= f.label "Google spreadsheet TAB name" %><br>
+    <%= f.text_field :sstab %>
+  </div> 
+
 
   <div class="actions">
     <%= f.submit "Update" %>

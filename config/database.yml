@@ -37,6 +37,12 @@ test:
   <<: *default
   database: db/test
 
+staging:
+  <<: *default
+  database: <%= ENV['DB_STAGE'] %>
+  username: <%= ENV['DB_USER'] %>
+  password: <%= ENV['DB_PASSWORD'] %>
+  
 production:
   ###<<: *default
   ###database: db/production

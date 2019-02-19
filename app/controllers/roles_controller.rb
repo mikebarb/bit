@@ -249,7 +249,7 @@ class RolesController < ApplicationController
         # starting week of year
         # Step 1 - get the destination chain that matches the destination roles
         logger.debug "get_all_parent_lesson_chain_and_block"
-        get_all_parent_lesson_chain_and_block(@new_lesson.id)
+        get_all_parent_lesson_chain_and_block(@role, @new_lesson.id)
         #Step 2 - get the existing role chain requested to be moved.
         logger.debug "get_role_chain_and_block"
         get_role_chain_and_block(@role, {})
@@ -323,7 +323,7 @@ class RolesController < ApplicationController
     #----------------------- parent extension ----------------------------
     # Now need to find the parent chain
     # We find the existing parent for this role - and get the rest of the run.
-    this_error = get_all_parent_lesson_chain_and_block(new_lesson_id)
+    this_error = get_all_parent_lesson_chain_and_block(@role, new_lesson_id)
     return this_error if this_error.length > 0
     # Now copy the roles hortzontally.
     # block_roles[0] is the existing entitiy

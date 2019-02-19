@@ -8,6 +8,7 @@ class StudentsController < ApplicationController
   # GET /students
   # GET /students.json
   def index
+    byebug
     @students = Student
     .order(:pname)
     .page(params[:page])

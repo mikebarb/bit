@@ -642,7 +642,8 @@ module ChainUtilities
   # modified version of get_matching_parent_lesson_chain_and_block
   # only difference is that ALL the parent block chain from the matching
   # starting role is returned AS OPPOSED to just the matching portion.
-  # return: nothing is returned.
+  # return: nothing is returned if all successful
+  #         error message returned if issue.
   def get_all_parent_lesson_chain_and_block(role, new_lesson_id)
     # role is used to determine the type of parent & that is all
     # new_lesson_id is the id of the clicked on parent element.

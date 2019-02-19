@@ -2866,8 +2866,15 @@ class AdminsController < ApplicationController
 #-----------------------------------------------------------------
 # Use an existing previously created spreadsheet
 # Only need the id to make use of this.
-    spreadsheet_id = '1VHNfTl0Qxok1ZgBD2Rwby-dqxihgSspA0InqS5dTXNI'
+   #spreadsheet_id = '1VHNfTl0Qxok1ZgBD2Rwby-dqxihgSspA0InqS5dTXNI'
+    spreadsheet_id = '1mfS0V2IRS1x18otIta1kOdfFvRMu6NltEe-edn7MZMc'
 #-----------------------------------------------------------------
+
+#-----------------------------------------------------------------
+# Use the spreadsheet configured in user profiles
+# = Roster Google Spreadsheet URL  
+    spreadsheet_id = current_user[:rosterssurl].match(/spreadsheets\/d\/(.*?)\//)[1]
+
     # Get URL of spreadsheet
     response = service.get_spreadsheet(spreadsheet_id)
     @spreadsheet_url = response.spreadsheet_url
@@ -2919,9 +2926,9 @@ class AdminsController < ApplicationController
     googleSheetProperties = lambda{
       result = service.get_spreadsheet(spreadsheet_id)
       mysheets = result.sheets
-      mysheetproperties = mysheets.map{|o| {'index'    => o.properties.index, 
-                                            'sheet_id' => o.properties.sheet_id,
-                                            'title'    => o.properties.title } }
+      mysheetproperties = mysheets.map{|p| {'index'    => p.properties.index, 
+                                            'sheet_id' => p.properties.sheet_id,
+                                            'title'    => p.properties.title } }
     
     }
 
@@ -2988,12 +2995,21 @@ class AdminsController < ApplicationController
     # googleVertAlign.call(rowStart, colStart, numberOfRows, numberOfCols,
     #                          palign "TOP | MIDDLE | BOTTOM")
     googleVertAlign = lambda{|passed_sheet_id, rs, cs, nr, nc, palign|
+      pad = 5
       result = {repeat_cell: {
                   	  range: {sheet_id: passed_sheet_id,
                   	          start_row_index: rs - 1,
                   	          start_column_index: cs - 1 },
-                      cell:{user_entered_format: {vertical_alignment: palign} },
-                      fields: "user_entered_format(vertical_alignment)"
+                      cell:{user_entered_format: {vertical_alignment: palign,
+                                                    padding: {
+                                                      top: pad,
+                                                      right: pad,
+                                                      bottom: pad,
+                                                      left: pad
+                                                    }
+                                                  } 
+                           },
+                      fields: "user_entered_format(vertical_alignment,padding)"
                     }
       }
       if nr != nil then
@@ -3028,9 +3044,9 @@ class AdminsController < ApplicationController
 
 # ******** update borders using batch_update_spreadsheet ********
 # https://developers.google.com/sheets/api/samples/formatting
-    # googleborder.call(sheet_id, rowStart, colStart, numberOfRows, numberOfCols,
-    #                          {left: color, right: .., top: .., bottom: ..})
-    googleborder = lambda{|passed_sheet_id, rs, cs, nr, nc, pcolour, passedStyle |
+    # googleBorder.call(sheet_id, rowStart, colStart, numberOfRows, numberOfCols,
+    #                          {left: color, right: .., top: .., bottom: ..}, width)
+    googleBorder = lambda{|passed_sheet_id, rs, cs, nr, nc, pcolour, passedStyle |
       {
         update_borders: {
     	      range:  { sheet_id: passed_sheet_id,
@@ -3039,13 +3055,31 @@ class AdminsController < ApplicationController
           	          start_column_index: cs - 1,
           	          end_column_index: cs - 1 + nc },
             top:    { style: passedStyle,
-        	            color: {red: pcolour[0], green: pcolour[1], blue: pcolour[2]} },
+        	            color: {red: pcolour[0], green: pcolour[1], blue: pcolour[2]}},
             left:   { style: passedStyle,
-        	            color: {red: pcolour[0], green: pcolour[1], blue: pcolour[2]} },
+        	            color: {red: pcolour[0], green: pcolour[1], blue: pcolour[2]}},
             right:  { style: passedStyle,
-        	            color: {red: pcolour[0], green: pcolour[1], blue: pcolour[2]} },
+        	            color: {red: pcolour[0], green: pcolour[1], blue: pcolour[2]}},
             bottom: { style: passedStyle,
-        	            color: {red: pcolour[0], green: pcolour[1], blue: pcolour[2]} }
+        	            color: {red: pcolour[0], green: pcolour[1], blue: pcolour[2]}},
+        }
+      }
+    }
+
+# ******** update borders using batch_update_spreadsheet ********
+# https://developers.google.com/sheets/api/samples/formatting
+    # googleBorder.call(sheet_id, rowStart, colStart, numberOfRows, numberOfCols,
+    #                          {left: color, right: .., top: .., bottom: ..}, width)
+    googleRightBorder = lambda{|passed_sheet_id, rs, cs, nr, nc, pcolour, passedStyle |
+      {
+        update_borders: {
+    	      range:  { sheet_id: passed_sheet_id,
+          	          start_row_index: rs - 1,
+          	          end_row_index: rs - 1 + nr,
+          	          start_column_index: cs - 1,
+          	          end_column_index: cs - 1 + nc },
+            right:  { style: passedStyle,
+        	            color: {red: pcolour[0], green: pcolour[1], blue: pcolour[2]}}
         }
       }
     }
@@ -3079,6 +3113,44 @@ class AdminsController < ApplicationController
                                       	        start_index: cs - 1,
                                                 end_index: cs - 1 + nc }
                                 }
+      }
+    }
+    
+# ******** merge cells using batch_update_spreadsheet ********
+# https://developers.google.com/sheets/api/samples/formatting 
+    # googleMergeCells.call(passed_sheet_id, rowStart, numOfRows, colStart, numberOfCols)
+    googleMergeCells = lambda{|passed_sheet_id, rs, nr, cs, nc|
+      {
+        merge_cells: { range: { sheet_id: passed_sheet_id,
+                                start_row_index: rs - 1,
+                                end_row_index: rs - 1 + nr,
+                                start_column_index: cs - 1,
+                                end_column_index: cs - 1 + nc },
+                       merge_type: "MERGE_ALL"
+                     }
+      }
+    }
+
+# ******** format header cells using batch_update_spreadsheet ********
+# https://developers.google.com/sheets/api/samples/formatting 
+    # googlefomratCells.call(passed_sheet_id, rowStart, numOfRows, colStart, numberOfCols, fontSize)
+    googleFormatCells = lambda{|passed_sheet_id, rs, nr, cs, nc, fs|
+      {
+        repeat_cell: { range: { sheet_id: passed_sheet_id,
+                                start_row_index: rs - 1,
+                                end_row_index: rs - 1 + nr,
+                                start_column_index: cs - 1,
+                                end_column_index: cs - 1 + nc },
+                       cell:  { user_entered_format: {
+                                     horizontal_alignment: "CENTER",
+                                     text_format: {
+                                          font_size: fs,
+                                          bold: true
+                                     }
+                                }
+                              },
+                       fields: "userEnteredFormat(textFormat, horizontalAlignment)"
+                     }
       }
     }
 
@@ -3203,7 +3275,7 @@ if testing then
     batchitems.push(googleBGColourItem.call(sheet_id, 6,1,1,2,[1,0,0]))
     batchitems.push(googleBGColourItem.call(sheet_id, 7,1,1,2,[0,0,1]))
 
-    batchitems.push(googleborder.call(sheet_id, 2,1,2,2, [0,0,0], "SOLID_THICK"))
+    batchitems.push(googleBorder.call(sheet_id, 2,1,2,2, [0,0,0], "SOLID_MEDIUM"))
     
     batchitems.push(googleVertAlign.call(sheet_id,2,1,2,2, "TOP"))
 
@@ -3252,8 +3324,10 @@ else      # Not to test.
     #mystartdate = current_user.daystart
     #myenddate = current_user.daystart + current_user.daydur.days
     @options = Hash.new
-    @options[:startdate] = current_user.daystart
-    @options[:enddate] = current_user.daystart + current_user.daydur.days
+    #@options[:startdate] = current_user.daystart
+    #@options[:enddate] = current_user.daystart + current_user.daydur.days
+    @options[:startdate] = current_user.rosterstart
+    @options[:enddate] = current_user.rosterstart + current_user.rosterdays.days
     
     #*****************************************************************
     # Set these to control what is displayed in the roster
@@ -3283,6 +3357,8 @@ else      # Not to test.
     #googleVertAlignAll.call("TOP")
 
     # kinds will govern the background colours for tutors and students.
+    kindcolours = Hash.new
+=begin
     kindcolours = {
                     'tutor-kind-training'     => [244, 164, 96],
                     'tutor-kind-called'       => [135, 206, 250],
@@ -3300,6 +3376,7 @@ else      # Not to test.
                     'tutor-kind-'             => [255, 255, 255],
                     'tutor-student-'          => [255, 255, 255]
                   }
+=end
     kindcolours.default = [255, 255, 255]   # result if called with missing key
     
     # clear unused sheets & get sheet properties
@@ -3335,7 +3412,9 @@ else      # Not to test.
     mysheetproperties[locationindex]['title'] = "All"
     sheet_name_all = mysheetproperties[locationindex]['title']
     sheet_id_all   = mysheetproperties[locationindex]['sheet_id']
-
+    ###----------------------------------------------------------------------
+    ###------------------- step through the sites ---------------------------
+    ###----------------------------------------------------------------------
     @cal.each do |location, calLocation|    # step through sites
       if @compress   # remove days with no valid slot for this site
         usedColumns = calLocation[0][0]["days"].keys
@@ -3360,7 +3439,7 @@ else      # Not to test.
         myformat.push(googleVertAlign.call(sheet_id_all, 1, 1, nil, nil, "TOP"))
         myformat.push(googleWrapText.call(sheet_id_all, 1, 1, nil, nil, "WRAP"))
         myformat.push(googleColWidthItem.call(sheet_id_all, 1,100,200))
-        myformat.push(googleColWidthItem.call(sheet_id_all, 1,1,100))
+        myformat.push(googleColWidthItem.call(sheet_id_all, 1,1,0))
       end
       # now have a sheet for each site.
       mysheetproperties = googleAddSheet.call(location, mysheetproperties)       # add a sheet
@@ -3371,191 +3450,287 @@ else      # Not to test.
       locationindex += 1
       sheet_name = mysheetproperties[locationindex]['title']
       sheet_id   = mysheetproperties[locationindex]['sheet_id']
+
+      # This function formats a lesson row
+      # myformal and mydata are global to this google roster function
+      # we are passing in values to ensure they are in the correct context.
+      formatLesson = lambda { |baseLessonRowInSlot, baseSlotRowInSite, baseSiteRow, baseSiteRowAll, currentCol, maxPersonRowInLesson|
+        borderRowStart    = baseLessonRowInSlot + baseSlotRowInSite + baseSiteRow
+        borderRowStartAll = baseLessonRowInSlot + baseSlotRowInSite + baseSiteRowAll
+        borderColStart = currentCol
+        borderRows = maxPersonRowInLesson
+        borderCols = 4    # one tutor col and 2 student cols + lesson commment col.
+        # merge the cells within the comment section of a single session
+        # googleMergeCells.call(passed_sheet_id, rowStart, numOfRows, colStart, numberOfCols)
+        myformat.push(googleMergeCells.call(sheet_id, borderRowStart, borderRows,
+                                                  borderColStart + borderCols - 1, 1))
+        myformat.push(googleMergeCells.call(sheet_id_all, borderRowStartAll, borderRows,
+                                                  borderColStart + borderCols - 1, 1))
+        myformat.push(googleBorder.call(sheet_id,     borderRowStart,    borderColStart, borderRows, borderCols, [0, 0, 0], "SOLID_MEDIUM"))
+        myformat.push(googleBorder.call(sheet_id_all, borderRowStartAll, borderColStart, borderRows, borderCols, [0, 0, 0], "SOLID_MEDIUM"))
+        myformat.push(googleRightBorder.call(sheet_id,     borderRowStart,    borderColStart, borderRows, 1, [0, 0, 0], "SOLID"))
+        myformat.push(googleRightBorder.call(sheet_id_all, borderRowStartAll, borderColStart, borderRows, 1, [0, 0, 0], "SOLID"))
+        myformat.push(googleRightBorder.call(sheet_id,     borderRowStart,    borderColStart+2, borderRows, 1, [0, 0, 0], "SOLID"))
+        myformat.push(googleRightBorder.call(sheet_id_all, borderRowStartAll, borderColStart+2, borderRows, 1, [0, 0, 0], "SOLID"))
+        myformat.push(googleWrapText.call(sheet_id,     borderRowStart,    borderColStart, borderRows, borderCols, "WRAP"))
+        myformat.push(googleWrapText.call(sheet_id_all, borderRowStartAll, borderColStart, borderRows, borderCols, "WRAP"))
+        # want to put timeslot time (timeData) in first column of each lesson row.
+        for i in borderRowStart..borderRowStart+borderRows-1 do
+          mydata.push(googleBatchDataItem.call(sheet_name,    i,1,1,1,[[timeData]]))
+        end
+        for i in borderRowStartAll..borderRowStartAll+borderRows-1 do
+          mydata.push(googleBatchDataItem.call(sheet_name_all,i,1,1,1,[[timeData]]))
+        end
+      }
+      #------------- end of lambda function: formatLesson ---------
+
       # General formatting for each site sheet
       myformat.push(googleVertAlign.call(sheet_id, 1, 1, nil, nil, "TOP"))
       myformat.push(googleWrapText.call(sheet_id, 1, 1, nil, nil, "WRAP"))
       myformat.push(googleColWidthItem.call(sheet_id, 1,100,200))
-      myformat.push(googleColWidthItem.call(sheet_id, 1,1,100))
+      myformat.push(googleColWidthItem.call(sheet_id, 1,1,0))
 
       #<table id=site-<%= location %> >
       baseSlotRowInSite = 0                   # first slot
       currentRow    = baseSlotRowInSite + baseSiteRow
       currentRowAll = baseSlotRowInSite + baseSiteRowAll
+      ###----------------------------------------------------------------------
+      ###-- step through each time period for this site e.g. 3:30, 4:30, etc. - 
+      ###-- (entry 0 = title info: 1. site 2. populated days by date) 
+      ###----------------------------------------------------------------------
       calLocation.each do |rows|          # step through slots containing multiple days (fist row is actually a header row!)
         timeData = rows[0]["value"] 
         #<tr>
         maxPersonRowInAnySlot = 0           # initialised to 1 to step a row even if no tutor or student found.
         currentCol = 1
-        rows.each_with_index do |cells, cellIndex|              # step through each day (first column is head column - for time slots!)
+        ###--------------------------------------------------------------------
+        ###------- step through each day for this time period -----------------
+        ###        (entry 0 = time of lesson)
+        ###--------------------------------------------------------------------
+        rows.each_with_index do |cells, cellIndex|  # step through each day (first column is head column - for time slots!)
           if @compress      
             unless usedColumnsIndex.include?(cellIndex) then
                next
             end 
           end
+          awaystudents = ""
+          ###-------------------------------------------------------------------------------------------
+          ###------------------- step through each lesson in this slot ---------------------------------
+          ###-------------------------------------------------------------------------------------------
           if cells.key?("values") then      # lessons for this day in this slot      
             if cells["values"].respond_to?(:each) then    # check we have lessons?
+              # This is a slot with lessons, do I need to output a title.
+              #byebug
+              # First column for each day needs to have the width set
+              # googlecolwidthitem.call(sheet_id, colStart, numberOfCols, width_pixels)
+              myformat.push(googleColWidthItem.call(sheet_id, currentCol, 1, 130))
+              myformat.push(googleColWidthItem.call(sheet_id_all, currentCol, 1, 130))
+              title = calLocation[0][0]['value'] +                                           # site name
+                      calLocation[0][cellIndex]['datetime'].strftime("  %A %e/%-m/%y  ")  +  # date
+                      rows[0]['value']                                                       # sesson time 
+              mydata.push(googleBatchDataItem.call(sheet_name,
+                                                   baseSiteRow + baseSlotRowInSite - 1,   
+                                                   currentCol,1,1,[[title]]))
+              mydata.push(googleBatchDataItem.call(sheet_name_all,
+                                                   baseSiteRowAll + baseSlotRowInSite - 1,
+                                                   currentCol,1,1,[[title]]))
+              # googleMergeCells.call(passed_sheet_id, rowStart, numOfRows, colStart, numberOfCols)
+              myformat.push(googleMergeCells.call(sheet_id, baseSiteRow + baseSlotRowInSite - 1, 1,
+                                                            currentCol, 4))
+              myformat.push(googleMergeCells.call(sheet_id_all, baseSiteRowAll + baseSlotRowInSite - 1, 1,
+                                                                currentCol, 4))
+              # Format the header line (merged cells)
+              # googlefomratCells.call(passed_sheet_id, rowStart, numOfRows, colStart, numberOfCols, fontSize)
+              myformat.push(googleFormatCells.call(sheet_id, baseSiteRow + baseSlotRowInSite - 1, 1,
+                                                             currentCol, 4, 16))
+              myformat.push(googleFormatCells.call(sheet_id_all, baseSiteRowAll + baseSlotRowInSite - 1, 1,
+                                                                 currentCol, 4, 16))
               baseLessonRowInSlot = 0       # index of first lesson in this slot for this day
-              #maxPersonRowInLesson = 0
               cells["values"].sort_by {|obj| [valueOrderStatus(obj),valueOrder(obj)] }.each do |entry| # step thru sorted lessons
-              currentTutorRowInLesson = 0
-              if entry.tutors.respond_to?(:each) then
-                entry.tutors.sort_by {|obj| obj.pname }.each do |tutor|
-                  if tutor then
-                    thistutrole = tutor.tutroles.where(lesson_id: entry.id).first
-                    if @tutorstatusforroster.include?(thistutrole.status) then       # tutors of interest
-                      currentRow    = currentTutorRowInLesson + baseLessonRowInSlot + baseSlotRowInSite + baseSiteRow
-                      currentRowAll = currentTutorRowInLesson + baseLessonRowInSlot + baseSlotRowInSite + baseSiteRowAll
-                      
-                      #<div class="tutorname tutorinline <%= set_class_status(tutor, entry) %>">tutor: <%= tutor.pname %></div>
-                      tutorData = tutor.pname
-                      formatBreakPoints = []
-                      formatBreakPoints.push(0)
-                      formatBreakPoints.push(tutor.pname.length)
-                      # tutor.subjects
-                      mysubjects = tutor.subjects
-                      mysubjects = mysubjects ? mysubjects : ""
-                      tutorData += ((mysubjects == "") ? "" : ("\n" + mysubjects)) 
-                      # thistutrole.comment
-                      # tutor.comment
-                      # Status: thistutrole.status Kind: thistutrole.kind
-                      mykind = thistutrole.kind
-                      mykind = mykind ? mykind : ""
-                      tutorData += ((mykind == "") ? "" : ("\n" + mykind)) 
-                      mycolour = kindcolours['tutor-kind-' + mykind]
-                      mycolour = mycolour.map {|o| o/255.0} 
-                      myformat.push(googleTextFormatRun.call(sheet_id,     currentRow,    currentCol,
-                                                             tutorData, formatBreakPoints))
-                      myformat.push(googleTextFormatRun.call(sheet_id_all, currentRowAll, currentCol,
-                                                             tutorData, formatBreakPoints))
-                      #mydata.push(googleBatchDataItem.call(currentRow, currentCol, 1, 1, [[tutorData]]))
-                      #myformat.push(googleBGColourItem.call(sheet_id, currentRow, currentCol, 1, 1, [1,0,0]))
-                      myformat.push(googleBGColourItem.call(sheet_id,     currentRow,    currentCol, 1, 1, mycolour))
-                      myformat.push(googleBGColourItem.call(sheet_id_all, currentRowAll, currentCol, 1, 1, mycolour))
-                      currentTutorRowInLesson += 1
-                    end       # tutors of interest
+                next if (entry.status != nil && ["onCall", "global", "park", "allocate"].include?(entry.status))
+                currentTutorRowInLesson = 0
+                if entry.tutors.respond_to?(:each) then
+                  entry.tutors.sort_by {|obj| obj.pname }.each do |tutor|
+                    if tutor then
+                      thistutrole = tutor.tutroles.where(lesson_id: entry.id).first
+                      if @tutorstatusforroster.include?(thistutrole.status) then       # tutors of interest
+                        currentRow    = currentTutorRowInLesson + baseLessonRowInSlot + baseSlotRowInSite + baseSiteRow
+                        currentRowAll = currentTutorRowInLesson + baseLessonRowInSlot + baseSlotRowInSite + baseSiteRowAll
+                        #<div class="tutorname tutorinline <%= set_class_status(tutor, entry) %>">tutor: <%= tutor.pname %></div>
+                        tutorData    = tutor.pname
+                        tutorDataAll = tutor.pname
+                        formatBreakPoints    = []
+                        formatBreakPointsAll = []
+                        formatBreakPoints.push(0)
+                        formatBreakPointsAll.push(0)
+                        formatBreakPoints.push(tutor.pname.length)
+                        formatBreakPointsAll.push(tutor.pname.length)
+                        # tutor.subjects
+                        mysubjects = tutor.subjects
+                        mysubjects = mysubjects ? mysubjects : ""
+                        # thistutrole.comment
+                        # tutor.comment
+                        # Status: thistutrole.status Kind: thistutrole.kind
+                        mykind = thistutrole.kind
+                        mykind = mykind ? mykind : ""
+                        # don't diaplay subjects or kind for tutors on setup
+                        unless entry.status == 'onSetup' && mykind == 'onSetup' 
+                          tutorData    += ((mysubjects == "") ? "" : ("\n" + mysubjects)) 
+                          tutorData    += ((mykind == "")     ? "" : ("\n" + mykind)) unless ["standard"].include?(mykind)
+                          tutorDataAll += ((mykind == "")     ? "" : ("\n" + mykind)) unless ["standard"].include?(mykind)
+                        end
+                        if thistutrole.comment != nil && thistutrole.comment != ""
+                          tutorData += "\n" + thistutrole.comment
+                        end
+                        mycolour = kindcolours['tutor-kind-' + mykind]
+                        mycolour = mycolour.map {|p| p/255.0} 
+                        myformat.push(googleTextFormatRun.call(sheet_id,     currentRow,    currentCol,
+                                                               tutorData, formatBreakPoints))
+                        myformat.push(googleTextFormatRun.call(sheet_id_all, currentRowAll, currentCol,
+                                                               tutorDataAll, formatBreakPointsAll))
+                        ###myformat.push(googleBGColourItem.call(sheet_id,     currentRow,    currentCol, 1, 1, mycolour))
+                        ###myformat.push(googleBGColourItem.call(sheet_id_all, currentRowAll, currentCol, 1, 1, mycolour))
+                        currentTutorRowInLesson += 1
+                      end       # tutors of interest
+                    end
+                    #break
                   end
-                  #break
+                  # keep track of the largest count of tutors or students in lesson.
+                  maxPersonRowInAnySlot = maxPersonRowInAnySlot > currentTutorRowInLesson + baseLessonRowInSlot ?
+                                      maxPersonRowInAnySlot : currentTutorRowInLesson + baseLessonRowInSlot
                 end
-                # keep track of the largest count of tutors or students in lesson.
-                maxPersonRowInAnySlot = maxPersonRowInAnySlot > currentTutorRowInLesson + baseLessonRowInSlot ?
-                                    maxPersonRowInAnySlot : currentTutorRowInLesson + baseLessonRowInSlot
-              end
-
-              currentStudentRowInLesson = 0
-              currentStudentInLesson    = 0
-              #evenStudent = (currentStudentInLesson % 2) == 0 ? true : false
-              if entry.students.respond_to?(:each) then
-                entry.students.each do |student|
-                  if student then
-                    logger.debug "student: " + student.pname
-                    thisrole = student.roles.where(lesson_id: entry.id).first
-                    #logger.debug "thisrole: " + thisrole.inspect
-                    if @studentstatusforroster.include?(thisrole.status) then    # students of interest
-                      logger.debug "*************processing student: " + student.pname
-                      logger.debug "currentStudentInLesson: " + currentStudentInLesson.inspect
-                      logger.debug "currentStudentRowInLesson + baseLessonRowInSlot + baseSlotRowInSite: " +
-                                    currentStudentRowInLesson.to_s + ", " + baseLessonRowInSlot.to_s + ", " + baseSlotRowInSite.to_s
-                      currentRow    = currentStudentRowInLesson + baseLessonRowInSlot + baseSlotRowInSite + baseSiteRow
-                      currentRowAll = currentStudentRowInLesson + baseLessonRowInSlot + baseSlotRowInSite + baseSiteRowAll
-                      
-                      #<div class="studentname studentinline <%= set_class_status(student, entry) %>">student: <%= student.pname %></div>
-                      logger.debug "DataItem parameters: " + currentRow.to_s + ", " + currentCol.to_s + ", 1, 1, " + student.pname 
-                      formatBreakPoints = []
-                      formatBreakPoints.push(0)
-                      studentData = student.pname
-                      logger.debug "student.pname: " + student.pname 
-                      logger.debug "lesson_id: " + entry.id.to_s
-                      formatBreakPoints.push(student.pname.length)
-                      studentSex = student.sex == nil ? "" :
-                           (student.sex.downcase.include?("female") ? "(F) " : (student.sex.downcase.include?("male") ? "(M) " : ""))
-                      studentSubjects = " Yr: " + (student.year == nil ? "   " : student.year.rjust(3)) +
-                                        " | " +  (student.study == nil ? "" : student.study)
-                      studentData += "\n" + studentSex + studentSubjects
-                      # thisrole.comment
-                      # student.comment
-                      studentData += "\n" + student.comment
-                      # Status: thisrole.status Kind: thisrole.kind
-                      mykind = thisrole.kind
-                      mykind = mykind ? mykind : ""
-                      mycolour = kindcolours['student-kind-' + mykind]
-                      mycolour = mycolour.map {|o| o/255.0}
-                      #myformat.push(googleTextFormatRun.call(sheet_id, currentRow, currentCol + 1,
-                      #                                       studentData, formatBreakPoints))
-                      colOffset = 1 + (currentStudentInLesson % 2)
-                      myformat.push(googleTextFormatRun.call(sheet_id,     currentRow,    currentCol + colOffset,
-                                                             studentData, formatBreakPoints))
-                      myformat.push(googleTextFormatRun.call(sheet_id_all, currentRowAll, currentCol + colOffset,
-                                                             studentData, formatBreakPoints))
-                      #mydata.push(googleBatchDataItem.call(currentRow, currentCol + 1, 1, 1, [[studentData]]))
-                      #myformat.push(googleBGColourItem.call(sheet_id, currentRow, currentCol + 1, 1, 1, [0,0.5,0]))
-                      myformat.push(googleBGColourItem.call(sheet_id,     currentRow,    currentCol + colOffset, 1, 1, mycolour))
-                      myformat.push(googleBGColourItem.call(sheet_id_all, currentRowAll, currentCol + colOffset, 1, 1, mycolour))
-                      
-                      #byebug 
-                      currentStudentRowInLesson += 1 if (currentStudentInLesson % 2) == 1  # odd
-                      currentStudentInLesson += 1
-                    end           # students of interest
+                currentStudentRowInLesson = 0
+                currentStudentInLesson    = 0
+                studentLessonComments = ""
+                if entry.students.respond_to?(:each) then
+                  entry.students.each do |student|
+                    if student then
+                      logger.debug "student: " + student.pname
+                      thisrole = student.roles.where(lesson_id: entry.id).first
+                      #logger.debug "thisrole: " + thisrole.inspect
+                      if ['away'].include?(thisrole.status) then 
+                        awaystudents += awaystudents.length > 0 ?  "\n" + student.pname : student.pname
+                      end
+                      if @studentstatusforroster.include?(thisrole.status) then    # students of interest
+                        #logger.debug "*************processing student: " + student.pname
+                        #logger.debug "currentStudentInLesson: " + currentStudentInLesson.inspect
+                        #logger.debug "currentStudentRowInLesson + baseLessonRowInSlot + baseSlotRowInSite: " +
+                        #              currentStudentRowInLesson.to_s + ", " + baseLessonRowInSlot.to_s + ", " + baseSlotRowInSite.to_s
+                        currentRow    = currentStudentRowInLesson + baseLessonRowInSlot + baseSlotRowInSite + baseSiteRow
+                        currentRowAll = currentStudentRowInLesson + baseLessonRowInSlot + baseSlotRowInSite + baseSiteRowAll
+                        #<div class="studentname studentinline <%= set_class_status(student, entry) %>">student: <%= student.pname %></div>
+                        #logger.debug "DataItem parameters: " + currentRow.to_s + ", " + currentCol.to_s + ", 1, 1, " + student.pname 
+                        formatBreakPoints = []
+                        formatBreakPoints.push(0)
+                        studentData = student.pname
+                        studentSex = student.sex == nil ? "" :
+                             (student.sex.downcase.include?("female") ? "(F) " : (student.sex.downcase.include?("male") ? "(M) " : ""))
+                        studentData += " " + studentSex
+                        #logger.debug "student.pname: " + student.pname 
+                        #logger.debug "lesson_id: " + entry.id.to_s
+                        #formatBreakPoints.push(student.pname.length)
+                        #studentSubjects = " Yr: " + (student.year == nil ? "   " : student.year.rjust(3)) +
+                        #                  " | " +  (student.study == nil ? "" : student.study)
+                        #studentYear      = " Yr:" + (student.year == nil ? student.year.rjust(3))
+                        studentYear      = " Yr:" + (student.year == nil ? "" : student.year)
+                        studentSubjects  = student.study == nil ? "" : student.study
+                        studentData += studentYear
+                        studentDataAll = studentData
+                        formatBreakPointsAll = formatBreakPoints
+                        studentData += "\n" + studentSubjects
+                        formatBreakPoints.push(studentData.length)
+                        # thisrole.comment
+                        # student.comment
+                        # Status: thisrole.status Kind: thisrole.kind
+                        mykind = thisrole.kind
+                        mykind = mykind ? mykind : ""
+                        studentData += " (" + mykind + ")" unless ["standard"].include?(mykind)
+                        if thisrole.comment != nil && thisrole.comment != ""
+                          studentLessonComments += student.pname + ":\n" + thisrole.comment + "\n"
+                          #studentData += "\n" + thisrole.comment
+                        end
+                        if student.comment != nil && student.comment != ""
+                          studentData += "\n" + student.comment
+                        end
+                        mycolour = kindcolours['student-kind-' + mykind]
+                        mycolour = mycolour.map {|p| p/255.0}
+                        #myformat.push(googleTextFormatRun.call(sheet_id, currentRow, currentCol + 1,
+                        #                                       studentData, formatBreakPoints))
+                        colOffset = 1 + (currentStudentInLesson % 2)
+                        myformat.push(googleTextFormatRun.call(sheet_id,     currentRow,    currentCol + colOffset,
+                                                               studentData, formatBreakPoints))
+                        myformat.push(googleTextFormatRun.call(sheet_id_all, currentRowAll, currentCol + colOffset,
+                                                               studentDataAll, formatBreakPointsAll))
+                        ###myformat.push(googleBGColourItem.call(sheet_id,     currentRow,    currentCol + colOffset, 1, 1, mycolour))
+                        ###myformat.push(googleBGColourItem.call(sheet_id_all, currentRowAll, currentCol + colOffset, 1, 1, mycolour))
+                        
+                        #byebug 
+                        currentStudentRowInLesson += 1 if (currentStudentInLesson % 2) == 1  # odd
+                        currentStudentInLesson += 1
+                      end           # students of interest
+                    end
                   end
+                  # Need to get correct count of rows (rounding up is necessary)
+                  # derive currentStudentRowInLesson from the currentStudentInLesson
+                  currentStudentRowInLesson = (currentStudentInLesson % 2) == 0 ? 
+                  currentStudentInLesson / 2 : (currentStudentInLesson / 2) + 1 
+                  
+                  # keep track of the largest count of tutors or students in lesson.
+                  maxPersonRowInAnySlot = maxPersonRowInAnySlot > currentStudentRowInLesson + baseLessonRowInSlot ?
+                                          maxPersonRowInAnySlot : currentStudentRowInLesson + baseLessonRowInSlot
                 end
-                # Need to get correct count of rows (rounding up is necessary)
-                # derive currentStudentRowInLesson from the currentStudentInLesson
-                currentStudentRowInLesson = (currentStudentInLesson % 2) == 0 ? 
-                currentStudentInLesson / 2 : (currentStudentInLesson / 2) + 1 
-                
-                # keep track of the largest count of tutors or students in lesson.
-                maxPersonRowInAnySlot = maxPersonRowInAnySlot > currentStudentRowInLesson + baseLessonRowInSlot ?
-                                        maxPersonRowInAnySlot : currentStudentRowInLesson + baseLessonRowInSlot
-
-              end
-              maxPersonRowInLesson = currentTutorRowInLesson > currentStudentRowInLesson ? 
-                                     currentTutorRowInLesson : currentStudentRowInLesson 
-              # put a border around this lesson if there were lessons with people
-              logger.debug "maxPersonRowInLesson: " + maxPersonRowInLesson.to_s
-              if maxPersonRowInLesson > 0 then
-                # put in lesson comments if there were tutors or students.
-                #<div class="lessoncommenttext"><% if entry.comments != nil && entry.comments != "" %><%= entry.comments %><% end %></div>
-                #<div class="lessonstatusinfo"><% if entry.status != nil && entry.status != "" %>Status: <%= entry.status %> <% end %></div>
-                mylessoncomment = ''
-                if entry.comments != nil && entry.comments != ""
-                  mylessoncomment = entry.comments
-                  mydata.push(googleBatchDataItem.call(sheet_name,    currentRow,   currentCol+3,1,1,[[mylessoncomment]]))
-                  mydata.push(googleBatchDataItem.call(sheet_name_all,currentRowAll,currentCol+3,1,1,[[mylessoncomment]]))
+                maxPersonRowInLesson = currentTutorRowInLesson > currentStudentRowInLesson ? 
+                                       currentTutorRowInLesson : currentStudentRowInLesson 
+                # put a border around this lesson if there were lessons with people
+                if maxPersonRowInLesson > 0 then
+                  # put in lesson comments if there were tutors or students.
+                  #<div class="lessoncommenttext"><% if entry.comments != nil && entry.comments != "" %><%= entry.comments %><% end %></div>
+                  #<div class="lessonstatusinfo"><% if entry.status != nil && entry.status != "" %>Status: <%= entry.status %> <% end %></div>
+                  mylessoncomment = ''
+                  if entry.status != nil && entry.status != ''
+                    unless ["standard"].include?(entry.status)   # if this is a standard lesson 
+                      mylessoncomment = entry.status + "\n"      # don't show the lesson status (kind)
+                    end
+                  end
+                  mylessoncommentAll = mylessoncomment
+                  if entry.comments != nil && entry.comments != ""
+                    mylessoncomment += entry.comments
+                  end
+                  mylessoncomment += studentLessonComments
+                  if mylessoncomment.length > 0
+                    mydata.push(googleBatchDataItem.call(sheet_name,    currentRow,   currentCol+3,1,1,[[mylessoncomment]]))
+                    mydata.push(googleBatchDataItem.call(sheet_name_all,currentRowAll,currentCol+3,1,1,[[mylessoncommentAll]]))
+                  end
+                  # ----- formatting of the lesson row within the slot ---------
+                  formatLesson.call(baseLessonRowInSlot, baseSlotRowInSite, baseSiteRow, baseSiteRowAll, currentCol, maxPersonRowInLesson)
                 end
-                # formatting
-                borderRowStart    = baseLessonRowInSlot + baseSlotRowInSite + baseSiteRow
-                borderRowStartAll = baseLessonRowInSlot + baseSlotRowInSite + baseSiteRowAll
-                borderColStart = currentCol
-                borderRows = maxPersonRowInLesson
-                borderCols = 4    # one tutor col and 2 student cols + lesson commment col.
-                logger.debug "border parameters: " + borderRowStart.to_s + ", " + borderColStart.to_s + ", "+ borderRows.to_s + ", " + borderCols.to_s
-                myformat.push(googleborder.call(sheet_id,     borderRowStart,    borderColStart, borderRows, borderCols, [0, 0, 0], "SOLID_THICK"))
-                myformat.push(googleborder.call(sheet_id_all, borderRowStartAll, borderColStart, borderRows, borderCols, [0, 0, 0], "SOLID_THICK"))
-                myformat.push(googleWrapText.call(sheet_id,     borderRowStart,    borderColStart, borderRows, borderCols, "WRAP"))
-                myformat.push(googleWrapText.call(sheet_id_all, borderRowStartAll, borderColStart, borderRows, borderCols, "WRAP"))
-
-
-                # want to put timeslot time (timeData) in first column of each lesson row.
-                #byebug
-                for i in borderRowStart..borderRowStart+borderRows-1 do
-                  mydata.push(googleBatchDataItem.call(sheet_name,    i,1,1,1,[[timeData]]))
-                end
-                for i in borderRowStartAll..borderRowStartAll+borderRows-1 do
-                  mydata.push(googleBatchDataItem.call(sheet_name_all,i,1,1,1,[[timeData]]))
-                end
-              end
-              ###baseLessonRowInSlot += maxPersonRowInLesson
-              baseLessonRowInSlot += maxPersonRowInLesson
-              #currentRow = maxPersonRowInAnySlot + baseLessonRowInSlot + baseSlotRowInSite + baseSiteRow  # next empty row 
+                ###baseLessonRowInSlot += maxPersonRowInLesson
+                baseLessonRowInSlot += maxPersonRowInLesson
+                #currentRow = maxPersonRowInAnySlot + baseLessonRowInSlot + baseSlotRowInSite + baseSiteRow  # next empty row 
               end     # end looping sorted lessons within a day/slot
             end    # responds to cell["values"]
           elsif cells.key?("value") then     # just holds cell info (not lessons) to be shown
             currentRow    = baseSlotRowInSite + baseSiteRow
             currentRowAll = baseSlotRowInSite + baseSiteRowAll
-            #byebug
             #timeData = cells["value"].to_s #if currentCol == 1 &&
                                            #   cells["value"] != nil  # pick up the time
             mydata.push(googleBatchDataItem.call(sheet_name,    currentRow,   currentCol,1,1,[[cells["value"].to_s]]))
             mydata.push(googleBatchDataItem.call(sheet_name_all,currentRowAll,currentCol,1,1,[[cells["value"].to_s]]))
+          end
+          # Now add a dummy row at end of slot to show students who are away
+          if awaystudents.length > 0
+            currentRow    = baseLessonRowInSlot + baseSlotRowInSite + baseSiteRow
+            currentRowAll = baseLessonRowInSlot + baseSlotRowInSite + baseSiteRowAll
+            mydata.push(googleBatchDataItem.call(sheet_name,     currentRow,    currentCol,1,1,[["Students Away"]]))
+            mydata.push(googleBatchDataItem.call(sheet_name_all, currentRowAll, currentCol,1,1,[["Students Away"]]))
+            myformat.push(googleFormatCells.call(sheet_id, currentRow, 1, currentCol, 1, 16))
+            myformat.push(googleFormatCells.call(sheet_id_all, currentRowAll, 1, currentCol, 1, 16))
+            mydata.push(googleBatchDataItem.call(sheet_name,     currentRow,    currentCol + 1,1,1,[[awaystudents]]))
+            mydata.push(googleBatchDataItem.call(sheet_name_all, currentRowAll, currentCol + 1,1,1,[[awaystudents]]))
+            maxPersonRowInLesson = 1
+            formatLesson.call(baseLessonRowInSlot, baseSlotRowInSite, baseSiteRow,
+                              baseSiteRowAll, currentCol, maxPersonRowInLesson)                    # apply the standard formatting
+            baseLessonRowInSlot += 2               # add another row for this
           end
           #</td>
           currentCol += currentCol == 1 ? 1 : 4       # first column is title, rest have adjacent tutors & students.
@@ -3567,7 +3742,7 @@ else      # Not to test.
           baseSlotRowInSite += 1                # cater for when no lessons with tutors or students of interest
         end
         # Add an extra row between slots - except the  first title slot
-        baseSlotRowInSite += 1 unless baseSlotRowInSite == 1
+        baseSlotRowInSite += 3 unless baseSlotRowInSite == 1
       end       # end looping slots
       holdRailsLoggerLevel = Rails.logger.level
       Rails.logger.level = 1 
@@ -3614,6 +3789,8 @@ end           # end of testing option.
   # Sort the values in display2 (cell of lessons/sessions) by status and then by tutor name
   # as some lessons have no tutor, this returns the tutor name if available.
   # This can then be used as the second attribute in the sort.
+  # --
+  # We make an eaxception to the sort by name if the tutor is actually on BFL or BFLassist
   def valueOrder(obj)
     if obj.tutors.exists?
       obj.tutors.sort_by {|t| t.pname }.first.pname
@@ -3622,14 +3799,26 @@ end           # end of testing option.
     end
   end
 
-  def valueOrderStatus(obj)
-    if obj.status != nil
-      obj.status
-    else
-      ""
+  def valueOrderTutorKindBFL(thistutor) 
+    t = ["BFL", "BFLassist"].index(thistutor.kind)
+    if t != nil
+      return 1 + t
     end
+    return 0
   end
-    
+        
+
+
+  def valueOrderStatus(obj)
+    mylist = ["onCall", "onSetup", "free",  "on_BFL", "standard", "routine", "flexible", "allocate", "global", "park"]
+    if obj.status != nil
+      t = mylist.index(obj.status)
+      if t != nil
+        return t 
+      end
+    end
+    return 0
+  end
 
   
 end
