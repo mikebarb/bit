@@ -3714,8 +3714,8 @@ else      # Not to test.
             currentRowAll = baseSlotRowInSite + baseSiteRowAll
             #timeData = cells["value"].to_s #if currentCol == 1 &&
                                            #   cells["value"] != nil  # pick up the time
-            mydata.push(googleBatchDataItem.call(sheet_name,    currentRow,   currentCol,1,1,[[cells["value"].to_s]]))
-            mydata.push(googleBatchDataItem.call(sheet_name_all,currentRowAll,currentCol,1,1,[[cells["value"].to_s]]))
+            #mydata.push(googleBatchDataItem.call(sheet_name,    currentRow,   currentCol,1,1,[[cells["value"].to_s]]))
+            #mydata.push(googleBatchDataItem.call(sheet_name_all,currentRowAll,currentCol,1,1,[[cells["value"].to_s]]))
           end
           # Now add a dummy row at end of slot to show students who are away
           if awaystudents.length > 0
@@ -3730,7 +3730,12 @@ else      # Not to test.
             maxPersonRowInLesson = 1
             formatLesson.call(baseLessonRowInSlot, baseSlotRowInSite, baseSiteRow,
                               baseSiteRowAll, currentCol, maxPersonRowInLesson)                    # apply the standard formatting
-            baseLessonRowInSlot += 2               # add another row for this
+            baseLessonRowInSlot += 1               # add another row for this
+            # update tracking of the largest count of tutors or students in lesson.
+            maxPersonRowInAnySlot = maxPersonRowInAnySlot > currentStudentRowInLesson + baseLessonRowInSlot ?
+                                    maxPersonRowInAnySlot : currentStudentRowInLesson + baseLessonRowInSlot
+            maxPersonRowInAnySlot = maxPersonRowInAnySlot > currentTutorRowInLesson   + baseLessonRowInSlot ?
+                                    maxPersonRowInAnySlot : currentTutorRowInLesson   + baseLessonRowInSlot
           end
           #</td>
           currentCol += currentCol == 1 ? 1 : 4       # first column is title, rest have adjacent tutors & students.
@@ -3742,7 +3747,7 @@ else      # Not to test.
           baseSlotRowInSite += 1                # cater for when no lessons with tutors or students of interest
         end
         # Add an extra row between slots - except the  first title slot
-        baseSlotRowInSite += 3 unless baseSlotRowInSite == 1
+        baseSlotRowInSite += 2 unless baseSlotRowInSite == 1
       end       # end looping slots
       holdRailsLoggerLevel = Rails.logger.level
       Rails.logger.level = 1 

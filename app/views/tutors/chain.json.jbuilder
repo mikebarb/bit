@@ -1,3 +1,4 @@
+    json.display "chain"
     json.role "tutor"
     json.id @tutor_history["tutor"].id
     json.pname @tutor_history["tutor"].pname

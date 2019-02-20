@@ -284,15 +284,15 @@ table, th, td {
   background-color: amber;
 }
 
-.history {
-  margin: 1px;
-  color: black;
-  background-color: brown;
-  line-height: 18px;
-  border:5px solid red;
-  padding: 15px;
-  width: 800px;
-}
+//.history {
+//  margin: 1px;
+//  color: black;
+//  background-color: brown;
+//  line-height: 18px;
+//  border:5px solid red;
+//  padding: 15px;
+//  width: 800px;
+//}
 
   .ui-resizable-e {
     cursor: e-resize;
@@ -919,10 +919,13 @@ table, th, td {
 
 // statistics specific items
 .formatcatchup, .catchup {
-    color: green; 
+    color: blue; 
+}
+.formatregular, .regular {
+    color: Fuchsia;  
 }
 .formatfree, .free {
-    color: blue;  
+    color: green;  
 }
 .selectshowstats {
     display: inline-block;

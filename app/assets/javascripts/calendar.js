@@ -1425,12 +1425,16 @@ function testSuiteForWeekOfYear(){
   function showhistory(historydata){
     var template_ele = document.getElementById("history-template");
     var this_ele = template_ele.cloneNode(true);
-    this_ele.id = 'history-' + historydata['role'] + historydata['id'];
+    this_ele.id = historydata['display'] + '-' + historydata['role'] + historydata['id'];
     this_ele.innerHTML = historyToHtml(historydata);
     template_ele.after(this_ele);
     var historyDisplay = this_ele;
     positionMenu(historyDisplay);
     $("#" + this_ele.id).resizable({handles: "e"});
+    if(historydata['display'] == 'chain'){
+      this_ele.classList.remove('history');
+      this_ele.classList.add('chain');
+    }
     this_ele.classList.remove('hideme');
   }
 
@@ -1445,8 +1449,8 @@ function testSuiteForWeekOfYear(){
 
   // convert historydata to a HTML segment
   function historyToHtml(hd){
-    var role = hd['role'];
-    var htmlsegment = "<h4>" + role + ': ' + hd['pname'] + "</h4>";
+    var role    = hd['role'];
+    var htmlsegment = "<h4>" + hd['display'] + " for " + role + ': ' + hd['pname'] + "</h4>";
     htmlsegment += '<div id="closehistory"><svg height="300" width="300"><line x1="1" y1="1" x2="15" y2="15" style="stroke:#000; stroke-width:4" /><line x1="15" y1="1" x2="1" y2="15" style="stroke:#000; stroke-width:4" /></svg></div>';
     htmlsegment += "<table>";
     htmlsegment += "<tr><td>Lesson Kind</td>";
@@ -1464,7 +1468,7 @@ function testSuiteForWeekOfYear(){
       htmlsegmentlesson    += "<td>" + lesson['site'] + "</td>";
       
       // get students - ensure only other students if displaying a student
-      var htmlstudents = "<td>";
+      var htmlstudents = "";
       lesson['students'].forEach( function(student){
         if((role == 'student') && (student.name == hd['pname'])){
           // don't add this student to html list.
@@ -1477,13 +1481,17 @@ function testSuiteForWeekOfYear(){
           htmlpersonstatus = student.status;
         }else{
           if(['attended', 'scheduled', 'deal'].includes(student.status)){
-            htmlstudents += student.name + "<br>";
+            if(htmlstudents.length){
+              htmlstudents +=  "<br>" + student.name;
+            }else{
+              htmlstudents +=  student.name;
+            }
           }else{
             htmlstudents += "<span class=dullme>" + student.name + "</span><br>";
           }
         }
       });
-      htmlstudents += "</td>";
+      htmlstudents =  "<td>" + htmlstudents + "</td>";
       
       // get tutors - ensure only other tutors if displaying a tutor
       var htmltutors = "";
@@ -1498,7 +1506,11 @@ function testSuiteForWeekOfYear(){
           }
           htmlpersonstatus = tutor.status;
         }else{
-          htmltutors += tutor.name + (htmltutors.length?"<br>":"");
+          if(htmltutors.length){
+            htmltutors += "<br>" + tutor.name;
+          }else{
+            htmltutors += tutor.name;
+          }
         }
       });
       htmltutors = "<td>" + htmltutors + "</td>";
@@ -1721,6 +1733,10 @@ function testSuiteForWeekOfYear(){
   // ------------------------- Draggable History -----------------------------   
   // Draggable history container
     $(".histories").on('mouseover', '.history', function(){
+      $(this).draggable();
+    });
+
+    $(".histories").on('mouseover', '.chain', function(){
       $(this).draggable();
     });
 
@@ -1986,7 +2002,7 @@ function testSuiteForWeekOfYear(){
   }
 
   function addLesson_Update(domchange){
-    domchange["status"] = "free";  // make default for new session.
+    domchange["status"] = "flexible";  // make default for new session.
     var myurl = myhost + "/lessonadd/";
     $.ajax({
         type: "POST",
@@ -2667,6 +2683,7 @@ function ready_stats(){
   }
 
   console.log("entered ready_stats");
+  showregular();
   showcatchup();
   showfree();
   showstats();
@@ -3298,6 +3315,7 @@ function showhidedow(day, selectdowday){
 
 
 
+function showregular(){showhidescopestats(document, 'regular');}
 function showcatchup(){showhidescopestats(document, 'catchup');}
 function showfree(){showhidescopestats(document, 'free');}
 function showstats(){showhidescopestats(document, 'stats');}

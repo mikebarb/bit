@@ -24,17 +24,19 @@
               <li><%= link_to "Yesterday", flexibledisplay_path(:default => "yesterday") %></li>
             </ul>
           </li>
+          <li class='active'><%= link_to "Stats", flexibledisplay_path(:bench => "stats") %>
+            <ul>
+              <li><%= link_to "Ratio",
+                      flexibledisplay_path(:bench => "ratio",
+                      :select_roster_default => "1") %></li>
+            </ul>
+          </li>
           <li class='active'><%= link_to "Roster",
                       flexibledisplay_path(:bench => "roster",
                       :select_roster_default => "1") %>
             <ul>
               <li><%= link_to "Google_roster", googleroster_path %></li>
               <li><%= link_to "Flexible Display", displayoptions_path %></li>
-              <li><%= link_to "Ratio",
-                      flexibledisplay_path(:bench => "ratio",
-                      :select_roster_default => "1") %></li>
-              <li><%= link_to "Stats",
-                      flexibledisplay_path(:bench => "stats") %></li>
             </ul>
           </li>
           <li class='active'><%= link_to "tutors", tutors_path %>

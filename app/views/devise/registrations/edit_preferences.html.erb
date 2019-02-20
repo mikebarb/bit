@@ -45,7 +45,7 @@
   </div> 
 
   <h3>Term - for use in term related displays</h3>
-  <p>This is referenced in displaying specific students in calendar format.</p>
+  <p>This is referenced when displaying the calendar and stats.</p>
   <div class="field">
     <%= f.label "Date of first day of term (Monday)" %><br>
     <%= f.date_field :termstart %>
@@ -55,7 +55,8 @@
     <%= f.label "Number of week in this  term" %><br>
     <%= f.number_field :termweeks %>
   </div> 
-
+  
+<% if current_user.role == 'admin' %>
   <h3>Google Sheets Selections - for use when importing data from google sheets.</h3>
   <p>This is for use by administrators only.</p>
 
@@ -68,7 +69,7 @@
     <%= f.label "Google spreadsheet TAB name" %><br>
     <%= f.text_field :sstab %>
   </div> 
-
+<% end %>
 
   <div class="actions">
     <%= f.submit "Update" %>

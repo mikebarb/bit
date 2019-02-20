@@ -17,6 +17,10 @@
   margin: 3px;
   /* background-color: white; */
   width: 74%; }
+  
+.np-status, .np-kind, .p-status {
+  display: inline-block
+}
 
 .n-status-onCall, #lesson-status-oncall {
   background-color: cornflowerblue;
@@ -175,14 +179,20 @@ table, th, td {
 .updating {
   background-color: amber; }
 
-.history {
+.history, .chain {
   margin: 1px;
   color: black;
-  background-color: brown;
   line-height: 18px;
-  border: 5px solid red;
   padding: 15px;
-  width: 400px; }
+  width: 800px; }
+
+.history {
+  background-color: brown;
+  border: 5px solid red; }
+
+.chain {
+  background-color: SkyBlue;
+  border: 5px solid blue; }
 
 .ui-resizable-e {
   cursor: e-resize;
@@ -196,6 +206,11 @@ table, th, td {
   width: 45%;
   margin-top: 0; }
 
+.chain h4 {
+  float: left;
+  width: 45%;
+  margin-top: 0; }
+
 .history #closehistory {
   float: right;
   width: 20px;
@@ -203,12 +218,29 @@ table, th, td {
   cursor: pointer;
   z-index: 200; }
 
+.chain #closehistory {
+  float: right;
+  width: 20px;
+  height: 20px;
+  cursor: pointer;
+  z-index: 200; }
+
+
 .history #closehistory:hover {
   background-color: white; }
+
+.chain #closehistory:hover {
+  background-color: white; }
+
 
 .history svg {
   height: 100%;
   width: 100%; }
+
+.chain svg {
+  height: 100%;
+  width: 100%; }
+
 
 .history table {
   width: 100%;
@@ -216,6 +248,14 @@ table, th, td {
   table-layout: fixed;
   clear: both;
   background-color: AliceBlue; }
+
+.chain table {
+  width: 100%;
+  height: 100%;
+  table-layout: fixed;
+  clear: both;
+  background-color: AliceBlue; }
+
 
 .context-menu {
   display: none;

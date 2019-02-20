@@ -560,6 +560,9 @@ module Calendarutilities
  #  AoTo  Away One to one
  #  B     Bye = fortnightly bye session, normal would be Rostered
  #
+ # Required for free sessions:- 
+ #  F     Free lesson for student
+ #
  # Formulas:
  # For routine sessons:-
  #  free Routine = availability of sessions for permanment allocations
@@ -571,8 +574,12 @@ module Calendarutilities
  # For routine sessons:-
  #  free Catch Up = sessons where catch ups can be allocated
  #  = 2S-R-RoTo
+ #  Note: free routine sessions do non exist for flexible sessions.
  #
- #  Note: free routine sessions do on exist for flexible sessions.
+ # For free sessons:-
+ #  free Free = sessons where free (introductory) lessons can be allocated
+ #  = S - F
+ 
  # -----------------------------------------------------------------------------
   def generate_stats
     # get the student stats info first which is displayed at the top of 
@@ -588,8 +595,8 @@ module Calendarutilities
       calLocation.each_with_index do |rows, rowindex|
         rows.each_with_index do |cells, colindex|
           if cells.key?("values") then  # in a slot with lessons
-            siv = {'S'=>0,'R'=>0,'A'=>0,'AoTo'=>0,'RoTo'=>0,'RCu'=>0,'RCoTo'=>0,'B'=>0}
-            s = {'routine'=>siv.clone, 'flexible'=>siv.clone}
+            siv = {'S'=>0,'R'=>0,'A'=>0,'AoTo'=>0,'RoTo'=>0,'RCu'=>0,'RCoTo'=>0,'B'=>0,'F'=>0}
+            s = {'routine'=>siv.clone, 'flexible'=>siv.clone, 'free'=>siv.clone}
             slottutorcount = slotstudentcount = 0
             cells["values"].each do |entry|  # go through each lesson
               # si = stats initiation parameters
@@ -611,7 +618,7 @@ module Calendarutilities
               end
               if @role_lessonindex.has_key? entry.id then  # check for students
                 # for ratio calculation
-                @role_lessonindex[entry.id].each do |thisstudentrole|  # check each tutrole for diagnostics
+                @role_lessonindex[entry.id].each do |thisstudentrole|  # check each role for diagnostics
                   thisstudent = @roleinfo[thisstudentrole].student
                   thisrole = @roleinfo[thisstudentrole]
                   thisstudent = thisrole.student
@@ -626,6 +633,9 @@ module Calendarutilities
                       if(["onetoone"].include?thisstudent.status)
                         s[ss]['RCoTo'] += 1
                       end        
+                    end
+                    if(["free"].include?thisrole.kind)
+                      s[ss]['F'] += 1
                     end
                   elsif(["bye"].include?thisrole.status)
                     s[ss]['B'] += 1
@@ -653,6 +663,8 @@ module Calendarutilities
             #s['sum'] = {'free'=>freeRoutine1, 'catchup'=>catchupRoutine1 + catchupFlexible1 }
             s['sum'] = {'regular'=>regularRoutine1, 'catchup'=>catchupRoutine1 + catchupFlexible1 }
             s['sum']['catchup'] -= s['allocate']['RCu'] if s.has_key?('allocate')
+            ss = 'free'
+            s['sum']['free'] = s[ss]['S'] - s[ss]['F']
             cells["stats"] = s.clone
             # keep counts in the cell/slot data
             cells["ratio"] = {'tutor_count'=>slottutorcount, 'student_count'=>slotstudentcount}

@@ -11,6 +11,12 @@
 
 <div id="selectshows">
   <div>
+    <div class="formatregular selectshowstats">
+      <label id=hideregularlabel class='checkboxzone' for="hideregular">
+        <input id=hideregular class=selectshow onclick="showregular()" type="checkbox" checked>
+        Regular
+      </label>
+    </div>
     <div class="formatcatchup selectshowstats">
       <label id=hidecatchuplabel class='checkboxzone' for="hidecatchup">
         <input id=hidecatchup class=selectshow onclick="showcatchup()" type="checkbox" checked>
@@ -19,8 +25,8 @@
     </div>
     <div class="formatfree selectshowstats">
       <label id=hidefreelabel class='checkboxzone' for="hidefree">
-        <input id=hidefree class=selectshow onclick="showfree()" type="checkbox" >
-        Regular
+        <input id=hidefree class=selectshow onclick="showfree()" type="checkbox" checked>
+        Free
       </label>
     </div>
     <div class="formatstats selectshowstats">
