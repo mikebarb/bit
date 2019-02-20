@@ -3688,7 +3688,7 @@ else      # Not to test.
                   #<div class="lessonstatusinfo"><% if entry.status != nil && entry.status != "" %>Status: <%= entry.status %> <% end %></div>
                   mylessoncomment = ''
                   if entry.status != nil && entry.status != ''
-                    unless ["standard"].include?(entry.status)   # if this is a standard lesson 
+                    unless ["standard", "routine", "flexible"].include?(entry.status)   # if this is a standard lesson 
                       mylessoncomment = entry.status + "\n"      # don't show the lesson status (kind)
                     end
                   end
