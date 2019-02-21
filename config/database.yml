@@ -39,7 +39,7 @@ test:
 
 staging:
   <<: *default
-  database: <%= ENV['DB_STAGE'] %>
+  database: <%= ENV['DB_NAME'] %>
   username: <%= ENV['DB_USER'] %>
   password: <%= ENV['DB_PASSWORD'] %>
   

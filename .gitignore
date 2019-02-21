@@ -22,7 +22,8 @@
 /client_secrets.json
 /google_tokens
 
-# Ignore application configuration
+# Ignore application configuration - holds the secrets
+# This file is uploaded manually directly to the appropriate server.
 /config/application.yml
 
 # ignore byebug stuff
