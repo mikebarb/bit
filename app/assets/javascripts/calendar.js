@@ -3062,6 +3062,7 @@ function ready_stats(){
   }
 
   elementdraggable_stats(".student, .allocate");
+  //elementdraggable_stats(".global, .allocate");
   slotdroppable_stats(".slot");
   
 //---------------------- End of Drag and Drop - stats ---------------------

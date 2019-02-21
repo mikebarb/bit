@@ -144,7 +144,7 @@ class RolesController < ApplicationController
       return "passed clicked_domid parameter to moverun function is incorrect - #{clicked_domid.inspect}"
     end      
     # Extract relevant details from destination
-    # Teh destination lesson (allocate) is determined and placed in @domchange['to']
+    # The destination lesson (allocate) is determined and placed in @domchange['to']
     # before this function is called.
     if(result = /^(([A-Z]+\d+l\d+)n(\d+))/.match(@domchange['to']))  # destination
       new_lesson_id = result[3].to_i
@@ -157,10 +157,11 @@ class RolesController < ApplicationController
     # 1. global (first scheduling of a student)
     # 2. allocate (rescheduling already scheduled student) i.e. parent changed
     #             their minds.
-    # There are a number of options based on kind of lesson/student
+    # There are a number of options based on kind of lesson/student (i.e. role)
     # 1. catchup - only a single element is moved.
     # 2. other types - element is moved to chosen designation, then that element 
     #                  is extended into the rest of the term.
+    # Member of 1 & 2 above needs to be refined!!!
     # Logical considerations
     # If moving from global to allocate (lesson.status)
     #   Note: no chains are valid in global!!
@@ -182,13 +183,11 @@ class RolesController < ApplicationController
     #       2. Lengthen or shorten the role chain
     #       3. Copy the updated chain (remove roles in db when shortened).
     #
-    # Keep a list of all the elements to be updated in the database
+    # Keep a list of all the elements that require a database update
     @block_roles = Array.new
     @block_lessons = Array.new
     #  ** old_lesson_id  ** holds the old lesson_id => so can update @role.lesson_id
     # Get the element we want to move
-    ### Role.where(first: @role.first).includes([:student, lesson: :slot])
-    ### @role = Role.includes(:lesson).where(:student_id => student_id, :lesson_id => old_lesson_id).first
     @role = Role.includes([:student, lesson: :slot]).where(:student_id => student_id, :lesson_id => old_lesson_id).first
     @new_lesson = Lesson.includes(:slot).find(new_lesson_id)
     return "Allocation Error - Parent lesson is not a part of a chain" if @new_lesson.first == nil 
@@ -197,29 +196,26 @@ class RolesController < ApplicationController
       if @role.first != nil                # error if not a single element (not a chain).
         return "Allocation Error - Global elements must not be chains!" 
       end                                  # Guaranteed single element at this point
-      if ['catchup'].include?(@role.kind)  # do the catchups first - remain single elements
-        @block_roles.push(@role)           # and store for later update (as db transaction)
-        @block_lessons.push(@new_lesson)   # the matching lesson
-      else                                    # do the others, they become a chain after dropping into allocate
+      if ['first','fortnightly','onetoone','standard', ].include?(@role.kind)    # they become a chain after dropping into allocate
         @role.first = @role.id                # make into a chain
         @role.block = @role.id                # .next defaults to nil - terminates chain.
-        #this_error = extend_chain_blocks.call(@new_lesson.id) # Extend the chain to the end of term -> @block_roles 
         this_error = extend_chain_blocks(@new_lesson.id) # Extend the chain to the end of term -> @block_roles 
         return this_error if this_error.length > 0
+      else                                 # rest remain single elements (free, catchup, bonus)
+        @block_roles.push(@role)           # and store for later update (as db transaction)
+        @block_lessons.push(@new_lesson)   # the matching lesson
       end
-      #this_error = extend_chain_doms.call
       this_error = extend_chain_doms()
       return this_error if this_error.length > 0
       @domchange['object_id_old'] = @domchangerun[0]['object_id_old']
       @domchange['object_id'] = @domchangerun[0]['object_id']
       @domchange['to'] = @domchangerun[0]['to']
-      #this_error = extend_chain_relinkrole.call
       this_error = extend_chain_relinkrole()
       return this_error if this_error.length > 0
-      #this_error = extend_chain_dbUpdates.call
       this_error = extend_chain_dbUpdates()
       return this_error if this_error.length > 0
-      #this_error = extend_chain_screenUpdates.call
+      this_error = extend_chain_doms_post_db_update()
+      return this_error if this_error.length > 0
       this_error = extend_chain_screenUpdates()
       return this_error if this_error.length > 0
     elsif(@role.lesson.status == 'allocate')
@@ -234,13 +230,12 @@ class RolesController < ApplicationController
         @domchange['object_id_old'] = @domchangerun[0]['object_id_old']
         @domchange['object_id'] = @domchangerun[0]['object_id']
         @domchange['to'] = @domchangerun[0]['to']
-        #this_error = extend_chain_relinkrole.call
         this_error = extend_chain_relinkrole()
         return this_error if this_error.length > 0
-        #this_error = extend_chain_dbUpdates.call
         this_error = extend_chain_dbUpdates()
         return this_error if this_error.length > 0
-        #this_error = extend_chain_screenUpdates.call
+        this_error = extend_chain_doms_post_db_update()
+        return this_error if this_error.length > 0
         this_error = extend_chain_screenUpdates()
         return this_error if this_error.length > 0
       else                                  # Moving chain
@@ -288,22 +283,20 @@ class RolesController < ApplicationController
           end
         end
         logger.debug "extend_chain_doms"
-        #this_error = extend_chain_doms.call
         this_error = extend_chain_doms()
         return this_error if this_error.length > 0
         @domchange['object_id_old'] = @domchangerun[0]['object_id_old']
         @domchange['object_id'] = @domchangerun[0]['object_id']
         @domchange['to'] = @domchangerun[0]['to']
         logger.debug "calling relinkrole"
-        #this_error = extend_chain_relinkrole.call
         this_error = extend_chain_relinkrole()
         return this_error if this_error.length > 0
         logger.debug "extend_chain_dbUpdates"
-        #this_error = extend_chain_dbUpdates.call
         this_error = extend_chain_dbUpdates()
         return this_error if this_error.length > 0
         logger.debug "extend_chain_screenUpdates"
-        #this_error = extend_chain_screenUpdates.call
+        this_error = extend_chain_doms_post_db_update()
+        return this_error if this_error.length > 0
         this_error = extend_chain_screenUpdates()
         return this_error if this_error.length > 0
       end
@@ -317,7 +310,6 @@ class RolesController < ApplicationController
   #---------------- Supporting Functions for doAllocation --------------------
   #------------------------- extend chain blocks ------------------------
   def extend_chain_blocks(new_lesson_id)
-  #extend_chain_blocks = lambda do |new_lesson_id|
     this_error = ""
     @block_roles.push(@role)
     #----------------------- parent extension ----------------------------
@@ -375,15 +367,13 @@ class RolesController < ApplicationController
 
   #------------------------- perform dom updates ------------------------
   def extend_chain_doms
-  #extend_chain_doms = lambda do
     # Build the @domchange(domchangerun for each element in the chain
     # Note: In this scenario, there is actually one element in this role chain
     #
-    
     this_error = ""
     @domchangerun = Array.new
     @block_roles.each_with_index do |o, i|
-      logger.debug "block_role (" + i.to_s + "): " + o.inspect
+      #logger.debug "block_role (" + i.to_s + "): " + o.inspect
       @domchangerun[i] = Hash.new
       # @domchange['action'] for the element depends on if they are moved, added
       # or deleted.
@@ -392,9 +382,9 @@ class RolesController < ApplicationController
       #         block_roles_remove processing 
       # copy    is for elements that have been added - detected by checking
       #         @blocksToAdd which is the number of added elements
-      @domchangerun[i]['action']         = 'move'           # default.
-      if @num_elements_added != nil && @num_elements_added > 0      # elements have been added         
-        if @block_roles.count - @num_elements_added <= i     # detect added elements
+      @domchangerun[i]['action']         = 'move'                 # default.
+      if @num_elements_added != nil && @num_elements_added > 0    # elements have been added         
+        if @block_roles.count - @num_elements_added <= i          # detect added elements
           @domchangerun[i]['action']         = 'copy'
         end
       end
@@ -418,22 +408,22 @@ class RolesController < ApplicationController
                                      'l' +  o.slot_id.to_s.rjust(@sf, "0")
       @domchangerun[i]['to']              = @domchangerun[i]['new_slot_domid'] +
                                      'n' +  o.id.to_s.rjust(@sf, "0")
-      @domchangerun[i]['html_partial']    = 
-        render_to_string("calendar/_schedule_student.html",
-                        :formats => [:html], :layout => false,
-                        :locals => {:student  => @role.student, 
-                                    :thisrole => @domchangerun[i]['role'], 
-                                    :slot     => @domchangerun[i]['new_slot_domid'],                     # new_slot_id, 
-                                    :lesson   => o.id                               # new_lesson_id
-                                   })
+      #@domchangerun[i]['html_partial']    = 
+      #  render_to_string("calendar/_schedule_student.html",
+      #                  :formats => [:html], :layout => false,
+      #                  :locals => {:student  => @role.student, 
+      #                              :thisrole => @domchangerun[i]['role'], 
+      #                              :slot     => @domchangerun[i]['new_slot_domid'],                     # new_slot_id, 
+      #                              :lesson   => o.id                               # new_lesson_id
+      #                             })
       @domchangerun[i]['object_id'] = @domchangerun[i]['to'] +
                                       's' + @role.student_id.to_s.rjust(@sf, "0")
     end
-    # # sometimes, we need to rmove students on the display
+    # # sometimes, we need to remove students on the display
     if @block_roles_remove != nil        # if deletions are required.
        @domchangeremove = Array.new      # build the version to manage display deletes
       (0..@block_roles_remove.length-1).each do |i|
-        o = @block_roles_remove[i]                # shortend chain in db
+        o = @block_roles_remove[i]                # shorten chain in db
         @domchangeremove[i] = Hash.new if @domchangeremove[i] == nil
         @domchangeremove[i]['action']    = 'remove'
         @domchangeremove[i]['object_id']  =        o.lesson.slot.location[0,3] +
@@ -448,9 +438,33 @@ class RolesController < ApplicationController
       end
     end
     # Now provide the new 'object_id' which governs the new display name
-    logger.debug "@domchange['object_id'] : " + @domchange['object_id'].inspect
+    #logger.debug "@domchange['object_id'] : " + @domchange['object_id'].inspect
     @domchange['object_id'] = @domchangerun[0]['object_id']
     #logger.debug "@domchange['object_id'] : " + @domchange['object_id'].inspect
+    # Now remove keys not needed
+    ###@domchangerun.delete('role')
+    ###@domchangerun.delete('student')
+    return this_error     # be empty if no errors
+  end
+
+
+  #------------------------ perform dom updates Part 2 -----------------------
+  def extend_chain_doms_post_db_update
+    # Build the @domchange(domchangerun for each element in the chain
+    # This step redoes the rendering after the db is updated.
+    #
+    this_error = ""
+    # redo the steps for the rendering
+    @block_lessons.each_with_index do |o, i|
+      @domchangerun[i]['html_partial']    = 
+        render_to_string("calendar/_schedule_student.html",
+                        :formats => [:html], :layout => false,
+                        :locals => {:student  => @role.student, 
+                                    :thisrole => @domchangerun[i]['role'], 
+                                    :slot     => @domchangerun[i]['new_slot_domid'],  # new_slot_id, 
+                                    :lesson   => o.id                                 # new_lesson_id
+                                   })
+    end
     # Now remove keys not needed
     @domchangerun.delete('role')
     @domchangerun.delete('student')
@@ -458,9 +472,7 @@ class RolesController < ApplicationController
   end
 
   #---------- relink roles from old_lessons to new_lessons ----------------
-
   def extend_chain_relinkrole
-  #extend_chain_relinkrole = lambda do
     @block_roles.each_with_index do |o, i|
       @block_roles[i].lesson_id = @block_lessons[i].id
     end
@@ -469,7 +481,6 @@ class RolesController < ApplicationController
 
   #------------------------- perform the db update ------------------------
   def extend_chain_dbUpdates
-  #extend_chain_dbUpdates = lambda do
     #------------------------- perform the db update ----------------------
     # block_role now contains all the (block of) elements we need to move
     # Need to step through this chain.
@@ -530,9 +541,13 @@ class RolesController < ApplicationController
     end
     return this_error     # be empty if no errors
   end
+
+
+
+
+
   
   def extend_chain_screenUpdates()
-  #extend_chain_screenUpdates = lambda do
     # saved safely, now need to update the browser display (using calendar messages)
     # May be some sceen items to remove
     # order of updating sceen elements is important.

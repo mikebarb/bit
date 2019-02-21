@@ -49,10 +49,19 @@ class CalendarController < ApplicationController
         passedParams.delete(:displayheader)
       end
     end
-    
+
     if flagRefresh && params.has_key?(:startdate) 
       @options[:startdate] = params[:startdate].to_date
       passedParams.delete(:startdate)
+    elsif params[:bench]  == 'roster'
+      if current_user.rosterstart                # roster period configured in preferences
+        mystartdate = current_user.rosterstart
+      elsif ! params[:daystart].blank?           # override flexible display period parameters provided
+        mystartdate = params[:daystart].to_date
+      else                                       # use preferences for calendar display
+        mystartdate = current_user.daystart
+      end
+      @options[:startdate] = mystartdate
     else
       params[:daystart].blank? ? mystartdate = current_user.daystart :
                                  mystartdate = params[:daystart].to_date
@@ -61,6 +70,17 @@ class CalendarController < ApplicationController
     if flagRefresh && params.has_key?(:enddate) 
       @options[:enddate] = params[:enddate].to_date
       passedParams.delete(:enddate)
+    elsif params[:bench]  == 'roster'
+      if current_user.rosterdays            # roster period configured in preferences
+        mydaydur = current_user.rosterdays
+      elsif ! params[:daydur].blank?        # override flexible display period parameters provided
+        mydaydur = params[:daydur].to_i
+      else                                  # use preferences for calendar display
+        mydaydur = current_user.daydur
+      end
+      mydaydur < 1  || mydaydur > 21   ? mydaydur : 1 # limit range of days allowed!!!
+      myenddate = @options[:startdate] + mydaydur.days
+      @options[:enddate] = myenddate
     else
       params[:daydur].blank?   ? mydaydur = current_user.daydur :
                                  mydaydur = params[:daydur].to_i  

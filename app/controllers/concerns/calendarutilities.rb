@@ -523,7 +523,7 @@ module Calendarutilities
       end
       #student.lessons.each_with_index do |lesson, i|
       studentlessons.sort{|x,y| x[1] <=> y[1]}.each_with_index do |a, i|
-        #byebug if student.pname == 'Vili Fusimalohi'
+        #byebug if student.pname == 'Eliza McGill'
         lesson = a[0]
         unless(@students_stats[student.id].key?(lesson.id))
           @students_stats[student.id][lesson.id] = Hash.new
@@ -538,7 +538,12 @@ module Calendarutilities
                  'n' + lesson.id.to_s.rjust(@sf, "0") + 
                  's' + student.id.to_s.rjust(@sf, "0")
         @students_stats[student.id]['dom_ids'].push(dom_id)
-        @students_stats[student.id]['role_kind'].push(student.roles[i].kind)
+        student.roles.each do |thisrole|
+          if thisrole.lesson_id == lesson.id
+            @students_stats[student.id]['role_kind'].push(thisrole.kind)
+            break
+          end
+        end
       end
     end
   end
