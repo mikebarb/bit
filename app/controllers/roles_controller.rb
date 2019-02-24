@@ -199,6 +199,8 @@ class RolesController < ApplicationController
       if ['first','fortnightly','onetoone','standard', ].include?(@role.kind)    # they become a chain after dropping into allocate
         @role.first = @role.id                # make into a chain
         @role.block = @role.id                # .next defaults to nil - terminates chain.
+        # moveing from global to allocate, role status changes from queued to scheduled
+        @role.status = 'scheduled'
         this_error = extend_chain_blocks(@new_lesson.id) # Extend the chain to the end of term -> @block_roles 
         return this_error if this_error.length > 0
       else                                 # rest remain single elements (free, catchup, bonus)
@@ -340,9 +342,9 @@ class RolesController < ApplicationController
                                       block:      @role.block)
       if @block_roles[0].student.status == 'fortnightly'
         if @block_roles[0].status == 'bye'
-          @block_roles[i].status = i.even? ? 'bye' : 'queued' 
-        else
-          @block_roles[i].status = i.odd? ? 'bye' : 'queued' 
+          @block_roles[i].status = i.even? ? 'bye' : 'scheduled' 
+        else+
+          @block_roles[i].status = i.odd? ? 'bye' : 'scheduled' 
         end
       end
       if @block_roles[0].kind == 'first'
@@ -353,7 +355,7 @@ class RolesController < ApplicationController
             @block_roles[i].kind = 'onetoone'
           elsif @block_roles[0].student.status == 'fortnightly'
             @block_roles[i].kind = 'fortnightly'
-            @block_roles[i].status = i.odd? ? 'bye' : 'queued' 
+            @block_roles[i].status = i.odd? ? 'bye' : 'fortnightly' 
           end
         end
       end

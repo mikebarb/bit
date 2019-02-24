@@ -379,7 +379,8 @@ table, th, td {
   background-color: #CC0000; }
 
 .t-kind-standard .statusinfo, #tutor-kind-standard {
-  background-color: mediumspringgreen; }
+  background-color: PeachPuff; }
+  /* background-color: mediumspringgreen; } */
 
 .t-kind-training .statusinfo, #tutor-kind-training {
   background-color: sandybrown; }
@@ -454,7 +455,8 @@ table, th, td {
   background-color: salmon; }
 
 .s-kind-standard, #student-kind-standard {
-  background-color: mediumspringgreen; }
+  background-color: PeachPuff; }
+  /* background-color: mediumspringgreen; } */
 
 .s-kind-BFL {
   background-color: #ffff00; }

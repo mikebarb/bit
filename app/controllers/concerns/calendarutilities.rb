@@ -601,14 +601,15 @@ module Calendarutilities
         rows.each_with_index do |cells, colindex|
           if cells.key?("values") then  # in a slot with lessons
             siv = {'S'=>0,'R'=>0,'A'=>0,'AoTo'=>0,'RoTo'=>0,'RCu'=>0,'RCoTo'=>0,'B'=>0,'F'=>0}
-            s = {'routine'=>siv.clone, 'flexible'=>siv.clone, 'free'=>siv.clone}
+            s = {'routine'=>siv.clone, 'flexible'=>siv.clone,
+                 'allocate'=>siv.clone, 'free'=>siv.clone}
             slottutorcount = slotstudentcount = 0
             cells["values"].each do |entry|  # go through each lesson
               # si = stats initiation parameters
               # ss = session status
               # s  = stats
               ss = entry.status
-              ss = 'routine' if entry.status == 'standard'
+              ss = 'routine' if entry.status == 'standard' # standard and routine lessons are equivalent
               s[ss] = siv.clone unless s.has_key?(ss)
                 s[ss]['S'] += 1
               if @tutrole_lessonindex.has_key? entry.id then  # check for tutroles linked to this lesson
@@ -653,21 +654,32 @@ module Calendarutilities
                 end
               end
             end
-            #logger.debug "statistics: " + s.inspect
             # keep stats in the cell/slot data
+            # track how many spare in routine/standard and flexible lessons
             ss = 'routine'
-            regularRoutine1 = 2*s[ss]['S']-s[ss]['A']-s[ss]['R']+s[ss]['RCu']-
-                          s[ss]['RoTo']-s[ss]['AoTo']+s[ss]['RCoTo']-s[ss]['B']
-            catchupRoutine1 = s[ss]['A']+s[ss]['RoTo']+s[ss]['B']-s[ss]['RCu']-s[ss]['RCoTo']
-            #s[ss]['Free'] = freeRoutine1
-            s[ss]['Regular'] = regularRoutine1
-            s[ss]['Catchup'] = catchupRoutine1
+            #regularRoutine1 = 2*s[ss]['S']-s[ss]['A']-s[ss]['R']+s[ss]['RCu']-
+            #              s[ss]['RoTo']-s[ss]['AoTo']+s[ss]['RCoTo']-s[ss]['B']
+            ###catchupRoutine1 = s[ss]['A']+s[ss]['RoTo']+s[ss]['B']-s[ss]['RCu']-s[ss]['RCoTo']
+            #catchupRoutine1 = s[ss]['A']+s[ss]['B']-s[ss]['RCu']-s[ss]['RCoTo']
+            s[ss]['Regular'] = 2*s[ss]['S']-s[ss]['A']-s[ss]['R']+s[ss]['RCu']-
+                               s[ss]['RoTo']-s[ss]['AoTo']+s[ss]['RCoTo']-s[ss]['B']
+            s[ss]['Catchup'] = s[ss]['A']+s[ss]['B']-s[ss]['RCu']-s[ss]['RCoTo']
             ss = 'flexible'
-            catchupFlexible1 = 2 * s[ss]['S']-s[ss]['R']-s[ss]['RoTo'] 
-            s[ss]['Catchup'] = catchupFlexible1
-            #s['sum'] = {'free'=>freeRoutine1, 'catchup'=>catchupRoutine1 + catchupFlexible1 }
-            s['sum'] = {'regular'=>regularRoutine1, 'catchup'=>catchupRoutine1 + catchupFlexible1 }
-            s['sum']['catchup'] -= s['allocate']['RCu'] if s.has_key?('allocate')
+            #catchupFlexible1 = 2 * s[ss]['S']-s[ss]['R']-s[ss]['RoTo'] 
+            s[ss]['Catchup'] = 2 * s[ss]['S']-s[ss]['R']-s[ss]['RoTo']
+            # now how many are to be used by allocations
+            ss = 'allocate'
+            s[ss]['Regular'] = s[ss]['R']+s[ss]['RoTo']-s[ss]['RCu']-
+                               s[ss]['RCoTo']+s[ss]['RoTo']
+            s[ss]['Catchup'] = s[ss]['RCu']+s[ss]['RCoTo']
+            # now to calculate overall availabilities
+            s['sum'] = {'regular'=>s['routine']['Regular'],
+                        'catchup'=>s['routine']['Catchup'] + s['flexible']['Catchup'] }
+            if s.has_key?('allocate')
+              s['sum']['regular'] -= s['allocate']['Regular'] 
+              s['sum']['catchup'] -= s['allocate']['Catchup']
+            end
+            # Now to handle the free lessons - quite independant of the routine and flexible lessons.
             ss = 'free'
             s['sum']['free'] = s[ss]['S'] - s[ss]['F']
             cells["stats"] = s.clone
@@ -730,17 +742,14 @@ module Calendarutilities
     end
     # Need to get all relevant lessons for this slot
     #slot_lessons = Lesson.includes(:students, :roles, :slot).where(:slot_id => slot_dbid)
-    #byebug
     @slot_lessons = Lesson.where(slot_id: slot_dbid)
                           .includes(roles:[:student])
     # step through each lesson in this slot
-    #O# rS = rR = rA = rAoTo = rRoTo = rRCu = rRCoTo = rB = 0
-    #O# fS = fR = fRoTo = fRCu = fRCoTo = 0
-    siv = {'S'=>0,'R'=>0,'A'=>0,'AoTo'=>0,'RoTo'=>0,'RCu'=>0,'RCoTo'=>0,'B'=>0}
-    s = {'routine'=>siv.clone, 'flexible'=>siv.clone}
-    
+    siv = {'S'=>0,'R'=>0,'A'=>0,'AoTo'=>0,'RoTo'=>0,'RCu'=>0,'RCoTo'=>0,'B'=>0,'F'=>0}
+    s = {'routine'=>siv.clone, 'flexible'=>siv.clone,
+         'allocate'=>siv.clone, 'free'=>siv.clone}
     @slot_lessons.each do |entry|
-      # Remember lesson(entry) status is diaplayed as kind.
+      # Remember lesson(entry) status is diaplayed to user as kind.
       ss = entry.status
       ss = 'routine' if entry.status == 'standard'
       s[ss] = siv.clone unless s.has_key?(ss)
@@ -764,6 +773,9 @@ module Calendarutilities
                 s[ss]['RCoTo'] += 1
               end        
             end
+            if(["free"].include?thisrole.kind)
+              s[ss]['F'] += 1
+            end
           elsif(["bye"].include?thisrole.status)
             s[ss]['B'] += 1
           elsif(["away", "absent"].include?thisrole.status)
@@ -776,20 +788,43 @@ module Calendarutilities
       end
     end
     # keep stats in the cell/slot data
+    # track how many spare in routine/standard and flexible lessons
+    ss = 'routine'
+    s[ss]['Regular'] = 2*s[ss]['S']-s[ss]['A']-s[ss]['R']+s[ss]['RCu']-
+                       s[ss]['RoTo']-s[ss]['AoTo']+s[ss]['RCoTo']-s[ss]['B']
+    s[ss]['Catchup'] = s[ss]['A']+s[ss]['B']-s[ss]['RCu']-s[ss]['RCoTo']
+    ss = 'flexible'
+    #catchupFlexible1 = 2 * s[ss]['S']-s[ss]['R']-s[ss]['RoTo'] 
+    s[ss]['Catchup'] = 2 * s[ss]['S']-s[ss]['R']-s[ss]['RoTo']
+    # now how many are to be used by allocations
+    ss = 'allocate'
+    s[ss]['Regular'] = s[ss]['R']+s[ss]['RoTo']-s[ss]['RCu']-
+                       s[ss]['RCoTo']+s[ss]['RoTo']
+    s[ss]['Catchup'] = s[ss]['RCu']+s[ss]['RCoTo']
+    # now to calculate overall availabilities
+    s['sum'] = {'regular'=>s['routine']['Regular'],
+                'catchup'=>s['routine']['Catchup'] + s['flexible']['Catchup'] }
+    if s.has_key?('allocate')
+      s['sum']['regular'] -= s['allocate']['Regular'] 
+      s['sum']['catchup'] -= s['allocate']['Catchup']
+    end
+    # Now to handle the free lessons - quite independant of the routine and flexible lessons.
+    ss = 'free'
+    s['sum']['free'] = s[ss]['S'] - s[ss]['F']
+#-------------------------------------------
+=begin
     ss = 'routine'
     regularRoutine      = 2*s[ss]['S']-s[ss]['A']-s[ss]['R']+s[ss]['RCu']-
                        s[ss]['RoTo']-s[ss]['AoTo']+s[ss]['RCoTo']-s[ss]['B']
     catchupRoutine   = s[ss]['A']+s[ss]['RoTo']+s[ss]['B']-s[ss]['RCu']-s[ss]['RCoTo']
-    #s[ss]['Free']    = freeRoutine
     s[ss]['Regular'] = regularRoutine
     s[ss]['Catchup'] = catchupRoutine
     ss = 'flexible'
     catchupFlexible  = 2 * s[ss]['S']-s[ss]['R']-s[ss]['RoTo'] 
     s[ss]['Catchup'] = catchupFlexible
-    #s['sum'] = {'free'=>freeRoutine, 'catchup'=>catchupRoutine + catchupFlexible }
     s['sum'] = {'regular'=>regularRoutine, 'catchup'=>catchupRoutine + catchupFlexible }
     s['sum']['catchup'] -= s['allocate']['RCu'] if s.has_key?('allocate')
-
+=end
     slot_html_partial = render_to_string("calendar/_stats_slot.html",
                         :formats => [:html], :layout => false,
                         :locals => {:stats => s})

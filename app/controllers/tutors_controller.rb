@@ -37,17 +37,15 @@ class TutorsController < ApplicationController
   # GET /tutors/history/1
   # GET /tutors/history/1.json
   def history
-    #byebug
     options = Hash.new
+    options['action'] = 'history'
     if params.has_key?('startdate')
       options['startdate'] = params['startdate'].to_date
     end
     if params.has_key?('enddate')
       options['startdate'] = params['enddate'].to_date
     end
-    logger.debug "options: " + options.inspect
-    @tutor_history =  tutor_history(params[:id], {})
-
+    @tutor_history =  tutor_history(params[:id], options)
     respond_to do |format|
       format.html
       # helpful reference for jbuilder is
@@ -55,6 +53,23 @@ class TutorsController < ApplicationController
       format.json { render :history, status: :ok }
     end
   end
+
+  # GET /tutors/term/1
+  # GET /tutors/term/1.json
+  def term
+    options = Hash.new
+    options['action'] = 'term'
+    options['startdate'] = current_user.termstart
+    options['enddate'] = current_user.termstart + current_user.termweeks.weeks
+    @tutor_history =  tutor_history(params[:id], options)
+    respond_to do |format|
+      #format.html
+      # helpful reference for jbuilder is
+      # https://devblast.com/b/jbuilder
+      format.json { render :history, status: :ok }
+    end
+  end
+
 
   # GET /tutors/history/1
   # GET /tutors/history/1.json

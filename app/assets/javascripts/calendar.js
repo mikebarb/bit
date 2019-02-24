@@ -497,6 +497,7 @@ function ready_calendar() {
     var scmi_editComment = false;
     var scmi_editDetail = false;
     var scmi_history = false;
+    var scmi_term = false;
     var scmi_chain = false;
     var scmi_editSubject = false;
     var scmi_changes = false;
@@ -539,6 +540,7 @@ function ready_calendar() {
           // first what contextmenu item to display for persons
           scmi_setStatus = scmi_setKind = scmi_editComment = scmi_editDetail = true;
           scmi_history   = true;
+          scmi_term      = true;
           scmi_changes   = true;
           scmi_editEntry = true;
           // select actions depending of if a chain element or not
@@ -622,6 +624,7 @@ function ready_calendar() {
     setscmi('context-editDetail', scmi_editDetail);
     setscmi('context-editSubject', scmi_editSubject);
     setscmi('context-history', scmi_history);
+    setscmi('context-term', scmi_term);
     setscmi('context-chain', scmi_chain);
     setscmi('context-changes', scmi_changes);
     setscmi('context-editEntry', scmi_editEntry);
@@ -966,6 +969,12 @@ function testSuiteForWeekOfYear(){
         break;
       case "history":
         // This will show the history for this person.
+        getHistory(currentActivity);        
+        break;
+      case "term":
+        // This will show all the entries in the current term for this person.
+        // Uses the same history code, just different dates picked up in the
+        // controller.
         getHistory(currentActivity);        
         break;
       case "chain":
@@ -1343,7 +1352,7 @@ function testSuiteForWeekOfYear(){
 
 
   //----------------- Show chain for selected Tutor or Student ------------------------
-  //This function is called to get a student or tutor history
+  //This function is called to get a student or tutor clicked on chain
   //Does ajax to get the student or tutor history
   function getChain(domchange){
     // domchange['action']      = thisChoice;
@@ -1351,7 +1360,7 @@ function testSuiteForWeekOfYear(){
     var parseid = currentActivity['object_id'].match(/\w(\d+)$/);
     var lessonid = currentActivity['object_id'].match(/n(\d+)[st]\d+$/);
     //var mydata = {'domchange' : domchange};
-    // url format: myhost + "/students/history/" + personid;
+    // url format: myhost + "/students/chain/" + personid;
     var myurl = myhost + "/" + domchange['object_type'] + "s/chain/" + parseid[1];
     $.ajax({
         type: "GET",
@@ -1381,12 +1390,10 @@ function testSuiteForWeekOfYear(){
      });
   }
 
-
-
-
-
   //----------------- Get history of Tutor or Student ------------------------
   //This function is called to get a student or tutor history
+  // This also used to get term entries - just uses different dates in 
+  // the controller based on the domchange action.
   //Does ajax to get the student or tutor history
   function getHistory(domchange){
     // domchange['action']      = thisChoice;
@@ -1394,7 +1401,9 @@ function testSuiteForWeekOfYear(){
     var parseid = currentActivity['object_id'].match(/\w(\d+)$/);
     //var mydata = {'domchange' : domchange};
     // url format: myhost + "/students/history/" + personid;
-    var myurl = myhost + "/" + domchange['object_type'] + "s/history/" + parseid[1];
+    var myurl = myhost + "/" + domchange['object_type'] + "s/" + 
+                domchange['action'] + "/" + parseid[1];
+    //mydata = domchange;
     $.ajax({
         type: "GET",
         url: myurl,
@@ -1464,7 +1473,9 @@ function testSuiteForWeekOfYear(){
     hd['lessons'].forEach( function(lesson){
       //var htmlsegmentlesson1 = "<td>" + lesson['status'] + "</td>";
       //var htmlsegmentlesson    += "<td>" + lesson['kind'] + "</td>";
-      var htmlsegmentlesson = "<td>" + lesson['daytime'] + "</td>";
+      //var thisdaytime = lesson['daytime'];
+      //var m = thisdaytime.match(/(.+) (.+)/); 
+      var htmlsegmentlesson = "<td>" + lesson['daytime'] + ' ' + lesson['week'] + "</td>";
       htmlsegmentlesson    += "<td>" + lesson['site'] + "</td>";
       
       // get students - ensure only other students if displaying a student
@@ -3062,7 +3073,6 @@ function ready_stats(){
   }
 
   elementdraggable_stats(".student, .allocate");
-  //elementdraggable_stats(".global, .allocate");
   slotdroppable_stats(".slot");
   
 //---------------------- End of Drag and Drop - stats ---------------------
@@ -3145,6 +3155,7 @@ function ready_stats(){
     elecreated.innerHTML = html_students;
     var eletoreplace = document.getElementById('index-students');
     eletoreplace.parentNode.replaceChild(elecreated, eletoreplace);
+    elementdraggable_stats(".student, .allocate");
     hideshowstudent();
   }
 

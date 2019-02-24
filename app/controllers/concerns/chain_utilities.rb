@@ -440,7 +440,8 @@ module ChainUtilities
         # handle the move student to global
         if options.has_key? 'to_global'
           @role.kind = options['to_global']
-          @role.status = 'scheduled'
+          ###@role.status = 'scheduled'
+          @role.status = 'queued'
         end
       else      # tutor
         @role = Tutrole.new(:tutor_id => person_id, :lesson_id => new_lesson_id)
@@ -833,7 +834,7 @@ module ChainUtilities
       this_error += " Can only extend from last link in chain (not midway)"
       return this_error
     end
-    #--------------------------- parent extension ---------------------------------
+    #------------------------- parent extension -------------------------------
     # Now need to find the parent chain
     # We find the existing parent for this role - and get the rest of the run.
     this_error = get_all_parent_lesson_chain_and_block(@role, @role.lesson_id)
@@ -842,6 +843,7 @@ module ChainUtilities
       this_error += " Already at end of parent chain - nothing to extend"
       return this_error
     end
+    #------------------ copy roles hortzontially -----------------------------
     # Now copy the roles hortzontally.
     # block_roles[0] is the existing entitiy
     # block_roles[1] is the first one to be created.

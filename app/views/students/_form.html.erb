@@ -15,25 +15,35 @@
     <%= f.label 'Preferred Name' %><br>
     <%= f.text_field :pname %>
   </div>
+  
+  Sex
   <div class="field">
-    <%= f.label :sex %><br>
-    <%= f.text_field :sex %>
+    <%= f.radio_button :sex, 'male' %>
+    <%= label :sex_male, 'male' %>
+    <%= f.radio_button :sex, 'female' %>
+    <%= label :sex_female, 'female' %>
+    <%= f.radio_button :sex, 'unknown' %>
+    <%= label :sex_unknown, 'unknown' %>
   </div>
+
+  Year
   <div class="field">
-    <%= f.label 'Focus' %><br>
-    <%= f.text_area :comment %>
+    <%= f.select :year, ['K','1','2','3','4','5','6','7','8','9','10','11','12','F'] %>
   </div>
+
+  Status
   <div class="field">
-    <%= f.label :status %><br>
-    <%= f.text_field :status %>
+    <%= f.select :status, ['new','fortnightly','onetoone','standard','inactive'] %>
   </div>
-  <div class="field">
-    <%= f.label :year %><br>
-    <%= f.text_field :year %>
-  </div>
+
   <div class="field">
     <%= f.label :study %><br>
     <%= f.text_field :study %>
+  </div>
+
+  <div class="field">
+    <%= f.label 'Focus' %><br>
+    <%= f.text_area :comment %>
   </div>
 
   <div class="actions">

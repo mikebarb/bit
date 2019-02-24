@@ -3487,7 +3487,7 @@ else      # Not to test.
       # General formatting for each site sheet
       myformat.push(googleVertAlign.call(sheet_id, 1, 1, nil, nil, "TOP"))
       myformat.push(googleWrapText.call(sheet_id, 1, 1, nil, nil, "WRAP"))
-      myformat.push(googleColWidthItem.call(sheet_id, 1,100,200))
+      myformat.push(googleColWidthItem.call(sheet_id, 1,100,300))
       myformat.push(googleColWidthItem.call(sheet_id, 1,1,0))
 
       #<table id=site-<%= location %> >
@@ -3525,6 +3525,8 @@ else      # Not to test.
               # googlecolwidthitem.call(sheet_id, colStart, numberOfCols, width_pixels)
               myformat.push(googleColWidthItem.call(sheet_id, currentCol, 1, 130))
               myformat.push(googleColWidthItem.call(sheet_id_all, currentCol, 1, 130))
+              myformat.push(googleColWidthItem.call(sheet_id, currentCol+3, 1, 200))
+              myformat.push(googleColWidthItem.call(sheet_id_all, currentCol+3, 1, 200))
               title = calLocation[0][0]['value'] +                                           # site name
                       calLocation[0][cellIndex]['datetime'].strftime("  %A %e/%-m/%y  ")  +  # date
                       rows[0]['value']                                                       # sesson time 
@@ -3608,8 +3610,9 @@ else      # Not to test.
                       logger.debug "student: " + student.pname
                       thisrole = student.roles.where(lesson_id: entry.id).first
                       #logger.debug "thisrole: " + thisrole.inspect
-                      if ['away'].include?(thisrole.status) then 
-                        awaystudents += awaystudents.length > 0 ?  "\n" + student.pname : student.pname
+                      if ['away', 'bye', 'absent'].include?(thisrole.status) then 
+                        displayname = student.pname + " (" + thisrole.status + ")"
+                        awaystudents += awaystudents.length > 0 ?  "\n" + displayname : displayname
                       end
                       if @studentstatusforroster.include?(thisrole.status) then    # students of interest
                         #logger.debug "*************processing student: " + student.pname

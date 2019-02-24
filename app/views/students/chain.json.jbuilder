@@ -15,5 +15,5 @@
             json.name student[0]
             json.status student[1] 
         end
-        json.status lesson[6]
+        json.week lesson[6]
     end

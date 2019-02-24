@@ -1,4 +1,4 @@
-    json.display "history"
+    json.display @tutor_history["display"]
     json.role "tutor"
     json.id @tutor_history["tutor"].id
     json.pname @tutor_history["tutor"].pname
@@ -17,5 +17,5 @@
             json.name student[0]
             json.status student[1]
         end
-        json.status lesson[6]
+        json.week lesson[6]
     end

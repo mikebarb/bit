@@ -16,16 +16,18 @@ module Historyutilities
     # control how much history to provide
     startdate = Date.today - (Integer(current_user.history_back) rescue 100)
     enddate = Date.today + (Integer(current_user.history_forward) rescue 7)
+    @tutorhistory["startdate"] = startdate
+    @tutorhistory["enddate"]   = enddate
     #provide the capability to override the start and end dates by
     # passing them as options
     if options.has_key?('startdate')
       startdate = options['startdate']
     end
     if options.has_key?('enddate')
-      startdate = options['enddate']
+      enddate = options['enddate']
     end
-    @tutorhistory["startdate"] = startdate
-    @tutorhistory["enddate"]   = enddate
+
+    @tutorhistory["display"]   = options['action']
     # get all lessons this tutor is in - all history
     # link to lessons for this tutor through the tutroles
     tutrole_objs = Tutrole.where (["tutor_id = ?", tutor_id])
@@ -40,7 +42,8 @@ module Historyutilities
                                             obj.slot.timeslot,
                                             obj.slot.location,
                                             obj.tutroles.map {|r| [r.tutor.pname,   r.status]},
-                                            obj.roles.map    {|r| [r.student.pname, r.status]}
+                                            obj.roles.map    {|r| [r.student.pname, r.status]},
+                                            date_to_weekofterm(obj.slot.timeslot)  
                                           ] }
     @tutorhistory
   end
@@ -67,20 +70,9 @@ module Historyutilities
                                             obj.slot.timeslot,
                                             obj.slot.location,
                                             obj.tutroles.map {|r| [r.tutor.pname,   r.status]},
-                                            obj.roles.map    {|r| [r.student.pname, r.status]}
+                                            obj.roles.map    {|r| [r.student.pname, r.status]},
+                                            date_to_weekofterm(obj.slot.timeslot)  
                                           ] }
-=begin
-    @tutorhistory["lessons"] = lesson_objs.map { |obj| [
-                                            obj.id,
-                                            obj.status,
-                                            obj.slot.timeslot,
-                                            obj.slot.location,
-                                            obj.tutors.map {|t| t.pname },
-                                            obj.students.map{|s| s.pname },
-                                            obj.tutroles.where(tutor_id: tutor_id).first.status == nil ?
-                                              "" : obj.tutroles.where(tutor_id: tutor_id).first.status
-                                            ] }
-=end
     @tutorhistory
   end
 
@@ -107,8 +99,9 @@ module Historyutilities
                                   obj.slot.location,
                                   obj.tutroles.map {|r| [r.tutor.pname,   r.status]},
                                   obj.roles.map    {|r| [r.student.pname, r.status]},
-                                  obj.roles.where(student_id: student_id).first.status == nil ?
-                                    "" : obj.roles.where(student_id: student_id).first.status
+                                  #obj.roles.where(student_id: student_id).first.status == nil ?
+                                  #  "" : obj.roles.where(student_id: student_id).first.status,
+                                  date_to_weekofterm(obj.slot.timeslot)  
                                   ] }
     @studenthistory
   end
@@ -133,6 +126,7 @@ module Historyutilities
     end
     @studenthistory["startdate"] = startdate
     @studenthistory["enddate"]   = enddate
+    @studenthistory["display"]    = options['action']
     # get all lessons this student is in - all history
     # link to lessons for this student through the roles
     role_objs = Role.where (["student_id = ?", student_id])
@@ -147,22 +141,24 @@ module Historyutilities
                                             obj.slot.timeslot,
                                             obj.slot.location,
                                             obj.tutroles.map {|r| [r.tutor.pname,   r.status]},
-                                            obj.roles.map    {|r| [r.student.pname, r.status]}
+                                            obj.roles.map    {|r| [r.student.pname, r.status]},
+                                            date_to_weekofterm(obj.slot.timeslot)  
                                           ] }
-=begin
-    @studenthistory["lessons"] = lesson_objs.map { |obj| [
-                                            obj.id,
-                                            obj.status,
-                                            obj.slot.timeslot,
-                                            obj.slot.location,
-                                            obj.tutors.map {|t| t.pname },
-                                            obj.students.map{|s| s.pname },
-                                            obj.roles.where(student_id: student_id).first.status == nil ?
-                                              "" : obj.roles.where(student_id: student_id).first.status
-                                            ] }
-=end
+
     @studenthistory
   end
+  
+  def date_to_weekofterm(thisdatetime)  
+    thistermweek = ''
+    if current_user.termstart != nil && current_user.termweeks != nil        
+      termweek = ((thisdatetime.to_datetime - current_user.termstart.to_datetime).to_i)/7
+      if termweek >= 0 && termweek < current_user.termweeks
+        thistermweek = 'W' + (termweek + 1).to_s
+      end
+    end
+    return thistermweek
+  end
+
 
   # Obtain the changes for a single tutor
   # @tutorchanges holds everything required in the view

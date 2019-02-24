@@ -16,7 +16,7 @@ class Student < ApplicationRecord    # required migrating to rails 5.0
   }
   validates :status, presence:true, allow_blank: false, format: {
     with: %r{\A(inactive|new|standard|fortnightly|onetoone)\z},
-    message: 'must be male, female or unknown.'
+    message: 'must be inactive, new, standard, fortnightly or onetoone.'
   }
   validates :year, presence:true, allow_blank: false
   validates :study, presence:true, allow_blank: false

@@ -92,18 +92,20 @@ Rails.application.routes.draw do
 
   resources :slots
 
-  get 'tutors/history/:id' => 'tutors#history', as: :tutor_history
-  get 'tutors/chain/:id' => 'tutors#chain', as: :tutor_chain
-  get 'tutors/history' => 'tutors#allhistory', as: :tutors_history
-  get 'tutors/change/:id' => 'tutors#change', as: :tutor_change
-  get 'alltutors'          => 'tutors#alltutors', as: :alltutors
+  get 'tutors/history/:id' => 'tutors#history',    as: :tutor_history
+  get 'tutors/chain/:id'   => 'tutors#chain',      as: :tutor_chain
+  get 'tutors/term/:id'    => 'tutors#term',       as: :tutors_term
+  get 'tutors/history'     => 'tutors#allhistory', as: :tutors_history
+  get 'tutors/change/:id'  => 'tutors#change',     as: :tutor_change
+  get 'alltutors'          => 'tutors#alltutors',  as: :alltutors
   post 'tutordetailupdateskc' => 'tutors#tutordetailupdateskc', as: :tutors_tutordetailupdateskc
   resources :tutors
 
-  get 'students/history/:id' => 'students#history', as: :student_history
-  get 'students/chain/:id' => 'students#chain', as: :student_chain
-  get 'students/history'     => 'students#allhistory', as: :students_history
-  get 'students/change/:id'  => 'students#change', as: :student_change
+  get 'students/history/:id' => 'students#history',     as: :student_history
+  get 'students/chain/:id'   => 'students#chain',       as: :student_chain
+  get 'students/term/:id'    => 'students#term',        as: :students_term
+  get 'students/history'     => 'students#allhistory',  as: :students_history
+  get 'students/change/:id'  => 'students#change',      as: :student_change
   get 'allstudents'          => 'students#allstudents', as: :allstudents
   post 'studentdetailupdateskc' => 'students#studentdetailupdateskc', as: :students_studentdetailupdateskc
   resources :students
