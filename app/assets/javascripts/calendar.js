@@ -17,7 +17,7 @@
 // the order of this class list is important - searches are done from 
 // finest to broadest when looking for relevant elements(divs).
 var taskItemClassList_calendar = ['slot', 'lesson', 'tutor', 'student'];
-var taskItemClassList_stats = ['slot', 'lesson', 'tutor', 'student', 'allocate'];
+var taskItemClassList_stats = ['slot', 'lesson', 'tutor', 'student', 'allocate', 'global'];
 
 var taskItemInContext;  
 var contextMenuActive = "context-menu--active";
@@ -535,6 +535,8 @@ function ready_calendar() {
           scmi_editSubject = true;
           scmi_changes = true;
           scmi_editEntry   = true;
+          scmi_history   = true;
+          scmi_term      = true;
           //scmi_setPersonStatus = true;     // only in index area for tutors 
         }else{  // in the main schedule area (lesson)
           // first what contextmenu item to display for persons
@@ -2472,6 +2474,12 @@ function selectshows_scoped(ele_checkbox, ele_scope) {
         showhidecomments(document.getElementsByClassName("t-status-away"),
                          showList[i].checked);
         break;
+      case "hideAbsent":
+        showhidecomments(document.getElementsByClassName("s-status-absent"),
+                         showList[i].checked);
+        showhidecomments(document.getElementsByClassName("t-status-absent"),
+                         showList[i].checked);
+        break;
       case "hidetutors":
         // first check if either students or tutors need to be displayed.
         if(hidetutors_state || hidestudents_state) {
@@ -2588,10 +2596,23 @@ function selectshows_scoped(ele_checkbox, ele_scope) {
       case "selectdowfive":
         showhidedowfive();
         break;
-      default:    // hides sites based on checklists
-        var thispattern = /hide(.*)/;
+      case "selecttimes":
+        showhidetimes();
+        break;
+      
+      default:
+        // hide lesson times based on checklists
+        // id = select0330PM
+        if( /^select(.*)$/.exec(showList[i].id)){
+          console.log("processing hiding times");
+          showhidetimes();
+        }
+        // hides sites based on checklists
+        //var thispattern = /hide(.*)/;
         //console.log("showList[i].id: " + showList[i].id);
-        var m = thispattern.exec(showList[i].id);
+        //var m = thispattern.exec(showList[i].id);
+        //if( m ){
+        var m = /hide(.*)/.exec(showList[i].id);
         if( m ){
           //console.log("m: " + m[1]);
           var siteid = 'site-' + m[1];
@@ -2926,6 +2947,8 @@ function ready_stats(){
       console.log(" need to select the lesson");
       if(thisEleId.match(/^allocate/)){    // reallocate an already allocated lesson
         catchupId = thisEle.getAttribute('data-domid');
+      }else if(thisEle.classList.contains('global')){    // select a spectific item from list
+        catchupId = thisEle.getAttribute('data-domid');
       }else{   // allocate from the global - oldest first
         var catchupList = thisEle.getElementsByClassName('personlessons')[0].getElementsByClassName('personlesson');
         if(catchupList){
@@ -3022,7 +3045,7 @@ function ready_stats(){
 
   function slotdroppable_stats(myelement){
     $(myelement).droppable({
-      accept: ".student, .allocate",
+      accept: ".student, .allocate, .global",
       drop: function( event, ui ) {
         var dom_change = {};
         dom_change['action'] = "move";
@@ -3031,6 +3054,9 @@ function ready_stats(){
         var catchupId;
         var flagCatchupFound = false;
         if (thisEle.id.match(/^allocate/)) {
+          catchupId = thisEle.getAttribute('data-domid');
+          flagCatchupFound = true;
+        }else if(thisEle.classList.contains('global')){    // select a spectific item from list
           catchupId = thisEle.getAttribute('data-domid');
           flagCatchupFound = true;
         }else{
@@ -3072,7 +3098,7 @@ function ready_stats(){
     });
   }
 
-  elementdraggable_stats(".student, .allocate");
+  elementdraggable_stats(".student, .allocate, .global");
   slotdroppable_stats(".slot");
   
 //---------------------- End of Drag and Drop - stats ---------------------
@@ -3087,7 +3113,7 @@ function ready_stats(){
         dataType: "json",
         //context: domchange,
         success: function(result1, result2, result3){
-            console.log("personupdateslesson_Update_Stats Ajax response OK");
+            console.log("updatestatsstudents Ajax response OK");
             update_dom_stats_students(result1);
             //moveelement_update(result1);
         },
@@ -3155,7 +3181,7 @@ function ready_stats(){
     elecreated.innerHTML = html_students;
     var eletoreplace = document.getElementById('index-students');
     eletoreplace.parentNode.replaceChild(elecreated, eletoreplace);
-    elementdraggable_stats(".student, .allocate");
+    elementdraggable_stats(".student, .allocate, .global");
     hideshowstudent();
   }
 
@@ -3191,7 +3217,8 @@ function ready_stats(){
               //catchupEle.getElementsByClassName('allocate')[0].innerHTML = toObjectId;
               var eleUpdateDomid = catchupEle.getElementsByClassName('allocate')[0];
               eleUpdateDomid.setAttribute("data-domid", toObjectId);
-              eleUpdateDomid.innerHTML = toObjectId + ' = ' + toObjectText;
+              //eleUpdateDomid.innerHTML = toObjectId + ' = ' + toObjectText;
+              eleUpdateDomid.innerHTML = toObjectText;
               eleUpdateDomid.id = 'allocate_' + toObjectId;
               break;
             }

@@ -34,8 +34,22 @@ module Calendarutilities
         tutor_kinds = options[:tutor_kinds] if options.has_key?(:tutor_kinds)
         student_kinds = options[:student_kinds] if options.has_key?(:student_kinds)
 
-        tutor_ids = options[:tutor_ids] if options.has_key?(:tutor_ids)
-        student_ids = options[:student_ids] if options.has_key?(:student_ids)
+        #tutor_ids = options[:tutor_ids].map{|o| o.class == 'string' ? o.to_i : o} if options.has_key?(:tutor_ids)
+        if options.has_key?(:tutor_ids)
+          tutor_ids = options[:tutor_ids]
+          if tutor_ids.class != Array
+            tutor_ids = [tutor_ids]
+          end
+          tutor_ids = tutor_ids.map{|o| o.class == String ? o.to_i : o} 
+        end
+
+        if options.has_key?(:student_ids)
+          student_ids = options[:student_ids]
+          if student_ids.class != Array
+            student_ids = [student_ids]
+          end
+          student_ids = student_ids.map{|o| o.class == String ? o.to_i : o} 
+        end
     end
     
     # define a two dimesional array to hold the table info to be displayed.
@@ -537,10 +551,12 @@ module Calendarutilities
                  'l' + glws.slot.id.to_s.rjust(@sf, "0") +
                  'n' + lesson.id.to_s.rjust(@sf, "0") + 
                  's' + student.id.to_s.rjust(@sf, "0")
+        #@students_stats[student.id]['dom_ids'].push(dom_id)
         @students_stats[student.id]['dom_ids'].push(dom_id)
         student.roles.each do |thisrole|
           if thisrole.lesson_id == lesson.id
-            @students_stats[student.id]['role_kind'].push(thisrole.kind)
+            role_comment = thisrole.comment 
+            @students_stats[student.id]['role_kind'].push([thisrole.kind, role_comment])
             break
           end
         end
@@ -628,8 +644,8 @@ module Calendarutilities
                   thisstudent = @roleinfo[thisstudentrole].student
                   thisrole = @roleinfo[thisstudentrole]
                   thisstudent = thisrole.student
-                  if(["scheduled", "attended"].include?thisrole.status)     # rostered
-                    slotstudentcount += 1  if(['on_BFL', 'standard', 'routine', 'flexible'].include?entry.status)  # supporting ratio status
+                  if(["scheduled", "attended", "deal", "queued"].include?thisrole.status)     # rostered
+                    slotstudentcount += 1  if(['on_BFL', 'free', 'standard', 'routine', 'flexible'].include?entry.status)  # supporting ratio status
                     s[ss]['R'] += 1
                     if(["onetoone"].include?thisstudent.status)
                       s[ss]['RoTo'] += 1
@@ -681,7 +697,7 @@ module Calendarutilities
             end
             # Now to handle the free lessons - quite independant of the routine and flexible lessons.
             ss = 'free'
-            s['sum']['free'] = s[ss]['S'] - s[ss]['F']
+            s['sum']['free'] = s[ss]['S'] - s[ss]['F'] - s['allocate']['F']
             cells["stats"] = s.clone
             # keep counts in the cell/slot data
             cells["ratio"] = {'tutor_count'=>slottutorcount, 'student_count'=>slotstudentcount}
@@ -762,7 +778,7 @@ module Calendarutilities
           #logger.debug "student found - role: " + thisstudentrole.inspect
           thisstudent = thisrole.student
           #logger.debug "thisstudent: " + thisstudent.inspect
-          if(["scheduled", "attended", "queued"].include?thisrole.status)     # rostered
+          if(["scheduled", "attended", "deal", "queued"].include?thisrole.status)     # rostered
             s[ss]['R'] += 1
             if(["onetoone"].include?thisstudent.status)
               s[ss]['RoTo'] += 1
@@ -810,7 +826,7 @@ module Calendarutilities
     end
     # Now to handle the free lessons - quite independant of the routine and flexible lessons.
     ss = 'free'
-    s['sum']['free'] = s[ss]['S'] - s[ss]['F']
+    s['sum']['free'] = s[ss]['S'] - s[ss]['F'] - s['allocate']['F']
 #-------------------------------------------
 =begin
     ss = 'routine'

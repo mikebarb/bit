@@ -54,6 +54,7 @@
               <li><%= link_to "lessons", lessons_path %></li>
             </ul>
           </li>
+          <% if current_user.role == 'admin' %>
           <li><%= link_to "copydays", copydaysedit_path %>
             <ul>
               <li><%= link_to "copytermdays", copytermdaysedit_path %></li>
@@ -61,6 +62,7 @@
               <li><%= link_to "deletedays", deletedaysedit_path %></li>
             </ul>
           </li>
+          <% end %>
           <% if current_user.role == 'admin' %>
             <li><%= link_to "load", load_path %></li>
           <% end %>

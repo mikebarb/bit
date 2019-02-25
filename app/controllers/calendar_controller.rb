@@ -50,19 +50,27 @@ class CalendarController < ApplicationController
       end
     end
 
-    if flagRefresh && params.has_key?(:startdate) 
-      @options[:startdate] = params[:startdate].to_date
+    if flagRefresh && params.has_key?(:startdate)         # refreshing the screen
+      @options[:startdate] = params[:startdate].to_date   # use the same
       passedParams.delete(:startdate)
-    elsif params[:bench]  == 'roster'
-      if current_user.rosterstart                # roster period configured in preferences
-        mystartdate = current_user.rosterstart
-      elsif ! params[:daystart].blank?           # override flexible display period parameters provided
+    elsif params[:bench]  == 'roster'         # this is the flexible option
+      if ! params[:daystart].blank?           # use date parameters provided in flexible options
         mystartdate = params[:daystart].to_date
-      else                                       # use preferences for calendar display
+      elsif current_user.rosterstart          # use roster period configured in preferences
+        mystartdate = current_user.rosterstart
+      else                                    # use preferences for calendar display
         mystartdate = current_user.daystart
       end
       @options[:startdate] = mystartdate
-    else
+    elsif params[:bench]  == 'stats'          # display stats from now to end of roster (1 year)
+      if ! current_user.termstart.blank?      # use date parameters provided in flexible options
+        mystartdate = DateTime.now
+      end
+      if Rails.env.development?
+        mystartdate = "2018-6-19".to_datetime
+      end
+      @options[:startdate] = mystartdate.beginning_of_week
+    else                                      # Fall back to preferences for calendar display
       params[:daystart].blank? ? mystartdate = current_user.daystart :
                                  mystartdate = params[:daystart].to_date
       @options[:startdate] = mystartdate
@@ -71,15 +79,18 @@ class CalendarController < ApplicationController
       @options[:enddate] = params[:enddate].to_date
       passedParams.delete(:enddate)
     elsif params[:bench]  == 'roster'
-      if current_user.rosterdays            # roster period configured in preferences
-        mydaydur = current_user.rosterdays
-      elsif ! params[:daydur].blank?        # override flexible display period parameters provided
+      if ! params[:daydur].blank?        # override flexible display period parameters provided
         mydaydur = params[:daydur].to_i
+      elsif current_user.rosterdays            # roster period configured in preferences
+        mydaydur = current_user.rosterdays
       else                                  # use preferences for calendar display
         mydaydur = current_user.daydur
       end
       mydaydur < 1  || mydaydur > 21   ? mydaydur : 1 # limit range of days allowed!!!
       myenddate = @options[:startdate] + mydaydur.days
+      @options[:enddate] = myenddate
+    elsif params[:bench]  == 'stats'
+      myenddate = @options[:startdate] + 365.days
       @options[:enddate] = myenddate
     else
       params[:daydur].blank?   ? mydaydur = current_user.daydur :

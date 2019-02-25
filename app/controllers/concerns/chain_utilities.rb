@@ -882,6 +882,18 @@ module ChainUtilities
             @block_roles[i].status = i.odd? ? 'bye' : 'scheduled' 
           end
         end
+        if @block_roles[0].kind == 'first'
+          if i > 0  # leave first item in chain as 'first', change remainder
+            if @block_roles[0].student.status == 'standard'
+              @block_roles[i].kind = 'standard'
+            elsif @block_roles[0].student.status == 'onetoone'
+              @block_roles[i].kind = 'onetoone'
+            elsif @block_roles[0].student.status == 'fortnightly'
+              @block_roles[i].kind = 'fortnightly'
+              @block_roles[i].status = i.odd? ? 'bye' : 'fortnightly' 
+            end
+          end
+        end
       elsif @role.is_a?(Tutrole)
         @block_roles[i] = Tutrole.new(lesson_id: parentLessonId,
                                         tutor_id: @role.tutor.id, 

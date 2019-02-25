@@ -12,8 +12,10 @@
       <% v['dom_ids'].each_with_index do |dom_id, i| %>
         <div class="personlesson">
           <% #byebug %>
-          <div class='global' data-domid=<%= dom_id %> data-kind=<%= v['role_kind'][i] %> ><%= dom_id %> = <%=
-               slotDomidToText(dom_id) %> [<%= v['role_kind'][i] %>]</div>
+          <div class='global' data-domid=<%= dom_id %> data-kind=<%=
+               v['role_kind'][i] %> ><%= #dom_id + " = " %><%=
+               slotDomidToText(dom_id) %> [<%= v['role_kind'][i][0] %>]<br><%=
+               v['role_kind'][i][1] %></div>
           <div class='allocate' data-domid='' ></div>
         </div>
       <% end %>
