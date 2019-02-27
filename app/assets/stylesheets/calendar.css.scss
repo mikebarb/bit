@@ -368,7 +368,7 @@ table, th, td {
   position: absolute;
   z-index: 10;
   //padding: 12px 0;
-  width: 240px;
+  width: 250px;
   height: 340px;
   background-color: #fff;
   border: solid 1px #dfdfdf;
@@ -591,7 +591,7 @@ table, th, td {
   background-color: fuchsia;   // a highlighter pink 
 }
 .t-status-away .tutorname {
-  background-color: dimgrey;      // light gray   
+  background-color: Gainsboro;      // light gray   
 }
 // note: absent defined previously
 
@@ -718,7 +718,10 @@ table, th, td {
   background-color: fuchsia;        // a highlighter pink 
 }
 .s-status-away .studentname {
-  background-color: dimgrey;      // light gray   
+  background-color: Gainsboro;      // light gray   
+}
+.s-status-awaycourtesy .studentname {
+  background-color: Gainsboro;      // light gray   
 }
 // absent covered below.
 
@@ -739,6 +742,9 @@ table, th, td {
   background-color: #B6D7A8;   //light green 2  
 }
 .s-kind-catchup .statusinfo {
+  background-color: lightblue;  
+}
+.s-kind-catchupcourtesy .statusinfo {
   background-color: lightblue;  
 }
 .s-kind-fortnightly .statusinfo {
@@ -825,6 +831,9 @@ table, th, td {
   border: 5px solid #B6D7A8;   //light green 2  
 }
 .s-kind-catchup {
+  border: 5px solid lightblue;  
+}
+.s-kind-catchupcourtesy {
   border: 5px solid lightblue;  
 }
 .s-kind-fortnightly {
@@ -919,6 +928,9 @@ table, th, td {
 
 // statistics specific items
 .formatcatchup, .catchup {
+    color: blue; 
+}
+.formatcatchupcourtesy, .catchupcourtesy {
     color: blue; 
 }
 .formatregular, .regular {

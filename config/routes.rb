@@ -74,6 +74,8 @@ Rails.application.routes.draw do
   post 'studentmovelesson'       => 'roles#studentmovelesson',       as: :studentmovelesson
   post 'studentmovecopylesson'   => 'roles#studentmovecopylesson',   as: :studentmovecopylesson
   post 'studentupdateskc'        => 'roles#studentupdateskc',        as: :studentupdateskc
+  get  'catchups'                => 'roles#catchups',                as: :catchups
+  get  'catchupoptions'          => 'roles#catchupoptions',          as: :catchupoptions
   resources :roles
 
   get 'calendar/displayoptions/'  => 'calendar#displayoptions',  as: :displayoptions

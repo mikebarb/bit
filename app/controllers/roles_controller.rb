@@ -2,7 +2,7 @@ class RolesController < ApplicationController
   include Calendarutilities
   include ChainUtilities
 
-  before_action :set_role, only: [:show, :edit, :update, :destroy]
+  before_action :set_role, only: [:show, :edit, :update, :destroy], except: [:catchups]
   before_filter :authenticate_user!, :set_user_for_models
   after_filter :reset_user_for_models
 
@@ -12,6 +12,56 @@ class RolesController < ApplicationController
     @roles = Role
              .order(:id)
              .page(params[:page])
+  end
+
+  def catchupoptions
+    logger.debug "called roles conroller - catchup options"
+  end
+
+
+  #==================================================================
+  # GET /catchups
+  # GET /catchups.json
+  def catchups
+    wantedkind = Array.new
+    wantedstatus = Array.new
+    params.each do |k, v|
+     logger.debug "key: " + k.inspect + " value: " + v.inspect
+     if m = k.match(/^select_status_(.*)$/)
+     #if m
+       wantedstatus.push(m[1])
+     end
+     if m = k.match(/^select_kind_(.*)$/)
+       wantedkind.push(m[1])
+     end
+    end
+    if ! params[:daystart].blank?           # use date parameters provided in catchup options
+      @mystartdate = params[:daystart].to_date
+    else                                    # use preferences for calendar display
+      @mystartdate = current_user.daystart
+    end
+    if ! params[:daydur].blank?             # use period parameters providedin catchup options
+      mydaydur = params[:daydur].to_i
+    else                                    # use preferences for calendar display
+      mydaydur = current_user.daydur
+    end
+    @myenddate = @mystartdate + mydaydur.days
+    
+    @roles = Role
+             .includes( :student, lesson: :slot)
+             .where(kind: wantedkind, status: wantedstatus, lesson: Lesson.where(slot: Slot.where("timeslot >= :start_date AND timeslot < :end_date", {start_date: @mystartdate, end_date: @myenddate})))
+             .order(:id)
+
+    # Now I need to get all the copied from roles
+    copied_from_ids = @roles.map{|o| o.copied}
+    #@copied_from_roles = Role.find(copied_from_ids)
+    @copied_from_roles = Role
+                         .where(id: copied_from_ids)
+                         .includes(lesson: :slot)
+    @copied_from_roles_index = Hash.new
+    @copied_from_roles.each do |role|
+      @copied_from_roles_index[role.id] = role
+    end
   end
 
   #==================================================================
@@ -204,6 +254,7 @@ class RolesController < ApplicationController
         this_error = extend_chain_blocks(@new_lesson.id) # Extend the chain to the end of term -> @block_roles 
         return this_error if this_error.length > 0
       else                                 # rest remain single elements (free, catchup, bonus)
+        @role.status = 'scheduled'
         @block_roles.push(@role)           # and store for later update (as db transaction)
         @block_lessons.push(@new_lesson)   # the matching lesson
       end
@@ -284,19 +335,19 @@ class RolesController < ApplicationController
             #@block_roles_remove = @block_roles.shift(numBlocksToRemove)
           end
         end
-        logger.debug "extend_chain_doms"
+        #logger.debug "extend_chain_doms"
         this_error = extend_chain_doms()
         return this_error if this_error.length > 0
         @domchange['object_id_old'] = @domchangerun[0]['object_id_old']
         @domchange['object_id'] = @domchangerun[0]['object_id']
         @domchange['to'] = @domchangerun[0]['to']
-        logger.debug "calling relinkrole"
+        #logger.debug "calling relinkrole"
         this_error = extend_chain_relinkrole()
         return this_error if this_error.length > 0
-        logger.debug "extend_chain_dbUpdates"
+        #logger.debug "extend_chain_dbUpdates"
         this_error = extend_chain_dbUpdates()
         return this_error if this_error.length > 0
-        logger.debug "extend_chain_screenUpdates"
+        #logger.debug "extend_chain_screenUpdates"
         this_error = extend_chain_doms_post_db_update()
         return this_error if this_error.length > 0
         this_error = extend_chain_screenUpdates()
@@ -374,6 +425,7 @@ class RolesController < ApplicationController
     #
     this_error = ""
     @domchangerun = Array.new
+    @trackslots = Hash.new    # track and slots that need status updated
     @block_roles.each_with_index do |o, i|
       #logger.debug "block_role (" + i.to_s + "): " + o.inspect
       @domchangerun[i] = Hash.new
@@ -397,6 +449,7 @@ class RolesController < ApplicationController
       @domchangerun[i]['from']           = @domchangerun[i]['old_slot_domid'] +
                                     'n' +  o.lesson_id.to_s.rjust(@sf, "0")
       @domchangerun[i]['old_slot_id']   = o.lesson.slot_id
+      @trackslots[@domchangerun[i]['old_slot_domid']]     = 1
       @domchangerun[i]['role']          = o
       @domchangerun[i]['student']       = o.student
       @domchangerun[i]['name']          = o.student.pname  # for sorting in the DOM display
@@ -410,6 +463,7 @@ class RolesController < ApplicationController
                                      'l' +  o.slot_id.to_s.rjust(@sf, "0")
       @domchangerun[i]['to']              = @domchangerun[i]['new_slot_domid'] +
                                      'n' +  o.id.to_s.rjust(@sf, "0")
+      @trackslots[@domchangerun[i]['new_slot_domid']] = 1
       #@domchangerun[i]['html_partial']    = 
       #  render_to_string("calendar/_schedule_student.html",
       #                  :formats => [:html], :layout => false,
@@ -427,9 +481,13 @@ class RolesController < ApplicationController
       (0..@block_roles_remove.length-1).each do |i|
         o = @block_roles_remove[i]                # shorten chain in db
         @domchangeremove[i] = Hash.new if @domchangeremove[i] == nil
-        @domchangeremove[i]['action']    = 'remove'
-        @domchangeremove[i]['object_id']  =        o.lesson.slot.location[0,3] +
-                                                   o.lesson.slot.timeslot.strftime("%Y%m%d%H%M") +
+        @domchangeremove[i]['action']     = 'remove'
+        slot_dom_id                       = o.lesson.slot.location[0,3] +
+                                            o.lesson.slot.timeslot.strftime("%Y%m%d%H%M")
+        @trackslots[slot_dom_id]          = 1
+        #@domchangeremove[i]['object_id']  =        o.lesson.slot.location[0,3] +
+        #                                           o.lesson.slot.timeslot.strftime("%Y%m%d%H%M") +
+        @domchangeremove[i]['object_id']  = slot_dome_id +
                                             'l' +  o.lesson.slot_id.to_s.rjust(@sf, "0") +
                                             'n' +  o.lesson_id.to_s.rjust(@sf, "0")
         #if o.is_a?('Role')                            
@@ -543,11 +601,6 @@ class RolesController < ApplicationController
     end
     return this_error     # be empty if no errors
   end
-
-
-
-
-
   
   def extend_chain_screenUpdates()
     # saved safely, now need to update the browser display (using calendar messages)
@@ -571,6 +624,7 @@ class RolesController < ApplicationController
     # Now send out the updates to the stats screen - order does not matter.
     # collect the set of stat updates and send through Ably as single message
     statschanges = Array.new
+=begin
     (0..@block_roles.length-1).each do |i|
       statschanges.push(get_slot_stats(@domchangerun[i]['new_slot_domid']))
       if(@domchangerun[i].has_key?('old_slot_domid'))
@@ -578,6 +632,10 @@ class RolesController < ApplicationController
           statschanges.push(get_slot_stats(@domchangerun[i]['old_slot_domid']))
         end
       end
+    end
+=end
+    @trackslots.each do |k,v|
+      statschanges.push(get_slot_stats(k))
     end
     ably_rest.channels.get('stats').publish('json', statschanges)
     # everything is completed successfully.
@@ -809,7 +867,8 @@ class RolesController < ApplicationController
     @updateValues = "test"
     
     #Process if student/lesson status is set to 'away'
-    if @role.status_changed? && @role.status == 'away'
+    if @role.status_changed? && (@role.status == 'away' ||
+                                 @role.status == 'awaycourtesy')
       away_response = action_to_away_controller(@role)
     end
     begin
@@ -932,7 +991,12 @@ class RolesController < ApplicationController
     @copied_role = @role.dup
     @copied_role.lesson_id = @global_lesson.id
     # for copied roles when students are changed to away, need to change kind to 'catchup'
-    @copied_role.kind = 'catchup'
+    if @role.status == 'away'
+      @copied_role.kind = 'catchup'
+    elsif @role.status == 'awaycourtesy'
+      @copied_role.kind = 'catchupcourtesy'
+    end
+    #@copied_role.kind = 'catchup'
     @copied_role.status = 'queued'
     @copied_role.copied = @role.id               # remember where copied from.
     @copied_role.first = nil                     # not linked to current chain.

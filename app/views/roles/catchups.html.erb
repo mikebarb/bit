@@ -1,0 +1,44 @@
+<h1>Listing Student Catchups</h1>
+From <%= @mystartdate.strftime("%a %d/%m/%Y") %> to <%= @myenddate.strftime("%a %d/%m/%Y") %>
+<table>
+  <thead>
+    <tr>
+      <th>Catchup Lesson Kind</th>
+      <th>Catchup Date / Time</th>
+      <th>Student</th>
+      <th>Catchup Status</th>
+      <th>Catchup Kind</th>
+      <th>Catchup Comment</th>
+      <th>Away Comment</th>
+      <th>Away Date</th>
+      <th>Elapsed Weeks</th>
+    </tr>
+  </thead>
+
+  <tbody>
+    <% @roles.each do |role| %>
+      <tr>
+        <td><%= role.lesson.status %></td>
+        <td><%= role.lesson.slot.timeslot.strftime("%a %d/%m/%Y %l:%M") %></td>
+        <td><%= role.student.pname %></td>
+        <td><%= role.status %></td>
+        <td><%= role.kind %></td>
+        <td><%= role.comment %></td>
+        <% if role.copied %>
+          <td><%= @copied_from_roles_index[role.copied].comment %></td>
+          <td><%  copied_from = @copied_from_roles_index[role.copied].lesson.slot.timeslot
+                current_place = role.lesson.slot.timeslot
+                elapsed = ((current_place - copied_from)/1.week).round
+             %><%= copied_from.strftime("%a %d/%m/%Y %l:%M") %></td>
+          <td><%= elapsed.to_s %></td>
+        <% else %>
+          <td></td><td></td><td></td>
+        <% end %>
+      </tr>
+    <% end %>
+  </tbody>
+</table>
+
+<br>
+
+<%= link_to 'New Role', new_role_path %>

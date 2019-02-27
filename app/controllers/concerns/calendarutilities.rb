@@ -650,7 +650,7 @@ module Calendarutilities
                     if(["onetoone"].include?thisstudent.status)
                       s[ss]['RoTo'] += 1
                     end
-                    if(["catchup"].include?thisrole.kind)
+                    if(["catchup", "catchupcourtesy"].include?thisrole.kind)
                       s[ss]['RCu'] += 1
                       if(["onetoone"].include?thisstudent.status)
                         s[ss]['RCoTo'] += 1
@@ -686,7 +686,7 @@ module Calendarutilities
             # now how many are to be used by allocations
             ss = 'allocate'
             s[ss]['Regular'] = s[ss]['R']+s[ss]['RoTo']-s[ss]['RCu']-
-                               s[ss]['RCoTo']+s[ss]['RoTo']
+                               s[ss]['RCoTo']
             s[ss]['Catchup'] = s[ss]['RCu']+s[ss]['RCoTo']
             # now to calculate overall availabilities
             s['sum'] = {'regular'=>s['routine']['Regular'],
@@ -751,7 +751,7 @@ module Calendarutilities
   def get_slot_stats(slot_dom_id)
     # want to get the stats for one slot
     # slot id passed in: GUN201805281530l02424n29192s00520
-    #logger.debug "********************get_slot_stats: " + slot_dom_id
+    logger.debug "********************get_slot_stats: " + slot_dom_id
     if(result = /^([A-Z]+\d+l(\d+))/.match(slot_dom_id))
       slot_id = result[1]
       slot_dbid = result[2].to_i
@@ -765,7 +765,9 @@ module Calendarutilities
     s = {'routine'=>siv.clone, 'flexible'=>siv.clone,
          'allocate'=>siv.clone, 'free'=>siv.clone}
     @slot_lessons.each do |entry|
+      #byebug if entry.status == 'allocate'
       # Remember lesson(entry) status is diaplayed to user as kind.
+      logger.debug "lesson: " + entry.id.to_s + " status:  " + entry.status
       ss = entry.status
       ss = 'routine' if entry.status == 'standard'
       s[ss] = siv.clone unless s.has_key?(ss)
@@ -783,7 +785,7 @@ module Calendarutilities
             if(["onetoone"].include?thisstudent.status)
               s[ss]['RoTo'] += 1
             end
-            if(["catchup"].include?thisrole.kind)
+            if(["catchup", "catchupcourtesy"].include?thisrole.kind)
               s[ss]['RCu'] += 1
               if(["onetoone"].include?thisstudent.status)
                 s[ss]['RCoTo'] += 1
@@ -815,7 +817,7 @@ module Calendarutilities
     # now how many are to be used by allocations
     ss = 'allocate'
     s[ss]['Regular'] = s[ss]['R']+s[ss]['RoTo']-s[ss]['RCu']-
-                       s[ss]['RCoTo']+s[ss]['RoTo']
+                       s[ss]['RCoTo']
     s[ss]['Catchup'] = s[ss]['RCu']+s[ss]['RCoTo']
     # now to calculate overall availabilities
     s['sum'] = {'regular'=>s['routine']['Regular'],
@@ -828,19 +830,6 @@ module Calendarutilities
     ss = 'free'
     s['sum']['free'] = s[ss]['S'] - s[ss]['F'] - s['allocate']['F']
 #-------------------------------------------
-=begin
-    ss = 'routine'
-    regularRoutine      = 2*s[ss]['S']-s[ss]['A']-s[ss]['R']+s[ss]['RCu']-
-                       s[ss]['RoTo']-s[ss]['AoTo']+s[ss]['RCoTo']-s[ss]['B']
-    catchupRoutine   = s[ss]['A']+s[ss]['RoTo']+s[ss]['B']-s[ss]['RCu']-s[ss]['RCoTo']
-    s[ss]['Regular'] = regularRoutine
-    s[ss]['Catchup'] = catchupRoutine
-    ss = 'flexible'
-    catchupFlexible  = 2 * s[ss]['S']-s[ss]['R']-s[ss]['RoTo'] 
-    s[ss]['Catchup'] = catchupFlexible
-    s['sum'] = {'regular'=>regularRoutine, 'catchup'=>catchupRoutine + catchupFlexible }
-    s['sum']['catchup'] -= s['allocate']['RCu'] if s.has_key?('allocate')
-=end
     slot_html_partial = render_to_string("calendar/_stats_slot.html",
                         :formats => [:html], :layout => false,
                         :locals => {:stats => s})

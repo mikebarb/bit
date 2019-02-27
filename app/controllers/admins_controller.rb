@@ -3403,7 +3403,7 @@ else      # Not to test.
     locationindex = 0                       # index into the sites
     
     # to compress or not - remove unused days
-    @compress = true
+    @compress = true    # can be true or false
 
     # have an all tab in google sheets to show all sites in that page
     # this is for tutors to seach for their name across all sites.
@@ -3487,7 +3487,7 @@ else      # Not to test.
       # General formatting for each site sheet
       myformat.push(googleVertAlign.call(sheet_id, 1, 1, nil, nil, "TOP"))
       myformat.push(googleWrapText.call(sheet_id, 1, 1, nil, nil, "WRAP"))
-      myformat.push(googleColWidthItem.call(sheet_id, 1,100,300))
+      myformat.push(googleColWidthItem.call(sheet_id, 1,100,350))
       myformat.push(googleColWidthItem.call(sheet_id, 1,1,0))
 
       #<table id=site-<%= location %> >
@@ -3508,7 +3508,7 @@ else      # Not to test.
         ###        (entry 0 = time of lesson)
         ###--------------------------------------------------------------------
         rows.each_with_index do |cells, cellIndex|  # step through each day (first column is head column - for time slots!)
-          if @compress      
+          if @compress 
             unless usedColumnsIndex.include?(cellIndex) then
                next
             end 
@@ -3549,7 +3549,7 @@ else      # Not to test.
                                                                  currentCol, 4, 16))
               baseLessonRowInSlot = 0       # index of first lesson in this slot for this day
               cells["values"].sort_by {|obj| [valueOrderStatus(obj),valueOrder(obj)] }.each do |entry| # step thru sorted lessons
-                next if (entry.status != nil && ["onCall", "global", "park", "allocate"].include?(entry.status))
+                next if (entry.status != nil && ["global", "park"].include?(entry.status))
                 currentTutorRowInLesson = 0
                 if entry.tutors.respond_to?(:each) then
                   entry.tutors.sort_by {|obj| obj.pname }.each do |tutor|
@@ -3576,7 +3576,8 @@ else      # Not to test.
                         mykind = thistutrole.kind
                         mykind = mykind ? mykind : ""
                         # don't diaplay subjects or kind for tutors on setup
-                        unless entry.status == 'onSetup' && mykind == 'onSetup' 
+                        unless (entry.status == 'onSetup' && mykind == 'onSetup') ||
+                               (entry.status == 'onCall' && mykind == 'onCall')
                           tutorData    += ((mysubjects == "") ? "" : ("\n" + mysubjects)) 
                           tutorData    += ((mykind == "")     ? "" : ("\n" + mykind)) unless ["standard"].include?(mykind)
                           tutorDataAll += ((mykind == "")     ? "" : ("\n" + mykind)) unless ["standard"].include?(mykind)
@@ -3701,6 +3702,7 @@ else      # Not to test.
                   end
                   mylessoncomment += studentLessonComments
                   if mylessoncomment.length > 0
+                    mylessoncomment = mylessoncomment.sub(/\n$/, '')  # remove trailing new line
                     mydata.push(googleBatchDataItem.call(sheet_name,    currentRow,   currentCol+3,1,1,[[mylessoncomment]]))
                     mydata.push(googleBatchDataItem.call(sheet_name_all,currentRowAll,currentCol+3,1,1,[[mylessoncommentAll]]))
                   end
@@ -3727,7 +3729,7 @@ else      # Not to test.
             mydata.push(googleBatchDataItem.call(sheet_name,     currentRow,    currentCol,1,1,[["Students Away"]]))
             mydata.push(googleBatchDataItem.call(sheet_name_all, currentRowAll, currentCol,1,1,[["Students Away"]]))
             myformat.push(googleFormatCells.call(sheet_id, currentRow, 1, currentCol, 1, 16))
-            myformat.push(googleFormatCells.call(sheet_id_all, currentRowAll, 1, currentCol, 1, 16))
+            myformat.push(googleFormatCells.call(sheet_id_all, currentRowAll, 1, currentCol, 1, 10))
             mydata.push(googleBatchDataItem.call(sheet_name,     currentRow,    currentCol + 1,1,1,[[awaystudents]]))
             mydata.push(googleBatchDataItem.call(sheet_name_all, currentRowAll, currentCol + 1,1,1,[[awaystudents]]))
             maxPersonRowInLesson = 1
@@ -3750,7 +3752,8 @@ else      # Not to test.
           baseSlotRowInSite += 1                # cater for when no lessons with tutors or students of interest
         end
         # Add an extra row between slots - except the  first title slot
-        baseSlotRowInSite += 2 unless baseSlotRowInSite == 1
+        # Jasmine wanted no rows between slots so reduced from 2 to 1.
+        baseSlotRowInSite += 1 unless baseSlotRowInSite == 1
       end       # end looping slots
       holdRailsLoggerLevel = Rails.logger.level
       Rails.logger.level = 1 

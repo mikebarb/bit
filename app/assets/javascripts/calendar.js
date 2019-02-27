@@ -118,7 +118,7 @@ function ready_calendar() {
 
   // These are used in the quick status setting.
   var validTutorStatuses   = ["Away", "Absent", "Deal", "Scheduled", "Notified", "Confirmed", "Attended"];
-  var validStudentStatuses = ["Away", "Absent", "Deal", "Bye", "Attended", "Scheduled"];
+  var validStudentStatuses = ["Away", "Awaycourtesy", "Absent", "Deal", "Bye", "Attended", "Scheduled"];
   var validTutorKinds    = ["Standard"];
   var validStudentKinds    = ["Standard"];
   var validStudentPersonStatuses  = ["new", "fortnightly", "onetoone", "standard"];
@@ -774,9 +774,20 @@ function testSuiteForWeekOfYear(){
       //currentActivity['move_ele_id'] = thisEleId;
       currentActivity['object_id']   = thisEleId;     
       currentActivity['object_type'] = objectidToObjecttype(currentActivity['object_id']);
-      thisEle = document.getElementById(thisEleId);
+/*
+      if (currentActivity['object_type'] == 'student'){
+       var student_object_kind = '';
+        var thisClasslist = document.getElementById(currentActivity['object_id']).classList;
+        for(let i=0; i < thisClasslist.length; i++){
+          var m = thisClasslist[i].match(/^s-kind-(.*)/);
+          if(m){
+            student_object_kind = m[1];
+            break;
+          }
+        }
+      }
+*/
     }
-
     switch( thisAction ) {     
       case "copy":
       case "move":
@@ -1058,21 +1069,24 @@ function testSuiteForWeekOfYear(){
     var stmi_tutor_kind_relief        = false;
     var stmi_tutor_kind_fifteen       = false;
 
-    var stmi_student_status_scheduled = false;
-    var stmi_student_status_attended  = false;
-    var stmi_student_status_bye       = false;
-    var stmi_student_status_deal      = false;
-    var stmi_student_status_absent    = false;
-    var stmi_student_status_away      = false;
-    var stmi_student_status_queued    = false;
+    var stmi_student_status_scheduled     = false;
+    var stmi_student_status_attended      = false;
+    var stmi_student_status_bye           = false;
+    var stmi_student_status_deal          = false;
+    var stmi_student_status_absent        = false;
+    var stmi_student_status_away          = false;
+    var stmi_student_status_awaycourtesy  = false;
+    var stmi_student_status_queued        = false;
+    var stmi_student_status_expired       = false;
 
-    var stmi_student_kind_free        = false;
-    var stmi_student_kind_first       = false;
-    var stmi_student_kind_catchup     = false;
-    var stmi_student_kind_fortnightly = false;
-    var stmi_student_kind_onetoone    = false;
-    var stmi_student_kind_standard    = false;
-    var stmi_student_kind_bonus       = false;
+    var stmi_student_kind_free            = false;
+    var stmi_student_kind_first           = false;
+    var stmi_student_kind_catchup         = false;
+    var stmi_student_kind_catchupcourtesy = false;
+    var stmi_student_kind_fortnightly     = false;
+    var stmi_student_kind_onetoone        = false;
+    var stmi_student_kind_standard        = false;
+    var stmi_student_kind_bonus           = false;
 
     var stmi_student_personstatus_new          = false;
     var stmi_student_personstatus_fortnightly  = false;
@@ -1135,22 +1149,35 @@ function testSuiteForWeekOfYear(){
         // Now show the tertiary choices for this element.
         switch(etmAction){
           case 'setStatus':   // student set Status options
-            stmi_student_status_scheduled = true;
-            stmi_student_status_attended  = true;
-            stmi_student_status_bye       = true;
-            stmi_student_status_deal      = true;
-            stmi_student_status_absent    = true;
-            stmi_student_status_away      = true;
-            stmi_student_status_queued    = true;
+            stmi_student_status_scheduled     = true;
+            stmi_student_status_attended      = true;
+            stmi_student_status_bye           = true;
+            stmi_student_status_deal          = true;
+            stmi_student_status_absent        = true;
+            stmi_student_status_away          = true;
+            stmi_student_status_awaycourtesy  = true;
+            stmi_student_status_queued        = true;
+            // can only set student catchups to expire.
+            var thisClasslist = document.getElementById(currentActivity['object_id']).classList;
+            for(let i=0; i < thisClasslist.length; i++){
+              var m = thisClasslist[i].match(/^s-kind-(.*)/);
+              if(m){
+                if((m[1] == 'catchup') || (m[1] == 'catchupcourtesy')){
+                  stmi_student_status_expired = true;
+                  //break;
+                }
+              }
+            }
             break;
           case 'setKind':   // student set Kind options
-            stmi_student_kind_free        = true;            
-            stmi_student_kind_first       = true;
-            stmi_student_kind_catchup     = true;
-            stmi_student_kind_fortnightly = true;
-            stmi_student_kind_onetoone    = true;
-            stmi_student_kind_standard    = true;
-            stmi_student_kind_bonus       = true;
+            stmi_student_kind_free            = true;            
+            stmi_student_kind_first           = true;
+            stmi_student_kind_catchup         = true;
+            stmi_student_kind_catchupcourtesy = true;
+            stmi_student_kind_fortnightly     = true;
+            stmi_student_kind_onetoone        = true;
+            stmi_student_kind_standard        = true;
+            stmi_student_kind_bonus           = true;
             break;
           case 'setPersonStatus':   // student set student status options
             stmi_student_personstatus_new          = true;
@@ -1172,7 +1199,6 @@ function testSuiteForWeekOfYear(){
             break;
         }     // switch(etmAction)
         break;
-
       case 'lesson':   //lesson
         // Now show the tertiary choices for this element.
         switch(etmAction){
@@ -1219,11 +1245,14 @@ function testSuiteForWeekOfYear(){
     setscmi('student-status-deal', stmi_student_status_deal);
     setscmi('student-status-absent', stmi_student_status_absent);
     setscmi('student-status-away', stmi_student_status_away);
+    setscmi('student-status-awaycourtesy', stmi_student_status_awaycourtesy);
     setscmi('student-status-queued', stmi_student_status_queued);
+    setscmi('student-status-expired', stmi_student_status_expired);
 
     setscmi('student-kind-free', stmi_student_kind_free);            
     setscmi('student-kind-first', stmi_student_kind_first);
     setscmi('student-kind-catchup', stmi_student_kind_catchup);
+    setscmi('student-kind-catchupcourtesy', stmi_student_kind_catchupcourtesy);
     setscmi('student-kind-fortnightly', stmi_student_kind_fortnightly);
     setscmi('student-kind-onetoone', stmi_student_kind_onetoone);
     setscmi('student-kind-standard', stmi_student_kind_standard);
@@ -1663,8 +1692,9 @@ function testSuiteForWeekOfYear(){
       var current_status_value1 = document.getElementById(domchange['object_id']).getElementsByClassName('np-status')[0].innerHTML;
       var current_status_match = current_status_value1.match(/status: (\w+)/i);
       if((current_status_match != null) &&
-         (current_status_match[1] == 'away')){
-        console.log('we are moveing away for a status of AWAY');
+         (current_status_match[1] == 'away' ||
+          current_status_match[1] == 'awaycourtesy')){
+        console.log('we are moveing away from a status of AWAY');
         if(!confirm("Are your sure?  \n" + 
                     "Changing status from AWAY has significant implications!!!! \n" +
                     "You will need to clean up all the catchups.")){
@@ -2472,6 +2502,10 @@ function selectshows_scoped(ele_checkbox, ele_scope) {
         showhidecomments(document.getElementsByClassName("s-status-away"),
                          showList[i].checked);
         showhidecomments(document.getElementsByClassName("t-status-away"),
+                         showList[i].checked);
+        showhidecomments(document.getElementsByClassName("s-status-awaycourtesy"),
+                         showList[i].checked);
+        showhidecomments(document.getElementsByClassName("t-status-awaycourtesy"),
                          showList[i].checked);
         break;
       case "hideAbsent":
@@ -3364,6 +3398,7 @@ function showslotlessons(){showhidescopestats(document, 'slotlessons');}
 // pass in the dom_id for the slot.
 function scoped_showhidestats(scope){
   showhidescopestats(scope, 'catchup');
+  showhidescopestats(scope, 'catchupcourtesy');
   showhidescopestats(scope, 'free');
   showhidescopestats(scope, 'stats');
   showhidescopestats(scope, 'slotlessons');
@@ -3371,6 +3406,12 @@ function scoped_showhidestats(scope){
 
 function showhidescopestats(scope, type){
   var myobjects = scope.getElementsByClassName(type);
+  // Need to handle catchup courtesy the same way as catchup
+  // already have the list of objects to show hide
+  // look at catchup checkbox to determine what to do with catchup courtesy.
+  if(type == 'catchupcourtesy'){
+    type = 'catchup';
+  }
   if (document.getElementById('hide' + type).checked){
     for(var i = 0; i < myobjects.length; i++){
       myobjects[i].classList.remove("hideme");

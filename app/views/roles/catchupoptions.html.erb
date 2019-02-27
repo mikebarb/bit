@@ -1,0 +1,45 @@
+<h2>Options for Catchup Display</h2>
+
+<%= form_tag("/catchups", {method: :get}) do %>
+
+  <div class="actions">
+    <%= submit_tag "Display" %>
+  </div>
+
+     <p><b>Select the date range for 'Away' lessons that the catchups replace.</b><br>
+     If not set, find the catchups for aways during the period set for the calendar display .</p> 
+  <div class="field">
+    <%= label_tag "Date of first day to display" %><br>
+    <%= date_field_tag :daystart %>
+  </div>
+  <div class="field">
+    <%= label_tag "Number of days to display" %><br>
+    <%= number_field_tag :daydur %>
+  </div>
+  <br>
+  <div class="select_status">
+    <b>Student-Lesson (Role) Status</b><br>
+    <%= check_box_tag(:select_status_attended) %>
+    <%= label_tag(:select_status_attended, "Attended") %><br>
+    <%= check_box_tag(:select_status_scheduled) %>
+    <%= label_tag(:select_status_scheduled, "Scheduled") %><br>
+    <%= check_box_tag(:select_status_queued) %>
+    <%= label_tag(:select_status_queued, "Queued") %><br>
+    <%= check_box_tag(:select_status_expired) %>
+    <%= label_tag(:select_status_expired, "Expired") %><br>
+  </div>
+  <br>
+  <div class="select_status">
+    <b>Student-Lesson (Role) Kind</b><br>
+    <%= check_box_tag(:select_kind_catchup) %>
+    <%= label_tag(:select_kind_catchup, "Catchup") %><br>
+    <%= check_box_tag(:select_kind_catchupcourtesy) %>
+    <%= label_tag(:select_kind_catchupcourtesy, "Catchup Courtesy") %><br>
+  </div>
+  <br>
+  <div class="actions">
+    <%= submit_tag "Display" %>
+  </div>
+
+<% end %>
+

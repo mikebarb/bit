@@ -285,7 +285,7 @@ table, th, td {
   display: none;
   position: absolute;
   z-index: 10;
-  width: 240px;
+  width: 250px;
   background-color: #fff;
   border: solid 1px #dfdfdf;
   box-shadow: 1px 1px 2px #cfcfcf; }
@@ -367,7 +367,7 @@ table, th, td {
   background-color: fuchsia; }
 
 .t-status-away .tutorname, #tutor-status-away {
-  background-color: dimgrey; }
+  background-color: Gainsboro; }
 
 .t-status-undealtAbsent .tutorname {
   background-color: #ff0000; }
@@ -431,7 +431,10 @@ table, th, td {
   background-color: fuchsia; }
 
 .s-status-away, #student-status-away {
-  background-color: dimgrey; }
+  background-color: Gainsboro; }
+
+.s-status-awaycourtesy, #student-status-awaycourtesy {
+  background-color: Gainsboro; }
 
 .s-status-undealtAbsent {
   background-color: #FF0000; }
@@ -446,6 +449,8 @@ table, th, td {
   background-color: #B6D7A8; }
 
 .s-kind-catchup, #student-kind-catchup {
+  background-color: lightblue; }
+.s-kind-catchupcourtesy, #student-kind-catchupcourtesy {
   background-color: lightblue; }
 
 .s-kind-fortnightly, #student-kind-fortnightly {
