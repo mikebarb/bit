@@ -710,8 +710,9 @@ class RolesController < ApplicationController
       ###                    .where({slot_id: myslots, status: 'global'})
       ###                    .order('timeslot')
       ###                    .first
-      @lesson_new = Lesson.joins(:slot)
+      @lesson_new = Lesson.includes(:slot)
                           .where('status = :st AND timeslot >= :sd', {st: 'global', sd: nowdate})
+                          .order("slots.timeslot")
                           .first
       #===#dest_chain = true if @lesson_new.first   # a chain element
       @domchange['to'] = @lesson_new.slot.location[0..2].upcase
