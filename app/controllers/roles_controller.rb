@@ -699,6 +699,7 @@ class RolesController < ApplicationController
     elsif(@domchange.has_key?("to_global"))
       #logger.debug "to_global present in parameters"
       # need to find first global lesson after this point in time
+      nowdate = DateTime.now.beginning_of_day
       if Rails.env.development?
         nowdate = Date.strptime("18/6/2018", "%d/%m/%Y")
       end

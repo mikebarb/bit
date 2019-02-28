@@ -337,7 +337,7 @@ table, th, td {
   border: 2px solid yellow; }
 
 #site-WODEN {
-  border: 2px solid gainsboro; }
+  border: 2px solid Silver; }
 
 .t-kind-standard {
   background-color: #ffffff; }
@@ -367,7 +367,7 @@ table, th, td {
   background-color: fuchsia; }
 
 .t-status-away .tutorname, #tutor-status-away {
-  background-color: Gainsboro; }
+  background-color: Silver; }
 
 .t-status-undealtAbsent .tutorname {
   background-color: #ff0000; }
@@ -431,10 +431,10 @@ table, th, td {
   background-color: fuchsia; }
 
 .s-status-away, #student-status-away {
-  background-color: Gainsboro; }
+  background-color: Silver; }
 
 .s-status-awaycourtesy, #student-status-awaycourtesy {
-  background-color: Gainsboro; }
+  background-color: Silver; }
 
 .s-status-undealtAbsent {
   background-color: #FF0000; }
