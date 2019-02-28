@@ -3403,7 +3403,7 @@ else      # Not to test.
     locationindex = 0                       # index into the sites
     
     # to compress or not - remove unused days
-    @compress = true    # can be true or false
+    @compress = false    # can be true or false
 
     # have an all tab in google sheets to show all sites in that page
     # this is for tutors to seach for their name across all sites.

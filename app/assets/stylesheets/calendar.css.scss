@@ -750,6 +750,9 @@ table, th, td {
 .s-kind-fortnightly .statusinfo {
   background-color: steelblue;  
 }
+.s-kind-bye .statusinfo {
+  background-color: SaddleBrown;  
+}
 .s-kind-onetoone .statusinfo {
   background-color: salmon;  
 }
@@ -789,7 +792,11 @@ table, th, td {
 }
 
 .s-kind-fortnightly .statusinfo {
-  background-color: #A2C4C9;   //light cyan 2  
+  background-color: steelblue;  
+}
+
+.s-kind-bye .statusinfo {
+  background-color: SaddleBrown;  
 }
 
 .s-kind-awayAction .statusinfo {
@@ -839,6 +846,9 @@ table, th, td {
 .s-kind-fortnightly {
   border: 5px solid steelblue;  
 }
+.s-kind-bye {
+  border: 5px solid SaddleBrown;  
+}
 .s-kind-onetoone {
   border: 5px solid salmon;  
 }
@@ -878,7 +888,11 @@ table, th, td {
 }
 
 .s-kind-fortnightly {
-  border: 5px solid #A2C4C9;   //light cyan 2  
+  border: 5px steelblue;
+}
+
+.s-kind-bye {
+  border: 5px solid SaddleBrown;  
 }
 
 .s-kind-awayAction {

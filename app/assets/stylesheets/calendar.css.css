@@ -456,6 +456,9 @@ table, th, td {
 .s-kind-fortnightly, #student-kind-fortnightly {
   background-color: steelblue; }
 
+.s-kind-bye, #student-kind-bye {
+  background-color: SaddleBrown; }
+
 .s-kind-onetoone, #student-kind-onetoone {
   background-color: salmon; }
 
@@ -485,7 +488,10 @@ table, th, td {
   background-color: #9900FF; }
 
 .s-kind-fortnightly {
-  background-color: #A2C4C9; }
+  background-color: steelblue; }
+
+.s-kind-bye {
+  background-color: SaddleBrown; }
 
 .s-kind-awayAction {
   background-color: #C00000; }
