@@ -433,6 +433,9 @@ table, th, td {
 .s-status-away, #student-status-away {
   background-color: Silver; }
 
+.s-status-bye, #student-status-bye {
+  background-color: SaddleBrown; }
+
 .s-status-awaycourtesy, #student-status-awaycourtesy {
   background-color: Silver; }
 
