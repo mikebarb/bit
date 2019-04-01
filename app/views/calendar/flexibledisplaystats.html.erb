@@ -90,10 +90,11 @@
     %>
   
     <%  listoftimes.each do |mytime, mytimeid| %>
+        <% checked_time = mytimeid == '0300PM' ?  '' : 'checked' %>  
         <div class="<%= "selecttime" %> ">
           <label id=<%= 'select' + mytimeid + 'label' %> class='checkboxzone' for="<%= 'select' + mytimeid %>">
             <input id=<%= 'select' + mytimeid %> class="selectshow selecttime" 
-                 onclick="showhidetimes()" type="checkbox" checked> 
+                 onclick="showhidetimes()" type="checkbox" <%= checked_time %> > 
             <%= mytime %>
           </label>
         </div>
@@ -102,9 +103,10 @@
     
     <div>
     <%  listofsites.each_with_index do |site, i| %>
+        <% checked_site = site == 'ONCALL' ?  '' : 'checked' %>  
         <div class="<%= "selectSite" + site %> jumptosite">
           <input id=<%= 'hide' + site %> class="selectshow selectsite" 
-                 onclick="showhidesites()" type="checkbox" checked><%= site + "  " %>
+                 onclick="showhidesites()" type="checkbox" <%= checked_site %> ><%= site + "  " %>
           <span id=<%= 'hide' + site + 'label' %> ></span>
         </div>
     <% end %>

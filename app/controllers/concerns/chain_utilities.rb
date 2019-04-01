@@ -506,6 +506,132 @@ module ChainUtilities
   end
   #---------------End of  Service Function = doSingleMoveCopy ----------------
 
+
+
+
+
+  #******************************************************************
+  #---------------- Service Function = doLessonUpdateStatusRun --------------------
+  # This function will update the status in a lesson chain from the clicked on 
+  # element through to the rest of the term and into the week + 1.
+  # The chain goes all the way through to week + 1 inclusive
+  # The chain block is only for the term.
+  # Thus the chain "block" does not include week +1.
+  # WARNING - if the schecule is not set up with week+1, you will get
+  #           incorrect results.
+  #
+  # Input: dom_id of the clicked on element - the one to be extended.
+  # Output: "" if all OK
+  #         error message if not OK. Calling code to handle the error.
+  #----------------------------------------------------------------------------
+  def doLessonUpdateStatusRun(object_domid)
+    this_error = ""
+    if(result = /^(([A-Z]+\d+l\d+)n(\d+))/.match(object_domid))
+      lesson_id = result[3].to_i
+      #@domchange['object_type'] = 'lesson'
+    else
+      return "passed clicked_domid parameter to doLessonUpdateStatusRun function is incorrect - #{clicked_domid.inspect}"
+    end      
+    # need to produce the matching block chain for the roles
+    # get the chain of existing lessons (called 'roles' here)
+    # in each of these. Only the role records are updated.
+    #--------------------------- role ---------------------------------
+    #@role = Role.where(:student_id => student_id, :lesson_id => old_lesson_id).first
+    if @domchange['object_type'] == 'lesson'
+      @lesson = Lesson.find(lesson_id)
+    else    # tutor
+      return "doLessonUpdateStatusRun can only process lessons!!!"
+    end
+    this_error += doUpdateStatusBlock(@lesson)
+    return this_error if this_error.length > 0
+    return ""
+  end
+  #------------------End of Service Function = doLessonUpdateStatusRun ---------------------
+
+  #--------------------------- doUpdateStatusBlock() ---------------------------------
+  # input: makes use of object variables
+  # @role
+  # output: writes out object variables
+  # return: if error -text string containing error descrition
+  #         else - empty string.
+  #
+  def doUpdateStatusBlock(role)
+    # build the chain for roles - contains all elements of the original chain - even when fragmented.
+    # and the block chain that we propagate as the updated elements (roles)
+    this_error = ""
+    this_error = get_role_chain_and_block(role, {})
+    return this_error if this_error.length > 0
+    # In order to minimise db queries.
+    # Reload @role so get the full connections to lessons, slots and students/tutors
+    # This makes the first lookup for @role more succint.
+    role = @role_chain_index_id[role.id]
+    #------------------------ build the dom updates  (pre-update parts)-------------------------
+    # Build the @domchange(domchangerun for each element in the block)
+    @domchangerun = Array.new
+    @block_roles.each_with_index do |o, i|
+      #logger.debug "block_role (" + i.to_s + "): " + o.inspect
+      @domchangerun[i] = Hash.new
+      @domchangerun[i]['action']         = 'set'                 # set status of individual elements. 
+      @domchangerun[i]['updatefield']    = @domchange['updatefield']
+      @domchangerun[i]['updatevalue']    = @domchange['updatevalue']
+      
+      @domchangerun[i]['object_type']    = @domchange['object_type']
+      @domchangerun[i]['object_id']       = o.slot.location[0,3] +
+                                           o.slot.timeslot.strftime("%Y%m%d%H%M") +
+                                    'l' +  o.slot_id.to_s.rjust(@sf, "0") +
+                                    'n' +  o.id.to_s.rjust(@sf, "0")
+    end
+    #--------------- update the lesson status  ---------------------------------
+    # Block processing
+    (0..@block_roles.length-1).each do |i|
+      @block_roles[i].status = @domchange['updatevalue']   # change to the database
+    end
+    #------------------------- perform the db update ------------------------
+    # block_role now contains all the (block of) elements we need to move
+    # Need to step through this chain.
+    # Let role be the controlling chain - lesson being the secondary chain
+    # transactional code.
+    #return "Truncated operation due to testing!!!"
+    begin
+      Role.transaction do
+        (0..@block_roles.length-1).each do |i|
+          @block_roles[i].save!                                      # change to the database
+            # all saved safely, now need to update the browser display (using calendar messages)
+        end
+      end
+      rescue ActiveRecord::RecordInvalid => exception
+        logger.debug "Transaction failed!!! - rollback exception: " + exception.inspect
+        this_error = "Transaction failed!!! " + exception.inspect 
+    end
+    return this_error if this_error.length > 0
+    #----------------------- update screens  ---------------------------------
+    # saved safely, now need to update the browser display (using calendar messages)
+    # collect the set of screen updates and send through Ably as single message
+    domchanges = Array.new
+    (0..@block_roles.length-1).each do |i|
+      domchanges.push(@domchangerun[i])
+    end
+    ably_rest.channels.get('calendar').publish('json', domchanges)
+    # Now send out the updates to the stats screen
+    # no change in stats for preblock
+    # collect the set of stat updates and send through Ably as single message
+    if @block_roles[0].is_a?(Role)
+      statschanges = Array.new
+      (0..@block_roles.length-1).each do |i|
+        statschanges.push(get_slot_stats(@domchangerun[i]['new_slot_domid']))
+        if(@domchangerun[i]['new_slot_domid'] != @domchangerun[i]['old_slot_domid'])
+          statschanges.push(get_slot_stats(@domchangerun[i]['old_slot_domid']))
+        end
+      end
+      #ActionCable.server.broadcast "stats_channel", { json: @statschange }
+      ably_rest.channels.get('stats').publish('json', statschanges)
+    end
+    # everything is completed successfully - just need to let the caller know.
+    return ""
+  end    
+  #-----------------End of  doUpdateStatusBlock() -----------------------------
+
+
   #******************************************************************
   #----------------- Helper Function = get_role_and_block_chain ---------------
   # @role_chain  contains all the elemets for this chain - even if they have
@@ -1033,7 +1159,9 @@ module ChainUtilities
     end
     #--------------------------- role ---------------------------------
     # This is converting a lesson to a chain.
-    @lesson = Lesson.includes(:slot).where(id: old_lesson_id).first
+    #@lesson = Lesson.includes(:slot).where(id: old_lesson_id).first
+    @lesson = Lesson.includes(:slot, roles: :student, tutroles: :tutor)
+                    .where(id: old_lesson_id).first
     # build the chain for lessons.
     # and the block chain that we propagate as the updated elements (roles)
     #
@@ -1053,10 +1181,9 @@ module ChainUtilities
                                       :formats => [:html], :layout => false,
                                       :locals => {:slot => slot_id_basepart,
                                                   :lesson => @lesson,
-                                                  :thistutroles => [],
-                                                  :thisroles => []
+                                                  :thistutroles => @lesson.tutroles,
+                                                  :thisroles => @lesson.roles
                                                  })
-  
           @domchange['action'] = 'replace'    # in dom, this is replacing an existing element.
           format.json { render json: @domchange, status: :ok }
           #ActionCable.server.broadcast "calendar_channel", { json: @domchange }
@@ -1089,7 +1216,9 @@ module ChainUtilities
     end
     #--------------------------- role ---------------------------------
     # This is extending a lesson.
-    @lesson = Lesson.includes(:slot).where(id: old_lesson_id).first
+    # @lesson = Lesson.includes(:slot).where(id: old_lesson_id).first
+    @lesson = Lesson.includes(:slot, roles: :student, tutroles: :tutor)
+                    .where(id: old_lesson_id).first
     # build the chain for lessons.
     # and the block chain that we propagate as the updated elements (roles)
     #
@@ -1190,13 +1319,14 @@ module ChainUtilities
       #@domchangerun[i]['old_slot_id']   = o.slot_id
       @domchangerun[i]['object_id'] = @domchangerun[i]['to'] +
                                 'n' + o.id.to_s.rjust(@sf, "0")
-      
+      thistutroles = i == 0 ? o.tutroles : []
+      thisroles    = i == 0 ? o.roles    : []
       @domchangerun[i]['html_partial'] = render_to_string("calendar/_schedule_lesson_ajax.html", 
                                   :formats => [:html], :layout => false,
                                   :locals => {:slot => @domchangerun[i]['to'],
                                               :lesson => @block_roles[i],
-                                              :thistutroles => [],
-                                              :thisroles => []
+                                              :thistutroles => thistutroles,
+                                              :thisroles => thisroles
                                              })
     end
     # saved safely, now need to update the browser display (using calendar messages)

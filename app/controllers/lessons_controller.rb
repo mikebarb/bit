@@ -144,6 +144,25 @@ class LessonsController < ApplicationController
     end
   end
 
+  # PATCH/PUT /lessonupdatestatusrun.json
+  # ajax updates skc = status comment (kind not valid for sessions)
+  def lessonupdatestatusrun
+    @domchange = Hash.new
+    params[:domchange].each do |k, v| 
+      logger.debug "k: " + k.inspect + " => v: " + v.inspect 
+      @domchange[k] = v
+    end
+    this_error = doLessonUpdateStatusRun(@domchange['object_id'])
+    respond_to do |format|
+      if this_error.length > 0
+        logger.debug("errors.messages: " + this_error)
+        format.json { render json: this_error, status: :unprocessable_entity }
+      else
+        format.json { render json: @domchange, status: :ok }
+      end
+    end
+  end  
+
   # PATCH/PUT /lessonupdateskc.json
   # ajax updates skc = status comment (kind not valid for sessions)
   def lessonupdateskc

@@ -82,14 +82,15 @@ Rails.application.routes.draw do
   get 'calendar/flexibledisplay/' => 'calendar#flexibledisplay', as: :flexibledisplay
   get 'calendar/globalstudents'   => 'calendar#globalstudents',  as: :globalstudents
 
-  get  'lessons/:id/move'     => 'lessons#move',                as: :move_lesson
-  post 'lessonmoveslot'       => 'lessons#lessonmoveslot',      as: :lessonmoveslot
-  post 'lessonadd'            => 'lessons#lessonadd',           as: :lessonadd
-  post 'lessonextend'         => 'lessons#lessonextend',        as: :lessonextend
-  post 'lessontosinglechain'  => 'lessons#lessontosinglechain', as: :lessontosinglechain
-  delete 'lessonremove'       => 'lessons#lessonremove',        as: :lessonremove
-  post 'lessons/:id'          => 'lessons#update',              as: :update_lesson
-  post 'lessonupdateskc'      => 'lessons#lessonupdateskc',     as: :lessonupdateskc
+  get  'lessons/:id/move'       => 'lessons#move',                  as: :move_lesson
+  post 'lessonmoveslot'         => 'lessons#lessonmoveslot',        as: :lessonmoveslot
+  post 'lessonadd'              => 'lessons#lessonadd',             as: :lessonadd
+  post 'lessonextend'           => 'lessons#lessonextend',          as: :lessonextend
+  post 'lessontosinglechain'    => 'lessons#lessontosinglechain',   as: :lessontosinglechain
+  delete 'lessonremove'         => 'lessons#lessonremove',          as: :lessonremove
+  post 'lessons/:id'            => 'lessons#update',                as: :update_lesson
+  post 'lessonupdateskc'        => 'lessons#lessonupdateskc',       as: :lessonupdateskc
+  post 'lessonupdatestatusrun'  => 'lessons#lessonupdatestatusrun', as: :lessonupdatestatusrun
   resources :lessons
 
   resources :slots

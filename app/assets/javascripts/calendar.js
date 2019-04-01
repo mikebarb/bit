@@ -488,11 +488,12 @@ function ready_calendar() {
     var scmi_extendrun = false;
     var scmi_addLesson = false;
     var scmi_extendLessonrun = false;
-    var scmi_toSingleChainLesson = false
+    var scmi_toSingleChainLesson = false;
     var scmi_removeLesson = false;
     var scmi_removeLessonrun = false;
     var scmi_setStatus = false;
     var scmi_setKind = false;
+    var scmi_setKindrun = false;
     var scmi_setPersonStatus = false;
     var scmi_editComment = false;
     var scmi_editDetail = false;
@@ -582,7 +583,9 @@ function ready_calendar() {
           if(taskItemInContext.classList.contains('runl')){   // last chain element
             scmi_extendLessonrun = true;
           }
-          if(!object_run){   // not a chain element
+          if(object_run){   // a chain element
+            scmi_setKindrun = true;
+          }else{            // not a chain element
             scmi_toSingleChainLesson = true;
             scmi_move = true; 
           }
@@ -621,6 +624,7 @@ function ready_calendar() {
     setscmi('context-removeLessonrun', scmi_removeLessonrun);
     setscmi('context-setStatus', scmi_setStatus);
     setscmi('context-setKind', scmi_setKind);
+    setscmi('context-setKindrun', scmi_setKindrun);
     setscmi('context-setPersonStatus', scmi_setPersonStatus);
     setscmi('context-editComment', scmi_editComment);
     setscmi('context-editDetail', scmi_editDetail);
@@ -899,6 +903,20 @@ function testSuiteForWeekOfYear(){
         // This is more meaningful to the user!!!
         if(currentActivity['object_type'] == 'lesson'){
           currentActivity['action'] = 'setStatus';
+        }
+        //***************************************************
+        // Set Kind has been selected on an element.
+        // It will open up another menu to select the status requried.
+        // This will set the status of this item (tutor, student, lesson).
+        enableTertiaryMenu(currentActivity);
+        break;
+      case "setKindrun":
+        //***************************************************
+        // WARNING - for lessons, the user sees 'set kind'
+        //          BUT the system processes 'set status'
+        // This is more meaningful to the user!!!
+        if(currentActivity['object_type'] == 'lesson'){
+          currentActivity['action'] = 'setStatusrun';
         }
         //***************************************************
         // Set Kind has been selected on an element.
@@ -1214,6 +1232,18 @@ function testSuiteForWeekOfYear(){
             stmi_lesson_status_global     = true;
             stmi_lesson_status_park       = true;
             break;
+          case 'setStatusrun':   // lesson set Status options
+            stmi_lesson_status_oncall     = true;
+            stmi_lesson_status_onsetup    = true;
+            stmi_lesson_status_free       = true;
+            stmi_lesson_status_onbfl      = true;
+            stmi_lesson_status_standard   = true;
+            stmi_lesson_status_routine    = true;
+            stmi_lesson_status_flexible   = true;
+            stmi_lesson_status_allocate   = true;
+            stmi_lesson_status_global     = true;
+            stmi_lesson_status_park       = true;
+            break;
           case 'editComment':   // show the text edit box & populate
             stmi_edit_comment             = true;
             break;
@@ -1306,6 +1336,11 @@ function testSuiteForWeekOfYear(){
       currentActivity['to_global'] = parseaction[2];
       personupdateslesson_Update( currentActivity);
       //studenttoglobal( currentActivity);
+    }else if (currentActivity['action'] == 'setStatusrun'){
+      currentActivity['action']      = choice.getAttribute("data-choice"); // thisChoice
+      currentActivity['move_ele_id'] = taskItemInContext.id;   // thisEleId
+      currentActivity['object_id']   = taskItemInContext.id;   // thisEleId
+      lessonupdatestatusrun( currentActivity );
     }else{
       currentActivity['action']      = choice.getAttribute("data-choice"); // thisChoice
       currentActivity['move_ele_id'] = taskItemInContext.id;   // thisEleId
@@ -1529,7 +1564,11 @@ function testSuiteForWeekOfYear(){
               htmlstudents +=  student.name;
             }
           }else{
-            htmlstudents += "<span class=dullme>" + student.name + "</span><br>";
+            if(htmlstudents.length){
+              htmlstudents += "<br><span class=dullme>" + student.name + "</span>";
+            }else{
+              htmlstudents += "<span class=dullme>" + student.name + "</span>";
+            }
           }
         }
       });
@@ -1548,10 +1587,18 @@ function testSuiteForWeekOfYear(){
           }
           htmlpersonstatus = tutor.status;
         }else{
-          if(htmltutors.length){
-            htmltutors += "<br>" + tutor.name;
+          if(['attended', 'scheduled', 'deal', 'confirmed', 'notified'].includes(tutor.status)){
+            if(htmltutors.length){
+              htmltutors += "<br>" + tutor.name;
+            }else{
+              htmltutors += tutor.name;
+            }
           }else{
-            htmltutors += tutor.name;
+            if(htmltutors.length){
+              htmltutors += "<br><span class=dullme>" + tutor.name + "</span>";
+            }else{
+              htmltutors += "<span class=dullme>" + tutor.name + "</span>";
+            }
           }
         }
       });
@@ -1659,6 +1706,62 @@ function testSuiteForWeekOfYear(){
      });
   }
 
+  //----- update lesson with status for the rest of the chain
+  function lessonupdatestatusrun(domchange){
+    // domchange['action']    = thisChoice;  // in tertiary menu
+    // domchange['object_id'] = thisEleId; //=moveEleId
+    //console.log( "personupdatestatuskindcomment: " + new Date().toLocaleTimeString() );
+    //console.dir(domchange);
+    var mydata = {'domchange' : domchange};
+    var action = domchange['action'];   //update status or kind with value
+    if ( 'lesson' != domchange['object_type']){     // must be a lesson
+      console.log("error - the record being updated is not a lesson");
+      return;
+    }
+    // Need to determine the context - index or lesson
+    if(domchange['object_id'].match(/^[ts]\d+$/)){  // index area
+      console.log("error - the record must not be in the index area");
+      return;    // Not valid in the index
+    }
+    // action = "lesson-status-routine"
+    // var updatefield = 'status';
+    // var updatevalue = 'routine';
+    var parseaction = action.match(/^(\w+)-(\w+)-(\w+)$/);
+    domchange['updatefield'] = parseaction[2];
+    domchange['updatevalue'] = parseaction[3];
+ 
+    //redefine action for processing dom after ajax call.
+    //???//domchange['action'] = 'set';
+    var myurl = myhost + "/lessonupdatestatusrun";
+
+    $.ajax({
+        type: 'POST',
+        url: myurl,
+        data: mydata,
+        dataType: "json",
+        context: domchange,
+        success: function(result1, result2, result3){
+          console.log("personupdatestatuskindcomment: ajax response OK");
+          //moveelement_update( result1 );
+        },
+        error: function(xhr){
+          var error_message = "";
+          if (typeof xhr.responseText == 'string'){
+            error_message = xhr.responseText;
+          }else{
+            var errors = $.parseJSON(xhr.responseText);
+            for (var error in (errors['person_id'])){     // lesson_id ??????
+              error_message += " : " + errors['lesson_id'][error];
+            }
+          }
+          alert('error updating ' + domchange['object_type'] +
+                ' '  + domchange['updatefield'] + ': ' + error_message);
+        }
+     });
+    
+  }
+
+
   //----- Update Tutor, Student or Lesson -> Status, Kind or Comment ----------
   //This function is called to update a student or tutor record
   // with one of status, kind or comment. 
@@ -1667,8 +1770,8 @@ function testSuiteForWeekOfYear(){
   function personupdatestatuskindcomment( domchange ){
     // domchange['action']    = thisChoice;  // in tertiary menu
     // domchange['object_id'] = thisEleId; //=moveEleId
-    console.log( "personupdatestatuskindcomment: " + new Date().toLocaleTimeString() );
-    console.dir(domchange);
+    //console.log( "personupdatestatuskindcomment: " + new Date().toLocaleTimeString() );
+    //console.dir(domchange);
     var mydata = {'domchange' : domchange};
     var action = domchange['action'];   //update status or kind with value
     var object_type = domchange['object_type'];
@@ -1789,6 +1892,7 @@ function testSuiteForWeekOfYear(){
   // the drag reverts if database update fails.
   // good intro document: 
   // https://www.elated.com/articles/drag-and-drop-with-jquery-your-essential-guide/
+
   
   // for moving the lessons
   function elementdraggable(myelement){
@@ -1826,8 +1930,9 @@ function testSuiteForWeekOfYear(){
     });
   }
 
-  elementdraggable(".lesson");
+  //elementdraggable(".lesson");
   slotdroppable(".slot");
+  
 
   // for moving tutors and students.
   function lessondroppable(myelement){
@@ -1847,7 +1952,8 @@ function testSuiteForWeekOfYear(){
         } else {                                      // from calendar area
           var eleFrom = document.getElementById(dom_change['object_id']);
           if(eleFrom.classList.contains("run")){       // a chain element
-            dom_change['action'] = "moverun";
+            //dom_change['action'] = "moverun";
+            dom_change['action'] = "moverunsingle";
           }else{
             dom_change['action'] = "move";
           }
@@ -2657,6 +2763,7 @@ function selectshows_scoped(ele_checkbox, ele_scope) {
             document.getElementById(siteid).classList.add("hideme");
           }
         }
+        event.stopPropagation();
     }
   }
   if(ele_checkbox != document) {

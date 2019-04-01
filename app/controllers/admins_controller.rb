@@ -3728,7 +3728,7 @@ else      # Not to test.
             currentRowAll = baseLessonRowInSlot + baseSlotRowInSite + baseSiteRowAll
             mydata.push(googleBatchDataItem.call(sheet_name,     currentRow,    currentCol,1,1,[["Students Away"]]))
             mydata.push(googleBatchDataItem.call(sheet_name_all, currentRowAll, currentCol,1,1,[["Students Away"]]))
-            myformat.push(googleFormatCells.call(sheet_id, currentRow, 1, currentCol, 1, 16))
+            myformat.push(googleFormatCells.call(sheet_id, currentRow, 1, currentCol, 1, 10))
             myformat.push(googleFormatCells.call(sheet_id_all, currentRowAll, 1, currentCol, 1, 10))
             mydata.push(googleBatchDataItem.call(sheet_name,     currentRow,    currentCol + 1,1,1,[[awaystudents]]))
             mydata.push(googleBatchDataItem.call(sheet_name_all, currentRowAll, currentCol + 1,1,1,[[awaystudents]]))
