@@ -234,10 +234,12 @@ module Historyutilities
     end
     # only dealing with a single tutor
     if changetutor.length > 0
-      h = makeDsp.call(Hash.new(), changetutor[0])
-      h['timeslot'] = ''
-      h['location'] = ''
-      @dsp.push(h)
+      changetutor.each do |this|
+        h = makeDsp.call(Hash.new(), this)
+        h['timeslot'] = ''
+        h['location'] = ''
+        @dsp.push(h)
+      end
     end
     # sort in modified date order
     @dsp = @dsp.sort_by{ |q| q['modified']}.reverse
@@ -321,11 +323,14 @@ module Historyutilities
       @dsp.push(h)
     end
     # only dealing with a single student
+    #byebug
     if changestudent.length > 0
-      h = makeDsp.call(Hash.new(), changestudent[0])
-      h['timeslot'] = ''
-      h['location'] = ''
-      @dsp.push(h)
+      changestudent.each do |this|
+        h = makeDsp.call(Hash.new(), this)
+        h['timeslot'] = ''
+        h['location'] = ''
+        @dsp.push(h)
+      end
     end
     # sort in modified date order
     @dsp = @dsp.sort_by{ |q| q['modified']}.reverse

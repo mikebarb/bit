@@ -39,13 +39,15 @@ class Student < ApplicationRecord    # required migrating to rails 5.0
       @mychange.rid = self.id
       @mychange.table = self.class.to_s
       my_changed_attributes = self.changed_attributes.dup
-      if my_changed_attributes['updated_at'] != nil
-        @mychange.modified = my_changed_attributes.delete('updated_at')
-      elsif my_changed_attributes['created_at'] != nil
-        @mychange.modified = my_changed_attributes.delete('updated_at')
-      else
-        @mychange.modified = self['created_at']
-      end        
+      @mychange.modified = self.updated_at if self.updated_at
+      ### This logic gave the previous update date!!!
+      ###if my_changed_attributes['updated_at'] != nil
+      ###  @mychange.modified = my_changed_attributes.delete('updated_at')
+      ###elsif my_changed_attributes['created_at'] != nil
+      ###  @mychange.modified = my_changed_attributes.delete('created_at')
+      ###else
+      ###  @mychange.modified = self['created_at']
+      ###end
       my_changed_attributes.delete_if do |k, v|
         if ['status', 'comment', 'study'].include?(k)
           @mychange1 = @mychange.dup
@@ -83,7 +85,6 @@ class Student < ApplicationRecord    # required migrating to rails 5.0
     @mychange.table = self.class.to_s
     @mychange.field = 'destroy'
     @mychange.value = ''
-    #byebug
     @mychange.save
   end
 

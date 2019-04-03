@@ -77,7 +77,6 @@ module Calendarutilities
                      .order(:status)
                      .includes(:slot)
 
-    #byebug
     # when a 'allocate' lesson is added as part of this process,
     # we want to reread the database again to get all lessons.
     whilecountlimit = 2             # safety net - if 'allocate' lessons not added.
@@ -101,9 +100,7 @@ module Calendarutilities
       # now check that all slots have an allocate session(lesson)
       flagAllocateAddedToSlot = false
       @slotAllocateLessonDom_id = Hash.new
-      #byebug
       @slotsinfo.each do |thisslot|
-        #byebug
         if @slotallocate.has_key?(thisslot.id)   # allocate present in this slot
           # add an allocate lesson for this slot
           # determine dom_id for slot where new allocate lesson is to be placed.
@@ -120,7 +117,7 @@ module Calendarutilities
           slot_dom_id = thisslot.location[0..2].upcase + 
                         thisslot.timeslot.strftime("%Y%m%d%H%M") +
                         'l' + thisslot.id.to_s.rjust(@sf, "0")
-          logger.debug "add lesson allocate to slot " + slot_dom_id
+          #logger.debug "add lesson allocate to slot " + slot_dom_id
           #----------------------------------
           # !!!!!!! Add code here !!!!!!!!!!
           #----------------------------------
@@ -130,8 +127,7 @@ module Calendarutilities
     #end        # of while loop
 
     #@slotAllocateLessonDom_id[slot_id] = Dom_id of the allocate lesson.
-    logger.debug "+++++++++++++++++++++++++++@slotAllocateLessonDom_id: " + @slotAllocateLessonDom_id.inspect
-    #byebug
+    #logger.debug "+++++++++++++++++++++++++++@slotAllocateLessonDom_id: " + @slotAllocateLessonDom_id.inspect
 
     @tutroleinfo = Tutrole
                    .joins(:tutor, :lesson)
@@ -315,7 +311,6 @@ module Calendarutilities
     # Sort sites order by specific sequence
     # sequence requested by organiser - actually geographic locations
     #@sessinfo = @sessinfo.sort_by{ |o| [valueOrderStatus(o), valueOrderTutor(o)]}
-    #byebug
     @locations = @locations.sort_by{ |o| valueOrderSite(o) }
 
     #column headers will be the days - two step process to get these
@@ -448,28 +443,28 @@ module Calendarutilities
     @all_sites_ratio = {'tutor_count'=>0, 'student_count'=>0}
     @cal.each do |location, calLocation|
       calLocation.each_with_index do |rows, rowindex|
-        logger.debug "next row - " + rowindex.to_s
+        #logger.debug "next row - " + rowindex.to_s
         rows.each_with_index do |cells, colindex|
-          logger.debug "next cell - " + colindex.to_s 
+          #logger.debug "next cell - " + colindex.to_s 
           if cells.key?("values") then  # in a slot with lessons
             slottutorcount = slotstudentcount = 0
             cells["values"].each do |entry|  # go thorugh each lesson
-              logger.debug "entry: " + entry.inspect
+              #logger.debug "entry: " + entry.inspect
               if @tutrole_lessonindex.has_key? entry.id then  # check for tutroles linked to this lesson
                 # could be multiple tutors in this lesson, a tutrole for each - need to step through each one
-                logger.debug "tutroles_lessonindex has an entry for this lesson with tutrole indexes into the array of: " +
-                             @tutrole_lessonindex[entry.id].inspect
+                #logger.debug "tutroles_lessonindex has an entry for this lesson with tutrole indexes into the array of: " +
+                #             @tutrole_lessonindex[entry.id].inspect
                 slottutorcount += @tutrole_lessonindex[entry.id].count
-                @tutrole_lessonindex[entry.id].each do |thistutor|  # check each tutrole for diagnostics
-                  logger.debug "tutor found - tutrole: " + @tutroleinfo[thistutor].inspect
-                end
+                #@tutrole_lessonindex[entry.id].each do |thistutor|  # check each tutrole for diagnostics
+                  #logger.debug "tutor found - tutrole: " + @tutroleinfo[thistutor].inspect
+                #end
               end
               if @role_lessonindex.has_key? entry.id then  # check for students
-                logger.debug "student found: " + @role_lessonindex[entry.id].inspect
+                #logger.debug "student found: " + @role_lessonindex[entry.id].inspect
                 slotstudentcount += @role_lessonindex[entry.id].count 
-                @role_lessonindex[entry.id].each do |thisstudent|  # check each tutrole for diagnostics
-                  logger.debug "student found - role: " + @roleinfo[thisstudent].inspect
-                end
+                #@role_lessonindex[entry.id].each do |thisstudent|  # check each tutrole for diagnostics
+                  #logger.debug "student found - role: " + @roleinfo[thisstudent].inspect
+                #end
               end
             end
             # keep counts in the cell/slot data
@@ -751,7 +746,7 @@ module Calendarutilities
   def get_slot_stats(slot_dom_id)
     # want to get the stats for one slot
     # slot id passed in: GUN201805281530l02424n29192s00520
-    logger.debug "********************get_slot_stats: " + slot_dom_id
+    #logger.debug "********************get_slot_stats: " + slot_dom_id
     if(result = /^([A-Z]+\d+l(\d+))/.match(slot_dom_id))
       slot_id = result[1]
       slot_dbid = result[2].to_i
@@ -759,15 +754,21 @@ module Calendarutilities
     # Need to get all relevant lessons for this slot
     #slot_lessons = Lesson.includes(:students, :roles, :slot).where(:slot_id => slot_dbid)
     @slot_lessons = Lesson.where(slot_id: slot_dbid)
-                          .includes(roles:[:student])
+                          .includes(roles:[:student], tutroles:[:tutor])
     # step through each lesson in this slot
     siv = {'S'=>0,'R'=>0,'A'=>0,'AoTo'=>0,'RoTo'=>0,'RCu'=>0,'RCoTo'=>0,'B'=>0,'F'=>0}
     s = {'routine'=>siv.clone, 'flexible'=>siv.clone,
          'allocate'=>siv.clone, 'free'=>siv.clone}
+    # Define this outside this function, so that when this is called multiple
+    # times with different slots, they are all concatenated.
+    @duplicates = Array.new unless @duplicates
+    # keep track of students and tutorsin this slot
+    slottutors = Hash.new
+    slotstudents = Hash.new
     @slot_lessons.each do |entry|
       #byebug if entry.status == 'allocate'
       # Remember lesson(entry) status is diaplayed to user as kind.
-      logger.debug "lesson: " + entry.id.to_s + " status:  " + entry.status
+      #logger.debug "lesson: " + entry.id.to_s + " status:  " + entry.status
       ss = entry.status
       ss = 'routine' if entry.status == 'standard'
       s[ss] = siv.clone unless s.has_key?(ss)
@@ -779,6 +780,17 @@ module Calendarutilities
         entry.roles.each do |thisrole|  # check each role for diagnostics
           #logger.debug "student found - role: " + thisstudentrole.inspect
           thisstudent = thisrole.student
+          # see if we already had this student
+          if slotstudents.has_key?thisstudent.pname
+            dsptimeslot = ""
+            if(result = /^([A-Z]+)(\d{4})(\d{2})(\d{2})(\d{2})(\d{2})/.match(slot_dom_id))
+              dsptimeslot = "#{result[1]} #{result[4]}/#{result[3]}/#{result[2]} #{result[5]}:#{result[6]}"
+            end
+            @duplicates.push(['student', thisstudent.pname, dsptimeslot])
+            slotstudents[thisstudent.pname] += 1
+          else
+            slotstudents[thisstudent.pname]  = 1
+          end
           #logger.debug "thisstudent: " + thisstudent.inspect
           if(["scheduled", "attended", "deal", "queued"].include?thisrole.status)     # rostered
             s[ss]['R'] += 1
@@ -803,6 +815,23 @@ module Calendarutilities
             end        
           end
         end
+      end
+      if entry.tutroles then  # check for tutors
+        entry.tutroles.each do |thistutrole|  # check each role for diagnostics
+          #logger.debug "student found - role: " + thisstudentrole.inspect
+          thistutor = thistutrole.tutor
+          # see if we already had this student
+          if slottutors.has_key?thistutor.pname
+            dsptimeslot = ""
+            if(result = /^([A-Z]+)(\d{4})(\d{2})(\d{2})(\d{2})(\d{2})/.match(slot_dom_id))
+              dsptimeslot = "#{result[1]} #{result[4]}/#{result[3]}/#{result[2]} #{result[5]}:#{result[6]}"
+            end
+            @duplicates.push(['tutor', thistutor.pname, dsptimeslot])
+            slottutors[thistutor.pname] += 1
+          else
+            slottutors[thistutor.pname]  = 1
+          end
+        end      
       end
     end
     # keep stats in the cell/slot data
@@ -834,7 +863,7 @@ module Calendarutilities
                         :formats => [:html], :layout => false,
                         :locals => {:stats => s})
     
-    logger.debug "slot_html_partial: " + slot_html_partial
+    #logger.debug "slot_html_partial: " + slot_html_partial
     @statschange = Hash.new
     @statschange['slot_id']      = slot_id
     @statschange['html_partial'] = slot_html_partial

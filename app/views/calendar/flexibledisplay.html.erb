@@ -222,14 +222,16 @@
    end 
   end %>
   <% firsttablecolumn = true %>
+  <% #firsttablecolumninrow = true %>
   <table id=site-<%= location %> >
   <% calLocation.each_with_index do |rows, rowIndex| %>
     <% rows.each_with_index do |cells, cellIndex|
         if rowIndex > 0 && cellIndex == 0
+          firsttablecolumninrow = true
           timeoflessonid = cells["value"]
           timeoflessonid = timeoflessonid.gsub('-', '')
           timeoflessonid = timeoflessonid.gsub(' ', '') %>
-          <tr class="<%= timeoflessonid %> " >
+          <tr class="<%= timeoflessonid + ' c' + timeoflessonid %> " >
         <% end
       if @compress      
         unless usedColumnsIndex.include?(cellIndex) then
@@ -253,8 +255,13 @@
       %><td class="cell slot <%= celldow %>" id=<%= cell_id_dom %>  >
       <% elsif cells.key?("value") then %>
         <% if firsttablecolumn == true then
-          firsttablecolumn = false %>
-          <td class="cell firsttablecolumn" %>
+          firsttablecolumn = false
+          firsttablecolumninrow = false %>
+          <td class="cell firsttablecolumn" ><%
+        elsif firsttablecolumninrow == true then
+          firsttablecolumninrow = false 
+          %>
+          <td class="cell firsttablecolumninrow" >
         <% else %>
           <td class="cell <%= celldow %>" %>
         <% end %>

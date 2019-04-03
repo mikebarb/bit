@@ -573,10 +573,21 @@ table, th, td {
 }
 */
 
-// tutor status
+// colours for lesson times left sidebar
+.c0330PM .firsttablecolumninrow  {
+  background-color: bisque;   
+}
+.c0430PM .firsttablecolumninrow  {
+  background-color: lightgreen;   
+}
+.c0530PM .firsttablecolumninrow  {
+  background-color: skyblue;   
+}
 
+
+// tutor status
 .t-status-scheduled .tutorname   {
-  background-color: mediumturquoise;   
+  background-color: paleturquoise;   
 }
 .t-status-notified .tutorname {
   background-color: mediumaquamarine;   
@@ -591,7 +602,7 @@ table, th, td {
   background-color: fuchsia;   // a highlighter pink 
 }
 .t-status-away .tutorname {
-  background-color: Silver;      // light gray   
+  background-color: darkgray;      // light gray   
 }
 // note: absent defined previously
 
@@ -709,7 +720,7 @@ table, th, td {
 // in order to ensure old entries (imported) remain working
 
 .s-status-scheduled .studentname {
-  background-color: mediumturquoise;   
+  background-color: paleturquoise;   
 }
 .s-status-attended .studentname {
   background-color: yellowgreen;   
@@ -718,7 +729,7 @@ table, th, td {
   background-color: fuchsia;        // a highlighter pink 
 }
 .s-status-away .studentname {
-  background-color: Silver;      // light gray   
+  background-color: darkgray;   
 }
 .s-status-bye .studentname {
   background-color: SaddleBrown; 

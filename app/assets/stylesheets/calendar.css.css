@@ -352,7 +352,7 @@ table, th, td {
   background-color: #ffffff; }
 
 .t-status-scheduled .tutorname, #tutor-status-scheduled {
-  background-color: mediumturquoise; }
+  background-color: paleturquoise; }
 
 .t-status-notified .tutorname, #tutor-status-notified {
   background-color: mediumaquamarine; }
@@ -367,7 +367,7 @@ table, th, td {
   background-color: fuchsia; }
 
 .t-status-away .tutorname, #tutor-status-away {
-  background-color: Silver; }
+  background-color: darkgray; }
 
 .t-status-undealtAbsent .tutorname {
   background-color: #ff0000; }
@@ -422,7 +422,7 @@ table, th, td {
   background-color: #EAD1DC; }
 
 .s-status-scheduled .studentname, #student-status-scheduled {
-  background-color: mediumturquoise; }
+  background-color: paleturquoise; }
 
 .s-status-attended .studentname, #student-status-attended {
   background-color: yellowgreen; }
@@ -431,7 +431,7 @@ table, th, td {
   background-color: fuchsia; }
 
 .s-status-away, #student-status-away {
-  background-color: Silver; }
+  background-color: darkgray; }
 
 .s-status-bye, #student-status-bye {
   background-color: SaddleBrown; }
