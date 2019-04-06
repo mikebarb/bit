@@ -47,3 +47,20 @@ production:
   ###<<: *default
   ###database: db/production
   url: <%= ENV['DATABASE_URL'] %>
+
+prodcbr:
+  <<: *default
+  database: prodcbr
+  username: <%= ENV['DB_USER'] %>
+  password: <%= ENV['DB_PASSWORD'] %>
+  host:frozen-beach-84686.csf4r3cevrgb.ap-southeast-2.rds.amazonaws.com
+  port: 5432
+
+prodsyd:
+  <<: *default
+  database: prodsyd
+  username: <%= ENV['DB_USER'] %>
+  password: <%= ENV['DB_PASSWORD'] %>
+  host:frozen-beach-84686.csf4r3cevrgb.ap-southeast-2.rds.amazonaws.com
+  port: 5432
+

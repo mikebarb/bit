@@ -766,6 +766,9 @@ module Calendarutilities
     slottutors = Hash.new
     slotstudents = Hash.new
     @slot_lessons.each do |entry|
+      # determine if this lesson is to be included in tutor/student deplicate checks
+      flagcheckdup = true
+      flagcheckdup = false if ["global", "parked", "setup"].include?entry.status
       #byebug if entry.status == 'allocate'
       # Remember lesson(entry) status is diaplayed to user as kind.
       #logger.debug "lesson: " + entry.id.to_s + " status:  " + entry.status
@@ -781,15 +784,17 @@ module Calendarutilities
           #logger.debug "student found - role: " + thisstudentrole.inspect
           thisstudent = thisrole.student
           # see if we already had this student
-          if slotstudents.has_key?thisstudent.pname
-            dsptimeslot = ""
-            if(result = /^([A-Z]+)(\d{4})(\d{2})(\d{2})(\d{2})(\d{2})/.match(slot_dom_id))
-              dsptimeslot = "#{result[1]} #{result[4]}/#{result[3]}/#{result[2]} #{result[5]}:#{result[6]}"
+          if flagcheckdup
+            if slotstudents.has_key?thisstudent.pname
+              dsptimeslot = ""
+              if(result = /^([A-Z]+)(\d{4})(\d{2})(\d{2})(\d{2})(\d{2})/.match(slot_dom_id))
+                dsptimeslot = "#{result[1]} #{result[4]}/#{result[3]}/#{result[2]} #{result[5]}:#{result[6]}"
+              end
+              @duplicates.push(['student', thisstudent.pname, dsptimeslot])
+              slotstudents[thisstudent.pname] += 1
+            else
+              slotstudents[thisstudent.pname]  = 1
             end
-            @duplicates.push(['student', thisstudent.pname, dsptimeslot])
-            slotstudents[thisstudent.pname] += 1
-          else
-            slotstudents[thisstudent.pname]  = 1
           end
           #logger.debug "thisstudent: " + thisstudent.inspect
           if(["scheduled", "attended", "deal", "queued"].include?thisrole.status)     # rostered
@@ -820,16 +825,18 @@ module Calendarutilities
         entry.tutroles.each do |thistutrole|  # check each role for diagnostics
           #logger.debug "student found - role: " + thisstudentrole.inspect
           thistutor = thistutrole.tutor
-          # see if we already had this student
-          if slottutors.has_key?thistutor.pname
-            dsptimeslot = ""
-            if(result = /^([A-Z]+)(\d{4})(\d{2})(\d{2})(\d{2})(\d{2})/.match(slot_dom_id))
-              dsptimeslot = "#{result[1]} #{result[4]}/#{result[3]}/#{result[2]} #{result[5]}:#{result[6]}"
+          if flagcheckdup
+            # see if we already had this student
+            if slottutors.has_key?thistutor.pname
+              dsptimeslot = ""
+              if(result = /^([A-Z]+)(\d{4})(\d{2})(\d{2})(\d{2})(\d{2})/.match(slot_dom_id))
+                dsptimeslot = "#{result[1]} #{result[4]}/#{result[3]}/#{result[2]} #{result[5]}:#{result[6]}"
+              end
+              @duplicates.push(['tutor', thistutor.pname, dsptimeslot])
+              slottutors[thistutor.pname] += 1
+            else
+              slottutors[thistutor.pname]  = 1
             end
-            @duplicates.push(['tutor', thistutor.pname, dsptimeslot])
-            slottutors[thistutor.pname] += 1
-          else
-            slottutors[thistutor.pname]  = 1
           end
         end      
       end
