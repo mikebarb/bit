@@ -33,6 +33,8 @@ class SlotsController < ApplicationController
 
     respond_to do |format|
       if @slot.save
+        @slot.first = @slot.id
+        @slot.save
         format.html { redirect_to @slot, notice: 'Slot was successfully created.' }
         format.json { render :show, status: :created, location: @slot }
       else
@@ -45,6 +47,9 @@ class SlotsController < ApplicationController
   # PATCH/PUT /slots/1
   # PATCH/PUT /slots/1.json
   def update
+    if @slot.first == nil
+      @slot.first = @slot.id
+    end
     respond_to do |format|
       if @slot.update(slot_params)
         format.html { redirect_to @slot, notice: 'Slot was successfully updated.' }
