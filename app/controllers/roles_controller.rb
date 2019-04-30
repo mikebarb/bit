@@ -172,7 +172,6 @@ class RolesController < ApplicationController
   #----------------------------------------------------------------------------
   def doAllocation(object_domid, dest_domid)      # element to be moved
     logger.debug "entering doAllocation"
-    byebug
     # We have a set of lambda functions here
     # 1. extend_chain_blocks
     # 2. extend_chain_doms
