@@ -9,7 +9,7 @@ module Calendarutilities
   # -----------------------------------------------------------------------------
   # Obtain all the data from the database to display calendar or roster.
   #
-  # Alternatice options to limit tutors or students based on status
+  # Alternative options to limit tutors or students based on status
   #
   # Quite a good document:
   # https://blog.carbonfive.com/2016/11/16/rails-database-best-practices/
@@ -424,11 +424,16 @@ module Calendarutilities
   def valueOrderSite(obj)
     #logger.debug "obj status: " + obj.id.inspect + " - " + obj.status
     if obj.location != nil
-      thisindex = ["GUNGAHLIN", "KALEEN", "DICKSON", "WODEN", "KAMBAH",
-                   "ERINDALE", "CALWELL"].index(obj.location)
-      thisindex == nil ? 0 : thisindex + 1
+      if obj.location =~ /oncall/i 
+        thisindex = 0
+      else
+        thisindex = ["GUNGAHLIN", "KALEEN", "DICKSON", "WODEN", "KAMBAH",
+                     "ERINDALE", "CALWELL",
+                     "ASHFIELD", "STANMORE"].index(obj.location)
+        thisindex == nil ? 2 : thisindex + 3
+      end
     else
-      return 0
+      return 1
     end
   end
   
