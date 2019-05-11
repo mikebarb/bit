@@ -147,6 +147,79 @@ module Historyutilities
 
     @studenthistory
   end
+
+
+  # Obtain the history for a single student for obtaining feedback
+  # from a tutor for this student.
+  # @studentfeedback holds everything required in the view
+  def student_feedback(student_id, options)
+    # put everything in a hash for use in the view.
+    @studentfeedback = Hash.new
+    # keep the student details
+    @studentfeedback["student"] = Student.find(student_id)
+    # control how much history to provide
+    startdate = Date.today - (Integer(current_user.history_back) rescue 100)
+    enddate = Date.today + (Integer(current_user.history_forward) rescue 7)
+    #provide the capability to override the start and end dates by
+    # passing them as options
+    if options.has_key?('startdate')
+      startdate = options['startdate']
+    end
+    if options.has_key?('enddate')
+      enddate = options['enddate']
+    end
+    @studentfeedback["startdate"] = startdate
+    @studentfeedback["enddate"]   = enddate
+    @studentfeedback["display"]   = options['action']
+    # get all lessons this student is in - all history
+    # link to lessons for this student through the roles
+    role_objs = Role.where (["student_id = ?", student_id])
+    # get all the lessons found through tutroles 
+    lesson_ids = role_objs.map { |obj| obj.lesson_id }.uniq
+    lesson_objs = Lesson.includes(:slot, roles: :student, tutroles: :tutor)
+                        .where( id: lesson_ids, slots: { timeslot: startdate..enddate})
+                        .order('slots.timeslot').reverse_order
+    @studentfeedback["lessons"] = Array.new
+    tutornames = Hash.new
+    lesson_objs.each do |thislesson|
+      rowdata = Hash.new
+      flagstudentfound = flagtutorfound = false
+      thislesson.roles.each do |thisrole|
+        if thisrole.student_id == student_id.to_i   # check if desired student
+          if ['scheduled', 'attended'].include?(thisrole.status) # student is rostered.
+            rowdata[:student_pname] = thisrole.student.pname
+            rowdata[:student_status] = thisrole.student.status
+            flagstudentfound = true
+            # Now get the tutor that was on.
+            thislesson.tutroles.each do |thistutrole|
+              if ['scheduled', 'notified', 'confirmed', 'attended'].include?(thisrole.status) # tutor is rostered.
+                tutname = thistutrole.tutor.pname
+                rowdata[:tutor_pname] = tutname
+                tutornames[tutname] = tutornames[tutname] ? 1 + tutornames[tutname] : 1
+                rowdata[:tutor_count] = tutornames[tutname]
+                flagtutorfound = true
+              end          
+            end
+            unless flagtutorfound
+              rowdata[:tutor_pname] = ''
+              rowdata[:tutor_count] = 0
+            end
+          end
+        end  
+      end
+      if flagstudentfound
+        rowdata[:location] = thislesson.slot.location
+        rowdata[:timeslot] = thislesson.slot.timeslot
+        @studentfeedback["lessons"].push(rowdata.clone)
+      end
+
+    end
+    @studentfeedback
+  end
+
+
+
+
   
   def date_to_weekofterm(thisdatetime)  
     thistermweek = ''

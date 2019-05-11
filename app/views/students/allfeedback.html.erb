@@ -1,0 +1,13 @@
+<p id="notice"><%= notice %></p>
+
+<h1> Project information to facilitate feedback for all active Students </h1>
+<% if @students_feedback[0] %>
+  <p>Feedback information between <%= @students_feedback[0]["startdate"].strftime("%a %d/%m/%Y") %>
+     and <%= @students_feedback[0]["enddate"].strftime("%a %d/%m/%Y") %> </p>
+<% end %>
+<% #byebug %>
+<% @students_feedback.each do |studentfeedback| %>
+  <% @student_feedback = studentfeedback %>
+  <%= render "feedback" %>
+  <br>
+<% end %>

@@ -1,4 +1,5 @@
 class TutrolesController < ApplicationController
+  include Calendarutilities
   include ChainUtilities
   
   before_action :set_tutrole, only: [:show, :edit, :update, :destroy]
@@ -156,11 +157,16 @@ class TutrolesController < ApplicationController
     #==#  end
     #==#end
     # Intercept and do nothing if parent is the same.
+    
     if new_lesson_id != nil && 
        old_lesson_id == new_lesson_id
+      combinedresult = Hash.new
+      combinedresult['domchange'] = @domchange
+      combinedresult['duplicates'] = @duplicates
       # Nothing to do - just say OK to caller.
       respond_to do |format|
-        format.json { render json: @domchange, status: :ok }
+        #format.json { render json: @domchange, status: :ok }
+        format.json { render json: combinedresult, status: :ok }
       end
       return
     end
@@ -195,59 +201,18 @@ class TutrolesController < ApplicationController
       respond_to do |format|
         format.json { render json: this_error, status: :unprocessable_entity }
       end
-      logger.debug "unprocessable entity(line 478): " + this_error.inspect 
+      logger.debug "unprocessable entity(line 198): " + this_error.inspect 
       return
     end
     # All OK if you get to here.
+    #byebug
+    combinedresult = Hash.new
+    combinedresult['domchange'] = @domchange
+    combinedresult['duplicates'] = @duplicates
     respond_to do |format|
-      format.json { render json: @domchange, status: :ok }
+      #format.json { render json: @domchange, status: :ok }
+      format.json { render json: combinedresult, status: :ok }
     end
-    
-=begin    
-    if( @domchange['action'] == 'move')    # move
-      @tutrole = Tutrole
-                  .includes(:tutor)
-                  .where(:tutor_id => tutor_id, :lesson_id => old_lesson_id)
-                  .first
-      @tutrole.lesson_id = new_lesson_id
-    else    # copy
-      @tutrole = Tutrole.new(:tutor_id => tutor_id, :lesson_id => new_lesson_id)
-      # copy relevant info from old tutrole (status & kind)
-      if old_lesson_id
-        @tutrole_from = Tutrole.where(:tutor_id  => tutor_id,
-                                      :lesson_id => old_lesson_id).first
-        @tutrole.status = @tutrole_from.status
-        @tutrole.kind   = @tutrole_from.kind
-      end
-    end
-
-    @domchange['html_partial'] = render_to_string("calendar/_schedule_tutor.html",
-                                    :formats => [:html], :layout => false,
-                                    :locals => {:tutor => @tutrole.tutor, 
-                                                :thistutrole => @tutrole, 
-                                                :slot => new_slot_id, 
-                                                :lesson => new_lesson_id
-                                               })
-
-    # the object_id will now change (for both move and copy as the inbuild
-    # lesson number will change.
-    @domchange['object_id_old'] = @domchange['object_id']
-    @domchange['object_id'] = new_slot_id + "n" + new_lesson_id.to_s.rjust(@sf, "0") +
-                    "t" + tutor_id.to_s.rjust(@sf, "0")
-            
-    # want to hold the name for sorting purposes in the DOM display
-    @domchange['name'] = @tutrole.tutor.pname
-    
-    respond_to do |format|
-      if @tutrole.save
-        format.json { render json: @domchange, status: :ok }
-        #ActionCable.server.broadcast "calendar_channel", { json: @domchange }
-        ably_rest.channels.get('calendar').publish('json', @domchange)
-      else
-        format.json { render json: @tutrole.errors.messages, status: :unprocessable_entity }
-      end
-    end
-=end
   end
 
   #*******************************tutorupdateskc*****************************

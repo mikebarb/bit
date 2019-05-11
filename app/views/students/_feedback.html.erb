@@ -1,0 +1,23 @@
+<%= @student_feedback["student"].pname %> ( <%= @student_feedback["student"].status %> )
+<table>
+  <thead>
+    <tr>
+      <th>Day & Time</th>
+      <th>Location</th>
+      <th>Tutor</th>
+      <th>Count</th></th>
+    </tr>
+  </thead>
+
+  <tbody>
+    <% @student_feedback["lessons"].each do |r| 
+       next if r.count == 0 %>
+    <tr>
+      <td><%= r[:timeslot].strftime("%a %l:%M %p %d/%m/%Y") %></td>
+      <td><%= r[:location] %></td>
+      <td><%= r[:tutor_pname] %></td>
+      <td><%= r[:tutor_count] %></td>
+    </tr>
+    <% end %>
+  </tbody>
+</table>

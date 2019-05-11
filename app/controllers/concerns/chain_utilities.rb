@@ -9,8 +9,9 @@ module ChainUtilities
   #         else - empty string.
   #
   def doMoveBlock(role, new_lesson_id, options)
-    # build the chain for roles - contains all elements of the original chain - even when fragmented.
-    # and the block chain that we propagate as the updated elements (roles)
+    # build the chain for roles - contains all elements of the original chain 
+    # - even when fragmented. and the block chain that we propagate as the 
+    # updated elements (roles)
     this_error = ""
     this_error = get_role_chain_and_block(role, options)
     return this_error if this_error.length > 0
@@ -487,14 +488,14 @@ module ChainUtilities
     ably_rest.channels.get('calendar').publish('json', @domchange)
 
     # collect the set of stat updates and send through Ably as single message
+    statschanges = Array.new
+    #get_slot_stats(new_slot_id)
+    statschanges.push(get_slot_stats(new_slot_id))
+    if(old_slot_id && (new_slot_id != old_slot_id))
+      #get_slot_stats(old_slot_id)
+      statschanges.push(get_slot_stats(old_slot_id))
+    end
     if @role.is_a?(Role)
-      statschanges = Array.new
-      #get_slot_stats(new_slot_id)
-      statschanges.push(get_slot_stats(new_slot_id))
-      if(old_slot_id && (new_slot_id != old_slot_id))
-        #get_slot_stats(old_slot_id)
-        statschanges.push(get_slot_stats(old_slot_id))
-      end
       ably_rest.channels.get('stats').publish('json', statschanges)
     end
     
@@ -1119,12 +1120,15 @@ module ChainUtilities
     # Now send out the updates to the stats screen
     # no change in stats for preblock
     # collect the set of stat updates and send through Ably as single message
+    # Need to call stats changes for both tutors and students as the
+    # duplicates are detected in this process.
+    statschanges = Array.new
+    (1..@block_roles.length-1).each do |i|
+      statschanges.push(get_slot_stats(@domchangerun[i]['new_slot_domid']))
+      #get_slot_stats(@domchangerun[i]['new_slot_domid'])
+    end
+    # Stats changes only sent to stats screen for students
     if @role.is_a?(Role)   # No stats update for tutors
-      statschanges = Array.new
-      (1..@block_roles.length-1).each do |i|
-        statschanges.push(get_slot_stats(@domchangerun[i]['new_slot_domid']))
-        #get_slot_stats(@domchangerun[i]['new_slot_domid'])
-      end
       ably_rest.channels.get('stats').publish('json', statschanges)
     end
     # everything is completed successfully.

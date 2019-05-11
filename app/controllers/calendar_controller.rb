@@ -420,7 +420,7 @@ class CalendarController < ApplicationController
       generate_stats()
       render 'flexibledisplaystats' and return
     end
-
+    check_duplicates()
   end
 
 end

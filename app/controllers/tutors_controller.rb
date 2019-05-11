@@ -11,12 +11,35 @@ class TutorsController < ApplicationController
     @tutors = Tutor
               .order(:pname)
               .page(params[:page])
+    @listtutortitle = "Listing All Tutors"
+  end
+
+  # GET /activetutors
+  # GET /activetutors.json
+  def activetutors
+    @tutors = Tutor
+              .where.not(status: 'inactive')
+              .order(:pname)
+              .page(params[:page])
+    @listtutortitle = "Listing Active Tutors"
+    render 'index' and return
   end
 
   # GET /alltutors
   # GET /alltutors.json
   def alltutors
     @tutors = Tutor.order(:pname)
+    @listtutortitle = "Listing All Tutors"
+  end
+
+  # GET /alltutors
+  # GET /alltutors.json
+  def allactivetutors
+    @tutors = Tutor
+              .where.not(status: 'inactive')
+              .order(:pname)
+    @listtutortitle = "Listing All Active Tutors"
+    render 'alltutors' and return
   end
 
   # GET /tutors/1

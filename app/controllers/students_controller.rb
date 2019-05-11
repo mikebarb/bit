@@ -11,6 +11,18 @@ class StudentsController < ApplicationController
     @students = Student
     .order(:pname)
     .page(params[:page])
+    @liststudenttitle = "Listing Students"
+  end
+
+  # GET /activestudents
+  # GET /activestudents.json
+  def activestudents
+    @students = Student
+    .where.not(status: 'inactive')
+    .order(:pname)
+    .page(params[:page])
+    @liststudenttitle = "Listing Active Students"
+    render 'index' and return
   end
 
   # GET /allstudents
@@ -18,6 +30,17 @@ class StudentsController < ApplicationController
   def allstudents
     @students = Student
     .order(:pname)
+    @liststudenttitle = "Listing All Students"
+  end
+
+  # GET /allactivestudents
+  # GET /allactivestudents.json
+  def allactivestudents
+    @students = Student
+    .where.not(status: 'inactive')
+    .order(:pname)
+    @liststudenttitle = "Listing All Active Students"
+    render 'allstudents' and return
   end
 
 
@@ -30,7 +53,9 @@ class StudentsController < ApplicationController
   # GET /students/history.json
   def allhistory
     @students_history = Array.new
-    students = Student.all.order("pname")
+    students = Student
+              .where.not(status: 'inactive')
+              .order("pname")
     students.each do |thisstudent|
       @students_history.push(student_history(thisstudent.id, {}))
     end
@@ -53,6 +78,38 @@ class StudentsController < ApplicationController
       # helpful reference for jbuilder is
       # https://devblast.com/b/jbuilder
       format.json { render :history, status: :ok }
+    end
+  end
+
+  # GET /students/feedback
+  def allfeedback
+    @students_feedback = Array.new
+    students = Student
+               .where.not(status: 'inactive')
+               .order("pname")
+    students.each do |thisstudent|
+      @students_feedback.push(student_feedback(thisstudent.id, {}))
+    end
+  end
+
+  # GET /students/feedback/1
+  def feedback
+    options = Hash.new
+    options['action'] = 'feedback'
+    # By default,use the dates from the users preference display dates
+    options['startdate'] = current_user.daystart
+    mydaydur = current_user.daydur
+    mydaydur < 1  || mydaydur > 180   ? mydaydur : 1 # limit range of days allowed!!!
+    options['enddate'] = options['startdate'] + mydaydur.days
+    if params.has_key?('startdate')
+      options['startdate'] = params['startdate'].to_date
+    end
+    if params.has_key?('enddate')
+      options['enddate'] = params['enddate'].to_date
+    end
+    @student_feedback =  student_feedback(params[:id], options)
+    respond_to do |format|
+      format.html
     end
   end
 

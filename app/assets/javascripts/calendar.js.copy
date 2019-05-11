@@ -35,8 +35,6 @@ var stackActivity = [];
 var myhost = window.location.protocol + '//' + window.location.hostname;   // base url for ajax
 var ably;             // messaging global identifier
 
-// This function is called on document load through turbolinks load
-// Called in last line of this javascript file.
 var ready = function() {
   //console.log("called ready");
   if(document.getElementById('page_name')){
@@ -73,9 +71,9 @@ function ready_common() {
     $status.hide();
   }
 */
-}
+};
 
-//------------- 'ready_calendar' function --------------------------------
+//var ready_calendar = function() {
 function ready_calendar() {
   console.log("called ready_calendar");
 /* No longer needed with Ably
@@ -209,6 +207,39 @@ function ready_calendar() {
     };
   }
   
+/*
+  //----------------- common support functions for 'refresh me' -------------- 
+  // check if we should jump to postion.
+  var jumpTo = getCookie('jumpToScrollPostion');
+  if(jumpTo != "") {
+    window.scrollTo(0, jumpTo);
+    setCookie('jumpToScrollPostion', '', 0);  // and delete cookie so we don't jump again.
+  }
+
+  function setCookie(cname, cvalue, exdays) {
+    var d = new Date();
+    d.setTime(d.getTime() + (exdays*24*60*60*1000));
+    var expires = "expires="+ d.toUTCString();
+    document.cookie = cname + "=" + cvalue + ";" + expires + ";path=/";
+  }
+  
+  function getCookie(cname) {
+    var name = cname + "=";
+    var decodedCookie = decodeURIComponent(document.cookie);
+    var ca = decodedCookie.split(';');
+    for(var i = 0; i <ca.length; i++) {
+        var c = ca[i];
+        while (c.charAt(0) == ' ') {
+            c = c.substring(1);
+        }
+        if (c.indexOf(name) == 0) {
+            return c.substring(name.length, c.length);
+        }
+    }
+    return "";
+  }
+  //------------- end of common support functions for 'refresh me' ----------- 
+*/
   //------------------------ Context Menu - calendar ---------------------------
   // This is the context menu for the lesson, tutor and student elements.
   // It is the first context menu to be displayed when you right click on an
@@ -234,30 +265,8 @@ function ready_calendar() {
     clickListener_calendar();
     keyupListener();
     resizeListener();
-
-    // As these history and duplicate elements are added after the page load,
-    // the click event is not attached.
-    // Event delegation addresses this issue. Disccussed in:
-    // https://learn.jquery.com/events/event-delegation/
-    $(".histories").on('click', '#closehistory' , function() {
-      console.log("closing history clicked");
-      $(this).parent("div").remove();
-    });
-    
-    $(".duplicates").on('click', '#closeduplicate' , function() {
-      console.log("closing duplicate clicked");
-      $(this).parent("div").remove();
-    });
-
     // disply the up to now hidden scheduler
     document.getElementsByClassName('schedule')[0].classList.remove('hideme');
-    
-    var duplicateElement = document.getElementById("d1");
-    if(duplicateElement){
-      duplicateElement.style.position="fixed";
-      duplicateElement.style.left = "2%";
-      duplicateElement.style.top  = "10%";
-    }
   }
   
   // Sticky header allows us to shrink the index region of the page.
@@ -509,6 +518,7 @@ function ready_calendar() {
         scmi_paste = true;
       }
     }
+
 
     switch(object_type){     // student, tutor, lesson.
       case 'student':   //student
@@ -841,7 +851,7 @@ function testSuiteForWeekOfYear(){
         break;
       case "removerun":
         if(!confirm("Are your sure?  \n" + 
-            "Are so sure you wish to delete THIS ENTITY and then everything for the rest of this chain \n" +
+            "Are so sure you wish to delete everything for the rest of this chain \n" +
                     " - most likely to the end of the term!.")){
           return;
         }
@@ -1406,6 +1416,246 @@ function testSuiteForWeekOfYear(){
   //------------------------ End of Context Menu -----------------------------
 
 
+
+  //----------------- Show chain for selected Tutor or Student ------------------------
+  //This function is called to get a student or tutor clicked on chain
+  //Does ajax to get the student or tutor history
+  function getChain(domchange){
+    // domchange['action']      = thisChoice;
+    // domchange['object_id'] = thisEleId;
+    var parseid = currentActivity['object_id'].match(/\w(\d+)$/);
+    var lessonid = currentActivity['object_id'].match(/n(\d+)[st]\d+$/);
+    //var mydata = {'domchange' : domchange};
+    // url format: myhost + "/students/chain/" + personid;
+    var myurl = myhost + "/" + domchange['object_type'] + "s/chain/" + parseid[1];
+    $.ajax({
+        type: "GET",
+        url: myurl,
+        data: {
+          lesson_id: lessonid[1]
+        },
+        dataType: "json",
+        context: domchange,
+
+        success: function(data, textStatus, xhr){
+          showhistory(data);
+        },
+        error: function(xhr){
+          var error_message = "";
+          if (typeof xhr.responseText == 'string'){
+            error_message = xhr.responseText;
+          }else{
+            var errors = $.parseJSON(xhr.responseText);
+            for (var error in (errors['person_id'])){     // lesson_id ??????
+              error_message += " : " + errors['person_id'][error];
+            }
+          }
+          alert('error fetching history for ' + domchange['object_type'] +
+                error_message);
+        }
+     });
+  }
+
+  //----------------- Get history of Tutor or Student ------------------------
+  //This function is called to get a student or tutor history
+  // This also used to get term entries - just uses different dates in 
+  // the controller based on the domchange action.
+  //Does ajax to get the student or tutor history
+  function getHistory(domchange){
+    // domchange['action']      = thisChoice;
+    // domchange['object_id'] = thisEleId;
+    var parseid = currentActivity['object_id'].match(/\w(\d+)$/);
+    //var mydata = {'domchange' : domchange};
+    // url format: myhost + "/students/history/" + personid;
+    var myurl = myhost + "/" + domchange['object_type'] + "s/" + 
+                domchange['action'] + "/" + parseid[1];
+    //mydata = domchange;
+    $.ajax({
+        type: "GET",
+        url: myurl,
+        //data: mydata,
+        dataType: "json",
+        context: domchange,
+
+        success: function(data, textStatus, xhr){
+          showhistory(data);
+        },
+        error: function(xhr){
+          var error_message = "";
+          if (typeof xhr.responseText == 'string'){
+            error_message = xhr.responseText;
+          }else{
+            var errors = $.parseJSON(xhr.responseText);
+            for (var error in (errors['person_id'])){     // lesson_id ??????
+              error_message += " : " + errors['person_id'][error];
+            }
+          }
+          alert('error fetching history for ' + domchange['object_type'] +
+                error_message);
+        }
+     });
+  }
+
+  function showduplicate(duplicatedata){
+    var template_ele = document.getElementById("duplicate-template");
+    var this_ele = template_ele.cloneNode(true);
+    this_ele.id = +new Date;    // current unix time in msec - provides uniqueness.
+    this_ele.innerHTML = duplicateToHtml(duplicatedata);
+    template_ele.after(this_ele);
+    var duplicateDisplay = this_ele;
+    //positionMenu(duplicateDisplay);
+    duplicateDisplay.style.position="fixed";
+    duplicateDisplay.style.left = "2%";
+    duplicateDisplay.style.top  = "10%";
+    $("#" + this_ele.id).resizable({handles: "e"});
+    this_ele.classList.remove('hideme');
+  }
+
+  // As this duplicate element is added after the page load,
+  // the click event is not attached.
+  // Event delegation addresses this issue. Disccussed in:
+  // https://learn.jquery.com/events/event-delegation/
+  $(".duplicates").on('click', '#closeduplicate' , function() {
+    console.log("closing duplicate clicked");
+    $(this).parent("div").remove();
+  });
+
+  // convert duplicate data to a HTML segment
+  function duplicateToHtml(dd){
+    var htmlsegment = '<h4>Duplicates</h4>';
+    htmlsegment += '<div id="closeduplicate"><svg height="300" width="300"><line x1="1" y1="1" x2="15" y2="15" style="stroke:#000; stroke-width:4" /><line x1="15" y1="1" x2="1" y2="15" style="stroke:#000; stroke-width:4" /></svg></div>';
+    htmlsegment += '<table>';
+    htmlsegment += '<tr><th>Slot</th><th>Name</th><th>Type</th></tr>';
+    dd.forEach( function(dup){
+      htmlsegment += "<tr><td>" + dup[2] + "</td>";
+      htmlsegment += "<td>" + dup[1] + "</td>";
+      htmlsegment += "<td>" + dup[0] + "</td></tr>";
+    });
+    htmlsegment += '</table>';
+    return htmlsegment;
+  }
+
+
+  function showhistory(historydata){
+    var template_ele = document.getElementById("history-template");
+    var this_ele = template_ele.cloneNode(true);
+    this_ele.id = historydata['display'] + '-' + historydata['role'] + historydata['id'];
+    this_ele.innerHTML = historyToHtml(historydata);
+    template_ele.after(this_ele);
+    var historyDisplay = this_ele;
+    positionMenu(historyDisplay);
+    $("#" + this_ele.id).resizable({handles: "e"});
+    if(historydata['display'] == 'chain'){
+      this_ele.classList.remove('history');
+      this_ele.classList.add('chain');
+    }
+    this_ele.classList.remove('hideme');
+  }
+
+  // As this history element is added after the page load,
+  // the click event is not attached.
+  // Event delegation addresses this issue. Disccussed in:
+  // https://learn.jquery.com/events/event-delegation/
+  $(".histories").on('click', '#closehistory' , function() {
+    console.log("closing history clicked");
+    $(this).parent("div").remove();
+  });
+
+  // convert historydata to a HTML segment
+  function historyToHtml(hd){
+    var role    = hd['role'];
+    var htmlsegment = "<h4>" + hd['display'] + " for " + role + ': ' + hd['pname'] + "</h4>";
+    htmlsegment += '<div id="closehistory"><svg height="300" width="300"><line x1="1" y1="1" x2="15" y2="15" style="stroke:#000; stroke-width:4" /><line x1="15" y1="1" x2="1" y2="15" style="stroke:#000; stroke-width:4" /></svg></div>';
+    htmlsegment += "<table>";
+    htmlsegment += "<tr><td>Lesson Kind</td>";
+    if(role == 'student'){
+      htmlsegment += "<td>Student Status</td><td>Day Time</td><td>Site</td><td>Tutor</td><td>Other Students</td></tr>";
+    }else{  // role is a tutor
+      htmlsegment += "<td>Tutor Status</td><td>Day Time</td><td>Site</td><td>Students</td><td>Other Tutors</td></tr>";
+    }
+    var htmlrowstart = "";
+    var htmlpersonstatus = "";
+    hd['lessons'].forEach( function(lesson){
+      //var htmlsegmentlesson1 = "<td>" + lesson['status'] + "</td>";
+      //var htmlsegmentlesson    += "<td>" + lesson['kind'] + "</td>";
+      //var thisdaytime = lesson['daytime'];
+      //var m = thisdaytime.match(/(.+) (.+)/); 
+      var htmlsegmentlesson = "<td>" + lesson['daytime'] + ' ' + lesson['week'] + "</td>";
+      htmlsegmentlesson    += "<td>" + lesson['site'] + "</td>";
+      
+      // get students - ensure only other students if displaying a student
+      var htmlstudents = "";
+      lesson['students'].forEach( function(student){
+        if((role == 'student') && (student.name == hd['pname'])){
+          // don't add this student to html list.
+          // however, dull this table row if this student status is not rostered
+          if(['attended', 'scheduled', 'deal'].includes(student.status)){
+            htmlrowstart = "<tr>";
+          }else{
+            htmlrowstart = "<tr class=dullme>";
+          }
+          htmlpersonstatus = student.status;
+        }else{
+          if(['attended', 'scheduled', 'deal'].includes(student.status)){
+            if(htmlstudents.length){
+              htmlstudents +=  "<br>" + student.name;
+            }else{
+              htmlstudents +=  student.name;
+            }
+          }else{
+            if(htmlstudents.length){
+              htmlstudents += "<br><span class=dullme>" + student.name + "</span>";
+            }else{
+              htmlstudents += "<span class=dullme>" + student.name + "</span>";
+            }
+          }
+        }
+      });
+      htmlstudents =  "<td>" + htmlstudents + "</td>";
+      
+      // get tutors - ensure only other tutors if displaying a tutor
+      var htmltutors = "";
+      lesson['tutors'].forEach( function(tutor){
+        if((role == 'tutor') && (tutor.name == hd['pname'])){
+          // don't add this student to html list.
+          // however, dull this table row if this tutor status is not rostered
+          if(['attended', 'notified', 'confirmed', 'scheduled', 'de1448al'].includes(tutor.status)){
+            htmlrowstart = "<tr>";
+          }else{
+            htmlrowstart = "<tr class=dullme>";
+          }
+          htmlpersonstatus = tutor.status;
+        }else{
+          if(['attended', 'scheduled', 'deal', 'confirmed', 'notified'].includes(tutor.status)){
+            if(htmltutors.length){
+              htmltutors += "<br>" + tutor.name;
+            }else{
+              htmltutors += tutor.name;
+            }
+          }else{
+            if(htmltutors.length){
+              htmltutors += "<br><span class=dullme>" + tutor.name + "</span>";
+            }else{
+              htmltutors += "<span class=dullme>" + tutor.name + "</span>";
+            }
+          }
+        }
+      });
+      htmltutors = "<td>" + htmltutors + "</td>";
+      // now place them in the html output in the correct order
+      if(role == 'student'){
+        htmlsegmentlesson += htmltutors + htmlstudents;
+      }else{  // role is a tutor
+        htmlsegmentlesson += htmlstudents + htmltutors;
+      }
+      htmlpersonstatus = "<td>" + htmlpersonstatus + "</td>";
+      htmlsegment += htmlrowstart + "<td>" + lesson['kind'] + "</td>" +
+                     htmlpersonstatus + htmlsegmentlesson +"</tr>";
+    });
+    htmlsegment += "</table>";
+    return htmlsegment;
+  }
+
   //----- Update Tutor, Student or Lesson -> Comment, subject ----------
   // This function is called to update: student, tutor, lesson, tutrole, role records
   // with one of comment or subjects. 
@@ -1893,9 +2143,7 @@ function testSuiteForWeekOfYear(){
         success: function(result1, result2, result3){
             console.log("personupdateslesson_Update Ajax response OK");
             //var domchange  = result1['domchange'];
-            if(('duplicates' in result1) &&
-              (result1['duplicates'] != null) &&
-               (result1['duplicates'].length > 0)){
+            if(('duplicates' in result1) && (result1['duplicates'].length > 0)){
               var duplicates = result1['duplicates'];
               console.log("duplicates present.");
               showduplicate(duplicates);
@@ -2353,7 +2601,6 @@ function testSuiteForWeekOfYear(){
   $("#personInput").keyup(filterPeople);
 
 };    //************************** !!!!!!!!!!!!!!!!!!!! **********************
-//------------- End of 'ready_calendar' function --------------------------------
 
 //--------- Filter by name functions for the tutors and students -----------
 function filterPeople(){
@@ -2683,35 +2930,6 @@ function ready_stats(){
     clickListener_stats();
     keyupListener();
     resizeListener();
-    
-    // As these history and duplicate elements are added after the page load,
-    // the click event is not attached.
-    // Event delegation addresses this issue. Disccussed in:
-    // https://learn.jquery.com/events/event-delegation/
-    $(".histories").on('click', '#closehistory' , function() {
-      console.log("closing history clicked");
-      $(this).parent("div").remove();
-    });
-    
-    $(".duplicates").on('click', '#closeduplicate' , function() {
-      console.log("closing duplicate clicked");
-      $(this).parent("div").remove();
-    });
-
-    // ------------------ Draggable History ----------------  
-    // Draggable history container
-    $(".histories").on('mouseover', '.history', function(){
-      $(this).draggable();
-    });
-
-    $(".histories").on('mouseover', '.chain', function(){
-      $(this).draggable();
-    });
-
-    $(".duplicates").on('mouseover', '.duplicate', function(){
-      $(this).draggable();
-    });
-
   }
 
   //------------------ refresh me for stats page ------------------------------
@@ -2802,8 +3020,6 @@ function ready_stats(){
     var scmi_copy = false;  //scmi - set comtext menu items.
     var scmi_move = false;  // to show or not show in menu
     var scmi_paste = false;  // set the dom display value at end.
-    var scmi_history = false;
-    var scmi_term = false;
     switch(object_type){     // student, tutor, lesson.
       case 'student':   //student
       case 'tutor':   //tutor
@@ -2812,8 +3028,6 @@ function ready_stats(){
           // this element in student and tutor list
           scmi_move = true;
           scmi_paste = false;   //nothing can be pasted into the index space
-          scmi_history   = true;
-          scmi_term      = true;
         }
         break;
       case 'slot':   //slot
@@ -2831,8 +3045,6 @@ function ready_stats(){
     setscmi('context-move', scmi_move);
     setscmi('context-copy', scmi_copy);
     setscmi('context-paste', scmi_paste);
-    setscmi('context-history', scmi_history);
-    setscmi('context-term', scmi_term);
   }
   
   // Listens for click events on context menu items element.
@@ -2990,16 +3202,6 @@ function ready_stats(){
         }  // end of if currentActivity
         // Of course, if there is no currentActivity on a paste, then ignore.
         break;
-      case "history":
-        // This will show the history for this person.
-        getHistory(currentActivity);        
-        break;
-      case "term":
-        // This will show all the entries in the current term for this person.
-        // Uses the same history code, just different dates picked up in the
-        // controller.
-        getHistory(currentActivity);      
-        break;
       }
   }
 
@@ -3141,10 +3343,9 @@ function ready_stats(){
             console.log("personupdateslesson_Update_Stats Ajax response OK");
             var domchange  = result1['domchange'];
             stats_student_update(domchange);
-            if(('duplicates' in result1) && (result1['duplicates'].length > 0)){
+            if(('duplicates' in result1) && (result1.length > 0)){
               var duplicates = result1['duplicates'];
               console.log("duplicates present.");
-              showduplicate(duplicates);
             }
         },
         error: function(xhr){
@@ -3622,231 +3823,6 @@ function positionMenu(thismenu) {
   }
   console.log(thismenu);
 }
-
-
-  //----------------- Show chain for selected Tutor or Student ------------------------
-  //This function is called to get a student or tutor clicked on chain
-  //Does ajax to get the student or tutor history
-  function getChain(domchange){
-    // domchange['action']      = thisChoice;
-    // domchange['object_id'] = thisEleId;
-    var parseid = currentActivity['object_id'].match(/\w(\d+)$/);
-    var lessonid = currentActivity['object_id'].match(/n(\d+)[st]\d+$/);
-    //var mydata = {'domchange' : domchange};
-    // url format: myhost + "/students/chain/" + personid;
-    var myurl = myhost + "/" + domchange['object_type'] + "s/chain/" + parseid[1];
-    $.ajax({
-        type: "GET",
-        url: myurl,
-        data: {
-          lesson_id: lessonid[1]
-        },
-        dataType: "json",
-        context: domchange,
-
-        success: function(data, textStatus, xhr){
-          showhistory(data);
-        },
-        error: function(xhr){
-          var error_message = "";
-          if (typeof xhr.responseText == 'string'){
-            error_message = xhr.responseText;
-          }else{
-            var errors = $.parseJSON(xhr.responseText);
-            for (var error in (errors['person_id'])){     // lesson_id ??????
-              error_message += " : " + errors['person_id'][error];
-            }
-          }
-          alert('error fetching history for ' + domchange['object_type'] +
-                error_message);
-        }
-     });
-  }
-
-  //----------------- Get history of Tutor or Student ------------------------
-  //This function is called to get a student or tutor history
-  // This also used to get term entries - just uses different dates in 
-  // the controller based on the domchange action.
-  //Does ajax to get the student or tutor history
-  function getHistory(domchange){
-    // domchange['action']      = thisChoice;
-    // domchange['object_id'] = thisEleId;
-    var parseid = currentActivity['object_id'].match(/\w(\d+)$/);
-    //var mydata = {'domchange' : domchange};
-    // url format: myhost + "/students/history/" + personid;
-    var myurl = myhost + "/" + domchange['object_type'] + "s/" + 
-                domchange['action'] + "/" + parseid[1];
-    //mydata = domchange;
-    $.ajax({
-        type: "GET",
-        url: myurl,
-        //data: mydata,
-        dataType: "json",
-        context: domchange,
-
-        success: function(data, textStatus, xhr){
-          showhistory(data);
-        },
-        error: function(xhr){
-          var error_message = "";
-          if (typeof xhr.responseText == 'string'){
-            error_message = xhr.responseText;
-          }else{
-            var errors = $.parseJSON(xhr.responseText);
-            for (var error in (errors['person_id'])){     // lesson_id ??????
-              error_message += " : " + errors['person_id'][error];
-            }
-          }
-          alert('error fetching history for ' + domchange['object_type'] +
-                error_message);
-        }
-     });
-  }
-
-  function showduplicate(duplicatedata){
-    var template_ele = document.getElementById("duplicate-template");
-    var this_ele = template_ele.cloneNode(true);
-    this_ele.id = 'd' + (+new Date);    // current unix time in msec - provides uniqueness.
-    this_ele.innerHTML = duplicateToHtml(duplicatedata);
-    template_ele.after(this_ele);
-    var duplicateDisplay = this_ele;
-    //positionMenu(duplicateDisplay);
-    duplicateDisplay.style.position="fixed";
-    duplicateDisplay.style.left = "2%";
-    duplicateDisplay.style.top  = "10%";
-    $("#" + this_ele.id).resizable({handles: "e"});
-    this_ele.classList.remove('hideme');
-  }
-  
-
-  // convert duplicate data to a HTML segment
-  function duplicateToHtml(dd){
-    var htmlsegment = '<h4>Duplicates</h4>';
-    htmlsegment += '<div id="closeduplicate"><svg height="300" width="300"><line x1="1" y1="1" x2="15" y2="15" style="stroke:#000; stroke-width:4" /><line x1="15" y1="1" x2="1" y2="15" style="stroke:#000; stroke-width:4" /></svg></div>';
-    htmlsegment += '<table>';
-    htmlsegment += '<tr><th>Slot</th><th>Name</th><th>Type</th></tr>';
-    dd.forEach( function(dup){
-      htmlsegment += "<tr><td>" + dup[2] + "</td>";
-      htmlsegment += "<td>" + dup[1] + "</td>";
-      htmlsegment += "<td>" + dup[0] + "</td></tr>";
-    });
-    htmlsegment += '</table>';
-    return htmlsegment;
-  }
-
-
-  function showhistory(historydata){
-    var template_ele = document.getElementById("history-template");
-    var this_ele = template_ele.cloneNode(true);
-    this_ele.id = historydata['display'] + '-' + historydata['role'] + historydata['id'];
-    this_ele.innerHTML = historyToHtml(historydata);
-    template_ele.after(this_ele);
-    var historyDisplay = this_ele;
-    positionMenu(historyDisplay);
-    $("#" + this_ele.id).resizable({handles: "e"});
-    if(historydata['display'] == 'chain'){
-      this_ele.classList.remove('history');
-      this_ele.classList.add('chain');
-    }
-    this_ele.classList.remove('hideme');
-  }
-
-
-  // convert historydata to a HTML segment
-  function historyToHtml(hd){
-    var role    = hd['role'];
-    var htmlsegment = "<h4>" + hd['display'] + " for " + role + ': ' + hd['pname'] + "</h4>";
-    htmlsegment += '<div id="closehistory"><svg height="300" width="300"><line x1="1" y1="1" x2="15" y2="15" style="stroke:#000; stroke-width:4" /><line x1="15" y1="1" x2="1" y2="15" style="stroke:#000; stroke-width:4" /></svg></div>';
-    htmlsegment += "<table>";
-    htmlsegment += "<tr><td>Lesson Kind</td>";
-    if(role == 'student'){
-      htmlsegment += "<td>Student Status</td><td>Day Time</td><td>Site</td><td>Tutor</td><td>Other Students</td></tr>";
-    }else{  // role is a tutor
-      htmlsegment += "<td>Tutor Status</td><td>Day Time</td><td>Site</td><td>Students</td><td>Other Tutors</td></tr>";
-    }
-    var htmlrowstart = "";
-    var htmlpersonstatus = "";
-    hd['lessons'].forEach( function(lesson){
-      //var htmlsegmentlesson1 = "<td>" + lesson['status'] + "</td>";
-      //var htmlsegmentlesson    += "<td>" + lesson['kind'] + "</td>";
-      //var thisdaytime = lesson['daytime'];
-      //var m = thisdaytime.match(/(.+) (.+)/); 
-      var htmlsegmentlesson = "<td>" + lesson['daytime'] + ' ' + lesson['week'] + "</td>";
-      htmlsegmentlesson    += "<td>" + lesson['site'] + "</td>";
-      
-      // get students - ensure only other students if displaying a student
-      var htmlstudents = "";
-      lesson['students'].forEach( function(student){
-        if((role == 'student') && (student.name == hd['pname'])){
-          // don't add this student to html list.
-          // however, dull this table row if this student status is not rostered
-          if(['attended', 'scheduled', 'deal'].includes(student.status)){
-            htmlrowstart = "<tr>";
-          }else{
-            htmlrowstart = "<tr class=dullme>";
-          }
-          htmlpersonstatus = student.status;
-        }else{
-          if(['attended', 'scheduled', 'deal'].includes(student.status)){
-            if(htmlstudents.length){
-              htmlstudents +=  "<br>" + student.name;
-            }else{
-              htmlstudents +=  student.name;
-            }
-          }else{
-            if(htmlstudents.length){
-              htmlstudents += "<br><span class=dullme>" + student.name + "</span>";
-            }else{
-              htmlstudents += "<span class=dullme>" + student.name + "</span>";
-            }
-          }
-        }
-      });
-      htmlstudents =  "<td>" + htmlstudents + "</td>";
-      
-      // get tutors - ensure only other tutors if displaying a tutor
-      var htmltutors = "";
-      lesson['tutors'].forEach( function(tutor){
-        if((role == 'tutor') && (tutor.name == hd['pname'])){
-          // don't add this student to html list.
-          // however, dull this table row if this tutor status is not rostered
-          if(['attended', 'notified', 'confirmed', 'scheduled', 'de1448al'].includes(tutor.status)){
-            htmlrowstart = "<tr>";
-          }else{
-            htmlrowstart = "<tr class=dullme>";
-          }
-          htmlpersonstatus = tutor.status;
-        }else{
-          if(['attended', 'scheduled', 'deal', 'confirmed', 'notified'].includes(tutor.status)){
-            if(htmltutors.length){
-              htmltutors += "<br>" + tutor.name;
-            }else{
-              htmltutors += tutor.name;
-            }
-          }else{
-            if(htmltutors.length){
-              htmltutors += "<br><span class=dullme>" + tutor.name + "</span>";
-            }else{
-              htmltutors += "<span class=dullme>" + tutor.name + "</span>";
-            }
-          }
-        }
-      });
-      htmltutors = "<td>" + htmltutors + "</td>";
-      // now place them in the html output in the correct order
-      if(role == 'student'){
-        htmlsegmentlesson += htmltutors + htmlstudents;
-      }else{  // role is a tutor
-        htmlsegmentlesson += htmlstudents + htmltutors;
-      }
-      htmlpersonstatus = "<td>" + htmlpersonstatus + "</td>";
-      htmlsegment += htmlrowstart + "<td>" + lesson['kind'] + "</td>" +
-                     htmlpersonstatus + htmlsegmentlesson +"</tr>";
-    });
-    htmlsegment += "</table>";
-    return htmlsegment;
-  }
-
 
 //----------------- common support functions for 'refresh me' -------------- 
 // check if we should jump to postion.

@@ -455,22 +455,39 @@ module Calendarutilities
             slottutorcount = slotstudentcount = 0
             cells["values"].each do |entry|  # go thorugh each lesson
               #logger.debug "entry: " + entry.inspect
-              if @tutrole_lessonindex.has_key? entry.id then  # check for tutroles linked to this lesson
-                # could be multiple tutors in this lesson, a tutrole for each - need to step through each one
-                #logger.debug "tutroles_lessonindex has an entry for this lesson with tutrole indexes into the array of: " +
-                #             @tutrole_lessonindex[entry.id].inspect
-                slottutorcount += @tutrole_lessonindex[entry.id].count
-                #@tutrole_lessonindex[entry.id].each do |thistutor|  # check each tutrole for diagnostics
-                  #logger.debug "tutor found - tutrole: " + @tutroleinfo[thistutor].inspect
-                #end
-              end
-              if @role_lessonindex.has_key? entry.id then  # check for students
-                #logger.debug "student found: " + @role_lessonindex[entry.id].inspect
-                slotstudentcount += @role_lessonindex[entry.id].count 
-                #@role_lessonindex[entry.id].each do |thisstudent|  # check each tutrole for diagnostics
-                  #logger.debug "student found - role: " + @roleinfo[thisstudent].inspect
-                #end
-              end
+              # Need to not include some lesson types (actually status in db)
+              unless ['oncall', 'onCall', 'onsetup', 'onSetup'].include?(entry.status)   # skip these
+                if @tutrole_lessonindex.has_key? entry.id then  # check for tutroles linked to this lesson
+                  # could be multiple tutors in this lesson, a tutrole for each - need to step through each one
+                  #logger.debug "tutroles_lessonindex has an entry for this lesson with tutrole indexes into the array of: " +
+                  #             @tutrole_lessonindex[entry.id].inspect
+                  ###slottutorcount += @tutrole_lessonindex[entry.id].count
+                  @tutrole_lessonindex[entry.id].each do |thistutor|  # check each tutrole for diagnostics
+                    #logger.debug "tutor found - tutrole: " + @tutroleinfo[thistutor].inspect
+                    # must be rostered
+                    if ['scheduled', 'notified', 'confirmed', 'attended', 'deal'].include?(@tutroleinfo[thistutor].status)
+                      if ['fifteen'].include?(@tutroleinfo[thistutor].kind)
+                        slottutorcount += 0.25
+                      else
+                        slottutorcount += 1
+                      end
+                    end  # processed each tutor
+                  end    # lesson has tutors
+                end      # lesson has tutors
+                if @role_lessonindex.has_key? entry.id then  # check for students
+                  #logger.debug "student found: " + @role_lessonindex[entry.id].inspect
+                  ###slotstudentcount += @role_lessonindex[entry.id].count 
+                  @role_lessonindex[entry.id].each do |thisstudent|  # check each tutrole for diagnostics
+                    #logger.debug "student found - role: " + @roleinfo[thisstudent].inspect
+                    # must be roster
+                    if ['scheduled', 'attended', 'deal'].include?(@roleinfo[thisstudent].status)
+                      unless ['free', 'bonus'].include?(@roleinfo[thisstudent].kind)  # don't count free lessons
+                        slotstudentcount += 1
+                      end
+                    end
+                  end  # processed each student
+                end    # lesson has students
+              end      # skipped lesson types
             end
             # keep counts in the cell/slot data
             cells["ratio"] = {'tutor_count'=>slottutorcount, 'student_count'=>slotstudentcount}
@@ -558,6 +575,73 @@ module Calendarutilities
             role_comment = thisrole.comment 
             @students_stats[student.id]['role_kind'].push([thisrole.kind, role_comment])
             break
+          end
+        end
+      end
+    end
+  end
+
+ # -----------------------------------------------------------------------------
+ # Check duplicates.
+ #
+ # Using the standard @cal hash, 
+ # gernerate another hash (@duplicates) to show all duplicate names
+ # in any given slot for all lessons except onSetup, parked and global.
+ #
+ # @duplicates = ['Tutor or Student', 'pname', 'slot']
+ # -----------------------------------------------------------------------------
+  def check_duplicates
+    @duplicates = Array.new unless @duplicates
+    # step through each site
+    @cal.each do |location, calLocation|
+      calLocation.each_with_index do |rows, rowindex|
+        rows.each_with_index do |cells, colindex|
+          if cells.key?("values") then  # in a slot with lessons
+            slottutors = Hash.new
+            slotstudents = Hash.new
+            cells["values"].each do |entry|  # go through each lesson
+              # determine if this lesson is to be included in tutor/student deplicate checks
+              #flagcheckdup = true
+              #flagcheckdup = false if ["global", "parked", "onSetup"].include?entry.status
+              unless ( ["global", "parked", "onSetup"].include?(entry.status)) then 
+                # Remember lesson(entry) status is diaplayed to user as kind.
+                if entry.roles then  # check for students
+                  entry.roles.each do |thisrole|  # check each role for diagnostics
+                    #byebug
+                    logger.debug "thisrole: " + thisrole.student_id.inspect
+                    if slotstudents.has_key?thisrole.student_id   # ? already have this student
+                      thisstudent = thisrole.student
+                      dsptimeslot = ""
+                      slot_dom_id = cells["id_dom"]
+                      if(result = /^([A-Z]+)(\d{4})(\d{2})(\d{2})(\d{2})(\d{2})/.match(slot_dom_id))
+                        dsptimeslot = "#{result[1]} #{result[4]}/#{result[3]}/#{result[2]} #{result[5]}:#{result[6]}"
+                      end
+                      #byebug
+                      @duplicates.push(['student', thisstudent.pname, dsptimeslot])
+                      slotstudents[thisrole.student_id] += 1   # increment this tutor count
+                    else
+                      slotstudents[thisrole.student_id]  = 1   # always add this tutor
+                    end
+                  end
+                end
+                if entry.tutroles then  # check for tutors
+                  entry.tutroles.each do |thistutrole|  # check each role for diagnostics
+                    if slottutors.has_key?thistutrole.tutor_id    # do we already have this tutor
+                      thistutor = thistutrole.tutor
+                      dsptimeslot = ""
+                      slot_dom_id = cells["id_dom"]
+                      if(result = /^([A-Z]+)(\d{4})(\d{2})(\d{2})(\d{2})(\d{2})/.match(slot_dom_id))
+                        dsptimeslot = "#{result[1]} #{result[4]}/#{result[3]}/#{result[2]} #{result[5]}:#{result[6]}"
+                      end
+                      @duplicates.push(['tutor', thistutor.pname, dsptimeslot])
+                      slottutors[thistutrole.tutor_id] += 1      # increment this tutor
+                    else
+                      slottutors[thistutrole.tutor_id]  = 1      # always add this tutor
+                    end
+                  end
+                end      
+              end
+            end
           end
         end
       end
@@ -773,7 +857,7 @@ module Calendarutilities
     @slot_lessons.each do |entry|
       # determine if this lesson is to be included in tutor/student deplicate checks
       flagcheckdup = true
-      flagcheckdup = false if ["global", "parked", "setup"].include?entry.status
+      flagcheckdup = false if ["global", "parked", "onSetup"].include?entry.status
       #byebug if entry.status == 'allocate'
       # Remember lesson(entry) status is diaplayed to user as kind.
       #logger.debug "lesson: " + entry.id.to_s + " status:  " + entry.status

@@ -42,11 +42,22 @@
           </li>
           <li class='active'><%= link_to "tutors", tutors_path %>
             <ul>
+              <li><%= link_to "active tutors", activetutors_path %></li>
+              <li><%= link_to "all active tutors", allactivetutors_path %></li>
+              <li><%= link_to "all tutors", alltutors_path %></li>
+              <li><%= link_to "new tutor", new_tutor_path %></li>
+              <br>
               <li><%= link_to "tutor roles", tutroles_path %></li>
             </ul>
           </li>
           <li class='active'><%= link_to "students", students_path %>
             <ul>
+              <li><%= link_to "active students", activestudents_path %></li>
+              <li><%= link_to "all active students", allactivestudents_path %></li>
+              <li><%= link_to "all students", allstudents_path %></li>
+              <li><%= link_to "Feedback Project", students_feedback_path %></li>
+              <li><%= link_to "new student", new_student_path %></li>
+              <br>
               <li><%= link_to "student roles", roles_path %></li>
             </ul>
           </li>

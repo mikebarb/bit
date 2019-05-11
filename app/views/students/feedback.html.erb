@@ -1,0 +1,7 @@
+<p id="notice"><%= notice %></p>
+
+<h1> Student Feedback </h1>
+<p>Student feedback information between <%= @studentfeedback["startdate"].strftime("%a %d/%m/%Y") %>
+   and <%= @studentfeedback["enddate"].strftime("%a %d/%m/%Y") %> </p>
+
+<%= render "feedback" %>

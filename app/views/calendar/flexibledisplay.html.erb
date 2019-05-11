@@ -557,4 +557,19 @@
     <div id="history-template" class="history ui-widget-content hideme"></div>
   </div>
 
+  <div id="duplicates" class="duplicates"  >
+    <div id="duplicate-template" class="duplicate ui-widget-content hideme"></div>
+    <% if @duplicates && @duplicates.length > 0 %>
+      <div id="d1" class="duplicate ui-widget-content ">
+        <h4>Duplicates</h4>
+        <div id="closeduplicate"><svg height="300" width="300"><line x1="1" y1="1" x2="15" y2="15" style="stroke:#000; stroke-width:4" /><line x1="15" y1="1" x2="1" y2="15" style="stroke:#000; stroke-width:4" /></svg></div>
+        <table>
+        <tr><th>Slot</th><th>Name</th><th>Type</th></tr>
+        <% @duplicates.each do |dup| %>
+          <tr><td><%= dup[2] %></td><td><%= dup[1] %></td><td><%= dup[0] %></td></tr>
+        <% end %>
+        </table>
+      </div>
+    <% end %>
+  </div>
 

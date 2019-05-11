@@ -3611,7 +3611,7 @@ else      # Not to test.
                       logger.debug "student: " + student.pname
                       thisrole = student.roles.where(lesson_id: entry.id).first
                       #logger.debug "thisrole: " + thisrole.inspect
-                      if ['away', 'bye', 'absent'].include?(thisrole.status) then 
+                      if ['away', 'awaycourtesy', 'bye', 'absent'].include?(thisrole.status) then 
                         displayname = student.pname + " (" + thisrole.status + ")"
                         awaystudents += awaystudents.length > 0 ?  "\n" + displayname : displayname
                       end

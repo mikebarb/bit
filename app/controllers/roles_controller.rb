@@ -164,6 +164,8 @@ class RolesController < ApplicationController
   #            *** Not called from the calendar page ***
   # This function will do the required moves when allocating students
   # from the stats page.
+  # .a modification to enable free lessons to be placed directly into
+  #    a free lesson for this slot - rather than into allocate.
   #
   # Input: dom_id of the clicked on element - the one to be extended.
   #        dom_id of the destination lesson - for the source clicked on element.
@@ -196,35 +198,43 @@ class RolesController < ApplicationController
     # Extract relevant details from destination
     # The destination lesson (allocate) is determined and placed in @domchange['to']
     # before this function is called.
-    if(result = /^(([A-Z]+\d+l\d+)n(\d+))/.match(@domchange['to']))  # destination
-      new_lesson_id = result[3].to_i
-      #new_slot_id = result[2]
+    if(result = /^(([A-Z]+\d+l(\d+))n(\d+))/.match(@domchange['to']))  # destination
+      new_lesson_id = result[4].to_i
+      new_slot_id_db = result[3].to_i
+      new_slot_id = result[2]
     else
       return "passed dest parameter to moverun function is incorrect - #{dest_domid.inspect}"
     end      
     #---- Do some initial checks on type of allocation ----
     # There are a number of restrictions: They can only come from
     # 1. global (first scheduling of a student)
+    # 1a) global (first scheduling of a student's free lesson)
     # 2. allocate (rescheduling already scheduled student) i.e. parent changed
     #             their minds.
+    # 2a) free    (rescheduling of free lesson to anther free lesson)
     # There are a number of options based on kind of lesson/student (i.e. role)
     # 1. catchup - only a single element is moved.
+    # 1a) free   - only a single element is moved.
     # 2. other types - element is moved to chosen designation, then that element 
     #                  is extended into the rest of the term.
     # Member of 1 & 2 above needs to be refined!!!
     # Logical considerations
-    # If moving from global to allocate (lesson.status)
+    # If moving from global to allocate or free (lesson.status)
     #   Note: no chains are valid in global!!
     #   If catchup (role.kind)
     #     1. move element from global to allocate (simply a relink to new lesson)
+    #   If free (role.kind)
+    #     1a.move element from global to free 
+    #        (need to find or create a free lesson in this slot)
     #   If other than catchup (role.kind)
     #     1. move element from global to allocate
     #     2. turn element into a chain
     #     3. extend this chain to the rest of the term.
     #
-    # If moving from allocate to allocate (lesson.status)
+    # If moving from allocate to allocate OR free to free (lesson.status)
     #   If single element
-    #     1. Move element to different allocate slot
+    #     1. Catchup - Move element to different allocate slot
+    #     1a.Free    - Move element to different free slot 
     #   If link in a chain
     #     If week of year is identical
     #       1. MoveRun the chain.
@@ -239,9 +249,44 @@ class RolesController < ApplicationController
     #  ** old_lesson_id  ** holds the old lesson_id => so can update @role.lesson_id
     # Get the element we want to move
     @role = Role.includes([:student, lesson: :slot]).where(:student_id => student_id, :lesson_id => old_lesson_id).first
-    @new_lesson = Lesson.includes(:slot).find(new_lesson_id)
-    return "Allocation Error - Parent lesson is not a part of a chain" if @new_lesson.first == nil 
-    if(@role.lesson.status == 'global')    # coming from global 
+    if @role.kind == 'free'    # need to find a 'free' lesson for this slot
+      @new_lesson = Lesson.where(slot_id: new_slot_id_db, status: 'free').first 
+      unless @new_lesson  # if no lesson found, 
+        #------------------------Policy Decision------------------------------------------------
+        # You have two options for moving a free into a lesson
+        # 1. If no free lesson present in slot, then prevent this move
+        #    Uncomment the next line after this text block to achieve this.
+        # 2. Allow a free lesson to be created if not present, then move into it.
+        #    Comment the next line after this text block to achieve this.
+        # ### Copy of line to be comment or uncommented in case you it is deleted.
+        # ### return "You cannot allocate this free as no free lessons configured in this slot!"
+        #---------------------------------------------------------------------------------------
+        #return "You cannot allocate this free as no free lessons configured in this slot!"
+        @new_lesson = Lesson.new(slot_id: new_slot_id_db, status: 'free')
+        @new_lesson.save
+        # Need to send message to calendar display to load new lesson
+        @domchange_newlesson = Hash.new
+        @domchange_newlesson['action'] = 'addLesson'
+        @domchange_newlesson['object_type'] = 'lesson'
+        @domchange_newlesson['to'] = new_slot_id
+        @domchange_newlesson['status'] = @new_lesson.status
+        @domchange_newlesson['object_id'] = new_slot_id + 'n' +
+                                            @new_lesson.id.to_s.rjust(@sf, "0")
+        @domchange_newlesson['html_partial'] = render_to_string("calendar/_schedule_lesson_ajax.html", 
+                                                :formats => [:html], :layout => false,
+                                                :locals => {:slot => new_slot_id,
+                                                :lesson => @new_lesson,
+                                                :thistutroles => [],
+                                                :thisroles => []
+                                               })
+        #ActionCable.server.broadcast "calendar_channel", { json: @domchange_newlesson }
+        ably_rest.channels.get('calendar').publish('json', @domchange_newlesson)
+      end
+    else    # lesson passed in the request is correct
+      @new_lesson = Lesson.includes(:slot).find(new_lesson_id)
+      return "Allocation Error - Parent lesson - kind (status) = 'allocate' - is not a part of a chain" if @new_lesson.first == nil 
+    end
+    if(@role.lesson.status == 'global')    # coming from global (initial allocate) 
       logger.debug " in stats moving from global"
       if @role.first != nil                # error if not a single element (not a chain).
         return "Allocation Error - Global elements must not be chains!" 
@@ -271,7 +316,30 @@ class RolesController < ApplicationController
       return this_error if this_error.length > 0
       this_error = extend_chain_screenUpdates()
       return this_error if this_error.length > 0
-    elsif(@role.lesson.status == 'allocate')
+    elsif(@role.lesson.status == 'free')  # coming from free lesson (reallocate)
+      logger.debug " in stats moving from free"
+      if @role.first != nil                     
+        return "free lesson must not be a chain"
+      else  # free lesson is a single element  
+        logger.debug "dealing with a single element for free lesson"
+        @block_roles.push(@role)           # and store for later update (as db transaction)
+        @block_lessons.push(@new_lesson)   # the matching lesson
+        #this_error = extend_chain_doms.call
+        this_error = extend_chain_doms()
+        return this_error if this_error.length > 0
+        @domchange['object_id_old'] = @domchangerun[0]['object_id_old']
+        @domchange['object_id'] = @domchangerun[0]['object_id']
+        @domchange['to'] = @domchangerun[0]['to']
+        this_error = extend_chain_relinkrole()
+        return this_error if this_error.length > 0
+        this_error = extend_chain_dbUpdates()
+        return this_error if this_error.length > 0
+        this_error = extend_chain_doms_post_db_update()
+        return this_error if this_error.length > 0
+        this_error = extend_chain_screenUpdates()
+        return this_error if this_error.length > 0
+      end
+    elsif(@role.lesson.status == 'allocate')   # allocate to allocate i.e. reallocate
       logger.debug " in stats moving from allocate"
       if @role.first == nil                     # single element  
         logger.debug "dealing with a single element"
@@ -802,12 +870,17 @@ class RolesController < ApplicationController
       respond_to do |format|
         format.json { render json: this_error, status: :unprocessable_entity }
       end
-      logger.debug "unprocessable entity(line 478): " + this_error.inspect 
+      logger.debug "unprocessable entity(line 873): " + this_error.inspect 
       return
     end
     # All OK if you get to here.
+    #byebug
+    combinedresult = Hash.new
+    combinedresult['domchange'] = @domchange
+    combinedresult['duplicates'] = @duplicates
     respond_to do |format|
-      format.json { render json: @domchange, status: :ok }
+      #format.json { render json: @domchange, status: :ok }
+      format.json { render json: combinedresult, status: :ok }
     end
   end
 
