@@ -76,6 +76,7 @@ Rails.application.routes.draw do
   post 'studentupdateskc'        => 'roles#studentupdateskc',        as: :studentupdateskc
   get  'catchups'                => 'roles#catchups',                as: :catchups
   get  'catchupoptions'          => 'roles#catchupoptions',          as: :catchupoptions
+  post 'expirecatchups'          => 'roles#expirecatchups',          as: :expirecatchups
   resources :roles
 
   get 'calendar/displayoptions/'  => 'calendar#displayoptions',  as: :displayoptions

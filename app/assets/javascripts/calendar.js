@@ -50,6 +50,8 @@ var ready = function() {
       ready_calendar();
     }else if(page_name == 'stats'){
       ready_stats();
+    }else if(page_name == 'catchups'){
+      ready_catchups();
     }
   }else{
     return;
@@ -2352,7 +2354,7 @@ function testSuiteForWeekOfYear(){
 
   $("#personInput").keyup(filterPeople);
 
-};    //************************** !!!!!!!!!!!!!!!!!!!! **********************
+}    //************************** !!!!!!!!!!!!!!!!!!!! **********************
 //------------- End of 'ready_calendar' function --------------------------------
 
 //--------- Filter by name functions for the tutors and students -----------
@@ -2594,23 +2596,7 @@ function showhidecomments(theseelements, tohide) {
 
 //------------- 'ready_stats' function --------------------------------
 function ready_stats(){
-
-/*//No longer needed with Ably
-  //App.cable.subscriptions.create("CalendarChannel", {  
-  App.stats = App.cable.subscriptions.create("StatsChannel", {  
-    received: function(data) {
-      console.log("calendar.js - entered ws received function for stats");
-      console.dir(data);
-      //var returnedDomData = JSON.parse(data['json']);
-      var returnedStatsData = data['json'];
-      returnedStatsData['actioncable'] = true;
-      stats_update(returnedStatsData);
-      console.log("stats update done!!!");
-      return;
-    }
-  });
-*/
-
+  // Ably is used for sending messages to browsers.
   ably = new Ably.Realtime({ authUrl: '/auth' });
   // Set up to subscribe to the Ably messages
   var statsChannel = ably.channels.get('stats');
@@ -3261,6 +3247,95 @@ function ready_stats(){
 }
 //------------- End of 'ready_stats' function --------------------------------
 
+//------------- 'ready_catchups' function --------------------------------
+function ready_catchups(){
+
+  init_catchups();
+
+  // Initialise our application's code for catchups.
+  // Made modular so that you have more control over initialising them. 
+  function init_catchups() {
+
+
+    //***********************************************************************
+    // Perform the actions invoked when clicking expire (or revert) button.                *
+    //***********************************************************************
+    // action is the element clicked on in the menu.
+    // The menu element clicked on has an attribute "data-action" that 
+    // describes the required action.
+  
+    // currentActivity['action'] = thisAction;             //**update**
+    // currentActivity['object_id'] = thisEleId;           //**update**
+    // currentActivity['object_type'] = thisEleId -> type; //**update**
+    // currentActivity['to'] = thisEleId;                  //**update**
+    //$(".action").on('click', function() {
+    $("#catchuptable").on('click', ".action", function(e) {
+      e.preventDefault();
+      console.log("action clicked for this catchup");
+      var domchange = {}; 
+      domchange['action'] = $(this).attr('data-action');
+      domchange['object_id'] = $(this)[0].id;
+      if($(this).attr("data-oldlesson")){ 
+        domchange['old_lesson'] = $(this).attr("data-oldlesson");
+        domchange['old_status'] = $(this).attr("data-oldstatus");
+      }
+      expire_catchups(domchange);
+      //will need to call the expire action - ajax call.
+    });
+
+  //----------------------------------------------------------------
+  // This will set up the ajax action to
+  // a) expire this catchup
+  // b) revert (or reset this catchup to previous state)
+  //    reverting will only occur if this browser screen has
+  //    not been refreshed - pervious state held in the dom info.
+  // domchange info is essential to this operation.
+  //----------------------------------------------------------------
+  
+  function expire_catchups(domchange){
+    // this function simply calls the controller
+    // controller returns a list of students from the global lesson
+    var myurl = myhost + '/expirecatchups'; 
+    var mydata = {'domchange' : domchange};
+    $.ajax({
+        type: "POST",
+        url: myurl,
+        dataType: "json",
+        data: mydata,
+        //context: domchange,
+        success: function(result1, result2, result3){
+            console.log("updatestatsstudents Ajax response OK");
+            catchups_update(result1);
+        },
+        error: function(xhr){
+            var errors = $.parseJSON(xhr.responseText);
+            var error_message = "";
+            for (var error in (errors['lesson_id'])){
+              error_message += " : " + errors['lesson_id'][error];
+            }
+            alert("error updating catchup: " + error_message);
+        }
+     });
+  }
+  
+  //----------------- catchup_update ----------------------
+  // this function updates the catchup details:
+  // This is called from the ajax response NOT a Web Socket propagation.
+  function catchups_update(domchange){
+    console.log('entered catchups_update');
+    var elecreated = document.createElement('table');
+    elecreated.innerHTML = domchange['html_partial'];
+    var eletoplace = elecreated.getElementsByTagName("TR"); 
+    var object_domid = domchange['object_id'];
+    var button_ele = document.getElementById(object_domid);
+    var row_ele = button_ele.parentElement;
+    row_ele.parentNode.replaceChild(eletoplace[0], row_ele);
+  }
+
+}
+//------------- End of 'ready_catchups' function --------------------------------
+}
+
 // Filter students in the stats page
 function hideshowstudent(){
   var eleIndexPersons = document.getElementById("index-students");
@@ -3380,27 +3455,9 @@ function showhidescopestats(scope, type){
   }
 }
 
-/*
-function showcatchup(){showhidestats('catchup');}
-function showfree(){showhidestats('free');}
-function showstats(){showhidestats('stats');}
-function showslotlessons(){showhidestats('slotlessons');}
-*/
-/*
-function showhidestats(type){
-  var myobjects = document.getElementsByClassName(type);
-  if (document.getElementById('hide' + type).checked){
-    for(var i = 0; i < myobjects.length; i++){
-      myobjects[i].classList.remove("hideme");
-    }
-  }else{
-    for(i = 0; i < myobjects.length; i++){
-      myobjects[i].classList.add("hideme");
-    }
-  }
-}
-*/
+//----------------------------------------------------------
 // Common functions called from both scheduling and stats.
+//----------------------------------------------------------
 
 // initialisation that is common to both.
 function menu_common() {
@@ -3431,7 +3488,6 @@ function setscmi(elementId, scmi){
     }
   }
 }
-
 
 function toggleMenuOn() {
   if ( menuState !== 1 ) {
@@ -3472,7 +3528,6 @@ function keyupListener() {
   };
 }
 
-
 //On windows screen resize, hides the menu - start selection again 
 function resizeListener() {
   window.onresize = function(e) {
@@ -3481,7 +3536,6 @@ function resizeListener() {
 
   };
 }
-
 
 // check if clicked element or element in the parent chain 
 // is of the class provided in the list.
@@ -3718,7 +3772,6 @@ function positionMenu(thismenu) {
     this_ele.classList.remove('hideme');
   }
   
-
   // convert duplicate data to a HTML segment
   function duplicateToHtml(dd){
     var htmlsegment = '<h4>Duplicates</h4>';
@@ -3733,7 +3786,6 @@ function positionMenu(thismenu) {
     htmlsegment += '</table>';
     return htmlsegment;
   }
-
 
   function showhistory(historydata){
     var template_ele = document.getElementById("history-template");
@@ -3750,7 +3802,6 @@ function positionMenu(thismenu) {
     }
     this_ele.classList.remove('hideme');
   }
-
 
   // convert historydata to a HTML segment
   function historyToHtml(hd){
@@ -3846,7 +3897,6 @@ function positionMenu(thismenu) {
     htmlsegment += "</table>";
     return htmlsegment;
   }
-
 
 //----------------- common support functions for 'refresh me' -------------- 
 // check if we should jump to postion.

@@ -1,0 +1,31 @@
+<tr id=<%= 'r' + role.id.to_s.rjust(@sf, "0") %> >
+  <td><%= role.lesson.status %></td>
+  <td><%= role.lesson.slot.timeslot.strftime("%a %d/%m/%Y %l:%M") %></td>
+  <td><%= role.lesson.slot.location %></td>
+  <td><%= role.student.pname %></td>
+  <td><%= role.status %></td>
+  <td><%= role.kind %></td>
+  <td><%= role.comment %></td>
+  <% if role.copied %>
+    <td><%= @copied_from_roles_index[role.copied].comment %></td>
+    <td><%  copied_from = @copied_from_roles_index[role.copied].lesson.slot.timeslot
+          current_place = role.lesson.slot.timeslot
+          elapsed = ((current_place - copied_from)/1.week).round
+       %><%= copied_from.strftime("%a %d/%m/%Y %l:%M") %></td>
+    <td><%= elapsed.to_s %></td>
+  <% else %>
+    <td></td><td></td><td></td>
+  <% end
+  if ['queued', 'scheduled'].include?(role.status) 
+    %><td id=<%= role.id.to_s 
+    %> class='action buttonlink' data-action='expire' >expire</td><%
+  elsif ['expired'].include?(role.status) &&
+     @cudomchange && @cudomchange.has_key?('old_status')
+    %><td id=<%= role.id.to_s 
+    %> class='action buttonlink' data-action='revert' data-oldstatus='<%=
+    @cudomchange['old_status'] %>' data-oldlesson='<%=
+    @cudomchange['old_lesson'] %>' >revert</td><%
+  else
+    %><td class='action catchupaction' ></td><% end 
+%></tr>
+

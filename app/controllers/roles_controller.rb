@@ -2,7 +2,7 @@ class RolesController < ApplicationController
   include Calendarutilities
   include ChainUtilities
 
-  before_action :set_role, only: [:show, :edit, :update, :destroy], except: [:catchups]
+  before_action :set_role, only: [:show, :edit, :update, :destroy], except: [:catchups, :expirecatchups]
   before_filter :authenticate_user!, :set_user_for_models
   after_filter :reset_user_for_models
 
@@ -26,7 +26,6 @@ class RolesController < ApplicationController
     wantedkind = Array.new
     wantedstatus = Array.new
     params.each do |k, v|
-     logger.debug "key: " + k.inspect + " value: " + v.inspect
      if m = k.match(/^select_status_(.*)$/)
      #if m
        wantedstatus.push(m[1])
@@ -63,6 +62,123 @@ class RolesController < ApplicationController
       @copied_from_roles_index[role.id] = role
     end
   end
+
+  #==================================================================
+  # POST /expirecatchups.json
+  def expirecatchups
+    @cudomchange = Hash.new
+    params['domchange'].each do |k, v|
+      @cudomchange[k] = v
+    end
+    @role = Role.where(id: @cudomchange['object_id'].to_i)
+                 .includes([:student, lesson: :slot]).first
+    # Need to find the 'park' lesson in this slot
+    slotdbid  = @role.lesson.slot_id
+    slotdomid = @role.lesson.slot.location[0, 3].ljust(3, "-") + 
+                @role.lesson.slot.timeslot.strftime("%Y%m%d%H%M") + 
+          'l' + slotdbid.to_s.rjust(@sf, "0")
+    oldlessondbid  = @role.lesson_id 
+    oldlessondomid = slotdomid + 
+                     'n' + oldlessondbid.to_s.rjust(@sf, "0")
+    oldobjectdomid = oldlessondomid + 
+                     's' +  @role.student_id.to_s.rjust(@sf, "0")
+    if @cudomchange['action'] == 'expire'
+      @new_lesson = Lesson.where(slot_id: @role.lesson.slot_id, status: 'park').first 
+      unless @new_lesson  # if no lesson found, 
+        # Create a free lesson if not present, then move into it.
+        @new_lesson = Lesson.new(slot_id: @role.lesson.slot_id, status: 'park')
+        @new_lesson.save
+        # Need to send message to calendar display to load new lesson
+        @domchange_newlesson = Hash.new
+        @domchange_newlesson['action'] = 'addLesson'
+        @domchange_newlesson['object_type'] = 'lesson'
+        @domchange_newlesson['to'] = slotdomid
+        @domchange_newlesson['status'] = @new_lesson.status
+        @domchange_newlesson['object_id'] = slotdomid + 'n' +
+                                            @new_lesson.id.to_s.rjust(@sf, "0")
+        @domchange_newlesson['html_partial'] = render_to_string("calendar/_schedule_lesson_ajax.html", 
+                            :formats => [:html], :layout => false,
+                            :locals => {:slot => slotdomid,
+                                        :lesson => @new_lesson,
+                                        :thistutroles => [],
+                                        :thisroles => []
+                                       })
+        ably_rest.channels.get('calendar').publish('json', @domchange_newlesson)
+      end
+    else   # revert
+      @new_lesson = Lesson.find(@cudomchange['old_lesson'].to_i) 
+    end
+    newlessondbid  = @new_lesson.id 
+    newlessondomid = slotdomid + 
+                     'n' + newlessondbid.to_s.rjust(@sf, "0")
+    newobjectdomid = newlessondomid + 
+                     's' +  @role.student_id.to_s.rjust(@sf, "0")
+
+    if @cudomchange['action'] == 'expire'
+      # Keep details about where this catchup was previously located
+      # leave these blank for reverts
+      @cudomchange['old_status'] = @role.status
+      @cudomchange['old_lesson'] = @role.lesson_id
+    end
+
+    # Get the copied from role details
+    if @role.copied
+      copied_from_id = @role.copied
+      @copied_from_role = Role
+                           .where(id: copied_from_id)
+                           .includes(lesson: :slot)
+                           .first
+      @copied_from_roles_index = Hash.new
+      @copied_from_roles_index[@copied_from_role.id] = @copied_from_role
+    end
+  
+    # Now move the role into the new lesson
+    if @cudomchange['action'] == 'expire'
+      @role.status = 'expired'
+      @role.lesson_id = @new_lesson.id
+    else    # revert
+      @role.status = @cudomchange['old_status']
+      @role.lesson_id = @new_lesson.id
+    end
+    
+    # Generate the partial for the updated role 
+    @cudomchange['html_partial'] =  render_to_string("roles/_catchups.html",
+      :formats => [:html], :layout => false,
+      :locals => {:role  => @role }) 
+
+    # create the domchange for moving in calendar sent through ably
+    @domchange = Hash.new
+    @domchange['action'] = 'move'
+    @domchange['from'] = oldlessondomid
+    @domchange['name'] = @role.student.pname
+    @domchange['new_slot_domid'] = slotdomid 
+    @domchange['new_slot_id'] = slotdbid
+    @domchange['object_id'] = newobjectdomid 
+    @domchange['object_id_old'] = oldobjectdomid
+    @domchange['object_type'] = 'student'
+    @domchange['old_slot_domid'] = slotdomid
+    @domchange['old_slot_id'] = slotdbid
+    # role object = @role
+    # student object = @role.student
+    @domchange['to'] = newlessondomid
+    @domchange['html_partial'] = render_to_string("calendar/_schedule_student.html",
+      :formats => [:html], :layout => false,
+      :locals => {:student  => @role.student, 
+                  :thisrole => @role, 
+                  :slot     => slotdomid,  # new_slot_id, 
+                  :lesson   => @role.lesson_id  # new_lesson_id
+                 })
+    respond_to do |format|
+      if @role.save
+        ably_rest.channels.get('calendar').publish('json', @domchange)
+        format.json { render json: @cudomchange, status: :ok }
+      else
+        format.json { render json: @role.errors.full_messages, status: :unprocessable_entity }
+        logger.debug "unprocessable entity(line 43): " + @role.errors.full_messages.inspect 
+      end
+    end
+  end
+
 
   #==================================================================
   # GET /roles/1
@@ -1121,7 +1237,7 @@ class RolesController < ApplicationController
   def role_params
     params.require(:role).permit(:lesson_id, :student_id, :new_sesson_id, :old_lesson_id, :status, :kind,
       :domchange => [:action, :ele_new_parent_id, :ele_old_parent_id, :move_ele_id, :element_type,
-                     :to, :to_slot, :allocation]
+                     :to, :to_slot, :allocation, :object_id]
     )
   end
 end
