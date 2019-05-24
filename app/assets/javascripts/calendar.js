@@ -2458,6 +2458,10 @@ function selectshows_scoped(ele_checkbox, ele_scope) {
         showhidecomments(ele_scope.getElementsByClassName("comment"),
         showList[i].checked);
         break;
+      case "hidescid":       // hide session chain id
+        showhidecomments(ele_scope.getElementsByClassName("lessoncid"),
+        showList[i].checked);
+        break;
       case "hidetutorlessoncomments":
         //if  (!flagcomments) {   // if all comments selected, stop here
         showhidecomments(ele_scope.getElementsByClassName("tutrolecomment"),

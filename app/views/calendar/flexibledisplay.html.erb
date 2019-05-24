@@ -42,6 +42,10 @@
         </div>
         <div class=checklistlesson>
           Lesson=>(
+          <label id=hidescidlabel class='checkboxzone' for="hidescid">
+            <input id=hidescid class=selectshow onclick="selectshows(this)" type="checkbox" checked>
+            cid
+          </label>, 
           <label id=hidetutorlessoncommentslabel class='checkboxzone' for="hidetutorlessoncomments">
             <input id=hidetutorlessoncomments class=selectshow onclick="selectshows(this)" type="checkbox" >
             tutors
@@ -103,7 +107,7 @@
             global
           </label>
           <label id=hidelessonsParklabel class='checkboxzone' for="hidelessonsPark">
-            <input id=hidelessonsPark   class=selectshow onclick="selectshows(this)" type="checkbox" >
+            <input id=hidelessonsPark   class=selectshow onclick="selectshows(this)" type="checkbox checked" >
             park
           </label> )
           <label id=hideAwaylabel class='checkboxzone' for="hideAway">

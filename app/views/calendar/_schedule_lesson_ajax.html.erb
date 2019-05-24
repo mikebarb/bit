@@ -26,5 +26,6 @@
   <div class="lessoncomment comment commentinline">
     <div class="lessoncommenttext n-comments"><% if lesson.comments != nil && lesson.comments != "" %><%= lesson.comments %><% end %></div>
     <div class="lessonstatusinfo n-status"><% if lesson.status != nil && lesson.status != "" %>Kind: <%= lesson.status %> <% end %></div>
+    <div class="lessoncid n-scid"><% if lesson.first != nil %>cid<%= lesson.first.to_s %> <% end %></div>
   </div>  
 </div>
