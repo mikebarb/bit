@@ -178,7 +178,8 @@ module Historyutilities
     lesson_ids = role_objs.map { |obj| obj.lesson_id }.uniq
     lesson_objs = Lesson.includes(:slot, roles: :student, tutroles: :tutor)
                         .where( id: lesson_ids, slots: { timeslot: startdate..enddate})
-                        .order('slots.timeslot').reverse_order
+                        .order('slots.timeslot')
+    #                    .order('slots.timeslot').reverse_order
     @studentfeedback["lessons"] = Array.new
     tutornames = Hash.new
     lesson_objs.each do |thislesson|

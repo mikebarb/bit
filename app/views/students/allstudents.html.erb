@@ -19,7 +19,7 @@
       <th>Inv Code</th>
       <th>Day Code</th>
       <th>Preferences</th>
-      <th colspan="5"></th>
+      <th colspan="3"></th>
     </tr>
   </thead>
 
@@ -41,10 +41,11 @@
         <td><%= student.invcode %></td>
         <td><%= student.daycode %></td>
         <td><%= student.preferences %></td>
-        <td><%= link_to 'History', student_history_path(student) %></td>
-        <td><%= link_to 'Changes', student_change_path(student) %></td>
-        <td><%= link_to 'Show', student %></td>
-        <td><%= link_to 'Edit', edit_student_path(student) %></td>
+        <td><%= link_to 'History', student_history_path(student) %><br>
+            <%= link_to 'Changes', student_change_path(student) %><br>
+            <%= link_to 'Feedback', student_feedback_path(student) %></td>
+        <td><%= link_to 'Show', student %><br>
+            <%= link_to 'Edit', edit_student_path(student) %></td>
         <td><%= link_to 'Destroy', student, method: :delete, data: { confirm: 'Are you sure?' } %></td>
       </tr>
     <% end %>
