@@ -6,7 +6,7 @@
   <td><%= role.status %></td>
   <td><%= role.kind %></td>
   <td><%= role.comment %></td>
-  <% if role.copied %>
+  <% if role.copied && @copied_from_roles_index[role.copied] %>
     <td><%= @copied_from_roles_index[role.copied].comment %></td>
     <td><%  copied_from = @copied_from_roles_index[role.copied].lesson.slot.timeslot
           current_place = role.lesson.slot.timeslot

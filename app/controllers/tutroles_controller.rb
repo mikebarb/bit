@@ -3,8 +3,10 @@ class TutrolesController < ApplicationController
   include ChainUtilities
   
   before_action :set_tutrole, only: [:show, :edit, :update, :destroy]
-  before_filter :authenticate_user!, :set_user_for_models
-  after_filter :reset_user_for_models
+  #before_filter :authenticate_user!, :set_user_for_models
+  #after_filter :reset_user_for_models
+  before_action :authenticate_user!, :set_user_for_models
+  after_action :reset_user_for_models
 
   # GET /tutroles
   # GET /tutroles.json

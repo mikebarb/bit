@@ -26,6 +26,15 @@ Rails.application.configure do
     :domain               => ENV['MAILGUN_DOMAIN']
   }
 
+  #config.logger = ActiveSupport::Logger.new(STDOUT)
+  ###config.logger = RailsStdoutLogging::StdoutLogger.new(STDOUT)
+  ###config.logger.formatter = 
+  ###config.log_level = :debug
+  #config.logger = ActiveSupport::Logger.new("log/#{Rails.env}.log")
+  #Rails.logger = Logger.new("log/#{Rails.env}.log")
+  #Rails.logger = Logger.new(STDOUT)
+  logger = Rails.logger
+
   # Disable Action View Logger in production for Ruby on Rails
   # see http://www.jakobbeyer.de/disable-action-view-logger-in-production-for-ruby-on-rails
   config.action_view.logger = nil

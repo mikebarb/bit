@@ -2,8 +2,10 @@ class StudentsController < ApplicationController
   include Historyutilities
   include Calendarutilities
   before_action :set_student, only: [:show, :showsessions, :edit, :update, :destroy]
-  before_filter :authenticate_user!, :set_user_for_models
-  after_filter :reset_user_for_models
+  #before_filter :authenticate_user!, :set_user_for_models
+  #after_filter :reset_user_for_models
+  before_action :authenticate_user!, :set_user_for_models
+  after_action :reset_user_for_models
 
   # GET /students
   # GET /students.json
@@ -11,6 +13,8 @@ class StudentsController < ApplicationController
     @students = Student
     .order(:pname)
     .page(params[:page])
+    #Rails.logger.info "Check me out!"
+    #logger.debug "test"
     @liststudenttitle = "Listing Students"
   end
 
