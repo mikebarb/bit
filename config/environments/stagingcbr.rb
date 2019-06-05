@@ -71,7 +71,7 @@ Rails.application.configure do
   # config.force_ssl = true
 
   # Enable formatting of log messages by prepending with severity and timestamp
-  config.log_formatter = MessageFormatter.new
+  ###config.log_formatter = MessageFormatter.new
   # Set to :debug to see everything in the log.
   config.log_level = :info
   ###config.log_level = :debug
