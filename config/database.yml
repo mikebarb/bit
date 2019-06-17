@@ -22,9 +22,12 @@ default: &default
   pool: <%= ENV.fetch("RAILS_MAX_THREADS") { 5 } %>
   # next three lines have been added in manually following the 
   # instructions in http://blog.thefirehoseproject.com/posts/setting-up-a-cloud9-development-environment/ 
-  username: postgres
-  password: password
+  #username: postgres
+  #password: password
+  username: pguser
+  password: pguser
   host: localhost
+  port: 5432
 
 development:
   <<: *default
