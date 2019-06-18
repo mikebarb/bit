@@ -1,9 +1,9 @@
                       <% #byebug %>
-                      <div class="tutor <%= "ft" + tutor.id.to_s.rjust(@sf, "0") 
+                      <div class="tutor <%= "ft" + tutor.id.to_s 
                        %><%= ' t-status-' + set_class_status_f(thistutrole)
                        %><%= ' t-kind-'   + set_class_kind_f(  thistutrole)
                        %><%= ' '          + set_class_run_f(   thistutrole)
-                       %>" id=<%= slot + "n" + lesson.to_s.rjust(@sf, "0") + "t" + tutor.id.to_s.rjust(@sf, "0") %> >
+                       %>" id=<%= slot + "n" + lesson.to_s + "t" + tutor.id.to_s %> >
                         <div style=persongroup>
                           <div class="tutorname tutorinline p-name"><%= tutor.pname %> (tut) <%
                             if tutor.firstaid == 'yes' 

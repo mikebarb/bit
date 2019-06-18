@@ -33,7 +33,7 @@
         end 
       end %>
       <% if cells.key?("slotid") then %>
-        <td class="cell slot" id=<%= cells["id_dom"] + "l" + cells["slotid"].rjust(@sf, "0") %>  >
+        <td class="cell slot" id=<%= cells["id_dom"] + "l" + cells["slotid"] %>  >
       <% elsif cells.key?("value") then %>
         <% if firsttablecolumn == true then
           firsttablecolumn = false %>

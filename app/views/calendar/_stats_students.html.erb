@@ -1,7 +1,7 @@
 <% @students_stats.each do |k, v |
    student = v['student_object'] %>
-  <div class="student <%= "fs" + student.id.to_s.rjust(@sf, "0") 
-    %>" id=<%= "s" + student.id.to_s.rjust(@sf, "0") %> >
+  <div class="student <%= "fs" + student.id.to_s 
+    %>" id=<%= "s" + student.id.to_s %> >
     <div class=persongroup>
       <div class="studentname studentinline p-name"><%= student.pname %></div>
     </div>

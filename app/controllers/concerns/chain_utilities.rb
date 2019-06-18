@@ -35,21 +35,21 @@ module ChainUtilities
       @domchangerun[i]['object_type']    = @domchange['object_type']
       @domchangerun[i]['old_slot_domid'] = o.lesson.slot.location[0,3] +
                                            o.lesson.slot.timeslot.strftime("%Y%m%d%H%M") +
-                                    'l' +  o.lesson.slot_id.to_s.rjust(@sf, "0")
+                                    'l' +  o.lesson.slot_id.to_s
       @domchangerun[i]['from']           = @domchangerun[i]['old_slot_domid'] +
-                                    'n' +  o.lesson_id.to_s.rjust(@sf, "0")
+                                    'n' +  o.lesson_id.to_s
       @domchangerun[i]['old_slot_id']   = o.lesson.slot_id
       @domchangerun[i]['role']          = o
       if o.is_a?(Role)
         @domchangerun[i]['student']       = o.student
         @domchangerun[i]['name']          = o.student.pname  # for sorting in the DOM display
         @domchangerun[i]['object_id_old'] = @domchangerun[i]['from'] +
-                                    's' + o.student.id.to_s.rjust(@sf, "0")
+                                    's' + o.student.id.to_s
       else
         @domchangerun[i]['tutor']       = o.tutor
         @domchangerun[i]['name']          = o.tutor.pname  # for sorting in the DOM display
         @domchangerun[i]['object_id_old'] = @domchangerun[i]['from'] +
-                                    't' + o.tutor.id.to_s.rjust(@sf, "0")
+                                    't' + o.tutor.id.to_s
       end
     end
     #-----------determine if chain is breaking or reconnecting ---------------
@@ -211,9 +211,9 @@ module ChainUtilities
     @block_lessons.each_with_index do |o, i|
       @domchangerun[i]['new_slot_domid']  = o.slot.location[0,3] +
                                             o.slot.timeslot.strftime("%Y%m%d%H%M") +
-                                     'l' +  o.slot_id.to_s.rjust(@sf, "0")
+                                     'l' +  o.slot_id.to_s
       @domchangerun[i]['to']              = @domchangerun[i]['new_slot_domid'] +
-                                     'n' +  o.id.to_s.rjust(@sf, "0")
+                                     'n' +  o.id.to_s
       @domchangerun[i]['new_slot_id']     = o.slot_id
       #@domchangerun[i]['lesson_id']      = o.lesson_id
       if @block_roles[0].is_a?(Role)
@@ -226,7 +226,7 @@ module ChainUtilities
                                       :lesson   => o.id                         # new_lesson_id
                                      })
         @domchangerun[i]['object_id'] = @domchangerun[i]['to'] +
-                                            's' + @domchangerun[i]['student'].id.to_s.rjust(@sf, "0")
+                                            's' + @domchangerun[i]['student'].id.to_s
       else
         @domchangerun[i]['html_partial']    = 
             render_to_string("calendar/_schedule_tutor.html",
@@ -237,7 +237,7 @@ module ChainUtilities
                                         :lesson   => o.id                         # new_lesson_id
                                        })
           @domchangerun[i]['object_id'] = @domchangerun[i]['to'] +
-                                              's' + @domchangerun[i]['tutor'].id.to_s.rjust(@sf, "0")
+                                              's' + @domchangerun[i]['tutor'].id.to_s
       end
       #logger.debug "domchangerun (" + i.to_s + "): " + @domchangerun[i].inspect
     end
@@ -249,11 +249,11 @@ module ChainUtilities
       object_type                          = domchangeprepostblock['object_type']
       slot_dom_id                          = o.lesson.slot.location[0,3] +
                                              o.lesson.slot.timeslot.strftime("%Y%m%d%H%M") +
-                                      'l' +  o.lesson.slot_id.to_s.rjust(@sf, "0")
+                                      'l' +  o.lesson.slot_id.to_s
       lesson_dom_id                        = slot_dom_id +
-                                      'n' +  o.lesson_id.to_s.rjust(@sf, "0")
+                                      'n' +  o.lesson_id.to_s
       domchangeprepostblock['object_id']      = lesson_dom_id +
-      (object_type=='student'?('s'+o.student_id.to_s.rjust(@sf,"0")):('t'+o.tutor_id.to_s.rjust(@sf,"0")))
+      (object_type=='student'?('s'+o.student_id.to_s) : ('t'+o.tutor_id.to_s))
       render_locals = {:slot     => slot_dom_id,
                        :lesson   => o.lesson_id }
       if object_type == 'student'
@@ -474,9 +474,9 @@ module ChainUtilities
     # the object_id will now change (for both move and copy as the inbuild
     # lesson number will change.
     @domchange['object_id_old'] = @domchange['object_id']
-    @domchange['object_id'] = new_slot_id + "n" + new_lesson_id.to_s.rjust(@sf, "0") +
+    @domchange['object_id'] = new_slot_id + "n" + new_lesson_id.to_s +
                               (@domchange['object_type'] == 'student' ? "s" : "t") +
-                              person_id.to_s.rjust(@sf, "0")
+                              person_id.to_s
     # want to hold the name for sorting purposes in the DOM display
     @domchange['name'] = @domchange['object_type'] == 'student' ? @role.student.pname : @role.tutor.pname
     if @role.save
@@ -579,8 +579,8 @@ module ChainUtilities
       @domchangerun[i]['object_type']    = @domchange['object_type']
       @domchangerun[i]['object_id']       = o.slot.location[0,3] +
                                            o.slot.timeslot.strftime("%Y%m%d%H%M") +
-                                    'l' +  o.slot_id.to_s.rjust(@sf, "0") +
-                                    'n' +  o.id.to_s.rjust(@sf, "0")
+                                    'l' +  o.slot_id.to_s +
+                                    'n' +  o.id.to_s
     end
     #--------------- update the lesson status  ---------------------------------
     # Block processing
@@ -1064,27 +1064,27 @@ module ChainUtilities
       @domchangerun[i]['object_type']    = @domchange['object_type']
       @domchangerun[i]['old_slot_domid'] = o.lesson.slot.location[0,3] +
                                            o.lesson.slot.timeslot.strftime("%Y%m%d%H%M") +
-                                    'l' +  o.lesson.slot_id.to_s.rjust(@sf, "0")
+                                    'l' +  o.lesson.slot_id.to_s
       @domchangerun[i]['from']           = @domchangerun[i]['old_slot_domid'] +
-                                    'n' +  o.lesson_id.to_s.rjust(@sf, "0")
+                                    'n' +  o.lesson_id.to_s
       @domchangerun[i]['old_slot_id']   = o.lesson.slot_id
       @domchangerun[i]['role']          = o
       @domchangerun[i]['student']       = o.student     if person_type == 'student'
       @domchangerun[i]['tutor']         = o.tutor       if person_type == 'tutor'
       @domchangerun[i]['name']          = person_type == 'student' ? o.student.pname  : o.tutor.pname # for sorting in the DOM display
       @domchangerun[i]['object_id_old'] = @domchangerun[i]['from'] +
-                                    's' + o.student.id.to_s.rjust(@sf, "0") if person_type == 'student'
+                                    's' + o.student.id.to_s if person_type == 'student'
       @domchangerun[i]['object_id_old'] = @domchangerun[i]['from'] +
-                                    't' + o.tutor.id.to_s.rjust(@sf, "0")   if person_type == 'tutor'
+                                    't' + o.tutor.id.to_s   if person_type == 'tutor'
     end
     # do the dom updates including rendering
     # do this after the db updates so all info is correct for rendering
     @block_lessons.each_with_index do |o, i|
       @domchangerun[i]['new_slot_domid']  = o.slot.location[0,3] +
                                             o.slot.timeslot.strftime("%Y%m%d%H%M") +
-                                     'l' +  o.slot_id.to_s.rjust(@sf, "0")
+                                     'l' +  o.slot_id.to_s
       @domchangerun[i]['to']              = @domchangerun[i]['new_slot_domid'] +
-                                     'n' +  o.id.to_s.rjust(@sf, "0")
+                                     'n' +  o.id.to_s
       if @role.is_a?(Role)
         @domchangerun[i]['html_partial']    = 
           render_to_string("calendar/_schedule_student.html",
@@ -1095,7 +1095,7 @@ module ChainUtilities
                                       :lesson   => o.id                               # new_lesson_id
                                      })
         @domchangerun[i]['object_id'] = @domchangerun[i]['to'] +
-                                        's' + @role.student_id.to_s.rjust(@sf, "0")
+                                        's' + @role.student_id.to_s
       elsif @role.is_a?(Tutrole)
         @domchangerun[i]['html_partial']    = 
           render_to_string("calendar/_schedule_tutor.html",
@@ -1106,7 +1106,7 @@ module ChainUtilities
                                       :lesson   => o.id                               # new_lesson_id
                                      })
         @domchangerun[i]['object_id'] = @domchangerun[i]['to'] +
-                                        't' + @role.tutor_id.to_s.rjust(@sf, "0")
+                                        't' + @role.tutor_id.to_s
       end
     end
     # saved safely, now need to update the browser display (using calendar messages)
@@ -1179,7 +1179,7 @@ module ChainUtilities
       @lesson.next = nil
       respond_to do |format|
         if @lesson.save         # write to database.
-          #@domchange['object_id'] = slot_id_basepart + 'n' + @lesson.id.to_s.rjust(@sf, "0")
+          #@domchange['object_id'] = slot_id_basepart + 'n' + @lesson.id.to_s
           
           @domchange['html_partial'] = render_to_string("calendar/_schedule_lesson_ajax.html", 
                                       :formats => [:html], :layout => false,
@@ -1319,10 +1319,10 @@ module ChainUtilities
       @domchangerun[i]['object_type'] = 'lesson'
       @domchangerun[i]['to'] = o.slot.location[0,3] +
                                            o.slot.timeslot.strftime("%Y%m%d%H%M") +
-                                    'l' +  o.slot_id.to_s.rjust(@sf, "0")
+                                    'l' +  o.slot_id.to_s
       #@domchangerun[i]['old_slot_id']   = o.slot_id
       @domchangerun[i]['object_id'] = @domchangerun[i]['to'] +
-                                'n' + o.id.to_s.rjust(@sf, "0")
+                                'n' + o.id.to_s
       thistutroles = i == 0 ? o.tutroles : []
       thisroles    = i == 0 ? o.roles    : []
       @domchangerun[i]['html_partial'] = render_to_string("calendar/_schedule_lesson_ajax.html", 
@@ -1415,9 +1415,9 @@ module ChainUtilities
       @domchangerun[i]['object_type']    = 'lesson'
       @domchangerun[i]['new_slot_domid'] = o.slot.location[0,3] +
                                            o.slot.timeslot.strftime("%Y%m%d%H%M") +
-                                    'l' +  o.slot.id.to_s.rjust(@sf, "0")
+                                    'l' +  o.slot.id.to_s
       @domchangerun[i]['object_id']      = @domchangerun[i]['new_slot_domid'] +      
-                                    'n' +  o.id.to_s.rjust(@sf, "0")
+                                    'n' +  o.id.to_s
     end
     # No breakchainlast updates necessary for display. 
     ############ now need to add processing for screen update #################
@@ -1433,9 +1433,9 @@ module ChainUtilities
       @domchangebreakchainlast['object_type'] = 'lesson'
       @domchangebreakchainlast['new_slot_id'] = o.slot.location[0,3] +
                                                 o.slot.timeslot.strftime("%Y%m%d%H%M") +
-                                                'l' + o.slot_id.to_s.rjust(@sf, "0")
+                                                'l' + o.slot_id.to_s
       @domchangebreakchainlast['object_id']   = @domchangebreakchainlast['new_slot_id'] +
-                                                'n' + o.id.to_s.rjust(@sf, "0")
+                                                'n' + o.id.to_s
       # This is rendering a lesson
       @domchangebreakchainlast['html_partial']  = 
         render_to_string("calendar/_schedule_lesson_ajax.html",
@@ -1524,13 +1524,13 @@ module ChainUtilities
       @domchangerun[i]['object_type']    = @domchange['object_type']
       @domchangerun[i]['new_slot_domid'] = o.lesson.slot.location[0,3] +
                                            o.lesson.slot.timeslot.strftime("%Y%m%d%H%M") +
-                                    'l' +  o.lesson.slot.id.to_s.rjust(@sf, "0")
+                                    'l' +  o.lesson.slot.id.to_s
       @domchangerun[i]['object_id']      = @domchangerun[i]['new_slot_domid'] +      
-                                    'n' +  o.lesson_id.to_s.rjust(@sf, "0")
+                                    'n' +  o.lesson_id.to_s
       if role.is_a?(Role)  # student
-        @domchangerun[i]['object_id']      += 's' +  o.student_id.to_s.rjust(@sf, "0")
+        @domchangerun[i]['object_id']      += 's' +  o.student_id.to_s
       else                  # tutor
-        @domchangerun[i]['object_id']      += 't' +  o.tutor_id.to_s.rjust(@sf, "0")
+        @domchangerun[i]['object_id']      += 't' +  o.tutor_id.to_s
       end        
     end
     # Now do the breakchainlast
@@ -1545,18 +1545,18 @@ module ChainUtilities
       @domchangebreakchainlast['object_type']    = @domchange['object_type']
       @domchangebreakchainlast['old_slot_domid'] = o.lesson.slot.location[0,3] +
                                            o.lesson.slot.timeslot.strftime("%Y%m%d%H%M") +
-                                    'l' +  o.lesson.slot_id.to_s.rjust(@sf, "0")
+                                    'l' +  o.lesson.slot_id.to_s
       @domchangebreakchainlast['from']           = @domchangebreakchainlast['old_slot_domid'] +
-                                    'n' +  o.lesson_id.to_s.rjust(@sf, "0")
+                                    'n' +  o.lesson_id.to_s
       @domchangebreakchainlast['old_slot_id']   = o.lesson.slot_id
       @domchangebreakchainlast['role']          = o
       @domchangebreakchainlast['student']       = o.student     if person_type == 'student'
       @domchangebreakchainlast['tutor']         = o.tutor       if person_type == 'tutor'
       @domchangebreakchainlast['name']          = person_type == 'student' ? o.student.pname  : o.tutor.pname # for sorting in the DOM display
       @domchangebreakchainlast['object_id_old'] = @domchangebreakchainlast['from'] +
-                                    's' + o.student.id.to_s.rjust(@sf, "0") if person_type == 'student'
+                                    's' + o.student.id.to_s if person_type == 'student'
       @domchangebreakchainlast['object_id_old'] = @domchangebreakchainlast['from'] +
-                                    't' + o.tutor.id.to_s.rjust(@sf, "0")   if person_type == 'tutor'
+                                    't' + o.tutor.id.to_s   if person_type == 'tutor'
 
       # built using the parent lesson
       # Need the parent
@@ -1564,9 +1564,9 @@ module ChainUtilities
       o = @lesson_breakchainlast
       @domchangebreakchainlast['new_slot_domid']  = o.slot.location[0,3] +
                                                     o.slot.timeslot.strftime("%Y%m%d%H%M") +
-                                             'l' +  o.slot_id.to_s.rjust(@sf, "0")
+                                             'l' +  o.slot_id.to_s
       @domchangebreakchainlast['to']              = @domchangebreakchainlast['new_slot_domid'] +
-                                             'n' +  o.id.to_s.rjust(@sf, "0")
+                                             'n' +  o.id.to_s
       if role.is_a?(Role)
         @domchangebreakchainlast['html_partial']  = 
           render_to_string("calendar/_schedule_student.html",
@@ -1577,7 +1577,7 @@ module ChainUtilities
                                       :lesson   => o.id                               # new_lesson_id
                                      })
         @domchangebreakchainlast['object_id'] = @domchangebreakchainlast['to'] +
-                                          's' + role.student_id.to_s.rjust(@sf, "0")
+                                          's' + role.student_id.to_s
       elsif role.is_a?(Tutrole)
         @domchangebreakchainlast['html_partial']    = 
           render_to_string("calendar/_schedule_tutor.html",
@@ -1588,7 +1588,7 @@ module ChainUtilities
                                       :lesson   => o.id                               # new_lesson_id
                                      })
         @domchangebreakchainlast['object_id'] = @domchangebreakchainlast['to'] +
-                                          't' + role.tutor_id.to_s.rjust(@sf, "0")
+                                          't' + role.tutor_id.to_s
       end
     end
     #---------------------------  update screens ------------------------------

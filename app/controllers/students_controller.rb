@@ -242,10 +242,10 @@ class StudentsController < ApplicationController
 #       WARNING - next line is for testing with development data
 #
 ##########################################################################
-          if Rails.env.development?
-            this_start_date = Time.strptime("2018-06-18", "%Y-%m-%d")
+          #if Rails.env.development?
+          #  this_start_date = Time.strptime("2018-06-18", "%Y-%m-%d")
             #this_end_date = this_start_date + 3.days
-          end
+          #end
           stats_slots = Slot
                         .select('id', 'timeslot', 'location')
                         .joins({lessons: :roles})
@@ -253,7 +253,7 @@ class StudentsController < ApplicationController
                                 timeslot > :sd', {sid: @student.id, sd: this_start_date})
           stats_slot_domids = stats_slots.map do |o| 
             o.location[0,3].upcase + o.timeslot.strftime('%Y%m%d%H%M') +
-                                    'l' + o.id.to_s.rjust(@sf, "0")
+                                    'l' + o.id.to_s
           end
           #logger.debug "=============stats_slot_domids: " + stats_slot_domids.inspect 
           # Now to get all the slot stats and then send the set

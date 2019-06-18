@@ -6,6 +6,7 @@
   <%= stylesheet_link_tag    'application', media: 'all', 'data-turbolinks-track' => true %>
   <%= javascript_include_tag 'application', 'data-turbolinks-track' => true %>
   <%= csrf_meta_tags %>
+  <meta name="google-site-verification" content="7fwDd2AEu8-356-lsizSn66LARklG5-K8gHt3IaFZ-E" />
 </head>
 <body>
   <% # template for menu taken from
@@ -30,6 +31,7 @@
               <li><%= link_to "Ratio",
                       flexibledisplay_path(:bench => "ratio",
                       :select_roster_default => "1") %></li>
+              <li><%= link_to "Pivot Data",  pivotoptions_path %></li>
             </ul>
           </li>
           <li class='active'><%= link_to "Roster",

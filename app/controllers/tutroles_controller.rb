@@ -288,8 +288,8 @@ class TutrolesController < ApplicationController
     # the object_id will now change (for both move and copy as the inbuild
     # lesson number will change.
     @domchange['object_id_old'] = @domchange['object_id']
-    @domchange['object_id'] = new_slot_id + "n" + new_lesson_id.to_s.rjust(@sf, "0") +
-                    "t" + tutor_id.to_s.rjust(@sf, "0")
+    @domchange['object_id'] = new_slot_id + "n" + new_lesson_id.to_s +
+                    "t" + tutor_id.to_s
             
     # want to hold the name for sorting purposes in the DOM display
     @domchange['name'] = @tutrole.tutor.pname

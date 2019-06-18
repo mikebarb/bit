@@ -1,8 +1,8 @@
-                      <div class="student <%= "fs" + student.id.to_s.rjust(@sf, "0") 
+                      <div class="student <%= "fs" + student.id.to_s
                         %><%= ' s-status-' + set_class_status_f(thisrole) 
                         %><%= ' s-kind-'   + set_class_kind_f(  thisrole) 
                         %><%= ' '          + set_class_run_f(   thisrole) 
-                        %>" id=<%= slot + "n" + lesson.to_s.rjust(@sf, "0") + "s" + student.id.to_s.rjust(@sf, "0") %> >
+                        %>" id=<%= slot + "n" + lesson.to_s + "s" + student.id.to_s %> >
                         <div style=persongroup>
                           <div class="studentname studentinline p-name"><%= student.pname %><%=
                                student.year == nil ? "   " : student.year.rjust(3)

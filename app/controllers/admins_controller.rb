@@ -47,17 +47,14 @@ class AdminsController < ApplicationController
 #---------------------------------------------------------------------------
   # GET /admins/deletedays
   def deletedays
-    logger.debug "entering deletedays"
+    #logger.debug "entering deletedays"
     #logger.debug "deletedays_params: " + deletedays_params.inspect
-    sf = 5    # signigicant figures
+    #sf = 5    # signigicant figures
     mystartdeletedate = deletedays_params["from"].to_date
     myenddeletedate = deletedays_params["from"].to_date + deletedays_params["num_days"].to_i
-    #@cal = calendar_read_display2(sf, mystartdeletedate, myenddeletedate)
     @options = Hash.new
     @options[:startdate] = mystartdeletedate
     @options[:enddate]   = myenddeletedate
-    #@cal = calendar_read_display1f(sf, mystartdeletedate, myenddeletedate, {})
-    #@cal = calendar_read_display1f(sf, @options)
     @cal = calendar_read_display1f(@options)
     if @cal.empty?
       # these days are empty - show error and return
@@ -187,7 +184,7 @@ class AdminsController < ApplicationController
   def copydays
     logger.debug "entering copydays"
     #logger.debug "copydays_params: " + copydays_params.inspect
-    sf = 5    # signigicant figures
+    #sf = 5    # signigicant figures
     mystartcopyfromdate = copydays_params["from"].to_date
     myendcopyfromdate = copydays_params["from"].to_date + copydays_params["num_days"].to_i
     mystartcopytodate = copydays_params["to"].to_date
@@ -3319,7 +3316,7 @@ if testing then
 else      # Not to test.
 
 # let does some processing - writing rosters to google sheets.
-    @sf = 5   # number of significant figures in dom ids for lesson,tutor, etc.
+    #@sf = 5   # number of significant figures in dom ids for lesson,tutor, etc.
 
     #mystartdate = current_user.daystart
     #myenddate = current_user.daystart + current_user.daydur.days
@@ -3484,6 +3481,8 @@ else      # Not to test.
       }
       #------------- end of lambda function: formatLesson ---------
 
+      render flexibledisplay
+      
       # General formatting for each site sheet
       myformat.push(googleVertAlign.call(sheet_id, 1, 1, nil, nil, "TOP"))
       myformat.push(googleWrapText.call(sheet_id, 1, 1, nil, nil, "WRAP"))
@@ -3767,6 +3766,7 @@ else      # Not to test.
       #<br>
     end       # end looping sites
 end           # end of testing option.
+    return      # return without rendering.
   end
 
 

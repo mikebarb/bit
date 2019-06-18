@@ -1,0 +1,25 @@
+<h2>Options for Pivot Table Display</h2>
+
+<%= form_tag("/calendar/pivotstats", {method: :get}) do %>
+
+  <div class="actions">
+    <%= submit_tag "Display" %>
+  </div>
+
+     <p><b>Provide date settings</b><br>
+  <div class="field">
+    <%= label_tag "Date of first day to display" %><br>
+    <%= date_field_tag :daystart %>
+  </div> 
+  <div class="field">
+    <%= label_tag "Number of days to display" %><br>
+    <%= number_field_tag :daydur %>
+  </div> 
+
+  <br>
+  <div class="actions">
+    <%= submit_tag "Display" %>
+  </div>
+
+<% end %>
+

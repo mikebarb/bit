@@ -1,4 +1,4 @@
-<tr id=<%= 'r' + role.id.to_s.rjust(@sf, "0") %> >
+<tr id=<%= 'r' + role.id.to_s %> >
   <td><%= role.lesson.status %></td>
   <td><%= role.lesson.slot.timeslot.strftime("%a %d/%m/%Y %l:%M") %></td>
   <td><%= role.lesson.slot.location %></td>

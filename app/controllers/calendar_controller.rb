@@ -21,7 +21,7 @@ class CalendarController < ApplicationController
   end
 
   def displayoptions
-    logger.debug "called calendar conroller - preferences"
+    
   end
   
   def flexibledisplay
@@ -421,6 +421,41 @@ class CalendarController < ApplicationController
       render 'flexibledisplaystats' and return
     end
     check_duplicates()
+  end
+
+  # first function - to let user provide dates
+  def pivotoptions
+    
+  end
+
+  # second function - provide data
+  # Generate stats for use in spreadsheet pivot tables
+  def pivotstats
+    #mystartdate = DateTime.now
+    params[:daystart].blank? ? @mystartdate = current_user.daystart :
+                               @mystartdate = params[:daystart].to_date
+    params[:daydur].blank?   ? mydaydur = current_user.daydur :
+                               mydaydur = params[:daydur].to_i  
+    mydaydur < 1  || mydaydur > 365   ? mydaydur : 1 # limit range of days allowed!!!
+    @myenddate = @mystartdate + mydaydur.days
+
+    #mystartdate = "2018-6-19".to_datetime
+    #myenddate   = mystartdate + 7.days
+    # Get slots with their lesson + students and tutors
+    slotsinfo  = Slot.select(:id)
+                  .where("timeslot >= :start_date AND
+                        timeslot < :end_date",
+                        {start_date: @mystartdate,
+                         end_date: @myenddate
+                        })
+                        
+    @lessoninfo  = Lesson.joins(:slot)
+                         .where(slot_id: slotsinfo.map {|o| o.id})
+                         .includes(:slot, roles: :student, tutroles: :tutor)
+#                         .order(slot: :timeslot)
+
+
+    
   end
 
 end

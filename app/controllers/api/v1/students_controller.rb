@@ -166,7 +166,7 @@ class Api::V1::StudentsController < ApiController
                                 timeslot > :sd', {sid: @student.id, sd: this_start_date})
           stats_slot_domids = stats_slots.map do |o| 
             o.location[0,3].upcase + o.timeslot.strftime('%Y%m%d%H%M') +
-                                    'l' + o.id.to_s.rjust(@sf, "0")
+                                    'l' + o.id.to_s
           end
           logger.debug "=============stats_slot_domids: " + stats_slot_domids.inspect 
           stats_slot_domids.each do |this_domid|

@@ -127,8 +127,8 @@ class LessonsController < ApplicationController
     @lesson.status = @domchange['status']
     respond_to do |format|
       if @lesson.save
-        @domchange['object_id'] = slot_id_basepart + 'n' + @lesson.id.to_s.rjust(@sf, "0")
-        
+        #-#@domchange['object_id'] = slot_id_basepart + 'n' + @lesson.id.to_s.rjust(@sf, "0")
+        @domchange['object_id'] = slot_id_basepart + 'n' + @lesson.id.to_s
         @domchange['html_partial'] = render_to_string("calendar/_schedule_lesson_ajax.html", 
                                     :formats => [:html], :layout => false,
                                     :locals => {:slot => slot_id_basepart,
@@ -330,7 +330,8 @@ class LessonsController < ApplicationController
                             {thisdate: new_slot_time,
                              thislocation: new_slot_location + '%'
                             }).first  
-      @domchange['to'] = @domchange['to'] + 'l' + @slot.id.to_s.rjust(@sf, "0")
+      #-#@domchange['to'] = @domchange['to'] + 'l' + @slot.id.to_s.rjust(@sf, "0")
+      @domchange['to'] = @domchange['to'] + 'l' + @slot.id.to_s
 =end
     else
       this_error += "invalid to paramenter: " + params[:domchange][:to]
@@ -348,8 +349,10 @@ class LessonsController < ApplicationController
     # the object_id will now change (for both move and copy as the inbuild
     # slot number will change.
     @domchange['object_id_old'] = @domchange['object_id']
+    #-#@domchange['object_id'] = "l" + new_slot_id + 
+    #-#                          "n" + lesson_id.to_s.rjust(@sf, "0")
     @domchange['object_id'] = "l" + new_slot_id + 
-                              "n" + lesson_id.to_s.rjust(@sf, "0")
+                              "n" + lesson_id.to_s
     # Need to generate the html partial for this session.
     @tutroles = Tutrole
                 .includes(:tutor)

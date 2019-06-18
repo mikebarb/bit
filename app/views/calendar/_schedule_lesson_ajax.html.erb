@@ -1,7 +1,7 @@
 <% #byebug %>
 <div class="lesson <%= 'n-status-' + set_class_status_f(lesson) 
                    %><%= ' '       + set_class_run_f(   lesson)
-                   %>" id=<%= slot + "n" + lesson.id.to_s.rjust(@sf, "0") %> >
+                   %>" id=<%= slot + "n" + lesson.id.to_s %> >
 
   <div class="grouptutors">
     <% thistutroles.each do |thistutrole|  %>

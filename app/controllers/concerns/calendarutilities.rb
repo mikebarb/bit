@@ -107,8 +107,8 @@ module Calendarutilities
           #dom_id = location + datetime + lesson + student
           slot_dom_id = thisslot.location[0..2].upcase + 
                         thisslot.timeslot.strftime("%Y%m%d%H%M") +
-                        'l' + thisslot.id.to_s.rjust(@sf, "0") +
-                        'n' + @slotallocate[thisslot.id].to_s.rjust(@sf, "0")
+                        'l' + thisslot.id.to_s +
+                        'n' + @slotallocate[thisslot.id].to_s
           @slotAllocateLessonDom_id[thisslot.id] = slot_dom_id
         else    # no 'allocate' in this slot -> create one. 
           # add an allocate lesson for this slot
@@ -116,7 +116,7 @@ module Calendarutilities
           #dom_id = location + datetime + lesson + student
           slot_dom_id = thisslot.location[0..2].upcase + 
                         thisslot.timeslot.strftime("%Y%m%d%H%M") +
-                        'l' + thisslot.id.to_s.rjust(@sf, "0")
+                        'l' + thisslot.id.to_s
           #logger.debug "add lesson allocate to slot " + slot_dom_id
           #----------------------------------
           # !!!!!!! Add code here !!!!!!!!!!
@@ -517,28 +517,30 @@ module Calendarutilities
   # return: @students_stats    - a object hash available to the renderee
   #                              by stats_students
   # -----------------------------------------------------------------------------
+  # first function - to let user provide dates
+  def pivotoptions
+    
+  end
+
+  # second function - provide data
   def student_stats
     # Want all the global lessons with their students
-    global_students = Student.includes(:lessons, :roles)
+    global_students = Student
+                       .select(:id, :pname, :comment, :status)
+                       .includes([lessons: :slot], :roles)
                        .where(:lessons => {status: 'global'})
                        .order(:pname)
     alllessons = Hash.new
+    global_lessons_with_slots = Hash.new
     global_students.each do |student|
       student.lessons.each do |lesson|
         unless(alllessons.key?(lesson.id))
           alllessons[lesson.id] = 0         # initialise
+          global_lessons_with_slots[lesson.id] = lesson
         end
         alllessons[lesson.id] += 1          # count
       end
     end
-    # get all the global lessons containing these students
-    alllessons_ids = alllessons.keys
-    global_lessons_with_slots = Lesson.where(id: alllessons_ids ).includes(:slot)
-    global_lessons_with_slots_index = Hash.new
-    global_lessons_with_slots.each do |l|
-      global_lessons_with_slots_index[l.id] = l 
-    end
-        
     @students_stats = Hash.new
     global_students.each do |student|
       unless(@students_stats.key?(student.id))
@@ -549,8 +551,9 @@ module Calendarutilities
       end
       @students_stats[student.id]['student_object'] = student
       studentlessons = Array.new
-      student.lessons.each do |lesson| 
-        studentlessons.push([lesson, lesson.slot.timeslot])
+      student.lessons.each do |lesson|
+        studentlessons.push([lesson, 
+                             lesson.slot.timeslot])
       end
       #student.lessons.each_with_index do |lesson, i|
       studentlessons.sort{|x,y| x[1] <=> y[1]}.each_with_index do |a, i|
@@ -562,13 +565,12 @@ module Calendarutilities
         @students_stats[student.id]['total'] += 1
         @students_stats[student.id][lesson.id]['lesson_object'] = lesson
         @students_stats[student.id][lesson.id]['lesson_date'] = lesson.slot.timeslot
-        glws = global_lessons_with_slots_index[lesson.id]
+        glws = global_lessons_with_slots[lesson.id]
         dom_id = glws.slot.location[0..2].upcase + 
                  glws.slot.timeslot.strftime("%Y%m%d%H%M") +
-                 'l' + glws.slot.id.to_s.rjust(@sf, "0") +
-                 'n' + lesson.id.to_s.rjust(@sf, "0") + 
-                 's' + student.id.to_s.rjust(@sf, "0")
-        #@students_stats[student.id]['dom_ids'].push(dom_id)
+                 'l' + glws.slot.id.to_s +
+                 'n' + lesson.id.to_s + 
+                 's' + student.id.to_s
         @students_stats[student.id]['dom_ids'].push(dom_id)
         student.roles.each do |thisrole|
           if thisrole.lesson_id == lesson.id
@@ -690,7 +692,6 @@ module Calendarutilities
     # get the student stats info first which is displayed at the top of 
     # the stats page.
     student_stats()     # call the def
-    
     #logger.debug "********************@students_stats: " + @students_stats.inspect
     siv = {'S'=>0,'R'=>0,'A'=>0,'AoTo'=>0,'RoTo'=>0,'RCu'=>0,'RCoTo'=>0,'B'=>0}
 

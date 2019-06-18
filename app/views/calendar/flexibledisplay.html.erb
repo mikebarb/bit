@@ -258,8 +258,7 @@
         end
       end
       if cells.key?("slotid") then 
-          #cell_id_dom = cells["id_dom"] + "l" + cells["slotid"].rjust(@sf, "0")
-          cell_id_dom = cells["id_dom"] + "l" + cells["slotid"].rjust(@sf, "0")
+        cell_id_dom = cells["id_dom"] + "l" + cells["slotid"]
       %><td class="cell slot <%= celldow %>" id=<%= cell_id_dom %>  >
       <% elsif cells.key?("value") then %>
         <% if firsttablecolumn == true then

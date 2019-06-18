@@ -78,12 +78,12 @@ class RolesController < ApplicationController
     slotdbid  = @role.lesson.slot_id
     slotdomid = @role.lesson.slot.location[0, 3].ljust(3, "-") + 
                 @role.lesson.slot.timeslot.strftime("%Y%m%d%H%M") + 
-          'l' + slotdbid.to_s.rjust(@sf, "0")
+          'l' + slotdbid.to_s
     oldlessondbid  = @role.lesson_id 
     oldlessondomid = slotdomid + 
-                     'n' + oldlessondbid.to_s.rjust(@sf, "0")
+                     'n' + oldlessondbid.to_s
     oldobjectdomid = oldlessondomid + 
-                     's' +  @role.student_id.to_s.rjust(@sf, "0")
+                     's' +  @role.student_id.to_s
     if @cudomchange['action'] == 'expire'
       @new_lesson = Lesson.where(slot_id: @role.lesson.slot_id, status: 'park').first 
       unless @new_lesson  # if no lesson found, 
@@ -97,7 +97,7 @@ class RolesController < ApplicationController
         @domchange_newlesson['to'] = slotdomid
         @domchange_newlesson['status'] = @new_lesson.status
         @domchange_newlesson['object_id'] = slotdomid + 'n' +
-                                            @new_lesson.id.to_s.rjust(@sf, "0")
+                                            @new_lesson.id.to_s
         @domchange_newlesson['html_partial'] = render_to_string("calendar/_schedule_lesson_ajax.html", 
                             :formats => [:html], :layout => false,
                             :locals => {:slot => slotdomid,
@@ -112,9 +112,9 @@ class RolesController < ApplicationController
     end
     newlessondbid  = @new_lesson.id 
     newlessondomid = slotdomid + 
-                     'n' + newlessondbid.to_s.rjust(@sf, "0")
+                     'n' + newlessondbid.to_s
     newobjectdomid = newlessondomid + 
-                     's' +  @role.student_id.to_s.rjust(@sf, "0")
+                     's' +  @role.student_id.to_s
 
     if @cudomchange['action'] == 'expire'
       # Keep details about where this catchup was previously located
@@ -389,7 +389,7 @@ class RolesController < ApplicationController
         @domchange_newlesson['to'] = new_slot_id
         @domchange_newlesson['status'] = @new_lesson.status
         @domchange_newlesson['object_id'] = new_slot_id + 'n' +
-                                            @new_lesson.id.to_s.rjust(@sf, "0")
+                                            @new_lesson.id.to_s
         @domchange_newlesson['html_partial'] = render_to_string("calendar/_schedule_lesson_ajax.html", 
                                                 :formats => [:html], :layout => false,
                                                 :locals => {:slot => new_slot_id,
@@ -631,24 +631,24 @@ class RolesController < ApplicationController
       @domchangerun[i]['object_type']    = @domchange['object_type']
       @domchangerun[i]['old_slot_domid'] = o.lesson.slot.location[0,3] +
                                            o.lesson.slot.timeslot.strftime("%Y%m%d%H%M") +
-                                    'l' +  o.lesson.slot_id.to_s.rjust(@sf, "0")
+                                    'l' +  o.lesson.slot_id.to_s
       @domchangerun[i]['from']           = @domchangerun[i]['old_slot_domid'] +
-                                    'n' +  o.lesson_id.to_s.rjust(@sf, "0")
+                                    'n' +  o.lesson_id.to_s
       @domchangerun[i]['old_slot_id']   = o.lesson.slot_id
       @trackslots[@domchangerun[i]['old_slot_domid']]     = 1
       @domchangerun[i]['role']          = o
       @domchangerun[i]['student']       = o.student
       @domchangerun[i]['name']          = o.student.pname  # for sorting in the DOM display
       @domchangerun[i]['object_id_old'] = @domchangerun[i]['from'] +
-                                    's' + o.student.id.to_s.rjust(@sf, "0")
+                                    's' + o.student.id.to_s
     end
     # complete with destination info
     @block_lessons.each_with_index do |o, i|
       @domchangerun[i]['new_slot_domid']  = o.slot.location[0,3] +
                                             o.slot.timeslot.strftime("%Y%m%d%H%M") +
-                                     'l' +  o.slot_id.to_s.rjust(@sf, "0")
+                                     'l' +  o.slot_id.to_s
       @domchangerun[i]['to']              = @domchangerun[i]['new_slot_domid'] +
-                                     'n' +  o.id.to_s.rjust(@sf, "0")
+                                     'n' +  o.id.to_s
       @trackslots[@domchangerun[i]['new_slot_domid']] = 1
       #@domchangerun[i]['html_partial']    = 
       #  render_to_string("calendar/_schedule_student.html",
@@ -659,7 +659,7 @@ class RolesController < ApplicationController
       #                              :lesson   => o.id                               # new_lesson_id
       #                             })
       @domchangerun[i]['object_id'] = @domchangerun[i]['to'] +
-                                      's' + @role.student_id.to_s.rjust(@sf, "0")
+                                      's' + @role.student_id.to_s
     end
     # # sometimes, we need to remove students on the display
     if @block_roles_remove != nil        # if deletions are required.
@@ -673,13 +673,13 @@ class RolesController < ApplicationController
         @trackslots[slot_dom_id]          = 1
         #@domchangeremove[i]['object_id']  =        o.lesson.slot.location[0,3] +
         #                                           o.lesson.slot.timeslot.strftime("%Y%m%d%H%M") +
-        @domchangeremove[i]['object_id']  = slot_dome_id +
-                                            'l' +  o.lesson.slot_id.to_s.rjust(@sf, "0") +
-                                            'n' +  o.lesson_id.to_s.rjust(@sf, "0")
+        @domchangeremove[i]['object_id']  = slot_dom_id +
+                                            'l' +  o.lesson.slot_id.to_s +
+                                            'n' +  o.lesson_id.to_s
         #if o.is_a?('Role')                            
-          @domchangeremove[i]['object_id'] += 's' +  o.student_id.to_s.rjust(@sf, "0")
+          @domchangeremove[i]['object_id'] += 's' +  o.student_id.to_s
         #elsif o.is_a?('Tutor')
-          #@domchangeremove[i]['object_id'] += 't' +  o.tutor_id.to_s.rjust(@sf, "0")
+          #@domchangeremove[i]['object_id'] += 't' +  o.tutor_id.to_s
         #end
       end
     end
@@ -903,8 +903,8 @@ class RolesController < ApplicationController
       #===#dest_chain = true if @lesson_new.first   # a chain element
       @domchange['to'] = @lesson_new.slot.location[0..2].upcase
       @domchange['to'] += @lesson_new.slot.timeslot.strftime("%Y%m%d%H%M")
-      @domchange['to'] += 'l' + @lesson_new.slot_id.to_s.rjust(@sf, "0")
-      @domchange['to'] += 'n' + @lesson_new.id.to_s.rjust(@sf, "0")
+      @domchange['to'] += 'l' + @lesson_new.slot_id.to_s
+      @domchange['to'] += 'n' + @lesson_new.id.to_s
       options['to_global'] = @domchange['to_global']
       #new_parent_date = @domchange['to_slot'][3,11]
     elsif(@domchange.has_key?("to_slot"))
@@ -1150,7 +1150,7 @@ class RolesController < ApplicationController
     slot_dom_id_base  = thisrole_lesson.slot.location[0,3].upcase + 
                         thisrole_lesson.slot.timeslot.strftime("%Y%m%d%H%M")            
     slot_dom_id       = slot_dom_id_base + 
-                        'l' + thisrole_lesson.slot.id.to_s.rjust(@sf, "0") 
+                        'l' + thisrole_lesson.slot.id.to_s 
     @global_lessons = Lesson.where(slot_id: thisrole_lesson.slot_id, status: 'global')
     unless(@global_lesson = Lesson.where(slot_id: thisrole_lesson.slot_id, status: 'global').first)
       # No Global Lesson present - so need to create one.
@@ -1161,7 +1161,7 @@ class RolesController < ApplicationController
         @global_lesson_domchange = {
           'action' => 'addLesson',
           'object_id' => slot_dom_id_base + 
-                         'n' + @global_lesson.id.to_s.rjust(@sf, "0"),
+                         'n' + @global_lesson.id.to_s,
           "object_type"=>"lesson", 
           "status"=>"global",
           'to' => slot_dom_id
@@ -1195,12 +1195,12 @@ class RolesController < ApplicationController
     @copied_role.first = nil                     # not linked to current chain.
     @copied_role.next  = nil                     # but is in the batch.
     global_lesson_dom_id = slot_dom_id +
-                           'n' + @global_lesson.id.to_s.rjust(@sf, "0")
+                           'n' + @global_lesson.id.to_s
     @global_lesson_domchange = {
       'action'        => 'copy',
       'object_id'     => slot_dom_id + 
-                         'n' + @global_lesson.id.to_s.rjust(@sf, "0") +
-                         's' + @copied_role.id.to_s.rjust(@sf, "0"),
+                         'n' + @global_lesson.id.to_s +
+                         's' + @copied_role.id.to_s,
       "object_type"   =>"student", 
       'to'            => global_lesson_dom_id,
       'object_id_old' => 'xxx',

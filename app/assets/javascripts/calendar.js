@@ -432,28 +432,6 @@ function ready_calendar() {
     });
   }
 
-/*  
-  //function getRecordType(ele_id){
-  //function getRecordId(ele_id){
-  // this function extracts the record type (l, n, t, s) from the dom id
-  // for slot, lesson, tutor and student entries
-  function getRecordType(ele_id){
-    return ele_id.substr(ele_id.length-sf-1, 1);
-  }
-
-  // this function extracts the record id from the dom id
-  // for slot, lesson, tutor and student entries
-  function getRecordId(ele_id){
-    return ele_id.substr(ele_id.length-sf, sf);
-  }
-
-  // used to extract lesson id from a tutor or student element's id
-  // the lesson id is embedded in the elementid to ensure uniqueness.
-  function getLessonIdFromTutorStudent(ele_id){
-    return ele_id.substr(ele_id.length-sf-1-sf, sf);
-  }
-*/
-
   // As these are context sensitive menus, we need to determine what actions
   // are displayed.
   // Basically, all items are in the browser page. They are simply shown or

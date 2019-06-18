@@ -82,6 +82,8 @@ Rails.application.routes.draw do
   get 'calendar/displayoptions/'  => 'calendar#displayoptions',  as: :displayoptions
   get 'calendar/flexibledisplay/' => 'calendar#flexibledisplay', as: :flexibledisplay
   get 'calendar/globalstudents'   => 'calendar#globalstudents',  as: :globalstudents
+  get 'calendar/pivotstats'       => 'calendar#pivotstats',      as: :pivotstats
+  get 'calendar/pivotoptions'     => 'calendar#pivotoptions',    as: :pivotoptions
 
   get  'lessons/:id/move'       => 'lessons#move',                  as: :move_lesson
   post 'lessonmoveslot'         => 'lessons#lessonmoveslot',        as: :lessonmoveslot

@@ -1,0 +1,48 @@
+<h1>Pivot Table Data from 
+<%= @mystartdate.strftime("%d/%m/%Y") %> up to but excluding <%= @myenddate.strftime("%d/%m/%Y") %></h1>
+<table>
+  <thead>
+    <tr>
+      <th>Location</th>
+      <th>Day & Time</th>
+      <th>Lesson Type</th>
+      <th>Role-kind</th> 
+      <th>Role-status</th>
+      <th>Tutor or Student</th>
+      <th>Name</th>
+      <th>Year</th>
+    </tr>
+  </thead>
+
+  <tbody>
+    <% @lessoninfo.each do |lesson| %>
+      <% theseroles = lesson.roles %>
+      <% thesetutroles = lesson.tutroles %>
+      <% theseroles.each do |thisrole| %>
+          <tr>
+            <td><%= lesson.slot.location %></td>
+            <td><%= lesson.slot.timeslot %></td>
+            <td><%= lesson.status %></td>
+            <td><%= thisrole.kind %></td>
+            <td><%= thisrole.status %></td>
+            <td>student</td>
+            <td><%= thisrole.student.pname %></td>
+            <td><%= thisrole.student.year %></td>
+          </tr>
+       <% end %>
+      <% thesetutroles.each do |thistutrole| %>
+          <tr>
+            <td><%= lesson.slot.location %></td>
+            <td><%= lesson.slot.timeslot %></td>
+            <td><%= lesson.status %></td>
+            <td><%= thistutrole.kind %></td>
+            <td><%= thistutrole.status %></td>
+            <td>tutor</td>
+            <td><%= thistutrole.tutor.pname %></td>
+            <td></td>
+          </tr>
+      <% end %>
+    <% end %>
+  </tbody>
+</table>
+
