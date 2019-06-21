@@ -1,0 +1,24 @@
+<h1>Admin Controller - Delete old data from the database</h1>
+<p>Oldest day in database: <%= @oldestdate.strftime("%a %d/%m/%Y") %></p>
+<p>Newest day in database: <%= @newestdate.strftime("%a %d/%m/%Y") %></p>
+<p>Oldest chain in database: <%= @oldestslotchain.strftime("%a %d/%m/%Y") %></p>
+<br>    
+    <% #byebug %>
+    <p> This operation will delete all data in the database up to the but not includding the provided date. </p>    
+    <p> What remains will be the date provided and all data after that date.</p>
+    <p> All <b>inactive</b> tutors and students not referred to in the database after this date will also be deleted.</p>
+    <br>
+    <%= form_tag("deleteolddata", method: "get") do %>
+      <%= label_tag("delete[to]", "Date to delete up to but NOT including:") %>
+      <% if params["to"].nil? %>
+        <%= date_field_tag("delete[to]") %>
+      <% else %>
+        <%= date_field_tag("delete[to]", params["to"]) %>
+      <% end %>
+      <br><br>
+      <h1>This operation cannot be undone.</h1>
+      <br>
+      <%= submit_tag("Delete") %>
+    <% end %>
+    
+

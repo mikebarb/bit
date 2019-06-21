@@ -61,6 +61,8 @@ Rails.application.routes.draw do
   get 'admins/copytermweeks' => 'admins#copytermweeks', as: :copytermweeks
   get 'admins/deletedaysedit' => 'admins#deletedaysedit', as: :deletedaysedit
   get 'admins/deletedays' => 'admins#deletedays', as: :deletedays
+  get 'admins/deleteolddataedit' => 'admins#deleteolddataedit', as: :deleteolddataedit
+  get 'admins/deleteolddata' => 'admins#deleteolddata', as: :deleteolddata
 
   post 'removetutorfromlesson' => 'tutroles#removetutorfromlesson', as: :removetutorfromlesson
   post 'tutorcopylesson'       => 'tutroles#tutorcopylesson',       as: :tutorcopylesson

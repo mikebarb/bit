@@ -33,6 +33,179 @@ class AdminsController < ApplicationController
 
 #---------------------------------------------------------------------------
 #
+#   Delete Old Data up to a provided date - Edit parameters 
+#
+#---------------------------------------------------------------------------
+  # GET /admins/deleteolddata
+  def deleteolddataedit
+    # show oldest date in database and youngest date in database
+    @oldestdate      = Slot.order(:timeslot).first.timeslot
+    @newestdate      = Slot.order(:timeslot).reverse_order.first.timeslot
+    @oldestslotchain = Slot.order(:timeslot).where.not(first: nil).first.timeslot
+  end
+
+
+#---------------------------------------------------------------------------
+#
+#   Delete Old Data up to a provided date- do the deletes
+#
+#---------------------------------------------------------------------------
+  # GET /admins/deleteolddata
+  def deleteolddata
+    @result = ""
+    if deleteolddata_params["to"] == ""
+      @result = "Failed to pass required parameter (date)!"
+      return
+    end
+    @startdatetokeep = deleteolddata_params["to"].to_date
+    
+    if @startdatetokeep > DateTime.now - 365.days
+      @result = "You must keep at least one year of data!"
+      return
+    end
+  
+    @startdatetokeep = deleteolddata_params["to"].to_date
+    @checkdate = @startdatetokeep
+    # First of all, we must unlink any chains that cross this date.
+    # A chain link must exist in every week. Thus we must do this for each
+    # day of this week. 
+    # Because of this, we force the @startdatetokeep to be a Monday
+    # and then break the chain for every day in this week.
+    # Architecture facts: 
+    #   a chain link cannot exist twice in the same week.
+    #   a chain must have a parent chain (except slots)
+    
+    thisdayofweek = @startdatetokeep.wday
+    if thisdayofweek == 0
+      @startdatetokeep = @startdatetokeep + 1.day
+    else
+      @startdatetokeep = @startdatetokeep - (thisdayofweek - 1).day
+    end
+    # Process day at a time - Monday first then next for 7 days.
+    @basecheckdate = @startdatetokeep
+    for offsetdays in 0..6
+      @checkdate = @basecheckdate + offsetdays.days
+      logger.debug "check chains for " + @checkdate.inspect
+      
+      # get all slots that are part of a chain
+      checkslots    = Slot.where("timeslot > ? AND
+                                  timeslot < ? ",
+                                  @checkdate.beginning_of_day,
+                                  @checkdate.end_of_day)
+                          .where.not(first: nil)
+      # get all lessons in these slots that are part of a chain
+      checklessons  = Lesson.where(slot_id: checkslots.map{|o| o.id})
+                            .where.not(first: nil)
+      # get all student roles in these lessons that are part of a chain
+      checkroles =    Role.where(lesson_id: checklessons.map{|o| o.id})
+                          .where.not(first: nil)
+      # get all tutor tutroles in these lessons that are part of a chain
+      checktutroles =    Tutrole.where(lesson_id: checklessons.map{|o| o.id})
+                          .where.not(first: nil)
+
+      # Break the chains for the slots
+      checkslots.each do |slot|
+        if slot.id != slot.first   # not first element in chain
+          # for slots, make this the first element in the chain
+          #slots_to_update = Slot.where(first: slot.first)
+          Slot.where(first: slot.first).update_all(first: slot.id)
+        end
+      end
+      # Break the chains for the lessons
+      checklessons.each do |lesson|
+        if lesson.id != lesson.first   # not first element in chain
+          # for lessons, make this the first element in the chain
+          #lessons_to_update = Lesson.where(first: lesson.first)
+          Lesson.where(first: lesson.first).update_all(first: lesson.id)
+        end
+      end
+      # Break the chains for the student roles
+      # for roles and tutroles, there can be multiple chain segments 
+      # within the chain block. For the first chain in the set,
+      # first and block will be equal. Subsequent segments has
+      # and block different. Block will identify all chain segments
+      # in this chain.
+      checkroles.each do |role|
+        flag_first_in_block   = role.id    == role.block ? true : false
+        flag_first_in_segment = role.id    == role.first ? true : false 
+        flag_first_segment    = role.first == role.block ? true : false
+        # if first element in block, then nothing to do.
+        if !flag_first_in_block   # break chain, not first in block
+          # No matter where it it broken, the block needs updating
+          # this element id will become the block value for this block
+          role_to_update_block = Role.where(block: role.block)
+          #Role.where(block: role.block).update_all(block: role.id)
+          if !flag_first_in_segment # not first element in segment
+            # this element id will become the first value for this segment
+            #role_to_update_first = Role.where(first: role.first)
+            Role.where(first: role.first).update_all(first: role.id)
+          end
+        end
+      end
+
+      checktutroles.each do |tutrole|
+        flag_first_in_block   = tutrole.id    == tutrole.block ? true : false
+        flag_first_in_segment = tutrole.id    == tutrole.first ? true : false 
+        flag_first_segment    = tutrole.first == tutrole.block ? true : false
+        # if first element in block, then nothing to do.
+        if !flag_first_in_block   # break chain, not first in block
+          # No matter where it it broken, the block needs updating
+          # this element id will become the block value for this block
+          tutrole_to_update_block = Tutrole.where(block: tutrole.block)
+          #Tutrole.where(block: tutrole.block).update_all(block: tutrole.id)
+          if !flag_first_in_segment # not first element in segment
+            # this element id will become the first value for this segment
+            #tutrole_to_update_first = Tutrole.where(first: tutrole.first)
+            Tutrole.where(first: tutrole.first).update_all(first: tutrole.id)
+          end
+        end
+      end
+      
+    end
+
+    # Get all the slots (ids) for the deletion period.
+    removeslots    = Slot.select(:id).where("timeslot < :end_date",
+                                            {end_date: @startdatetokeep})
+    # Get all the lessons (ids) in the slots for this deletion period.
+    removelessons  = Lesson.select(:id).where(slot_id: removeslots.map{|o| o.id})
+    # Remove all the tutroles (tutors allocated) in these lessons
+    #removetutroles = Tutrole.select(:id).where(lesson_id: removelessons.map{|o| o.id})
+    Tutrole.where(lesson_id: removelessons.map{|o| o.id}).delete_all
+    # Remove all the roles (students allocated) in these lessons
+    #removeroles    = Role.select(:id).where(lesson_id: removelessons.map{|o| o.id})
+    Role.where(lesson_id: removelessons.map{|o| o.id}).delete_all
+    # Now remove the lessons
+    Lesson.where(slot_id: removeslots.map{|o| o.id}).delete_all
+    # And remove the slots.
+    Slot.where("timeslot < :end_date", {end_date: @startdatetokeep}).delete_all
+
+    #Remove all change records created before this date.
+    removechanges = Change.select(:id).where("created_at < :end_date", {end_date: @startdatetokeep})  
+    logger.debug "Number of change records: " + Change.count.to_s
+    logger.debug "Remove change records   : " + removechanges.count.to_s
+    Change.select(:id).where("created_at < :end_date", {end_date: @startdatetokeep}).delete_all  
+    logger.debug "Change records left     : " + Change.count.to_s
+
+
+    # Remove tutors not referred to in the calendar and 
+    # who have a status of inactive
+    #byebug
+    linkedtutors = Tutrole.select(:tutor_id).distinct
+    #logger.debug "linkedtutors: " + linkedtutors.count.to_s
+    linkedstudents = Role.select(:student_id).distinct
+    #logger.debug "linkedstudents: " + linkedstudents.count.to_s
+    #removetutors = Tutor.where(status: 'inactive').where.not(id: linkedtutors.map{|o| o.tutor_id})
+    #logger.debug "removetutors: " + removetutors.count.to_s
+    Tutor.where(status: 'inactive').where.not(id: linkedtutors.map{|o| o.tutor_id}).delete_all
+    #removestudents = Student.where(status: 'inactive').where.not(id: linkedstudents.map{|o| o.student_id})
+    #logger.debug "removestudents: " + removestudents.count.to_s
+    Student.where(status: 'inactive').where.not(id: linkedstudents.map{|o| o.student_id}).delete_all
+    
+  end
+
+
+#---------------------------------------------------------------------------
+#
 #   Delete Scheduler Days Edit paramenters - select days you want to delete
 #
 #---------------------------------------------------------------------------
@@ -3787,6 +3960,10 @@ end           # end of testing option.
 
     def deletedays_params
       params.require(:delete).permit(:from, :num_days)
+    end
+
+    def deleteolddata_params
+      params.require(:delete).permit(:to)
     end
 
     def set_user_for_models
