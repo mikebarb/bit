@@ -1,0 +1,10 @@
+<h1>Admin Controller - Populate Term completed.</h1>
+<br>
+
+<% @results.each do |result| %>
+ <p><%= result %></p>
+<% end %>
+
+<ul>
+ <%= link_to "populateterm", populatetermedit_path %>
+</ul>

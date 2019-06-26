@@ -440,6 +440,218 @@ class AdminsController < ApplicationController
                                             {end_date: @startdatetokeep})
     # Get all the lessons (ids) in the slots for this deletion period.
     removelessons  = Lesson.select(:id).where(slot_id: removeslots.map{|o| o.id})
+    # Remove all the tutroles (tutorthe first link
+        @displayshort.push([thislink.slot_id, thislink.slot.location,
+                            thislink.slot.timeslot, thislink.id,
+                            thislink.first, thislink.next,
+                            thislink.students.count, thislink.tutors.count])
+        leftlinks.delete(thislink.id)
+        while lessonchainindex.has_key?(thislink.next)  # now work through rest using next linkage 
+          thislink = lessonchainindex[thislink.next]    # select next link
+          @displayshort.push([thislink.slot_id, thislink.slot.location,
+                              thislink.slot.timeslot, thislink.id,
+                              thislink.first, thislink.next,
+                              thislink.students.count, thislink.tutors.count])
+          leftlinks.delete(thislink.id)
+          if thislink.next.nil?                         # ? last link in chain
+            break                                       # end of valid portion
+          end
+        end
+        # Now process the invalid portion
+        disconnectedlessons = Array.new   # keep list of invalid lessons
+        flagpersonspresent = false
+        @displayshort.push("Now disconnected from first chain links")
+        lastlink = nil                                  
+        while leftlinks.count > 0                       # ? while links left
+          leftlinks.each do |k, mylink|
+            if lessonchainnext.has_key?(mylink.id)
+              # OK thislink is part of chain ( there is a link before this  one)
+            else
+              # At the end of chain - though not set to nil
+              lastlink = mylink
+              break                                      # then keep it
+            end
+          end
+          # now work our way BACK through the chain
+          while !lastlink.nil? && lessonchainindex.has_key?(lastlink.id)  # next link exists 
+            countstudents = lastlink.students.count
+            counttutors = lastlink.tutors.count
+            flagpersonspresent = true if countstudents + counttutors > 0
+            if lastlink.slot_id.nil?
+              @displayshort.push([lastlink.slot_id, "-",
+                                  "-", lastlink.id, 
+                                  lastlink.first, lastlink.next, 
+                                  countstudents, counttutors])
+            else
+              @displayshort.push([lastlink.slot_id, lastlink.slot.location,
+                                  lastlink.slot.timeslot, lastlink.id, 
+                                  lastlink.first, lastlink.next, 
+                                  countstudents, counttutors])
+            end
+            leftlinks.delete(lastlink.id)
+            disconnectedlessons.push(lastlink.id)   # keep track of lessons to possibley be removed
+            lastlink = lessonchainindex[lastlink.next]             # select next link
+          end
+          if flagFixLessonDisconnects
+            if !flagpersonspresent  # NO tutors or students present in lessons
+              @displayshort.push("removed lessons "+ disconnectedlessons.inspect )
+              Lesson.where(id: disconnectedlessons).delete_all
+            else
+              @displayshort.push("CANNOT remove lessons as tutors or students present." )
+            end
+          end
+        end
+      end
+    end
+    
+    @errors.each do |o|
+      logger.debug o.inspect
+    end
+    logger.debug "-------------------------------------------"
+    @displayshort.each do |o|
+      logger.debug o.inspect
+    end
+  end
+
+
+
+#---------------------------------------------------------------------------
+#
+#   Delete Old Data up to a provided date - Edit parameters 
+#
+#---------------------------------------------------------------------------
+  # GET /admins/deleteolddata
+  def deleteolddataedit
+    # show oldest date in database and youngest date in database
+    @oldestdate      = Slot.order(:timeslot).first.timeslot
+    @newestdate      = Slot.order(:timeslot).reverse_order.first.timeslot
+    @oldestslotchain = Slot.order(:timeslot).where.not(first: nil).first.timeslot
+  end
+
+
+#---------------------------------------------------------------------------
+#
+#   Delete Old Data up to a provided date- do the deletes
+#
+#---------------------------------------------------------------------------
+  # GET /admins/deleteolddata
+  def deleteolddata
+    @result = ""
+    if deleteolddata_params["to"] == ""
+      @result = "Failed to pass required parameter (date)!"
+      return
+    end
+    @startdatetokeep = deleteolddata_params["to"].to_date
+    
+    if @startdatetokeep > DateTime.now - 365.days
+      @result = "You must keep at least one year of data!"
+      return
+    end
+  
+    @startdatetokeep = deleteolddata_params["to"].to_date
+    @checkdate = @startdatetokeep
+    # First of all, we must unlink any chains that cross this date.
+    # A chain link must exist in every week. Thus we must do this for each
+    # day of this week. 
+    # Because of this, we force the @startdatetokeep to be a Monday
+    # and then break the chain for every day in this week.
+    # Architecture facts: 
+    #   a chain link cannot exist twice in the same week.
+    #   a chain must have a parent chain (except slots)
+    
+    thisdayofweek = @startdatetokeep.wday
+    if thisdayofweek == 0
+      @startdatetokeep = @startdatetokeep + 1.day
+    else
+      @startdatetokeep = @startdatetokeep - (thisdayofweek - 1).day
+    end
+    # Process day at a time - Monday first then next for 7 days.
+    @basecheckdate = @startdatetokeep
+    for offsetdays in 0..6
+      @checkdate = @basecheckdate + offsetdays.days
+      logger.debug "check chains for " + @checkdate.inspect
+      
+      # get all slots that are part of a chain
+      checkslots    = Slot.where("timeslot > ? AND
+                                  timeslot < ? ",
+                                  @checkdate.beginning_of_day,
+                                  @checkdate.end_of_day)
+                          .where.not(first: nil)
+      # get all lessons in these slots that are part of a chain
+      checklessons  = Lesson.where(slot_id: checkslots.map{|o| o.id})
+                            .where.not(first: nil)
+      # get all student roles in these lessons that are part of a chain
+      checkroles =    Role.where(lesson_id: checklessons.map{|o| o.id})
+                          .where.not(first: nil)
+      # get all tutor tutroles in these lessons that are part of a chain
+      checktutroles =    Tutrole.where(lesson_id: checklessons.map{|o| o.id})
+                          .where.not(first: nil)
+
+      # Break the chains for the slots
+      checkslots.each do |slot|
+        if slot.id != slot.first   # not first element in chain
+          # for slots, make this the first element in the chain
+          #slots_to_update = Slot.where(first: slot.first)
+          Slot.where(first: slot.first).update_all(first: slot.id)
+        end
+      end
+      # Break the chains for the lessons
+      checklessons.each do |lesson|
+        if lesson.id != lesson.first   # not first element in chain
+          # for lessons, make this the first element in the chain
+          #lessons_to_update = Lesson.where(first: lesson.first)
+          Lesson.where(first: lesson.first).update_all(first: lesson.id)
+        end
+      end
+      # Break the chains for the student roles
+      # for roles and tutroles, there can be multiple chain segments 
+      # within the chain block. For the first chain in the set,
+      # first and block will be equal. Subsequent segments has
+      # and block different. Block will identify all chain segments
+      # in this chain.
+      checkroles.each do |role|
+        flag_first_in_block   = role.id    == role.block ? true : false
+        flag_first_in_segment = role.id    == role.first ? true : false 
+        #flag_first_segment    = role.first == role.block ? true : false
+        # if first element in block, then nothing to do.
+        if !flag_first_in_block   # break chain, not first in block
+          # No matter where it it broken, the block needs updating
+          # this element id will become the block value for this block
+          #role_to_update_block = Role.where(block: role.block)
+          #Role.where(block: role.block).update_all(block: role.id)
+          if !flag_first_in_segment # not first element in segment
+            # this element id will become the first value for this segment
+            #role_to_update_first = Role.where(first: role.first)
+            Role.where(first: role.first).update_all(first: role.id)
+          end
+        end
+      end
+
+      checktutroles.each do |tutrole|
+        flag_first_in_block   = tutrole.id    == tutrole.block ? true : false
+        flag_first_in_segment = tutrole.id    == tutrole.first ? true : false 
+        #flag_first_segment    = tutrole.first == tutrole.block ? true : false
+        # if first element in block, then nothing to do.
+        if !flag_first_in_block   # break chain, not first in block
+          # No matter where it it broken, the block needs updating
+          # this element id will become the block value for this block
+          #tutrole_to_update_block = Tutrole.where(block: tutrole.block)
+          #Tutrole.where(block: tutrole.block).update_all(block: tutrole.id)
+          if !flag_first_in_segment # not first element in segment
+            # this element id will become the first value for this segment
+            #tutrole_to_update_first = Tutrole.where(first: tutrole.first)
+            Tutrole.where(first: tutrole.first).update_all(first: tutrole.id)
+          end
+        end
+      end
+      
+    end
+
+    # Get all the slots (ids) for the deletion period.
+    removeslots    = Slot.select(:id).where("timeslot < :end_date",
+                                            {end_date: @startdatetokeep})
+    # Get all the lessons (ids) in the slots for this deletion period.
+    removelessons  = Lesson.select(:id).where(slot_id: removeslots.map{|o| o.id})
     # Remove all the tutroles (tutors allocated) in these lessons
     #removetutroles = Tutrole.select(:id).where(lesson_id: removelessons.map{|o| o.id})
     Tutrole.where(lesson_id: removelessons.map{|o| o.id}).delete_all
@@ -476,6 +688,7 @@ class AdminsController < ApplicationController
     @result = "Completed."
     
   end
+
 
 #---------------------------------------------------------------------------
 #
@@ -2656,7 +2869,501 @@ end
         logger.debug "flagupdate: " + flagupdate.inspect + " db_tutor: " + db_tutor.inspect
         if flagupdate == 1                   # something changed - need to save
           if db_tutor.save
+            logger.debug "db_tutent_id: student.id, 
+                                                      status: 'scheduled',
+                                                      kind: @blockRoles[0].kind,
+                                                      first: thisroleid,
+                                                      block: thisroleid)
+                      
+                      #byebug
+                      if @blockRoles[0].student.status == 'fortnightly'
+                        if @blockRoles[0].status == 'bye'
+                          @blockRoles[i].status = i.even? ? 'bye' : 'scheduled' 
+                        else
+                          @blockRoles[i].status = i.odd? ? 'bye' : 'scheduled' 
+                        end
+                      end
+                      logger.debug "@blockRoles ( " + i.to_s + "): " + @blockRoles[i].inspect
+                    end
+                    (0..mycopynumweeks+1).reverse_each do |i|
+                      # the last entity in chain will have next = nil by default, do not populate.
+                      @blockRoles[i].next = @blockRoles[i+1].id unless i == mycopynumweeks+1  
+                      if @blockRoles[i].save
+                        @results.push "created role " + @blockRoles[i].inspect
+                      else
+                        @results.push "FAILED creating role " + @blockRoles[i].inspect + 
+                                      "ERROR: " + @blockRoles[i].errors.messages.inspect
+                      end
+                      # the last entity in chain is the week + 1 entry. 
+                      # block will be set to self.
+                      ### This strategy is now changed.
+                      ### Week Plus One (WPO) is now identified in the slots
+                      ### Block now picks up all the items in the chain as first
+                      ### will change often as moves are done. Block is the only way
+                      ### to pick up all historical entries in the chain.
+                      ###if i == mycopynumweeks+1
+                      ###  @blockRoles[i].block = @blockRoles[i].id if i == mycopynumweeks+1  
+                      ###  if @blockRoles[i].save
+                      ###    @results.push "updated role :block " + @blockTutroles[i].inspect
+                      ###  else
+                      ###    @results.push "FAILED updating role block " + @blockTutroles[i].inspect + 
+                      ###                  "ERROR: " + @blockRoles[i].errors.messages.inspect
+                      ###  end
+                      ###end
+                    end
+                  end
+                end
+              end
+            end
+          end
+        end        
+      end
+    end
+
+    # Now need to break the chains 
+    # Remember that week + 1 is in the old chain.
+    # Need to find previous link in the chain and set entity.next to nil.
+    #@allCopiedSlotsIds    = Array.new
+    #@allCopiedLessonsIds  = Array.new
+    #@allCopiedRolesIds    = Array.new
+    #@allCopiedTutrolesIds = Array.new
+
+    Slot.where(next: @allCopiedSlotsIds).update_all(next: nil)
+    Lesson.where(next: @allCopiedLessonsIds).update_all(next: nil)
+    Role.where(next: @allCopiedRolesIds).update_all(next: nil)
+    Tutrole.where(next: @allCopiedTutrolesIds).update_all(next: nil)
+    
+    # Now remove the wpo flag for this initial wpo
+    byebug
+    Slot.where(id: @allCopiedSlotsIds).update_all(wpo: nil)
+
+  end
+
+#---------------------------------------------------------------------------
+#
+#   Load Tutors
+#
+#---------------------------------------------------------------------------
+  # GET /admins/loadtutors
+  def loadtutors
+    #service = googleauthorisation(request)
+    returned_authorisation = googleauthorisation(request)
+    if returned_authorisation["authorizationurl"]
+      redirect_to returned_authorisation["authorizationurl"] and return
+    end
+    service = returned_authorisation["service"]
+    spreadsheet_id = current_user[:ssurl].match(/spreadsheets\/d\/(.*?)\//)[1]
+    #spreadsheet_id = '1CbtBqeHyYb9jRmROCgItS2eEaYSwzOMpQZdUWLMvjng'
+    logger.debug 'about to read spreadsheet - service ' + service.inspect
+    # Need some new code to cater for variation in the spreadsheet columns.
+    # Will build an array with 'column names' = 'column numbers'
+    # This can then be used to identify columns by name rather than numbers.
+    #
+    #this function converts spreadsheet indices to column name
+    # examples: e[0] => A; e[30] => AE 
+    e=->n{a=?A;n.times{a.next!};a}  
+    columnmap = Hash.new  # {'column name' => 'column number'}
+    range = "TUTORS!A3:LU3"
+    response = service.get_spreadsheet_values(spreadsheet_id, range)
+    headerrow = response.values[0]
+    logger.debug "response: " + headerrow.inspect
+    headerrow.each_with_index do |value, index| 
+      columnmap[value] = index
+    end
+    logger.debug "columnmap: " + columnmap.inspect
+    #readcolumns = Array.new
+
+    #  pname:     t[1],
+    #  subjects:  t[2],
+    #  phone:     t[3],
+    #  email:     t[4],
+    #  sname:     t[5],
+    #  comment:   t[6],
+    
+    # Derived fields
+    #  status:        "active" unless prefixed with zz..
+    #  firstaid:     "yes" if name has suffix +
+    #  firstsesson:  "yes" if name has suffix *
+
+    readcolumns = [   'NAME + INITIAL',
+                      'SUBJECTS',
+                      'MOBILE',
+                      'EMAIL',
+                      'SURNAME',
+                      'NOTES'
+                  ]
+    colerrors = ""
+    readcolumns.each_with_index do |k, index|
+      unless columnmap[k] 
+        colerrors += k + ':'
+      end  
+    end
+    # ensure we can read all the required spreadsheet column
+    # if not, terminate and provide a user message
+    unless colerrors.length == 0   # anything put into error string
+      colerrors = "Load Tutors - not all columns are findable: " + colerrors
+      redirect_to load_path, notice: colerrors
+      return
+    end
+    # have everything we need, load the tutors from the spreadsheet
+    # placing info into @tutors.
+    startrow = 4            # row where the loaded data starts    
+    flagFirstPass = 1
+    readcolumns.each_with_index do |k, index|
+        columnid = e[columnmap[k]]
+        range = "TUTORS!#{columnid}#{startrow}:#{columnid}"
+        response = service.get_spreadsheet_values(spreadsheet_id, range)
+        if flagFirstPass == 1
+          @tutors = Array.new(response.values.length){Array.new(9)}
+          for rowcount in 0..response.values.count-1 
+      	    @tutors[rowcount][0] = rowcount + startrow
+          end
+          flagFirstPass = 0
+        end
+        #rowcount = 0
+        #response.values.each do |r|
+        #for rowcount in 0..response.values.count 
+        response.values.each_with_index do |c, rowindex|
+    	    @tutors[rowindex ][index + 1] = c[0]
+    	          #bc = v.effective_format.background_color
+    	          #logger.debug  "background color: red=" + bc.red.to_s +
+    	          #              " green=" + bc.green.to_s +
+    		        #              " blue=" + bc.blue.to_s
+        end 
+    end
+
+    #logger.debug "tutors: " + @tutors.inspect
+    # Now to update the database
+    loopcount = 0
+    @tutors.each do |t|                 # step through all tutors from the spreadsheet
+      t[7] = ""
+      pname = t[1]
+      logger.debug "pname: " + pname.inspect
+      if pname == ""  || pname == nil
+        t[7] = t[7] + "invalid pname - do nothing"
+        next
+      end
+      # determine status from name content - been marked by leading z...
+      thisstatus = "active"
+      if m = pname.match(/(^z+)(.+)$/)   # removing leading z..  (inactive entries)
+        pname = m[2].strip
+        thisstatus = "inactive"
+        #t[1] = pname
+      end
+      # look for + (firstaid:) * (firstsession) at end of pname 
+      # (first aid trained or first session trained)
+      thisfirstaid = 'no'
+      thisfirstlesson = 'no'
+      if m = pname.match(/([+* ]+)$/)
+        thisfirstaid    = (m[1].include?('+') ? 'yes' : 'no')
+        thisfirstlesson = (m[1].include?('*') ? 'yes' : 'no')
+        pname = pname.gsub($1, '') unless $1.strip.length == 0
+      end
+      pname = pname.strip
+      
+      db_tutor = Tutor.find_by pname: pname
+      if(db_tutor)   # already in the database
+        flagupdate = 0                  # detect if any fields change
+        updatetext = ""
+        if db_tutor.comment != t[6]
+          db_tutor.comment   = t[6]
+          flagupdate = 1
+          updatetext = updatetext + " - comment"  
+        end
+        if db_tutor.sname != t[5]
+          db_tutor.sname   = t[5]
+          flagupdate = 1
+          updatetext = updatetext + " - sname"  
+        end
+        if db_tutor.email != t[4]
+          db_tutor.email   = t[4]
+          flagupdate = 1
+          updatetext = updatetext + " - email"  
+        end
+        if db_tutor.phone != t[3]
+          db_tutor.phone   = t[3]
+          flagupdate = 1
+          updatetext = updatetext + " - phone"  
+        end
+        if db_tutor.subjects != t[2]
+          db_tutor.subjects   = t[2]
+          flagupdate = 1
+          updatetext = updatetext + " - subjects"  
+        end
+        if db_tutor.status != thisstatus 
+          db_tutor.status   = thisstatus
+          flagupdate = 1
+          updatetext = updatetext + " - status"  
+        end
+        if db_tutor.firstaid != thisfirstaid 
+          db_tutor.firstaid   = thisfirstaid
+          flagupdate = 1
+          updatetext = updatetext + " - firstaid"  
+        end
+        if db_tutor.firstlesson != thisfirstlesson
+          db_tutor.firstlesson   = thisfirstlesson
+          flagupdate = 1
+          updatetext = updatetext + " - firstlesson"  
+        end
+        logger.debug "flagupdate: " + flagupdate.inspect + " db_tutor: " + db_tutor.inspect
+        if flagupdate == 1                   # something changed - need to save
+          if db_tutor.save
             logger.debug "db_tutor saved changes successfully"
+            t[7] = t[7] + "updated" + updatetext  
+          else
+            logger.debug "db_tutor saving failed - " + @db_tutor.errors
+            t[7] = t[7] + "failed to create"
+          end
+        else
+            t[7] = t[7] + "no changes"
+        end
+      else
+        # This tutor is not in the database - so need to add it.
+        @db_tutor = Tutor.new(
+                              pname:        pname,
+                              subjects:     t[2],
+                              phone:        t[3],
+                              email:        t[4],
+                              sname:        t[5],
+                              comment:      t[6],
+                              status:       thisstatus,
+                              firstlesson:  thisfirstlesson,
+                              firstaid:     thisfirstaid
+                            )
+        #if pname =~ /^zz/                   # the way they show inactive tutors
+        #if t[1] =~ /^zz/                   # the way they show inactive tutors
+        #  @db_tutor.status = "inactive"
+        #end
+        logger.debug "new - db_tutor: " + @db_tutor.inspect
+        if @db_tutor.save
+          logger.debug "db_tutor saved successfully"
+          t[7] = t[7] + "created"  
+        else
+          logger.debug "db_tutor saving failed - " + @db_tutor.errors.inspect
+          t[7] = t[7] + "failed to create"
+        end
+      end
+      #exit
+      if loopcount > 5
+        #break
+      end
+      loopcount += 1
+    end
+    #exit
+  end
+
+#---------------------------------------------------------------------------
+#
+#   Load Students
+#
+#---------------------------------------------------------------------------
+  # GET /admins/loadstudents
+  def loadstudents
+    #service = googleauthorisation(request)
+    returned_authorisation = googleauthorisation(request)
+    if returned_authorisation["authorizationurl"]
+      redirect_to returned_authorisation["authorizationurl"] and return
+    end
+    service = returned_authorisation["service"]
+    #spreadsheet_id = '1CbtBqeHyYb9jRmROCgItS2eEaYSwzOMpQZdUWLMvjng'
+    spreadsheet_id = current_user[:ssurl].match(/spreadsheets\/d\/(.*?)\//)[1]
+    logger.debug 'about to read spreadsheet'
+    startrow = 3
+    # first get the 3 columns - Student's Name + Year, Focus, study percentages
+    range = "STUDENTS!A#{startrow}:C"
+    response = service.get_spreadsheet_values(spreadsheet_id, range)
+    @students = Array.new(response.values.length){Array.new(11)}
+    #logger.debug "students: " + @students.inspect
+    basecolumncount = 1    #index for loading array - 0 contains spreadsheet row number
+    rowcount = 0			   
+    response.values.each do |r|
+        #logger.debug "============ row #{rowcount} ================"
+        #logger.debug "row: " + r.inspect
+        colcount = 0
+        @students[rowcount][0] = rowcount + startrow
+        r.each do |c|
+          #logger.debug "============ cell value for column #{colcount} ================"
+    	    #logger.debug "cell value: " + c.inspect
+    	    @students[rowcount][basecolumncount + colcount] = c
+    		  colcount = colcount + 1
+        end
+        rowcount = rowcount + 1
+    end
+    basecolumncount += 3
+    # second get the 1 column - email
+    range = "STUDENTS!E#{startrow}:E"
+    response = service.get_spreadsheet_values(spreadsheet_id, range)
+    #logger.debug "students: " + @students.inspect
+    rowcount = 0			   
+    response.values.each do |r|
+        #logger.debug "============ row #{rowcount} ================"
+        #logger.debug "row: " + r.inspect
+        colcount = 0
+        r.each do |c|
+          #logger.debug "============ cell value for column #{colcount} ================"
+    	    #logger.debug "cell value: " + c.inspect
+    	    @students[rowcount][basecolumncount + colcount] = c
+    		  colcount = colcount + 1
+        end
+        rowcount = rowcount + 1
+    end
+    basecolumncount += 1
+    #third get the perferences and invcode
+    range = "STUDENTS!L#{startrow}:M"
+    response = service.get_spreadsheet_values(spreadsheet_id, range)
+    rowcount = 0
+    response.values.each do |r|
+        colcount = 0
+        r.each do |c|
+    	    @students[rowcount][basecolumncount + colcount] = c
+    		  colcount = colcount + 1
+        end
+        rowcount = rowcount + 1
+    end
+    basecolumncount += 2
+    #fourth get the 3 columns daycode, term 4, daycode
+    # these will be manipulated to get the savable daycode
+    range = "STUDENTS!P#{startrow}:R"
+    response = service.get_spreadsheet_values(spreadsheet_id, range)
+    rowcount = 0
+    response.values.each do |r|
+        colcount = 0
+        r.each do |c|
+    	    @students[rowcount][basecolumncount + colcount] = c
+    		  colcount = colcount + 1
+        end
+        rowcount = rowcount + 1
+    end
+    basecolumncount += 3
+    #logger.debug "students: " + @students.inspect
+    # Now to update the database
+    loopcount = 0                         # limit output during testing
+    @students.each do |t|                 # step through all ss students
+      pnameyear = t[1]
+      logger.debug "pnameyear: " + pnameyear.inspect
+      if pnameyear == ""  || pnameyear == nil
+        t[10] = "invalid pnameyear - do nothing"
+        next
+      end
+      #pnameyear[/^zz/] == nil ? status = "active" : status = "inactive"
+      name_year_sex = getStudentNameYearSex(pnameyear)
+      pname = name_year_sex[0]
+      year = name_year_sex[1]
+      sex = name_year_sex[2]
+      status = name_year_sex[3]
+      logger.debug "pname: " + pname + " : " + year + " : " +
+                   sex.inspect + " : " + status
+      # day code
+      # use term 3 code unless a term 4 code, then take term 4
+      t[9] == "" || t[9] == nil ? usedaycode = t[7] : usedaycode = t[9]
+      # check if alrady an entry in the database
+      # if so, update it. else create a new record.
+      db_student = Student.find_by pname: pname
+      if(db_student)   # already in the database
+        flagupdate = 0                  # detect if any fields change
+        updatetext = ""
+        # first get the 4 columns - 1. Student's Name + Year, 2. Focus,
+        #                           3. study percentages, 4. email
+        # now get the 5. perferences and 6. invcode
+        # now get the 7. daycode, 8. term 4, 9. daycode
+        if db_student.year != year
+          db_student.year = year
+          flagupdate = 1
+          updatetext = updatetext + " - year"  
+        end
+        if sex
+          if db_student.sex != sex
+            db_student.sex = sex
+            flagupdate = 1
+            updatetext = updatetext + " - sex (" + sex + ")"
+          end
+        end
+        if db_student.comment != t[2]
+          db_student.comment = t[2]
+          flagupdate = 1
+          updatetext = updatetext + " - comment"  
+        end
+        if db_student.study != t[3]
+          db_student.study = t[3]
+          flagupdate = 1
+          updatetext = updatetext + " - study percentages"  
+        end
+        if db_student.email != t[4]
+          db_student.email = t[4]
+          flagupdate = 1
+          updatetext = updatetext + " - email"  
+        end
+        if db_student.preferences != t[5]
+          db_student.preferences = t[5]
+          flagupdate = 1
+          updatetext = updatetext + " - preferences"  
+        end
+        if db_student.invcode != t[6]
+          db_student.invcode = t[6]
+          flagupdate = 1
+          updatetext = updatetext + " - invoice code"  
+        end
+        if db_student.daycode != usedaycode
+          db_student.daycode = usedaycode
+          flagupdate = 1
+          updatetext = updatetext + " - day code"  
+        end
+        if db_student.status != status
+          db_student.status = status
+          flagupdate = 1
+          updatetext = updatetext + " - status"  
+        end
+        logger.debug "flagupdate: " + flagupdate.inspect + " db_student: " + db_student.inspect
+        if flagupdate == 1                   # something changed - need to save
+          if db_student.save
+            logger.debug "db_student saved changes successfully"
+            t[10] = "updated #{db_student.id} " + updatetext   
+          else
+            logger.debug "db_student saving failed - " + @db_student.errors
+            t[10] = "failed to update"
+          end
+        else
+            t[10] = "no changes"
+        end
+      else
+        # This Student is not in the database - so need to add it.
+        #
+        # first get the 4 columns - 1. Student's Name + Year, 2. Focus,
+        #                           3. study percentages, 4. email
+        # now get the 5. perferences and 6. invcode
+        # now get the 7. daycode, 8. term 4, 9. daycode
+        @db_student = Student.new(
+                              pname:        pname,
+                              year:         year,
+                              comment:      t[2],
+                              study:        t[3],
+                              email:        t[4],
+                              preferences:  t[5],
+                              invcode:      t[6],
+                              daycode:      usedaycode,
+                              status:       status,
+                              sex:          sex
+                            )
+        logger.debug "new - db_student: " + @db_student.inspect
+        if @db_student.save
+          logger.debug "db_student saved successfully"
+          t[10] = "created #{@db_student.id}"  
+        else
+          logger.debug "db_student saving failed - " + @db_student.errors.inspect
+          t[10] = "failed to create"
+        end
+      end
+      #exit
+      if loopcount > 2
+        #break
+      end
+      loopcount += 1
+    end
+  end
+
+#---------------------------------------------------------------------------
+#
+#   Load Students    ---    second veror saved changes successfully"
             t[7] = t[7] + "updated" + updatetext  
           else
             logger.debug "db_tutor saving failed - " + @db_tutor.errors
@@ -3146,9 +3853,6 @@ end
       if s[1] == ""       # no record in the db according to the spreadsheet
         # Will need to be created. Need main values as opposed to
         # update primary values (ignore spreadsheet 'update' values).
-
-        
-        
     sion
 #   Goggle spreadsheet changed dramatically in  Term 2 2017
 #   Dropped out a number of fields -now only has three columns

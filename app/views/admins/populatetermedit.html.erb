@@ -1,0 +1,43 @@
+<h1>Admin Controller - Copy term weeks in the scheduler</h1>
+
+<p>WPO (Week Plus One) slots<br>
+- First: <%= @slotwpofirst.timeslot.inspect %><br>
+- Last : <%= @slotwpolast.timeslot.inspect %></p>
+<% if @slotwpoweeks.count > 1%>
+<p> You have an issue with the database. WPO is spread over more than one week.<br>
+This opertion cannot be executed.</p>
+<% else %>
+<br>
+<p>This copies weeks suitable for propagating relevant sessions, tutors and students for populating term information.</p>
+<br>
+    <%
+    # Love this very straight forward tutorial on forms
+    # https://www.theodinproject.com/courses/ruby-on-rails/lessons/form-basics
+    %>
+    
+    <% #byebug %>
+    
+    <%= form_tag("populateterm", method: "get") do %>
+      The schedule will be copied from an already populated week (wpo):<br>
+        <%= @slotwpofirst.timeslot.inspect %><br>
+
+      Number of weeks in this term:<br>
+      <%= label_tag("copy[num_weeks]", "Number of weeks in term:") %>
+      <% if params["num_weeks"].nil? %>
+        <%= number_field_tag("copy[num_weeks]", '10', min:2) %>
+      <% else %>
+        <%= number_field_tag("copy[num_weeks]", params["num_weeks"]) %>
+      <% end %><br>  
+      
+      Then it will be copied into one more week for the beginning of the following term:<br> 
+      <%= label_tag("copy[first_week]", "Start date of next term:") %>
+      <% if params["first_week"].nil? %>
+        <%= date_field_tag("copy[first_week]") %>
+      <% else %>
+        <%= date_field_tag("copy[first_week]", params["first_week"]) %>
+      <% end %><br>
+      <%= submit_tag("Copy") %>
+    <% end %>
+
+<% end %>
+    

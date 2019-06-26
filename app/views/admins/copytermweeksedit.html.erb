@@ -1,4 +1,9 @@
 <h1>Admin Controller - Copy term weeks in the scheduler</h1>
+
+<p>WPO (Week Plus One) slots<br>
+- First: <%= @slotwpofirst.timeslot.inspect %><br>
+- Last : <%= @slotwpolast.timeslot.inspect %></p>
+<br>
 <p>This copies weeks suitable for propagating relevant sessions, tutors and students for populating term information.</p>
 <br>
     <%
@@ -19,7 +24,7 @@
       picking up this number of days in the copied from week:<br>
       <%= label_tag("copy[num_days]", "Number of days to copy:") %>
       <% if params["num_days"].nil? %>
-        <%= number_field_tag("copy[num_days]", '1', min:1) %>
+        <%= number_field_tag("copy[num_days]", '7', min:1) %>
       <% else %>
         <%= number_field_tag("copy[num_days]", params["num_days"]) %>
       <% end %><br>  
@@ -32,8 +37,8 @@
         <%= date_field_tag("copy[to]", params["to"]) %>
       <% end %><br>
 
-      And copied repeately into this many continuous weeks:<br>
-      <%= label_tag("copy[num_weeks]", "Number of weeks to populate:") %>
+      And copied repeately into this many continuous weeks (i.e. number of weeks in the term):<br>
+      <%= label_tag("copy[num_weeks]", "Number of weeks in term:") %>
       <% if params["num_weeks"].nil? %>
         <%= number_field_tag("copy[num_weeks]", '1', min:1) %>
       <% else %>

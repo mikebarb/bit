@@ -59,10 +59,13 @@ Rails.application.routes.draw do
   get 'admins/copytermdays' => 'admins#copytermdays', as: :copytermdays
   get 'admins/copytermweeksedit' => 'admins#copytermweeksedit', as: :copytermweeksedit
   get 'admins/copytermweeks' => 'admins#copytermweeks', as: :copytermweeks
+  get 'admins/populatetermedit' => 'admins#populatetermedit', as: :populatetermedit
+  get 'admins/populateterm' => 'admins#populateterm', as: :populateterm
   get 'admins/deletedaysedit' => 'admins#deletedaysedit', as: :deletedaysedit
   get 'admins/deletedays' => 'admins#deletedays', as: :deletedays
   get 'admins/deleteolddataedit' => 'admins#deleteolddataedit', as: :deleteolddataedit
   get 'admins/deleteolddata' => 'admins#deleteolddata', as: :deleteolddata
+  get 'admins/checkchains' => 'admins#checkchains', as: :checkchains
 
   post 'removetutorfromlesson' => 'tutroles#removetutorfromlesson', as: :removetutorfromlesson
   post 'tutorcopylesson'       => 'tutroles#tutorcopylesson',       as: :tutorcopylesson
