@@ -305,9 +305,9 @@ class AdminsController < ApplicationController
     checktutroleblocks = Tutrole.select(:block).where.not(block: nil).distinct
     @numberofblocks_tutroles = checktutroleblocks.count
     # Now check each block
-    flagerror = false
     count = 0
     checktutroleblocks.each do |firsttutrole|   # step through blocks - one by one 
+      flagerror = false
       count += 1
       #break if count > 2
       thisblock = Tutrole.where(block: firsttutrole.block)  # all links in the block
@@ -348,16 +348,17 @@ class AdminsController < ApplicationController
                        "segment has no valid first link")
           flagerror = true
         end
-        unless segmentlast.has_key?(k)          # has a valid first link
+        unless segmentlast.has_key?(k)          # has a valid terminating link
           @errors.push(firsttutrole.block.to_s + " block " + k.to_s +
-                       "segment has no valid termination")
-          flagerror = true
+                       " segment has no valid termination")
+          #flagerror = true  # don't terminate as can be fixed.
         end
       end
       next if flagerror           # if any errors so far, go to next block
                 
       # Now check segment flows
       # above checks make this simpler - begin and end are trusted
+      linkcount = 0   # get scope at this level
       segmentcount.each do |k,v|    # checking every segment
         thislink = blockindex[k]    # first link in segment
         # now setup through rest of this chain checking flows and length
@@ -368,16 +369,39 @@ class AdminsController < ApplicationController
             thislink = blockindex[thislink.next]  # select next link
             linkcount += 1                        # count link processed in segment
           else                                    # error - expected link not found
-            @errors.push(firsttutrole.first.to_s +  " segment expected link not found " + thislink.inspect)
-            @keepshortchaintutrole.push(firsttutrole.first)
+            @errors.push(firsttutrole.block.to_s + " block " + k.to_s +
+                         " segment expected link not found " + thislink.id.to_s)
+            @keepshortchaintutrole.push(k)
             flagerror = true
+          end
+          if linkcount == segmentcount[k] &&  # now processed all stored links in segment
+             !thislink.next.nil?              # and this last link is not nil terminated
+            @errors.push(firsttutrole.block.to_s + " block " + k.to_s +
+                         " segment last link is not null terminated " + thislink.id.to_s)
+            @keepshortchaintutrole.push(k)
+            flagerror = true
+            if (!(thislink.next.nil?))              # but is not nil terminated
+              if flagFixNilTerminate
+                @errors.push(firsttutrole.block.to_s + " block " + k.to_s +
+                             " FIXING - segment last link requires nil termination " +
+                             thislink.id.to_s)
+                thislink.next = nil
+                thislink.save
+              else
+                @errors.push(firsttutrole.block.to_s + " block " + k.to_s +
+                             " segment last link requires nil termination " +
+                             thislink.id.to_s)
+              end
+            end
+            break
           end
         end
         # segmented terminated - check links processed matches no. of links found
         # for this segment in the database
-        if linkcount != segmentcount[thislink]   # length decrepency
-          @errors.push(firsttutrole.first.to_s +  " segment expected link not found " + thislink.inspect)
-          @keepshortchaintutrole.push(firsttutrole.first)
+        if linkcount != segmentcount[k]   # length decrepency
+          @errors.push(firsttutrole.block.to_s + " block " + k.to_s +  
+                       " segment has wrong length " + thislink.inspect)
+          @keepshortchaintutrole.push(k)
           flagerror = true
         end
         @tutrolelinkerroroccurred = true if flagerror == true
