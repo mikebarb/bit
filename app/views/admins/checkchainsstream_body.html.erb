@@ -1,0 +1,12 @@
+<% 
+mydata.each do |s| 
+%><p><% 
+  if s.respond_to?('each') 
+    s.each do |e| 
+      %> <%= e %> <%
+    end
+  else
+    %><%= s %><%
+  end
+%></p><%
+end %>

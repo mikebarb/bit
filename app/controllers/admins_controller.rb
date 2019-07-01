@@ -1,6 +1,7 @@
 class AdminsController < ApplicationController
   include Googleutilities
   include Calendarutilities
+  include ActionController::Live
 
   #skip_before_action :authenticate_user!, only: [:home]
   #before_filter :set_user_for_models
@@ -34,6 +35,9 @@ class AdminsController < ApplicationController
 #---------------------------------------------------------------------------
 #
 #   Check Chains
+#   This function checks the database for integrity of chains
+#   for slots, lessons, tutroles (tutors in lessons) and 
+#   roles (students in lessons)
 #
 #---------------------------------------------------------------------------
   # GET /admins/checkchains
@@ -48,54 +52,80 @@ class AdminsController < ApplicationController
     @slotwpolast = Slot.select(:timeslot).where.not(wpo: nil).order(:timeslot).last
     
     # Checking  options
-    flagCheckwpos              = false    # true to check, false to ignore
-    flagCheckSlots             = false
-    flagCheckLessons           = false
-    flagCheckTutroles          = false
+    @flagCheckwpos              = true    # true to check, false to ignore
+    @flagCheckSlots             = true
+    @flagCheckLessons           = true
+    @flagCheckTutroles          = true
+    @flagCheckRoles             = true
     
-    flagCheckNilTerminate      = false    # true to fix, false to monitor
-    flagCheckLessonDisconnects = false    # true to fix, false to monitor
-    flagcheckshortchains       = false    # true to fix, false to monitor
-
     # Fixing options
     flagFixNilTerminate        = true    # true to fix, false to monitor
     flagFixLessonDisconnects   = true    # true to fix, false to monitor
-    flagfixwpos                = true     # true to fix, false to monitor
+    flagfixwpos                = true    # true to fix, false to monitor
 
     @errors              = Array.new   # keep track of errors.
     @displayshort        = Array.new
     @displayshortlesson  = Array.new
-    @displayshorttutrole = Array.new
 
+    #@domchange['html_partial'] = render_to_string("calendar/_stats_students.html",
+    #                    :formats => [:html], :layout => false)
+    mydisplay = render_to_string("admins/checkchainsstream_head.html", :formats => [:html])
+    response.stream.write mydisplay
+    @errors.clear
+    
+    
     #----------------- show wpo entries -------------------------------
-    @wpos = Array.new
-    if flagCheckwpos
-      # wpo = week + one
+    # wpo = week + one   - the first week in the following term
+    @errors = Array.new
+    @numberoferrors_wpos = 0  
+    if @flagCheckwpos
+      @errors.push("------------------- Check wpo (week + 1) ----------------")
       wposlots = Slot.where.not(wpo: nil).order(:location, :timeslot)
       #@wpos = wposlots.map{|o| [o.id, o.wpo, o.first, o.location, o.timeslot]}  
+      #@errors.push(['id', 'wpo', 'first', 'location', 'timeslot'])
+      flagerror =flagerrorfirst = false 
       wposlots.each do |s|
-        if s.first == s.wpo   # this should not happen  
-          @wpos.push([s.id, s.wpo, s.first, s.location, s.timeslot, "problem case"])
+        if flagerror                 # found error on last pass               
+          @numberoferrors_wpos += 1  # count in wpo erros
+          flagerror = false          # and reset ready for this pass
+        end
+        if s.first == s.wpo   # this should not happen
+          @errors.push(['id', 'wpo', 'first', 'location', 'timeslot']) unless flagerrorfirst
+          flagerrorfirst = flagerror = true
+          @errors.push([s.id, s.wpo, s.first, s.location, s.timeslot, "problem case"])
           if flagfixwpos
-            @wpos.push("Fix this wpo - set to nil")
+            @errors.push("Fixing this wpo - set wpo field to nil")
             s.wpo = nil
             s.save
           end
         else
-          @wpos.push([s.id, s.wpo, s.first, s.location, s.timeslot])
+          #@errors.push([s.id, s.wpo, s.first, s.location, s.timeslot])
         end
       end
-    end    
+      @numberoferrors_wpos += 1 if flagerror  # count error on last pass
+      mydisplay = render_to_string("admins/checkchainsstream_body.html",
+                                   :formats => [:html], :layout => false,
+                                   locals: {mydata: @errors})
+      response.stream.write mydisplay
+      @errors.clear
+    end
 
     #----------------- slot chains -------------------------------
-    if flagCheckSlots    
+    @numberoferrors_slots = 0
+    if @flagCheckSlots    
+      @errors.push("------------------- Check slot chains ----------------")
       # deal with slots
+      flagerror = false    
       # get all the 'first' ids in the database 
       checkslotchains = Slot.select(:first).where.not(first: nil).distinct
       @numberofchains_slots = checkslotchains.count
       # Now check each chain
       checkslotchains.each do |firstslot|   # step through chains - one by one 
         #byebug
+        if flagerror     # found error in last pass of this chain
+          @numberoferrors_slots += 1   # keep count of chains with errors
+          flagerror = false            # reset for this pass
+        end
         thischain = Slot.where(first: firstslot.first)  # all links in the chain
         chainindex = Hash.new     # index chain links by link.id
         thischain.each do |link|
@@ -103,12 +133,14 @@ class AdminsController < ApplicationController
         end
         unless chainindex.has_key?(firstslot.first) # ensure first link exists!
           @errors.push(firstslot.first.to_s + " block " + firstslot.to_s + "is missing first link")
+          flagerror = true
           next     # finish work on this chain - go to next chain
         end
         thislink = chainindex[firstslot.first]    # now check the linkages flow
         if thislink.next.nil? # single link chain
           if chainindex.length != 1   # check that it should be
             @errors.push(firstslot.first.to_s + " chain too short " + thislink.inspect)
+            flagerror = true
           end
           next    # all OK - go to next chain
         end
@@ -122,302 +154,374 @@ class AdminsController < ApplicationController
           if thislink.next.nil? # last link in chain
             if chainindex.length != linkcount   # check that it should be
               @errors.push(firstslot.first.to_s +  " chain too short " + thislink.inspect)
+              flagerror = true
             end
             next    # all OK - go to next chain
           end
         end
         if chainindex.length != linkcount
           @errors.push(firstslot.first.to_s + "chain length error " + firstslot.inspect)
+          flagerror = true
         end
         if !thislink.next.nil?    # check last link encounted has next == nil
           @errors.push(firstslot.first.to_s + " chain not nil terminated " + thislink.inspect)
+          flagerror = true
           if flagFixNilTerminate
             thislink.next = nil
             thislink.save
           end
         end
-  
       end
+      @numberoferrors_slots += 1 if flagerror  # count error on last pass
+      @errors.push("Total Errors for SLOTS: " + @numberoferrors_slots.to_s)
+      mydisplay = render_to_string("admins/checkchainsstream_body.html",
+                                   :formats => [:html], :layout => false,
+                                   locals: {mydata: @errors})
+      response.stream.write mydisplay
+      @errors.clear
     end    
-    @numberoferrors_slots = @errors.count
+
     
     #----------------- lesson chains -------------------------------
-    if flagCheckLessons
-      @lessonlinkerroroccurred = false
+    @numberoferrors_lessons = 0
+    if @flagCheckLessons
+      @errors.push("------------------- Check lesson chains ----------------")
+      #@lessonlinkerroroccurred = false
       @keepshortchain = Array.new   # keep instances of short chain errors
-      #byebug
       # deal with lessons
       # get all the 'first' ids in the database 
       checklessonchains = Lesson.select(:first).where.not(first: nil).distinct
       @numberofchains_lessons = checklessonchains.count
       # Now check each chain
+      flagerror = false
       count = 0
       checklessonchains.each do |firstlesson|   # step through chains - one by one 
         count += 1
         #break if count > 100
-        #byebug
+        if flagerror
+          @numberoferrors_lessons += 1 
+          flagerror = false
+        end
         thischain = Lesson.where(first: firstlesson.first)  # all links in the chain
         chainindex = Hash.new     # index chain links by link.id
         thischain.each do |link|
           chainindex[link.id] = link
         end
+        # check that each chain has a first link that exists
         unless chainindex.has_key?(firstlesson.first) # ensure first link exists!
           @errors.push(firstlesson.first.to_s + " block " + firstlesson.to_s + "is missing first link")
-          next     # finish work on this chain - go to next chain
+          flagerror = true
+          next     # finish processing this chain - not much point checking anything else
         end
+        # check chain flow through the links        
         thislink = chainindex[firstlesson.first]    # now check the linkages flow
-        if thislink.next.nil? # single link chain
-          if chainindex.length != 1   # check that it should be
-            @errors.push(firstlesson.first.to_s + " chain should be multiple links " + thislink.inspect)
-            @keepshortchain.push(firstlesson.first)
-            flagerror = true
-          end
-          next    # all OK - go to next chain
-        end
+        #if thislink.next.nil? # single link chain
+        #  if chainindex.length != 1   # check that it should be
+        #    @errors.push(firstlesson.first.to_s + " chain should be multiple links " + thislink.inspect)
+        #    @keepshortchain.push(firstlesson.first)
+        #    flagerror = true
+        #  end
+        #  next    # all OK - go to next chain
+        #end
         
-        if flagCheckLessonDisconnects
-          # now setup through rest of this chain checking flows and length
-          linkcount = 1
-          flagerror = false
-          while chainindex.has_key?(thislink.next)  # next link exists 
-            #byebug
-            thislink = chainindex[thislink.next]    # select next link
-            linkcount += 1
-            if thislink.next.nil?                   # last link in chain
-              if chainindex.length != linkcount     # check that it should be
-                #byebug
-                @errors.push(firstlesson.first.to_s +  " chain nil terminated - too short" + thislink.inspect)
-                @keepshortchain.push(firstlesson.first)
-                flagerror = true
-              end
-              next    # all OK - go to next link
+        # now step through rest of this chain checking flows and length
+        linkcount = 1
+        flagflowerror = false
+        while !thislink.next.nil? &&              # not last link in chain
+              chainindex.has_key?(thislink.next)  # next link exists 
+          thislink = chainindex[thislink.next]    # select next link
+          linkcount += 1
+          if thislink.next.nil?                   # last link in chain (is nil)
+            if chainindex.length != linkcount     # check that it should be
+              @errors.push(firstlesson.first.to_s +  " chain nil terminated - too short" + thislink.inspect)
+              @keepshortchain.push(firstlesson.first)
+              flagflowerror = true
             end
+            break   # break out of this flow check - even if good or bad.
           end
-          if !flagerror && (chainindex.length != linkcount)
-            @errors.push(firstlesson.first.to_s + " chain length error " + firstlesson.inspect)
-            @keepshortchain.push(firstlesson.first)
-            flagerror = true
+        end
+        if !flagflowerror && (chainindex.length != linkcount)
+          @errors.push(firstlesson.first.to_s + " chain length error " + firstlesson.inspect)
+          @keepshortchain.push(firstlesson.first)
+          flagflowerror = true
+        end
+        if !thislink.next.nil?    # check last link encounted has next == nil
+          @errors.push(firstlesson.first.to_s + " chain not nil terminated " + thislink.inspect)
+          #@keepshortchain.push(firstlesson.first) unless flagflowerror
+          if flagFixNilTerminate
+            thislink.next = nil
+            thislink.save
           end
-          if !thislink.next.nil?    # check last link encounted has next == nil
-            @errors.push(firstlesson.first.to_s + " chain not nil terminated " + thislink.inspect)
-            @keepshortchain.push(firstlesson.first) unless flagerror
-            if flagFixNilTerminate
-              thislink.next = nil
-              thislink.save
-            end
-          end
-          @lessonlinkerroroccurred = true if flagerror == true
+        end
+        flagerror = true if flagflowerror 
+        @numberoferrors_lessons += 1 if flagerror
+        if((count % 500) == 0)
+          mydisplay = render_to_string("admins/checkchainsstream_body.html",
+                                       :formats => [:html], :layout => false,
+                                       locals: {mydata: @errors})
+          response.stream.write mydisplay
+          @errors.clear
         end
       end
-      
-      @numberoferrors_lessons = @errors.count - @numberoferrors_slots
+      @errors.push("Total Errors for Lessons: " + @numberoferrors_lessons.to_s)
+      mydisplay = render_to_string("admins/checkchainsstream_body.html",
+                                   :formats => [:html], :layout => false,
+                                   locals: {mydata: @errors})
+      response.stream.write mydisplay
+      @errors.clear
+      #byebug
+
+      # ---------- Now work through the short lesson chains -------------
       @displayshortlesson = Array.new
-      #return
       # analyse short chain errors
-      if flagCheckLessonDisconnects && flagcheckshortchains
-        @keepshortchain.each do |short|
-          firstlink = Lesson.find(short)
-          lessonchain = Lesson.includes(:slot, :students, :tutors).where(first: firstlink.first)  # all links in the chain
-          lessonchainindex = Hash.new     # index chain links by link.id
-          lessonchainnext = Hash.new
-          leftlinks = Hash.new
-          lessonchain.each do |link|
-            lessonchainindex[link.id] = link
-            lessonchainnext[link.next] = link
-            leftlinks[link.id] = link 
-          end
-          
-          # Put in a header for this chain      
-          @displayshortlesson.push("--------------------------------------------------------------------------------------")
-          @displayshortlesson.push(["slot_id", "location", "timeslot", "lesson id",
-                              "first", "next", "students", "tutors"])
-          # Work through this lesson chain
-          thislink = firstlink    # begin with the first link
+      @keepshortchain.each do |short|
+        firstlink = Lesson.find(short)
+        lessonchain = Lesson.includes(:slot, :students, :tutors).where(first: firstlink.first)  # all links in the chain
+        lessonchainindex = Hash.new     # index chain links by link.id
+        lessonchainnext = Hash.new
+        leftlinks = Hash.new
+        lessonchain.each do |link|
+          lessonchainindex[link.id] = link
+          lessonchainnext[link.next] = link
+          leftlinks[link.id] = link 
+        end
+        
+        # Put in a header for this chain      
+        @displayshortlesson.push("---------------------------------Short Chain-----------------------------------------------------")
+        @displayshortlesson.push(["slot_id", "location", "timeslot", "lesson id",
+                            "first", "next", "students", "tutors"])
+        # Work through this lesson chain
+        thislink = firstlink    # begin with the first link
+        @displayshortlesson.push([thislink.slot_id, thislink.slot.location,
+                            thislink.slot.timeslot, thislink.id,
+                            thislink.first, thislink.next,
+                            thislink.students.count, thislink.tutors.count])
+        leftlinks.delete(thislink.id)
+        while lessonchainindex.has_key?(thislink.next)  # now work through rest using next linkage 
+          thislink = lessonchainindex[thislink.next]    # select next link
           @displayshortlesson.push([thislink.slot_id, thislink.slot.location,
                               thislink.slot.timeslot, thislink.id,
                               thislink.first, thislink.next,
                               thislink.students.count, thislink.tutors.count])
           leftlinks.delete(thislink.id)
-          while lessonchainindex.has_key?(thislink.next)  # now work through rest using next linkage 
-            thislink = lessonchainindex[thislink.next]    # select next link
-            @displayshortlesson.push([thislink.slot_id, thislink.slot.location,
-                                thislink.slot.timeslot, thislink.id,
-                                thislink.first, thislink.next,
-                                thislink.students.count, thislink.tutors.count])
-            leftlinks.delete(thislink.id)
-            if thislink.next.nil?                         # ? last link in chain
-              break                                       # end of valid portion
+          if thislink.next.nil?                         # ? last link in chain
+            break                                       # end of valid portion
+          end
+        end
+        # Now process the invalid portion
+        disconnectedlessons = Array.new   # keep list of invalid lessons
+        flagpersonspresent = false
+        @displayshortlesson.push("Now disconnected from first chain links")
+        lastlink = nil                                  
+        while leftlinks.count > 0                       # ? while links left
+          leftlinks.each do |k, mylink|
+            if lessonchainnext.has_key?(mylink.id)
+              # OK thislink is part of chain ( there is a link before this  one)
+            else
+              # At the end of chain - though not set to nil
+              lastlink = mylink
+              break                                      # then keep it
             end
           end
-          # Now process the invalid portion
-          disconnectedlessons = Array.new   # keep list of invalid lessons
-          flagpersonspresent = false
-          @displayshortlesson.push("Now disconnected from first chain links")
-          lastlink = nil                                  
-          while leftlinks.count > 0                       # ? while links left
-            leftlinks.each do |k, mylink|
-              if lessonchainnext.has_key?(mylink.id)
-                # OK thislink is part of chain ( there is a link before this  one)
-              else
-                # At the end of chain - though not set to nil
-                lastlink = mylink
-                break                                      # then keep it
-              end
+          # now work our way BACK through the chain
+          while !lastlink.nil? && lessonchainindex.has_key?(lastlink.id)  # next link exists 
+            countstudents = lastlink.students.count
+            counttutors = lastlink.tutors.count
+            flagpersonspresent = true if countstudents + counttutors > 0
+            if lastlink.slot_id.nil?
+              @displayshortlesson.push([lastlink.slot_id, "-",
+                                  "-", lastlink.id, 
+                                  lastlink.first, lastlink.next, 
+                                  countstudents, counttutors])
+            else
+              @displayshortlesson.push([lastlink.slot_id, lastlink.slot.location,
+                                  lastlink.slot.timeslot, lastlink.id, 
+                                  lastlink.first, lastlink.next, 
+                                  countstudents, counttutors])
             end
-            # now work our way BACK through the chain
-            while !lastlink.nil? && lessonchainindex.has_key?(lastlink.id)  # next link exists 
-              countstudents = lastlink.students.count
-              counttutors = lastlink.tutors.count
-              flagpersonspresent = true if countstudents + counttutors > 0
-              if lastlink.slot_id.nil?
-                @displayshortlesson.push([lastlink.slot_id, "-",
-                                    "-", lastlink.id, 
-                                    lastlink.first, lastlink.next, 
-                                    countstudents, counttutors])
-              else
-                @displayshortlesson.push([lastlink.slot_id, lastlink.slot.location,
-                                    lastlink.slot.timeslot, lastlink.id, 
-                                    lastlink.first, lastlink.next, 
-                                    countstudents, counttutors])
-              end
-              leftlinks.delete(lastlink.id)
-              disconnectedlessons.push(lastlink.id)   # keep track of lessons to possibley be removed
-              lastlink = lessonchainindex[lastlink.next]             # select next link
-            end
-            if flagFixLessonDisconnects
-              if !flagpersonspresent  # NO tutors or students present in lessons
-                @displayshortlesson.push("removed lessons "+ disconnectedlessons.inspect )
-                Lesson.where(id: disconnectedlessons).delete_all
-              else
-                @displayshortlesson.push("CANNOT remove lessons as tutors or students present." )
-              end
+            leftlinks.delete(lastlink.id)
+            disconnectedlessons.push(lastlink.id)   # keep track of lessons to possibley be removed
+            lastlink = lessonchainindex[lastlink.next]             # select next link
+          end
+          if flagFixLessonDisconnects
+            if !flagpersonspresent  # NO tutors or students present in lessons
+              @displayshortlesson.push("removed lessons "+ disconnectedlessons.inspect )
+              Lesson.where(id: disconnectedlessons).delete_all
+            else
+              @displayshortlesson.push("CANNOT remove lessons as tutors or students present." )
             end
           end
         end
       end
+      @numberoferrors_lessons += 1 if flagerror  # count error on last pass
+      if @displayshortlesson.length > 0
+        mydisplay = render_to_string("admins/checkchainsstream_body.html",
+                                     :formats => [:html], :layout => false,
+                                     locals: {mydata: @displayshortlesson})
+        response.stream.write mydisplay
+        
+        mydisplay = render_to_string("admins/checkchainsstream_todo.html",
+                                     :formats => [:html], :layout => false)
+        response.stream.write mydisplay
+        
+      end
     end
     
-    #----------------- tutrole chains -------------------------------
+    #----------------- tutrole and tut chains -------------------------------
     @tutrolelinkerroroccurred = false
     @keepshortchaintutrole = Array.new   # keep instances of short chain errors
-    
-    # get all the 'first' ids in the database for tutroles (tutor related info) 
-    checktutroleblocks = Tutrole.select(:block).where.not(block: nil).distinct
-    @numberofblocks_tutroles = checktutroleblocks.count
-    # Now check each block
-    count = 0
-    checktutroleblocks.each do |firsttutrole|   # step through blocks - one by one 
+    @rolelinkerroroccurred = false
+    @keepshortchainrole = Array.new   # keep instances of short chain errors
+    [Tutrole, Role].each do |checkrole|
+      if checkrole == Tutrole
+        next unless @flagCheckTutroles
+        @errors.push("-------------------- Tutrole Checks -------------------------")
+        desc = " tutrole "
+      end
+      if checkrole == Role
+        next unless @flagCheckRoles
+        @errors.push("---------------------- Role Checks -----------------------")
+        desc = " role "
+      end
+      @checkrolelinkerroroccurred = false
+      @keepshortchaincheckrole = Array.new   # keep instances of short chain errors
+      # get all the 'first' ids in the database for tutroles (tutor related info) 
+      checkroleblocks = checkrole.select(:block).where.not(block: nil).distinct
+      @numberofblocks_tutroles = checkroleblocks.count
+      # Now check each block
+      count = 0
       flagerror = false
-      count += 1
-      #break if count > 2
-      thisblock = Tutrole.where(block: firsttutrole.block)  # all links in the block
-      blockindex = Hash.new      # track every link in the block - index by link id
-      segmentcount = Hash.new    # count links in segment - indexed by first link in segment
-      segmentfirst = Hash.new    # track first link for each segment
-      segmentlast = Hash.new     # track terminating link for each segment
-      thisblock.each do |link|   # step through evey link in block
-        blockindex[link.id] = link   # index to all links in block
-        # segment index - show each segment indexed by first link in segment
-        if segmentcount.has_key?(link.first)    # first link in segment
-          segmentcount[link.first] += 1         # count links in segment
-        else
-          segmentcount[link.first] = 1
+      @numberoferrors_checkrole = 0
+      checkroleblocks.each do |firstcheckrole|   # step through blocks - one by one 
+        if flagerror
+          @numberoferrors_checkrole += 1 
+          flagerror = false
         end
-        if link.first == link.id        # first link in segment
-          if segmentfirst.has_key?(link.first)
-            @errors.push(firsttutrole.block.to_s + " block " + link.first.to_s + "segment has duplicate first link")
-            flagerror = true
-            next #
+        count += 1
+        #break if count > 2
+        thisblock = checkrole.where(block: firstcheckrole.block)  # all links in the block
+        blockindex = Hash.new      # track every link in the block - index by link id
+        segmentcount = Hash.new    # count links in segment - indexed by first link in segment
+        segmentfirst = Hash.new    # track first link for each segment
+        segmentlast = Hash.new     # track terminating link for each segment
+        thisblock.each do |link|   # step through evey link in block
+          blockindex[link.id] = link   # index to all links in block
+          # segment index - show each segment indexed by first link in segment
+          if link.first.nil?       # this link is not a chain e.g. catchup
+            next                   # then no further chain processing for this link
+          end
+          if segmentcount.has_key?(link.first)    # first link in segment
+            segmentcount[link.first] += 1         # count links in segment
           else
-            segmentfirst[link.first] = link # keep track of segment first link
+            segmentcount[link.first] = 1
           end
-        end
-        if link.next.nil?        # terminating link
-          if segmentlast.has_key?(link.first)
-            @errors.push(firsttutrole.block.to_s + " block " + link.first.to_s + " segment has duplicate terminations")
-            flagerror = true
-          else
-            segmentlast[link.first] = link # keep track of segment terminations
-          end
-        end
-      end
-      #Do some elementaty sanity checkslotchains
-      segmentcount.each do |k,v|                 # checking every segment
-        unless segmentfirst.has_key?(k)          # has a valid first link
-          @errors.push(firsttutrole.block.to_s + " block " + k.to_s +
-                       "segment has no valid first link")
-          flagerror = true
-        end
-        unless segmentlast.has_key?(k)          # has a valid terminating link
-          @errors.push(firsttutrole.block.to_s + " block " + k.to_s +
-                       " segment has no valid termination")
-          #flagerror = true  # don't terminate as can be fixed.
-        end
-      end
-      next if flagerror           # if any errors so far, go to next block
-                
-      # Now check segment flows
-      # above checks make this simpler - begin and end are trusted
-      linkcount = 0   # get scope at this level
-      segmentcount.each do |k,v|    # checking every segment
-        thislink = blockindex[k]    # first link in segment
-        # now setup through rest of this chain checking flows and length
-        linkcount = 1
-        flagerror = false
-        while !thislink.next.nil?   # another link in segment expected
-          if blockindex.has_key?(thislink.next)   # next link is valid
-            thislink = blockindex[thislink.next]  # select next link
-            linkcount += 1                        # count link processed in segment
-          else                                    # error - expected link not found
-            @errors.push(firsttutrole.block.to_s + " block " + k.to_s +
-                         " segment expected link not found " + thislink.id.to_s)
-            @keepshortchaintutrole.push(k)
-            flagerror = true
-          end
-          if linkcount == segmentcount[k] &&  # now processed all stored links in segment
-             !thislink.next.nil?              # and this last link is not nil terminated
-            @errors.push(firsttutrole.block.to_s + " block " + k.to_s +
-                         " segment last link is not null terminated " + thislink.id.to_s)
-            @keepshortchaintutrole.push(k)
-            flagerror = true
-            if (!(thislink.next.nil?))              # but is not nil terminated
-              if flagFixNilTerminate
-                @errors.push(firsttutrole.block.to_s + " block " + k.to_s +
-                             " FIXING - segment last link requires nil termination " +
-                             thislink.id.to_s)
-                thislink.next = nil
-                thislink.save
-              else
-                @errors.push(firsttutrole.block.to_s + " block " + k.to_s +
-                             " segment last link requires nil termination " +
-                             thislink.id.to_s)
-              end
+          if link.first == link.id        # first link in segment
+            if segmentfirst.has_key?(link.first)
+              @errors.push(firstcheckrole.block.to_s + " block " + link.first.to_s +
+                           desc + "segment has duplicate first link")
+              flagerror = true
+              next #
+            else
+              segmentfirst[link.first] = link # keep track of segment first link
             end
-            break
+          end
+          if link.next.nil?        # terminating link
+            if segmentlast.has_key?(link.first)
+              @errors.push(firstcheckrole.block.to_s + " block " + link.first.to_s +
+                           desc + " segment has duplicate terminations")
+              flagerror = true
+            else
+              segmentlast[link.first] = link # keep track of segment terminations
+            end
           end
         end
-        # segmented terminated - check links processed matches no. of links found
-        # for this segment in the database
-        if linkcount != segmentcount[k]   # length decrepency
-          @errors.push(firsttutrole.block.to_s + " block " + k.to_s +  
-                       " segment has wrong length " + thislink.inspect)
-          @keepshortchaintutrole.push(k)
-          flagerror = true
+        #Do some elementaty sanity checks
+        segmentcount.each do |k,v|                 # checking every segment
+          unless segmentfirst.has_key?(k)          # has a valid first link
+            byebug
+            @errors.push(firstcheckrole.block.to_s + " block " + k.to_s +
+                         desc + "segment has no valid first link")
+            flagerror = true
+          end
+          unless segmentlast.has_key?(k)          # has a valid terminating link
+            @errors.push(firstcheckrole.block.to_s + " block " + k.to_s +
+                         desc + " segment has no valid termination")
+            #flagerror = true  # don't terminate as can be fixed.
+          end
         end
-        @tutrolelinkerroroccurred = true if flagerror == true
+        next if flagerror           # if any errors so far, go to next block
+                  
+        # Now check segment flows
+        # above checks make this simpler - begin and end are trusted
+        linkcount = 0   # get scope at this level
+        segmentcount.each do |k,v|    # checking every segment
+          thislink = blockindex[k]    # first link in segment
+          # now setup through rest of this chain checking flows and length
+          linkcount = 1
+          flagerror = false
+          while !thislink.next.nil?   # another link in segment expected
+            if blockindex.has_key?(thislink.next)   # next link is valid
+              thislink = blockindex[thislink.next]  # select next link
+              linkcount += 1                        # count link processed in segment
+            else                                    # error - expected link not found
+              @errors.push(firstcheckrole.block.to_s + " block " + k.to_s +
+                           desc + " segment expected link not found " + thislink.id.to_s)
+              @keepshortchaincheckrole.push(k)
+              flagerror = true
+            end
+            if linkcount == segmentcount[k] &&  # now processed all stored links in segment
+               !thislink.next.nil?              # and this last link is not nil terminated
+              @errors.push(firstcheckrole.block.to_s + " block " + k.to_s +
+                           desc + " segment last link is not null terminated " + thislink.id.to_s)
+              @keepshortchaincheckrole.push(k)
+              flagerror = true
+              if (!(thislink.next.nil?))              # but is not nil terminated
+                if flagFixNilTerminate
+                  @errors.push(firstcheckrole.block.to_s + " block " + k.to_s +
+                               " FIXING -" + desc + "segment last link requires nil termination " +
+                               thislink.id.to_s)
+                  thislink.next = nil
+                  thislink.save
+                else
+                  @errors.push(firstcheckrole.block.to_s + " block " + k.to_s +
+                               desc + " segment last link requires nil termination " +
+                               thislink.id.to_s)
+                end
+              end
+              break
+            end
+          end
+          # segmented terminated - check links processed matches no. of links found
+          # for this segment in the database
+          if linkcount != segmentcount[k]   # length decrepency
+            @errors.push(firstcheckrole.block.to_s + " block " + k.to_s +  
+                         desc + " segment has wrong length " + thislink.inspect)
+            @keepshortchaincheckrole.push(k)
+            flagerror = true
+          end
+          @checkrolelinkerroroccurred = true if flagerror == true
+        end
       end
+      #if checkrole == Tutrole
+      #  @tutrolelinkerroroccurred = @checkrolelinkerroroccurred
+      #  @keepshortchaintutrole = @keepshortchaincheckrole.dup   # keep instances of short chain errors
+      #else
+      #  @rolelinkerroroccurred = @checkrolelinkerroroccurred
+      #  @keepshortchainrole = @keepshortchaincheckrole.dup   # keep instances of short chain errors
+      #end
+      @errors.push("Total Number of" + desc + "errors: " +
+                   @numberoferrors_checkrole.to_s)
+      mydisplay = render_to_string("admins/checkchainsstream_body.html",
+                                   :formats => [:html], :layout => false,
+                                   locals: {mydata: @errors})
+      response.stream.write mydisplay
+      @errors.clear
+      @numberoferrors_checkrole = 0
+      @keepshortchaincheckrole.clear
     end
     
-    @errors.each do |o|
-      logger.debug o.inspect
-    end
-    logger.debug "-------------------------------------------"
-    @displayshortlesson.each do |o|
-      logger.debug o.inspect
-    end
+    response.stream.close
   end
-
-
 
 #---------------------------------------------------------------------------
 #
