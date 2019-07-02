@@ -4,8 +4,9 @@
 <p>Oldest chain in database: <%= @oldestslotchain.strftime("%a %d/%m/%Y") %></p>
 <br>    
     <% #byebug %>
-    <p> This operation will delete all data in the database up to the but not includding the provided date. </p>    
-    <p> What remains will be the date provided and all data after that date.</p>
+    <p> This operation will delete all data in the database up to the but not including<br>
+        the Monday BEFORE your provided date. </p>
+    <p> What remains will be the data for this determined Monday and all data after that date.</p>
     <p> All <b>inactive</b> tutors and students not referred to in the database after this date will also be deleted.</p>
     <br>
     <%= form_tag("deleteolddata", method: "get") do %>

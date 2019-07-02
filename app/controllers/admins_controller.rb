@@ -545,14 +545,24 @@ class AdminsController < ApplicationController
   # GET /admins/deleteolddata
   def deleteolddata
     @result = ""
+    mydisplay = render_to_string("admins/deleteolddatastream_head.html", 
+                :formats => [:html])
+    response.stream.write mydisplay
     if deleteolddata_params["to"] == ""
-      @result = "Failed to pass required parameter (date)!"
+      #@result = "Failed to pass required parameter (date)!"
+      #mydisplay = render_to_string("admins/deleteolddatastream_head.html", 
+      #            :formats => [:html], :layout => false, locals: {mydate: @result})
+      response.stream.write "<p>Failed to pass required parameter (date)!</p>"
       return
     end
     @startdatetokeep = deleteolddata_params["to"].to_date
-    
-    if @startdatetokeep > DateTime.now - 365.days
-      @result = "You must keep at least one year of data!"
+    #if @startdatetokeep > DateTime.now - 365.days
+    if @startdatetokeep > DateTime.now - 10.days
+      #@result = "You must keep at least one year of data!"
+      #mydisplay = render_to_string("admins/deleteolddatastream_head.html", 
+      #            :formats => [:html], :layout => false, locals: {mydate: @result})
+      #response.stream.write mydisplay
+      response.stream.write "<p>You must keep at least one year of data!</p>"
       return
     end
   
@@ -566,13 +576,15 @@ class AdminsController < ApplicationController
     # Architecture facts: 
     #   a chain link cannot exist twice in the same week.
     #   a chain must have a parent chain (except slots)
-    
     thisdayofweek = @startdatetokeep.wday
     if thisdayofweek == 0
       @startdatetokeep = @startdatetokeep + 1.day
     else
       @startdatetokeep = @startdatetokeep - (thisdayofweek - 1).day
     end
+    response.stream.write "<p>Data will be deleted up to but not including" +
+                           @startdatetokeep.strftime("  %A %e/%-m/%y") + "</p>"
+    
     # Process day at a time - Monday first then next for 7 days.
     @basecheckdate = @startdatetokeep
     for offsetdays in 0..6
@@ -595,6 +607,10 @@ class AdminsController < ApplicationController
       checktutroles =    Tutrole.where(lesson_id: checklessons.map{|o| o.id})
                           .where.not(first: nil)
 
+      #mydisplay = render_to_string("admins/checkchainsstream_head.html",
+      #                              :formats => [:html])
+      #response.stream.write mydisplay
+      response.stream.write "<p>About to break chains for the slots.</p>"
       # Break the chains for the slots
       checkslots.each do |slot|
         if slot.id != slot.first   # not first element in chain
@@ -604,6 +620,7 @@ class AdminsController < ApplicationController
         end
       end
       # Break the chains for the lessons
+      response.stream.write "<p>About to break chains for the lessons.</p>"
       checklessons.each do |lesson|
         if lesson.id != lesson.first   # not first element in chain
           # for lessons, make this the first element in the chain
@@ -617,6 +634,7 @@ class AdminsController < ApplicationController
       # first and block will be equal. Subsequent segments has
       # and block different. Block will identify all chain segments
       # in this chain.
+      response.stream.write "<p>About to break chains for the student roles.</p>"
       checkroles.each do |role|
         flag_first_in_block   = role.id    == role.block ? true : false
         flag_first_in_segment = role.id    == role.first ? true : false 
@@ -635,6 +653,7 @@ class AdminsController < ApplicationController
         end
       end
 
+      response.stream.write "<p>About to break chains for the tutor roles.</p>"
       checktutroles.each do |tutrole|
         flag_first_in_block   = tutrole.id    == tutrole.block ? true : false
         flag_first_in_segment = tutrole.id    == tutrole.first ? true : false 
@@ -655,23 +674,30 @@ class AdminsController < ApplicationController
       
     end
 
+    response.stream.write "<p>Start processing the deletions.</p>"
     # Get all the slots (ids) for the deletion period.
+    response.stream.write "<p>Collecting what is to be deleted.</p>"
     removeslots    = Slot.select(:id).where("timeslot < :end_date",
                                             {end_date: @startdatetokeep})
     # Get all the lessons (ids) in the slots for this deletion period.
     removelessons  = Lesson.select(:id).where(slot_id: removeslots.map{|o| o.id})
     # Remove all the tutroles (tutors allocated) in these lessons
     #removetutroles = Tutrole.select(:id).where(lesson_id: removelessons.map{|o| o.id})
+    response.stream.write "<p>Removing the tutor roles.</p>"
     Tutrole.where(lesson_id: removelessons.map{|o| o.id}).delete_all
     # Remove all the roles (students allocated) in these lessons
     #removeroles    = Role.select(:id).where(lesson_id: removelessons.map{|o| o.id})
+    response.stream.write "<p>Removing the student roles.</p>"
     Role.where(lesson_id: removelessons.map{|o| o.id}).delete_all
     # Now remove the lessons
+    response.stream.write "<p>Removing the lessons.</p>"
     Lesson.where(slot_id: removeslots.map{|o| o.id}).delete_all
     # And remove the slots.
+    response.stream.write "<p>Removing the slots.</p>"
     Slot.where("timeslot < :end_date", {end_date: @startdatetokeep}).delete_all
 
     #Remove all change records created before this date.
+    response.stream.write "<p>Remove the change records.</p>"
     removechanges = Change.select(:id).where("created_at < :end_date", {end_date: @startdatetokeep})  
     logger.debug "Number of change records: " + Change.count.to_s
     logger.debug "Remove change records   : " + removechanges.count.to_s
@@ -682,18 +708,24 @@ class AdminsController < ApplicationController
     # Remove tutors not referred to in the calendar and 
     # who have a status of inactive
     #byebug
+    response.stream.write "<p>Now to determine the tutors and students to be removed.</p>"
     linkedtutors = Tutrole.select(:tutor_id).distinct
     #logger.debug "linkedtutors: " + linkedtutors.count.to_s
     linkedstudents = Role.select(:student_id).distinct
     #logger.debug "linkedstudents: " + linkedstudents.count.to_s
     #removetutors = Tutor.where(status: 'inactive').where.not(id: linkedtutors.map{|o| o.tutor_id})
     #logger.debug "removetutors: " + removetutors.count.to_s
+    response.stream.write "<p>Delete inactive tutors now no longer referred to in the calendar.</p>"
     Tutor.where(status: 'inactive').where.not(id: linkedtutors.map{|o| o.tutor_id}).delete_all
     #removestudents = Student.where(status: 'inactive').where.not(id: linkedstudents.map{|o| o.student_id})
     #logger.debug "removestudents: " + removestudents.count.to_s
+    response.stream.write "<p>Delete inactive students now no longer referred to in the calendar.</p>"
     Student.where(status: 'inactive').where.not(id: linkedstudents.map{|o| o.student_id}).delete_all
-    
+
+    response.stream.write "<p>Delete old date is COMPLETE.</p>"
+    response.stream.close
   end
+
 
 
 #---------------------------------------------------------------------------
@@ -711,7 +743,12 @@ class AdminsController < ApplicationController
 #
 #---------------------------------------------------------------------------
   # GET /admins/deletedays
-  def deletedays
+  def deletedays_RETIRED
+    ###################################################################
+    # DO NOT USE
+    # DOES NOT HANDLE CHAINS CORRECTLY
+    ###################################################################
+
     #logger.debug "entering deletedays"
     #logger.debug "deletedays_params: " + deletedays_params.inspect
     #sf = 5    # signigicant figures
@@ -846,7 +883,7 @@ class AdminsController < ApplicationController
 #
 #---------------------------------------------------------------------------
   # GET /admins/copydays
-  def copydays
+  def copydays_RETIRED
     logger.debug "entering copydays"
     #logger.debug "copydays_params: " + copydays_params.inspect
     #sf = 5    # signigicant figures
@@ -993,7 +1030,7 @@ class AdminsController < ApplicationController
 #
 #---------------------------------------------------------------------------
   # GET /admins/copytermdays
-  def copytermdays
+  def copytermdays_RETIRED
     logger.debug "entering copytermdays"
     #logger.debug "copytermdays_params: " + copytermdays_params.inspect
     #sf = 5    # signigicant figures
@@ -1256,7 +1293,7 @@ class AdminsController < ApplicationController
 #                                   }
 #-------------------------------------------------------------------
   # GET /admins/copytermweeks
-  def copytermweeks
+  def copytermweeks_RETIRED
     logger.debug "entering copytermweeks"
     #logger.debug "copytermweeks_params: " + copytermweeks_params.inspect
     #sf = 5    # signigicant figures
