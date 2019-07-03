@@ -1,0 +1,18 @@
+<h1>Admin Controller - Revert Week Plus One (WPO)</h1>
+<br>
+<p><b>Before this operation</b></p>
+<p>wpo entries span</p>
+<p>first: <%= @slotwpofirst.timeslot.strftime("%A %e/%-m/%y") %></p>
+<p>last : <%= @slotwpolast.timeslot.strftime("%A %e/%-m/%y") %></p>
+<br>
+<p>Last slot in last chain in the database is <%= @slotwpolast.timeslot.strftime("%A %e/%-m/%y") %>.</p>
+<p>First slot in last chain in the database is <%= @slotslastchain[0].timeslot.strftime("%A %e/%-m/%y") %>.</p>
+<br>
+<p><b>After this operation</b></p>
+<p>Week Plus One (WPO) will be:</p>
+<p>- start date: <%= @wpostartdate.strftime("%A %e/%-m/%y") %></p>
+<p>- end date  : <%= @wpoenddate.strftime("%A %e/%-m/%y") %> (up to but not including)</p>
+<br>
+<p>All data will be deleted on and after:</p>
+<p>- date: <%= @wpoenddate.strftime("%A %e/%-m/%y") %></p>
+<br>

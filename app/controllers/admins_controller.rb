@@ -53,26 +53,23 @@ class AdminsController < ApplicationController
     
     # Checking  options
     @flagCheckwpos              = true    # true to check, false to ignore
-    @flagCheckSlots             = true
-    @flagCheckLessons           = true
-    @flagCheckTutroles          = true
-    @flagCheckRoles             = true
+    @flagCheckSlots             = true    # ditto
+    @flagCheckLessons           = true    # ditto
+    @flagCheckTutroles          = true    # ditto
+    @flagCheckRoles             = true    # ditto
     
     # Fixing options
-    flagFixNilTerminate        = true    # true to fix, false to monitor
-    flagFixLessonDisconnects   = true    # true to fix, false to monitor
-    flagfixwpos                = true    # true to fix, false to monitor
+    flagFixNilTerminate        = false    # true to fix, false to monitor
+    flagFixLessonDisconnects   = false    # ditto
+    flagfixwpos                = false    # ditto
 
     @errors              = Array.new   # keep track of errors.
     @displayshort        = Array.new
     @displayshortlesson  = Array.new
 
-    #@domchange['html_partial'] = render_to_string("calendar/_stats_students.html",
-    #                    :formats => [:html], :layout => false)
     mydisplay = render_to_string("admins/checkchainsstream_head.html", :formats => [:html])
     response.stream.write mydisplay
     @errors.clear
-    
     
     #----------------- show wpo entries -------------------------------
     # wpo = week + one   - the first week in the following term
@@ -82,23 +79,25 @@ class AdminsController < ApplicationController
       @errors.push("------------------- Check wpo (week + 1) ----------------")
       wposlots = Slot.where.not(wpo: nil).order(:location, :timeslot)
       #@wpos = wposlots.map{|o| [o.id, o.wpo, o.first, o.location, o.timeslot]}  
-      #@errors.push(['id', 'wpo', 'first', 'location', 'timeslot'])
+      #@errors.push(['id', 'wpo', 'first', 'next', 'location', 'timeslot'])
       flagerror =flagerrorfirst = false 
       wposlots.each do |s|
         if flagerror                 # found error on last pass               
           @numberoferrors_wpos += 1  # count in wpo erros
           flagerror = false          # and reset ready for this pass
         end
-        if s.first == s.wpo   # this should not happen
-          @errors.push(['id', 'wpo', 'first', 'location', 'timeslot']) unless flagerrorfirst
-          flagerrorfirst = flagerror = true
-          @errors.push([s.id, s.wpo, s.first, s.location, s.timeslot, "problem case"])
-          if flagfixwpos
-            @errors.push("Fixing this wpo - set wpo field to nil")
-            s.wpo = nil
-            s.save
+        if s.first == s.wpo      # this should not happen
+          unless s.next == nil   # NOT a valid single link chain - wpo revert scenario
+            @errors.push(['id', 'wpo', 'first', 'next', 'location', 'timeslot']) unless flagerrorfirst
+            flagerrorfirst = flagerror = true
+            @errors.push([s.id, s.wpo, s.first, s.next, s.location, s.timeslot, "Problem - first link is WPO"])
+            if flagfixwpos
+              @errors.push("Fixing this wpo - set wpo field to nil")
+              s.wpo = nil
+              s.save
+            end
           end
-        else
+        else   # all OK
           #@errors.push([s.id, s.wpo, s.first, s.location, s.timeslot])
         end
       end
@@ -120,11 +119,18 @@ class AdminsController < ApplicationController
       checkslotchains = Slot.select(:first).where.not(first: nil).distinct
       @numberofchains_slots = checkslotchains.count
       # Now check each chain
+      flagbreak = false
       checkslotchains.each do |firstslot|   # step through chains - one by one 
         #byebug
         if flagerror     # found error in last pass of this chain
           @numberoferrors_slots += 1   # keep count of chains with errors
           flagerror = false            # reset for this pass
+        end
+        if !flagbreak
+          response.stream.write "<p><font size='-2'>Progressing through slots."
+          flagbreak = true
+        else
+          response.stream.write "."
         end
         thischain = Slot.where(first: firstslot.first)  # all links in the chain
         chainindex = Hash.new     # index chain links by link.id
@@ -172,6 +178,10 @@ class AdminsController < ApplicationController
           end
         end
       end
+      if flagbreak
+        response.stream.write "</font></p>"
+        flagbreak = false
+      end
       @numberoferrors_slots += 1 if flagerror  # count error on last pass
       @errors.push("Total Errors for SLOTS: " + @numberoferrors_slots.to_s)
       mydisplay = render_to_string("admins/checkchainsstream_body.html",
@@ -194,10 +204,17 @@ class AdminsController < ApplicationController
       @numberofchains_lessons = checklessonchains.count
       # Now check each chain
       flagerror = false
+      flagbreak = false
       count = 0
       checklessonchains.each do |firstlesson|   # step through chains - one by one 
         count += 1
         #break if count > 100
+        if !flagbreak
+          response.stream.write "<p><font size='-2'>Progressing through lessons ."
+          flagbreak = true
+        else
+          response.stream.write "."
+        end
         if flagerror
           @numberoferrors_lessons += 1 
           flagerror = false
@@ -255,14 +272,19 @@ class AdminsController < ApplicationController
         end
         flagerror = true if flagflowerror 
         @numberoferrors_lessons += 1 if flagerror
-        if((count % 500) == 0)
-          mydisplay = render_to_string("admins/checkchainsstream_body.html",
-                                       :formats => [:html], :layout => false,
-                                       locals: {mydata: @errors})
-          response.stream.write mydisplay
-          @errors.clear
-        end
+        #if((count % 500) == 0)
+          #mydisplay = render_to_string("admins/checkchainsstream_body.html",
+          #                             :formats => [:html], :layout => false,
+          #                             locals: {mydata: @errors})
+          #response.stream.write mydisplay
+          #@errors.clear
+        #end
       end
+      if flagbreak
+        response.stream.write "</font></p>"
+        flagbreak = false
+      end
+
       @errors.push("Total Errors for Lessons: " + @numberoferrors_lessons.to_s)
       mydisplay = render_to_string("admins/checkchainsstream_body.html",
                                    :formats => [:html], :layout => false,
@@ -274,7 +296,14 @@ class AdminsController < ApplicationController
       # ---------- Now work through the short lesson chains -------------
       @displayshortlesson = Array.new
       # analyse short chain errors
+      flagbreak = false
       @keepshortchain.each do |short|
+        if !flagbreak
+          response.stream.write "<p><font size='-2'>Progressing through short chains."
+          flagbreak = true
+        else
+          response.stream.write "."
+        end
         firstlink = Lesson.find(short)
         lessonchain = Lesson.includes(:slot, :students, :tutors).where(first: firstlink.first)  # all links in the chain
         lessonchainindex = Hash.new     # index chain links by link.id
@@ -353,6 +382,10 @@ class AdminsController < ApplicationController
           end
         end
       end
+      if flagbreak
+        response.stream.write "</font></p>"
+        flagbreak = false
+      end
       @numberoferrors_lessons += 1 if flagerror  # count error on last pass
       if @displayshortlesson.length > 0
         mydisplay = render_to_string("admins/checkchainsstream_body.html",
@@ -363,7 +396,6 @@ class AdminsController < ApplicationController
         mydisplay = render_to_string("admins/checkchainsstream_todo.html",
                                      :formats => [:html], :layout => false)
         response.stream.write mydisplay
-        
       end
     end
     
@@ -392,6 +424,7 @@ class AdminsController < ApplicationController
       count = 0
       flagerror = false
       @numberoferrors_checkrole = 0
+      flagbreak = false
       checkroleblocks.each do |firstcheckrole|   # step through blocks - one by one 
         if flagerror
           @numberoferrors_checkrole += 1 
@@ -399,6 +432,12 @@ class AdminsController < ApplicationController
         end
         count += 1
         #break if count > 2
+        if !flagbreak
+          response.stream.write "<p><font size='-2'>Progressing through #{desc}."
+          flagbreak = true
+        else
+          response.stream.write "."
+        end
         thisblock = checkrole.where(block: firstcheckrole.block)  # all links in the block
         blockindex = Hash.new      # track every link in the block - index by link id
         segmentcount = Hash.new    # count links in segment - indexed by first link in segment
@@ -438,7 +477,6 @@ class AdminsController < ApplicationController
         #Do some elementaty sanity checks
         segmentcount.each do |k,v|                 # checking every segment
           unless segmentfirst.has_key?(k)          # has a valid first link
-            byebug
             @errors.push(firstcheckrole.block.to_s + " block " + k.to_s +
                          desc + "segment has no valid first link")
             flagerror = true
@@ -502,6 +540,10 @@ class AdminsController < ApplicationController
           @checkrolelinkerroroccurred = true if flagerror == true
         end
       end
+      if flagbreak
+        response.stream.write "</font></p>"
+        flagbreak = false
+      end
       #if checkrole == Tutrole
       #  @tutrolelinkerroroccurred = @checkrolelinkerroroccurred
       #  @keepshortchaintutrole = @keepshortchaincheckrole.dup   # keep instances of short chain errors
@@ -519,7 +561,7 @@ class AdminsController < ApplicationController
       @numberoferrors_checkrole = 0
       @keepshortchaincheckrole.clear
     end
-    
+    response.stream.write "<p><b>Checks Complete</b></p>"
     response.stream.close
   end
 
@@ -726,7 +768,733 @@ class AdminsController < ApplicationController
     response.stream.close
   end
 
+#---------------------------------------------------------------------------
+#   wporevertedit 
+#---------------------------------------------------------------------------
+def wporevertedit
+  @issue = ""
+  @slotwpofirst = Slot.where.not(wpo: nil).order(:timeslot).first
+  @slotwpolast = Slot.where.not(wpo: nil).order(:timeslot).last
+  @slotwpoweeks = Slot.select(:timeslot).where.not(wpo: nil).map{|o| o.timeslot.to_datetime.cweek}.uniq
+  @slotdblast = Slot.order(:timeslot).last
+  @slotslastchain = Slot.where(first: @slotdblast.first).order(:timeslot)
+  # if last link in the last chain in the database matches last wpo
+  #   then we have a normal setup
+  # otherwise we have a corrupted build (possibly populate term aborted)
+  if @slotwpoweeks.count == 1  # only one wpo
+    if @slotwpolast.timeslot.to_datetime.cweek ==     # wpo 
+       @slotdblast.timeslot.to_datetime.cweek        # last link in db
+      # wpo matches last link in chain = normal scenario
+      wpostartdate = @slotslastchain[0].timeslot.to_datetime.beginning_of_week
+                     # reverted wpo is first link in chain
+    elsif @slotwpofirst.timeslot.to_datetime.cweek ==     # wpo
+          @slotslastchain[0].timeslot.to_datetime.cweek   # first link in last link in db
+      wpostartdate = @slotslastchain[0].timeslot.to_datetime.beginning_of_week
+                     # reverted wpo is first link in chain
+    else
+      # bad scenario - wpo is not in the correct place -> report
+      @issue = "Database has a bad scenario (wpo is not in the correct place)" +
+               " - you cannot proceed with this operation."
+      return
+    end
+  elsif @slotwpoweeks.count == 0
+    # abnormal situation - currently no wpo - revert to beginning of chain
+    wpostartdate = @slotslastchain[0].timeslot.to_datetime.beginning_of_week
+  else # more than one wpo
+    if @slotwpofirst.timeslot.to_datetime.cweek ==      # first wpo
+       @slotslastchain[0].timeslot.to_datetime.cweek    # first link in last link in db
+      # stable state to revert to.
+      wpostartdate = @slotslastchain[0].timeslot.to_datetime.beginning_of_week
+                     # reverted wpo is first link in chain
+    else
+      @issue = "Database has a bad scenario (muliple wpos and first wpo &" + 
+               " first link in last chain don't match)" +
+               " - you cannot proceed with this operation."
+      # report as an issue
+      return
+    end
+  end
+  # set all these wpo status
+  @wpostartdate = wpostartdate  # start of wpo week
+  @wpoenddate = wpostartdate + 7.days
+end
 
+#---------------------------------------------------------------------------
+#   wporevert 
+#---------------------------------------------------------------------------
+def wporevert
+  @slotwpofirst = Slot.where.not(wpo: nil).order(:timeslot).first
+  @slotwpolast = Slot.where.not(wpo: nil).order(:timeslot).last
+  @slotwpoweeks = Slot.select(:timeslot).where.not(wpo: nil).map{|o| o.timeslot.to_datetime.cweek}.uniq
+  @slotdblast = Slot.order(:timeslot).last
+  @slotslastchain = Slot.where(first: @slotdblast.first).order(:timeslot)
+  # if last link in the last chain in the database matches last wpo
+  #   then we have a normal setup
+  # otherwise we have a corrupted build (possibly populate term aborted)
+  if @slotwpoweeks.count == 1  # only one wpo
+    if @slotwpolast.timeslot.to_datetime.cweek ==     # wpo 
+       @slotdblast.timeslot.to_datetime.cweek        # last link in db
+      # wpo matches last link in chain = normal scenario
+      wpostartdate = @slotslastchain[0].timeslot.to_datetime.beginning_of_week
+                     # reverted wpo is first link in chain
+    elsif @slotwpofirst.timeslot.to_datetime.cweek ==     # wpo
+          @slotslastchain[0].timeslot.to_datetime.cweek   # first link in last link in db
+      wpostartdate = @slotslastchain[0].timeslot.to_datetime.beginning_of_week
+                     # reverted wpo is first link in chain
+    else
+      # bad scenario - wpo is not in the correct place -> report
+      return
+    end
+  elsif @slotwpoweeks.count == 0
+    # abnormal situation - currently no wpo - revert to beginning of chain
+    wpostartdate = @slotslastchain[0].timeslot.to_datetime.beginning_of_week
+  else # more than one wpo
+    if @slotwpofirst.timeslot.to_datetime.cweek ==      # first wpo
+       @slotslastchain[0].timeslot.to_datetime.cweek    # first link in last link in db
+      # stable state to revert to.
+      wpostartdate = @slotslastchain[0].timeslot.to_datetime.beginning_of_week
+                     # reverted wpo is first link in chain
+    else
+      # report as an issue
+      return
+    end
+  end
+  # set all these wpo status
+  @wpostartdate = wpostartdate  # start of wpo week
+  @wpoenddate = wpoenddate = wpostartdate + 7.days
+  mydisplay = render_to_string("admins/wporevertstream_head.html", 
+              :formats => [:html])
+  response.stream.write mydisplay
+
+  response.stream.write "<p>terminate reverted wpo chain links and set as wpo link.</p>"
+  wposlots = Slot.where("timeslot > ? AND
+                         timeslot < ? ", wpostartdate, wpoenddate)
+                 .where.not(first: nil)
+  wposlots.each do |slot|    # step through each link
+    slot.wpo = slot.id       # make wpo point to self
+    slot.next = nil          # end the chain
+    slot.save
+  end
+  #Book.where('title LIKE ?', '%Rails%').update_all(author: 'David')
+  response.stream.write "<p>terminate lesson chain in new wpo.</p>"
+  wpolessons_ids = Lesson.where(slot_id: wposlots.map{|o| o.id}).pluck(:id)
+  Lesson.where(id: wpolessons_ids).update_all(next: nil)
+  #wpolessons.each do |lesson|
+  #  lesson.next = nil
+  #  lesson.save
+  #end
+  response.stream.write "<p>terminate tutrole chain in new wpo.</p>"
+  Tutrole.where(lesson_id: wpolessons_ids).update_all(next: nil)
+  #wpotutroles = Tutrole.where(lesson_id: wpolessons.map{|o| o.id)
+  #wpotutroles.each do |tutrole|
+  #  tutrole.next = nil
+  #  tutrole.save
+  #end
+  response.stream.write "<p>terminate role chain in new wpo.</p>"
+  Role.where(lesson_id: wpolessons_ids).update_all(next: nil)
+  #wporoles = Role.where(slot_id: wpolessons.map{|o| o.id})
+  #wporoles.each do |role|
+  #  role.next = nil
+  #  role.save
+  #end
+  
+  response.stream.write "<p>Now delete all data on and after " + 
+                        wpoenddate.strftime("%A %e/%-m/%y") + ".</p>"
+  
+  # Get all the slots (ids) for the deletion period.
+  #removeslots = Slot.select(:id).where("timeslot < :start_delete_date", {start_delete_date: wpoenddate})
+  removeslots_ids = Slot.where("timeslot > :start_delete_date", {start_delete_date: wpoenddate}).pluck(:id)
+  # Get all the lessons (ids) in the slots for this deletion period.
+  #removelessons  = Lesson.select(:id).where(slot_id: removeslots.map{|o| o.id})
+  removelessons_ids  = Lesson.where(slot_id: removeslots_ids).pluck(:id)
+  # Remove all the tutroles (tutors allocated) in these lessons
+  response.stream.write "<p>Removing the tutor roles.</p>"
+  #Tutrole.where(lesson_id: removelessons.map{|o| o.id}).delete_all
+  Tutrole.where(lesson_id: removelessons_ids).delete_all
+  # Remove all the roles (students allocated) in these lessons
+  response.stream.write "<p>Removing the student roles.</p>"
+  #Role.where(lesson_id: removelessons.map{|o| o.id}).delete_all
+  Role.where(lesson_id: removelessons_ids).delete_all
+  # Now remove the lessons
+  response.stream.write "<p>Removing the lessons.</p>"
+  #Lesson.where(slot_id: removeslots.map{|o| o.id}).delete_all
+  Lesson.where(slot_id: removeslots_ids).delete_all
+  # And remove the slots.
+  response.stream.write "<p>Removing the slots.</p>"
+  #Slot.where("timeslot < :end_date", {end_date: @startdatetokeep}).delete_all
+  Slot.where(id: removeslots_ids).delete_all
+
+  response.stream.write "<p>WPO Revert is COMPLETE.</p>"
+  response.stream.close
+end
+
+
+
+
+
+#***********************************************************************
+#***********************************************************************
+#---------------------------------------------------------------------------
+#   Populate Term Edit 
+#---------------------------------------------------------------------------
+def populatetermedit
+  @slotwpofirst = Slot.where.not(wpo: nil).order(:timeslot).first
+  @slotwpolast = Slot.where.not(wpo: nil).order(:timeslot).last
+  # check if all are in the same week
+  @slotwpoweeks = Slot.select(:timeslot).where.not(wpo: nil).map{|o| o.timeslot.to_datetime.cweek}.uniq
+end
+
+#---------------------------------------------------------------------------
+#   Copy Term Weeks Edit 
+#---------------------------------------------------------------------------
+def copytermweeksedit
+  @slotwpofirst = Slot.where.not(wpo: nil).order(:timeslot).first
+  @slotwpolast = Slot.where.not(wpo: nil).order(:timeslot).last
+end
+
+#---------------------------------------------------------------------------
+#
+#   Populate Term
+#   - select in the copydaysedit menu
+#     a) the number of week you want in this term
+#        (Current week + 1 [wpo] as start dates)
+#     b) the first day of the next term.
+#
+#   - copies content based on:
+#       . session type 
+#       . student/session type
+#
+#   This will copy the week into a number of consective weeks +
+#   plus add one week into the following term at the provided date
+#
+#---------------------------------------------------------------------------
+#-------------------------------------------------------------------
+# For copying term info,
+# 1. Slots are always copied.
+# 2. Determine what tutors and students need to be copied.
+# Logic is:
+# Lesson status | copy lesson  | copy tutors  | copy students
+# routine       |    yes       |    yes if    |      yes if
+# (=standard)   |              | - rostered   |  - rostered
+#               |              | - away       |  - away
+#               |              | - absent     |  - absent
+#               |              |              |  - bye
+#               |              |    no if     |      no if
+#               |              | - deal       |  - deal
+#               |              | - kind=called| 
+# flexible      |    yes       |    yes if    |     no always
+#               |              | - rostered   | 
+#               |              | - away       | 
+#               |              | - absent     |  
+#               |              |    no if     |      
+#               |              | - deal       | 
+#               |              | - kind=called| 
+# on_BFL        |    yes       |   yes if     |     no always
+#               |              | - rostered   | 
+#               |              | - away       |  
+#               |              | - absent     | 
+#               |              |    no if     | 
+#               |              | - deal       | 
+#               |              | - kind=called| 
+# onSetup       |    yes       |   yes if     |     no always
+#               |              | - rostered   | 
+#               |              | - away       |  
+#               |              | - absent     | 
+#               |              |    no if     | 
+#               |              | - deal       | 
+#               |              | - kind=called| 
+# onCall        |    yes       |   yes if     |     no always
+#               |              | - rostered   | 
+#               |              | - away       |  
+# free          |    yes       |  no always   |     no always
+# global        |    no        |              |     
+# allocate      |    no        |              |     
+# park          |    no        |              |
+#-------------------------------------------------------------------
+#      Each site has an array
+#      @cal{sitename}[0][] -> [0] = {value = site name}
+#                             [1] = {value = date}
+#      @cal{sitename}[1][] -> [0] = {value = session_time}  e.g. "03-3- PM"
+#                             [1] = {slotid = nnnn
+#                                    id_dom = "CAL201804041530"
+#                                    values[] -> [0] = object #<Lesson>
+#                                                [1] = object #<Lesson>
+#                                                 ....
+#                                   }
+#-------------------------------------------------------------------
+
+
+  def populateterm
+    logger.debug "entering populateterm"
+    #logger.debug "copytermweeks_params: " + copytermweeks_params.inspect
+    #sf = 5    # signigicant figures
+    @slotwpolast = Slot.where.not(wpo: nil).order(:timeslot).last
+    
+    mystartcopyfromdate = @slotwpolast.timeslot.to_datetime.beginning_of_week
+    myendcopyfromdate = mystartcopyfromdate + 7.days 
+    mycopynumweeks      = copytermweeks_params["num_weeks"].to_i
+    mystartcopytodate   = mystartcopyfromdate + 7.days
+    myendcopytodate     = mystartcopytodate + (mycopynumweeks -2) * 7
+    #myfirstweekdate     = copytermweeks_params["first_week"].to_date
+    myfirstweekdate     = copytermweeks_params["first_week"].to_datetime.beginning_of_week
+        
+    logger.debug("mystartcopyfromdate:" + mystartcopyfromdate.inspect)
+    logger.debug("myendcopyfromdate:"   + myendcopyfromdate.inspect) 
+    logger.debug("mycopynumweeks:"      + mycopynumweeks.inspect) 
+    logger.debug("mystartcopytodate:"   + mystartcopytodate.inspect)
+    logger.debug("myendcopytodate:"     + myendcopytodate.inspect)
+    logger.debug("myfirstweekdate:"     + myfirstweekdate.inspect)
+    
+    copytermweeksdo(mystartcopyfromdate,
+                  myendcopyfromdate,
+                  mycopynumweeks,
+                  mystartcopytodate,
+                  myendcopytodate,
+                  myfirstweekdate)
+    
+  end
+
+
+  # ------------------------------------------------
+  # copytermweeks
+  # ------------------------------------------------
+  def copytermweeks_RETIRED
+    logger.debug "entering populateterm"
+    #logger.debug "copytermweeks_params: " + copytermweeks_params.inspect
+    #sf = 5    # signigicant figures
+    mystartcopyfromdate = copytermweeks_params["from"].to_date
+    myendcopyfromdate   = copytermweeks_params["from"].to_date + copytermweeks_params["num_days"].to_i
+    mycopynumweeks      = copytermweeks_params["num_weeks"].to_i
+    mystartcopytodate   = copytermweeks_params["to"].to_date
+    myendcopytodate     = copytermweeks_params["to"].to_date +
+                          copytermweeks_params["num_days"].to_i + (mycopynumweeks + 1) * 7
+    myfirstweekdate     = copytermweeks_params["first_week"].to_date
+    logger.debug "First week starts on " + myfirstweekdate.to_s
+    copytermweeksdo(mystartcopyfromdate,
+                  myendcopyfromdate,
+                  mycopynumweeks,
+                  mystartcopytodate,
+                  myendcopytodate,
+                  myfirstweekdate)
+    
+  end
+
+
+  # ------------------------------------------------
+  # copytermweeksdo  (Really just a called function
+  # ------------------------------------------------
+  def copytermweeksdo(mystartcopyfromdate,
+                  myendcopyfromdate,
+                  mycopynumweeks,
+                  mystartcopytodate,
+                  myendcopytodate,
+                  myfirstweekdate)
+    flagstream = true
+    mydisplay = render_to_string("admins/populatetermstream_head.html",
+                                 :formats => [:html])
+    response.stream.write mydisplay if flagstream
+
+    @results = Array.new   # store detailed feedback to be displayed on user browser.
+    if myfirstweekdate < myendcopytodate  # next term must be after this term
+      #flash[:notice] = "The next term must begin after this term - cannot copy!!!"
+      if flagstream
+        response.stream.write "<p>The next term must begin after this term - cannot copy!!!</p>" 
+        response.stream.close
+      end
+      return
+    end
+
+    @options = Hash.new
+    @options[:startdate] = mystartcopytodate
+    @options[:enddate]   = myendcopytodate
+    @cal = calendar_read_display1f(@options)
+    unless @cal.empty?
+      # destination is not empty - show error and return
+      #flash[:notice] = "Destination days are not empty - will not copy!!!"
+      if flagstream
+        response.stream.write "<p>Destination days are not empty - will not copy!!!</p>"
+        response.stream.close
+      end
+      #redirect_to copytermweeksedit_path(copytermweeks_params)
+      return
+    end
+    @options[:startdate] = mystartcopyfromdate
+    @options[:enddate]   = myendcopyfromdate
+    @cal = calendar_read_display1f(@options)
+    if @cal.empty?
+      # source is empty - show error and return
+      #flash[:notice] = "Source days are empty - nothing to copy!!!"
+      response.stream.write "<p>Source days are empty - nothing to copy!!!</p>"
+      response.stream.close
+      #redirect_to copytermweeksedit_path(copytermweeks_params)
+      return
+    end
+    if flagstream
+      response.stream.write "<p>Copy from week beginning: " +
+                             mystartcopyfromdate.strftime("  %A %e/%-m/%y  ") + "</p>"
+      response.stream.write "<p>Building a term containing : " +
+                             mycopynumweeks.to_s + " weeks</p>"
+      response.stream.write "<p>And staring first week of next term on : " +
+                             myfirstweekdate.strftime("  %A %e/%-m/%y  ") + " weeks</p>"
+    end
+    #--------------------------------------------------------------------
+    #---- check that all slots contains a global and allocate lesson ----
+    response.stream.write "<p>Checking all slots contain global and allocate lessons</p>"  if flagstream
+    flagAddedLesson = false         # track if one has been added.
+    @cal.each do |site, sitevalue| 
+      # Now work through the slots for this site and day
+      #---- for each  row of slots (all days - each row being a lesson timeslot ----
+      sitevalue.each_with_index do |bankslots, bankslotindex|
+        if bankslotindex == 0               # column title 
+        else
+          #---- for each slot in the row - ( one days with one lesson timeslot) ----
+          bankslots.each_with_index do |slot, slotindex|
+            if slotindex == 0         # row title
+              next        # simply holds the slot time - will get from found slot
+            end
+            thisslotid = slot['slotid']
+            # if not a valid slot, go to next iteration.
+            if thisslotid == nil
+              next
+            end
+            #---- processing a valid slot (not just a cell in the table) ----
+            #---- check this slot ----
+            #---- check existing lessons ----
+            # Now to look at each lesson in each slot
+            # Also check that each slot has lesson types of 'global' and 'allocate'
+            if slot['values'].respond_to?(:each) then
+              flagMissingGlobal = flagMissingAllocate = true
+              slot['values'].each do |lesson|
+                flagMissingGlobal   = false if lesson.status == 'global'
+                flagMissingAllocate = false if lesson.status == 'allocate'
+              end
+            end
+            # Add lesson if missing global lesson or allocate lesson.
+            #result = /^(([A-Z]+\d+l(\d+)))/.match(thisslotid)
+            #if result 
+            #  slot_dbId = result[3]
+            #end
+            if flagMissingGlobal
+              @lesson_new = Lesson.new(slot_id: thisslotid, status: "global")
+              @lesson_new.save
+              flagAddedLesson = true
+            end
+            if flagMissingAllocate
+              @lesson_new = Lesson.new(slot_id: thisslotid, status: "allocate")
+              @lesson_new.save
+              flagAddedLesson = true
+            end
+          end
+        end        
+      end
+    end
+    # if lessons added, then refetch! - should be a rare occurence!
+    if flagAddedLesson
+      response.stream.write "<p>Lessons added - refresh source data from database.</p>" if flagstream
+      @cal = calendar_read_display1f(@options) 
+    end
+    #--------------------------------------------------------------------
+    #---- copy this week into following weeks ----
+    response.stream.write "<p>copy this week into following weeks.</p>" if flagstream
+    # get to here, we are set up to do a copy
+    # @cal contains the info to be copied.
+    # First get the number of dayes to advance by ( + or - is valid)
+    adddays = mystartcopytodate - mystartcopyfromdate
+    adddaysforweekplusone = myfirstweekdate - mystartcopyfromdate
+    logger.debug "adddays: " + adddays.inspect
+    #keep track of all copied entities - slots, lessons, roles, tutroles.
+    # Used later - to break block links.
+    @allCopiedSlotsIds    = Array.new
+    @allCopiedLessonsIds  = Array.new
+    @allCopiedRolesIds    = Array.new
+    @allCopiedTutrolesIds = Array.new
+    #---- for each site ----
+    @cal.each do |site, sitevalue| 
+      response.stream.write "<p>Copying site #{site}.</p>" if flagstream
+      # Now work through the slots for this site and day
+      siteName = siteDate = ""    # control scope
+      #---- for each  row of slots (all days - each row being a lesson timeslot ----
+      sitevalue.each_with_index do |bankslots, bankslotindex|
+        response.stream.write "<p>Progressing through bank #{bankslotindex}.</p>" if flagstream
+        if bankslotindex == 0               # column title 
+          siteName = bankslots[0]['value']
+          siteDate = siteDateBankFrom = bankslots[1]['value']
+          logger.debug "siteName: " + siteName + " siteDate: " + siteDate.inspect
+          n = siteDate.match(/(\d+.*)/)
+          siteDate = n[1]
+          if bankslots[2] == nil
+            @results.push "processing #{siteName} #{siteDateBankFrom}"
+          else
+            siteDateBankTo = bankslots[2]['value']
+            @results.push "processing #{siteName} #{siteDateBankFrom} to #{siteDateBankTo}"
+          end
+        else
+          #---- for each slots in the row - ( one days with one lesson timeslot) ----
+          bankslots.each_with_index do |slot, slotindex|
+            if slotindex == 0         # row title
+              next        # simply holds the slot time - will get from found slot
+            end
+            thisslotid = slot['slotid']
+            # if not a valid slot, go to next iteration.
+            if thisslotid == nil
+              next
+            end
+            #---- processing a valid slot (not just a cell in the table) ----
+            @allCopiedSlotsIds.push thisslotid    # track all copied slots 
+            @results.push "Slotid: #{thisslotid}"
+            #---- copy run this slot ----
+            @blockSlots = Array.new
+            @blockSlots[0] = Slot.find(thisslotid)
+            @blockSlots[0].first = thisslotid
+            # Now need to copy this to the following mycopynumweeks weeks.
+            # we are forming a chain with first = first id in chain &
+            # next = the following id in the chain.
+            slotLocation = @blockSlots[0].location 
+            nextTimeslotTo = @blockSlots[0].timeslot + (adddays.to_i - 7) * 86400
+            ### adddaysforweekplusone
+            (1..mycopynumweeks+1).each do |i|
+              nextTimeslotTo += 7 * 86400
+              # cater for the week plus one entries
+              nextTimeslotTo = @blockSlots[0].timeslot + adddaysforweekplusone * 86400 if i == mycopynumweeks + 1 
+              @blockSlots[i] = Slot.new(timeslot: nextTimeslotTo, 
+                                        location: slotLocation,
+                                        first: thisslotid )
+            end
+            (0..mycopynumweeks+1).reverse_each do |i|
+              # the last entity in chain will have next = nil by default, do not populate.
+              @blockSlots[i].next = @blockSlots[i+1].id unless i == mycopynumweeks+1  
+              if @blockSlots[i].save
+                # weekPlusOne (wpo) will have the wpo field set to self
+                if i == mycopynumweeks+1  
+                  @blockSlots[i].wpo = @blockSlots[i].id
+                  @blockSlots[i].save
+                end
+                @results.push "created slot " + @blockSlots[i].inspect
+              else
+                @results.push "FAILED creating slot " + @blockSlots[i].inspect + 
+                              "ERROR: " + @blockSlots[i].errors.messages.inspect
+              end
+            end
+            #---- copy any existing lesson that have the desired status ----
+            # Now to look at each lession in each slot
+            # Also check that each slot has lesson types of 'global' and 'allocate'
+            flagbreak = false
+            if slot['values'].respond_to?(:each) then
+              slot['values'].each do |lesson|
+                #response.stream.write "<p>Progressing through lessons.</p>" if flagstream
+                if !flagbreak
+                  response.stream.write "<p>Progressing through lessons." if flagstream
+                  flagbreak = true
+                else
+                  response.stream.write "."
+                end
+                #logger.debug "lesson: " + lesson.inspect
+                # is this a valid lesson to copy
+                ###next if ['global', 'allocate', 'park'].include?(lesson.status)
+                next if ['park'].include?(lesson.status)
+                thislessonid = lesson.id
+                #---- copy run this lesson ----
+                @allCopiedLessonsIds.push thislessonid    # track all copied slots 
+                @blockLessons = Array.new
+                @blockLessons[0] = lesson
+                @blockLessons[0].first = thislessonid
+                # Now need to copy this to the following mycopynumweeks weeks.
+                # we are forming a chain with first = first id in chain &
+                # next = the following id in the chain.
+                ### adddaysforweekplusone
+                (1..mycopynumweeks+1).each do |i|
+                  parentSlotId = @blockSlots[i].id
+                  # cater for the week plus one entries
+                  @blockLessons[i] = Lesson.new(slot_id: parentSlotId, 
+                                            status: lesson.status,
+                                            first: thislessonid )
+                end
+                (0..mycopynumweeks+1).reverse_each do |i|
+                  # the last entity in chain will have next = nil by default, do not populate.
+                  @blockLessons[i].next = @blockLessons[i+1].id unless i == mycopynumweeks+1  
+                  if @blockLessons[i].save
+                    @results.push "created lesson " + @blockLessons[i].inspect
+                  else
+                    @results.push "FAILED creating lesson " + @blockLessons[i].inspect + 
+                                  "ERROR: " + @blockLessons[i].errors.messages.inspect
+                  end
+                end
+                #---- some lessons are copied but not their tutor/student content ----
+                # for free lesson, do not copy any tutors or students
+                next if lesson.status == 'free'
+                # At this point, decision to copy tutors or students depends
+                # on their kind and status.
+                # Now find all the tutors in this lesson
+                #---- copy any existing tutors that have the desired status & kind ----
+                if lesson.tutors.respond_to?(:each) then
+                  lesson.tutors.sort_by {|obj| obj.pname }.each do |tutor|
+                    logger.debug "tutor: " + tutor.inspect
+                    #thistutrole = tutor.tutroles.where(lesson_id: lesson.id).first
+                    @blockTutroles = Array.new
+                    @blockTutroles[0] = tutor.tutroles.where(lesson_id: lesson.id).first
+                    # Check if this tutor-lesson should be copied
+                    flagtutorcopy = false
+                    flagtutorcopy = true if ['scheduled', 'confirmed', 'notified',
+                        'attended', 'away', 'absent'].include?(@blockTutroles[0].status)
+                    # do not copy certain kinds!
+                    flagtutorcopy = false if ['called', 'training', 'relief'].include?(@blockTutroles[0].kind)
+                    #flagtutorcopy = false if @blockTutroles[0].kind == 'called'
+                    next unless flagtutorcopy
+                    thistutroleid = @blockTutroles[0].id
+                    @allCopiedTutrolesIds.push thistutroleid    # track all copied slots 
+                    @blockTutroles[0].block = @blockTutroles[0].first = thistutroleid
+                    # Now need to copy this to the following mycopynumweeks weeks.
+                    # we are forming a chain with first = first id in chain &
+                    # next = the following id in the chain.
+                    (1..mycopynumweeks+1).each do |i|
+                      parentLessonId = @blockLessons[i].id
+                      # cater for the week plus one entries
+                      @blockTutroles[i] = Tutrole.new(lesson_id: parentLessonId,
+                                                      tutor_id: tutor.id, 
+                                                      status: 'scheduled',
+                                                      kind: @blockTutroles[0].kind,
+                                                      first: thistutroleid,
+                                                      block: thistutroleid)
+                    end
+                    (0..mycopynumweeks+1).reverse_each do |i|
+                      # the last entity in chain will have next = nil by default, do not populate.
+                      @blockTutroles[i].next = @blockTutroles[i+1].id unless i == mycopynumweeks+1  
+                      if @blockTutroles[i].save
+                        @results.push "created tutrole " + @blockTutroles[i].inspect
+                      else
+                        @results.push "FAILED creating tutrole " + @blockTutroles[i].inspect + 
+                                      "ERROR: " + @blockTutroles[i].errors.messages.inspect
+                      end
+                      # the last entity in chain is the week + 1 entry. 
+                      # block will be set to self. 
+                      ### This strategy is now changed.
+                      ### Week Plus One (WPO) is now identified in the slots
+                      ### Block now picks up all the items in the chain as first
+                      ### will change often as moves are done. Block is the only way
+                      ### to pick up all historical entries in the chain.
+                      ###if i == mycopynumweeks+1
+                      ###  @blockTutroles[i].block = @blockTutroles[i].id   
+                      ###  if @blockTutroles[i].save
+                      ###    @results.push "updated tutrole :block " + @blockTutroles[i].inspect
+                      ###  else
+                      ###    @results.push "FAILED updating tutrole block " + @blockTutroles[i].inspect + 
+                      ###                  "ERROR: " + @blockTutroles[i].errors.messages.inspect
+                      ###  end
+                      ###end
+                    end
+                  end
+                end
+                #---- copy any existing students that have the desired status & kind ----
+                # Now find all the students in this lesson
+                if lesson.students.respond_to?(:each) then
+                  lesson.students.sort_by {|obj| obj.pname }.each do |student|
+                    logger.debug "student: " + student.inspect
+                    @blockRoles = Array.new
+                    @blockRoles[0] = student.roles.where(lesson_id: lesson.id).first
+                    # check if this student should be copied.
+                    # for some lesson types, students are never copied
+                    next if ['flexible', 'on_BFL', 'onSetup', 'onCall',
+                             'free'].include?(lesson.status)
+                    # others depend on their student-lesson status/
+                    flagstudentcopy = false
+                    # do not copy certain kinds!
+                    flagstudentcopy = true if ['scheduled', 'attended', 'away',
+                                      'absent', 'bye'].include?(@blockRoles[0].status)
+                    flagstudentcopy = false if ['catchup', 'bonus', 'free'].include?(@blockRoles[0].kind)
+                    next unless flagstudentcopy
+                    # if so, copy  this student-lesson
+                    thisroleid = @blockRoles[0].id
+                    @allCopiedRolesIds.push thisroleid    # track all copied slots 
+                    @blockRoles[0].block = @blockRoles[0].first = thisroleid
+                    # Now need to copy this to the following mycopynumweeks weeks.
+                    # we are forming a chain with first = first id in chain &
+                    # next = the following id in the chain.
+                    (1..mycopynumweeks+1).each do |i|
+                      parentLessonId = @blockLessons[i].id
+                      # cater for the week plus one entries
+                      @blockRoles[i] = Role.new(lesson_id: parentLessonId,
+                                                      student_id: student.id, 
+                                                      status: 'scheduled',
+                                                      kind: @blockRoles[0].kind,
+                                                      first: thisroleid,
+                                                      block: thisroleid)
+                      
+                      #byebug
+                      if @blockRoles[0].student.status == 'fortnightly'
+                        if @blockRoles[0].status == 'bye'
+                          @blockRoles[i].status = i.even? ? 'bye' : 'scheduled' 
+                        else
+                          @blockRoles[i].status = i.odd? ? 'bye' : 'scheduled' 
+                        end
+                      end
+                      logger.debug "@blockRoles ( " + i.to_s + "): " + @blockRoles[i].inspect
+                    end
+                    (0..mycopynumweeks+1).reverse_each do |i|
+                      # the last entity in chain will have next = nil by default, do not populate.
+                      @blockRoles[i].next = @blockRoles[i+1].id unless i == mycopynumweeks+1  
+                      if @blockRoles[i].save
+                        @results.push "created role " + @blockRoles[i].inspect
+                      else
+                        @results.push "FAILED creating role " + @blockRoles[i].inspect + 
+                                      "ERROR: " + @blockRoles[i].errors.messages.inspect
+                      end
+                      # the last entity in chain is the week + 1 entry. 
+                      # block will be set to self.
+                      ### This strategy is now changed.
+                      ### Week Plus One (WPO) is now identified in the slots
+                      ### Block now picks up all the items in the chain as first
+                      ### will change often as moves are done. Block is the only way
+                      ### to pick up all historical entries in the chain.
+                      ###if i == mycopynumweeks+1
+                      ###  @blockRoles[i].block = @blockRoles[i].id if i == mycopynumweeks+1  
+                      ###  if @blockRoles[i].save
+                      ###    @results.push "updated role :block " + @blockTutroles[i].inspect
+                      ###  else
+                      ###    @results.push "FAILED updating role block " + @blockTutroles[i].inspect + 
+                      ###                  "ERROR: " + @blockRoles[i].errors.messages.inspect
+                      ###  end
+                      ###end
+                    end
+                  end
+                end
+              end
+            end
+            if flagbreak
+              response.stream.write "</p>" if flagstream
+              flagbreak = false
+            end
+          end
+        end        
+      end
+    end
+
+    # Now need to break the chains 
+    # Remember that week + 1 is in the old chain.
+    # Need to find previous link in the chain and set entity.next to nil.
+    #@allCopiedSlotsIds    = Array.new
+    #@allCopiedLessonsIds  = Array.new
+    #@allCopiedRolesIds    = Array.new
+    #@allCopiedTutrolesIds = Array.new
+    response.stream.write "<p>Breaking chains to disconnect wpo from previous term.</p>" if flagstream
+    Slot.where(next: @allCopiedSlotsIds).update_all(next: nil)
+    Lesson.where(next: @allCopiedLessonsIds).update_all(next: nil)
+    Role.where(next: @allCopiedRolesIds).update_all(next: nil)
+    Tutrole.where(next: @allCopiedTutrolesIds).update_all(next: nil)
+    
+    # Now remove the wpo flag for this initial wpo
+    response.stream.write "<p>Remove wpo flag from old week plus one.</p>" if flagstream
+    Slot.where(id: @allCopiedSlotsIds).update_all(wpo: nil)
+    response.stream.write "<p>Populate Term COMPLETED.</p>"
+    response.stream.close
+  #rescue ActionController::Live::ClientDisconnected
+  #  logger.info("Client disconnected!!!")
+  #  flagStream = false
+  #ensure
+  #  response.stream.close
+  end
+
+#***********************************************************************
+#***********************************************************************
 
 #---------------------------------------------------------------------------
 #
@@ -1293,7 +2061,7 @@ class AdminsController < ApplicationController
 #                                   }
 #-------------------------------------------------------------------
   # GET /admins/copytermweeks
-  def copytermweeks_RETIRED
+  def copytermweeks_RETIRED2
     logger.debug "entering copytermweeks"
     #logger.debug "copytermweeks_params: " + copytermweeks_params.inspect
     #sf = 5    # signigicant figures
@@ -1640,12 +2408,6 @@ class AdminsController < ApplicationController
     #@allCopiedLessonsIds  = Array.new
     #@allCopiedRolesIds    = Array.new
     #@allCopiedTutrolesIds = Array.new
-=begin
-    Slot.where(next: @allCopiedSlotsIds).update_all(next: nil)
-    Lesson.where(next: @allCopiedLessonsIds).update_all(next: nil)
-    Role.where(next: @allCopiedRolesIds).update_all(next: nil)
-    Tutrole.where(next: @allCopiedTutrolesIds).update_all(next: nil)
-=end
   end
 
 #---------------------------------------------------------------------------
