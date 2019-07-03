@@ -63,6 +63,8 @@ Rails.application.routes.draw do
   get 'admins/populateterm' => 'admins#populateterm', as: :populateterm
   get 'admins/wporevertedit' => 'admins#wporevertedit', as: :wporevertedit
   get 'admins/wporevert' => 'admins#wporevert', as: :wporevert
+  get 'admins/wpomoveedit' => 'admins#wpomoveedit', as: :wpomoveedit
+  get 'admins/wpomove' => 'admins#wpomove', as: :wpomove
  #get 'admins/deletedaysedit' => 'admins#deletedaysedit', as: :deletedaysedit
  #get 'admins/deletedays' => 'admins#deletedays', as: :deletedays
   get 'admins/deleteolddataedit' => 'admins#deleteolddataedit', as: :deleteolddataedit

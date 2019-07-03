@@ -928,8 +928,84 @@ def wporevert
   response.stream.close
 end
 
+#---------------------------------------------------------------------------
+#   wpomoveedit 
+#---------------------------------------------------------------------------
+def wpomoveedit
+  @issue = ""
+  @slotwpofirst = Slot.where.not(wpo: nil).order(:timeslot).first
+  @slotwpolast = Slot.where.not(wpo: nil).order(:timeslot).last
+  @slotwpoweeks = Slot.select(:timeslot).where.not(wpo: nil).map{|o| o.timeslot.to_datetime.cweek}.uniq
+  @slotdblast = Slot.order(:timeslot).last
+  @slotslastchain = Slot.where(first: @slotdblast.first).order(:timeslot)
+  # if last link in the last chain in the database matches last wpo
+  #   then we have a normal setup
+  # otherwise we have a corrupted build (possibly populate term aborted)
+  if @slotwpoweeks.count == 1  # only one wpo
+    wpostartdate = @slotslastchain[0].timeslot.to_datetime.beginning_of_week
+                     # reverted wpo is first link in chain
+  else # more than one wpo
+      @issue = "Multiple WPOs present - this operation cannot be done."
+      return
+  end
+  # set all these wpo status
+  @wpostartdate = wpostartdate  # start of wpo week
+  @wpoenddate = wpostartdate + 7.days
+  # end of current term
+  checklastnonwposlot = Slot.where("timeslot < ? ", @wpostartdate)
+                            .order(:timeslot).last
+  @endofterm = checklastnonwposlot.timeslot.to_datetime.end_of_week
 
+end
 
+#---------------------------------------------------------------------------
+#   wpomove 
+#---------------------------------------------------------------------------
+  def wpomove
+    @issue = ""
+    @slotwpofirst = Slot.where.not(wpo: nil).order(:timeslot).first
+    @slotwpolast = Slot.where.not(wpo: nil).order(:timeslot).last
+    @slotwpoweeks = Slot.select(:timeslot).where.not(wpo: nil).map{|o| o.timeslot.to_datetime.cweek}.uniq
+    @slotdblast = Slot.order(:timeslot).last
+    @slotslastchain = Slot.where(first: @slotdblast.first).order(:timeslot)
+    # if last link in the last chain in the database matches last wpo
+    #   then we have a normal setup
+    # otherwise we have a corrupted build (possibly populate term aborted)
+    if @slotwpoweeks.count == 1  # only one wpo
+      wpostartdate = @slotslastchain[0].timeslot.to_datetime.beginning_of_week
+                       # reverted wpo is first link in chain
+    else # more than one wpo
+        @issue = "Multiple WPOs present - this operation cannot be done."
+        return
+    end
+    # set all these wpo status
+    @wpostartdate = wpostartdate  # start of wpo week
+    @wpoenddate = wpostartdate + 7.days
+    @moveto = params['moveto'].to_datetime.beginning_of_week
+    checkslots = Slot.where("timeslot > ? AND
+                         timeslot < ? ", @moveto, @moveto + 7.days) 
+    if checkslots.count > 0
+      @issue = "The period you are moving WPO to is not empty!"
+      return
+    end
+    # Need to ensure it is after the current term period 
+    # last slot before the current wpo
+    checklastnonwposlot = Slot.where("timeslot < ? ", @wpostartdate)
+                              .order(:timeslot).last
+    if checklastnonwposlot.timeslot.to_datetime.end_of_week > @moveto
+      @issue = "The period you are moving WPO to is not after the current term!"
+      return      
+    end
+    diff = @moveto - @wpostartdate
+    wposlots = Slot.where("timeslot > ? AND
+                         timeslot < ? ", @wpostartdate, @wpoenddate)
+    wposlots.each do |slot|
+      slot.timeslot = slot.timeslot.to_datetime + diff
+      slot.save
+    end
+    @issue = "WPO Move is complete."
+
+  end
 
 
 #***********************************************************************
