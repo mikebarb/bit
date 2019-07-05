@@ -1,12 +1,1 @@
-<h1>Check Chains</h1>
-<p>Oldest day in database  : <%= @oldestdate.strftime("%a %d/%m/%Y") %></p>
-<p>Newest day in database  : <%= @newestdate.strftime("%a %d/%m/%Y") %></p>
-<p>Oldest chain in database: <%= @oldestslotchain.strftime("%a %d/%m/%Y") %></p>
-<p><b>Week Plus One slots</b></p>
-<p>Oldest wpo (week+one)   : <%= @slotwpofirst.timeslot.strftime("%a %d/%m/%Y") %></p>
-<p>Newest wpo (week+one)   : <%= @slotwpolast.timeslot.strftime("%a %d/%m/%Y") %></p>
-<% if @slotwpoweeks.count > 1 %>
-<p><b>WARNING:</b> wpo slots (week plus one) are NOT all in the same week!</p>
-<% end %>
-<br>
-
+<h1>DB Checks - Check Chains</h1>

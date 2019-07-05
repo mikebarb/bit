@@ -1,0 +1,39 @@
+<div id="page_name" class="hideme">removeslot</div>
+<h1>Admins - Remove Slot</h1>
+<p><b></b>This operation cannot be undone - when you CLICK ON REMOVE,
+          the job is done.</b></p>
+<p>As a precaution to prevent accidental deletion, you MUST manually remove
+   all lesson including tutors and students from the slot in the calendar page
+   before you can remove the slot on this page.</p>
+
+<% if @issue.length > 0 %>
+  <P><%= @issue %></P>
+<% else %>
+<table id='removeslottable' >
+  <thead>
+    <tr>
+      <th>Location</th>
+      <th>Day</th>
+      <th>Time</th>
+      <th class='catchupaction'>action</th>
+    </tr>
+  </thead>
+
+  <tbody>
+    <% @wposlots.each do |slot| %>
+      <tr id=<%= 'r' + slot.id.to_s %> >
+        <td><%= slot.location %></td>
+        <td><%= slot.timeslot.to_datetime.strftime("%A") %></td>
+        <td><%= slot.timeslot.to_datetime.strftime("%l:%M %P") %></td>
+        <% if slot.lessons.count == 0 %>
+          <td id=<%= slot.id.to_s 
+          %> class='action buttonlink' data-action='removeslot' >remove</td>
+        <% else %>
+          <td></td>
+        <% end %>
+      </tr>
+    <% end %>
+  </tbody>
+</table>
+
+<% end %>

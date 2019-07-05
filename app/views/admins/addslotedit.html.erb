@@ -1,0 +1,28 @@
+<div id="page_name" class="hideme">addslotedit</div>
+<h1>Admin Controller - Add Slot</h1>
+<br>
+    <p>This function provides the ability to add a new slot into week plus one (WPO).<br>
+       This is the first week of the next term. </p>
+    <p>Current WPO span is</p>
+    <p>first: <%= @wpostartdate.strftime("%A %e/%-m/%y") %></p>
+    <p>last : <%= @wpoenddate.strftime("%A %e/%-m/%y") %></p>
+    <p>End of Term: <%=@endofterm.strftime("%A %e/%-m/%y") %></p>
+    <br>
+
+    <%= form_tag("addslot", method: "get") do %>
+      <%= label_tag("location", "Location:") %><br>
+      <%= select_tag("location", options_for_select(@locationsselect)) %>
+      <div id="otherDesc">
+        <%= text_field_tag( :location_other, "", id: 'otherlocation') %>
+      </div>
+      <br><br>
+      <%= label_tag("day", "Lesson Day:") %><br>
+      <%= select_tag("day", options_for_select(@daynamesselect, 'Wednesday')) %>
+      <br><br>
+      <%= label_tag("lesson", "Lesson Time:") %><br>
+      <%= time_field_tag("time", value = "15:30") %>
+      <br><br>
+      <%= submit_tag("Add Slot") %>
+    <% end %>
+
+

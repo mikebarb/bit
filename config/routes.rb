@@ -65,6 +65,10 @@ Rails.application.routes.draw do
   get 'admins/wporevert' => 'admins#wporevert', as: :wporevert
   get 'admins/wpomoveedit' => 'admins#wpomoveedit', as: :wpomoveedit
   get 'admins/wpomove' => 'admins#wpomove', as: :wpomove
+  get 'admins/addslotedit' => 'admins#addslotedit', as: :addslotedit
+  get 'admins/addslot' => 'admins#addslot', as: :addslot
+  get 'admins/removeslotshow' => 'admins#removeslotshow', as: :removeslotshow
+  post 'admins/removeslot' => 'admins#removeslot', as: :removeslot
  #get 'admins/deletedaysedit' => 'admins#deletedaysedit', as: :deletedaysedit
  #get 'admins/deletedays' => 'admins#deletedays', as: :deletedays
   get 'admins/deleteolddataedit' => 'admins#deleteolddataedit', as: :deleteolddataedit

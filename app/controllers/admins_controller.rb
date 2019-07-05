@@ -42,15 +42,41 @@ class AdminsController < ApplicationController
 #---------------------------------------------------------------------------
   # GET /admins/checkchains
   def checkchains
+    mydisplay = render_to_string("admins/checkchainsstream_head.html", :formats => [:html])
+    response.stream.write mydisplay
+
     # show oldest date in database and youngest date in database
     @oldestdate      = Slot.order(:timeslot).first.timeslot
+    response.stream.write "<p>Oldest day in database  : #{@oldestdate.strftime("%a %d/%m/%Y")}</p>"
     @newestdate      = Slot.order(:timeslot).reverse_order.first.timeslot
+    response.stream.write "<p>Newest day in database  : #{@newestdate.strftime("%a %d/%m/%Y")}</p>"
     @oldestslotchain = Slot.order(:timeslot).where.not(first: nil).first.timeslot
+    response.stream.write "<p>Oldest chain in database: #{@oldestslotchain.strftime("%a %d/%m/%Y")}</p>"
     # warn if all the wpos are not in the same week
-    @slotwpoweeks = Slot.select(:timeslot).where.not(wpo: nil).map{|o| o.timeslot.to_datetime.cweek}.uniq
-    @slotwpofirst = Slot.select(:timeslot).where.not(wpo: nil).order(:timeslot).first
+    response.stream.write "<p><b>Week Plus One slots</b></p>"
+    @slotwpofirst = Slot.where.not(wpo: nil).order(:timeslot).first
+    response.stream.write "<p>Oldest wpo (week+one)   : #{@slotwpofirst.timeslot.strftime("%a %d/%m/%Y")}</p>"
     @slotwpolast = Slot.select(:timeslot).where.not(wpo: nil).order(:timeslot).last
-    
+    response.stream.write "<p>Newest wpo (week+one)   : #{@slotwpolast.timeslot.strftime("%a %d/%m/%Y")}</p>"
+    @slotwpoweeks = Slot.select(:timeslot).where.not(wpo: nil).map{|o| o.timeslot.to_datetime.cweek}.uniq
+    if @slotwpoweeks.count > 1  # wpo is in two separate weeks!
+      response.stream.write "<p><b>WARNING:</b> wpo slots (week plus one) are NOT all in the same week!</p>"
+    else  # wpo in a single week - all good
+      if @slotwpofirst.id == @slotwpofirst.first
+        response.stream.write "<p>Note:<br>wpo slots (week plus one) are isolated from the previous term!<br>" + 
+                                          "This is usually the result of a wpo revert operation.<br>" +
+                                          "Changes in the current term DO NOT FLOW into this wpo.</p>"
+      end
+    end
+    # end of current term
+    @wpostartdate = @slotwpolast.timeslot.to_datetime.beginning_of_week  
+    checklastnonwposlot = Slot.where("timeslot < ? ", @wpostartdate)
+                              .order(:timeslot).last
+    @endofterm = checklastnonwposlot.timeslot.to_datetime.end_of_week
+    response.stream.write "<p><b>Last day of term previous to last WPO</b></p>"
+    response.stream.write "<p>End of term   : #{@endofterm.strftime("%a %d/%m/%Y")}</p>"
+    response.stream.write "<br>"
+
     # Checking  options
     @flagCheckwpos              = true    # true to check, false to ignore
     @flagCheckSlots             = true    # ditto
@@ -63,11 +89,13 @@ class AdminsController < ApplicationController
     flagFixLessonDisconnects   = false    # ditto
     flagfixwpos                = false    # ditto
 
-    @errors              = Array.new   # keep track of errors.
+    @errors              = Array.new
     @displayshort        = Array.new
     @displayshortlesson  = Array.new
 
-    mydisplay = render_to_string("admins/checkchainsstream_head.html", :formats => [:html])
+    mydisplay = render_to_string("admins/checkchainsstream_body.html",
+                                 :formats => [:html], :layout => false,
+                                 locals: {mydata: @errors})
     response.stream.write mydisplay
     @errors.clear
     
@@ -1007,6 +1035,151 @@ end
 
   end
 
+#---------------------------------------------------------------------------
+#   addslotedit 
+#---------------------------------------------------------------------------
+def addslotedit
+  @issue = ""
+  @slotwpofirst = Slot.where.not(wpo: nil).order(:timeslot).first
+  @slotwpolast = Slot.where.not(wpo: nil).order(:timeslot).last
+  @slotwpoweeks = Slot.select(:timeslot).where.not(wpo: nil).map{|o| o.timeslot.to_datetime.cweek}.uniq
+  if @slotwpoweeks.count == 1  # only one wpo
+    wpostartdate = @slotwpofirst.timeslot.to_datetime.beginning_of_week
+  else # more than one wpo
+      @issue = "Multiple WPOs present - this operation cannot be done."
+      return
+  end
+  # set all these wpo status
+  @wpostartdate = wpostartdate  # start of wpo week
+  @wpoenddate = wpostartdate + 7.days
+  @wposlots = Slot.where("timeslot > ? AND timeslot < ? ", @wpostartdate, @wpoenddate)
+  # end of current term
+  endoftermslot = Slot.where("timeslot < ?", @wpostartdate)
+                  .order(:timeslot).last
+  @endofterm = endoftermslot.timeslot.to_datetime.end_of_week
+  locations = Hash.new
+  @days = Hash.new
+  @times = Hash.new
+  @daynames = ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday"]
+  @daynamesselect = @daynames.map{|o| [o, o]}
+  @wposlots.each do |slot|
+      locations[slot.location] = true
+      day  = slot.timeslot.to_datetime.strftime("%A")
+      time = slot.timeslot.to_datetime.strftime("%H:%M")
+      @days[day] = 1
+      @times[time] = 1
+  end
+  @locationsselect = locations.map{|k,v| [k, k]}
+  @locationsselect.push(['OTHER', 'OTHER'])
+end
+
+#---------------------------------------------------------------------------
+#   addslot
+#---------------------------------------------------------------------------
+  def addslot
+    @issue = ""
+    @slotwpofirst = Slot.where.not(wpo: nil).order(:timeslot).first
+    @slotwpolast = Slot.where.not(wpo: nil).order(:timeslot).last
+    @slotwpoweeks = Slot.select(:timeslot).where.not(wpo: nil).map{|o| o.timeslot.to_datetime.cweek}.uniq
+
+    if @slotwpoweeks.count == 1  # only one wpo
+      @wpostartdate = @slotwpofirst.timeslot.to_datetime.beginning_of_week
+                       # reverted wpo is first link in chain
+    else # more than one wpo
+        @issue = "Multiple WPOs present - this operation cannot be done."
+        return
+    end
+    #wposlots = Slot.where("timeslot > ? AND timeslot < ?", @wpostartdate, @wpostartdate + 7.days)
+    location = params['location'].upcase
+    if location == "OTHER"
+      location = params['location_other'].upcase
+      if location.length == 0
+        @issue = "You have selected OTHER location but NOT provided a value!"
+        return
+      end
+    end
+    day      = params['day']
+    time = params['time'].match(/^(\d\d):(\d\d)$/)
+    daynames = ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday"]
+    dayindex = daynames.index(day)
+    mydatetime = @wpostartdate + dayindex.days + time[1].to_i.hours + time[2].to_i.minutes
+    logger.debug "mytimeslot: " + mydatetime.inspect
+    logger.debug "location: " + location
+ 
+    # Need to make sure this slot is not already in the database
+    checkslots = Slot.where(timeslot: mydatetime).where(location: location)
+    if checkslots.count > 0
+      @issue = "This slot is already in the database - location: " + location + 
+               " timeslot: " + mydatetime.inspect
+      return
+    end
+    newslot = Slot.new(location: location, timeslot: mydatetime)
+    newslot.save
+    newslot.first = newslot.id
+    newslot.wpo = newslot.id
+    newslot.save
+    logger.debug "newslot: " + newslot.inspect
+    
+    @issue = "Slot added: " + newslot.inspect
+
+  end
+
+#---------------------------------------------------------------------------
+#   removeslotshow
+#---------------------------------------------------------------------------
+  def removeslotshow
+    @issue = ""
+    @slotwpofirst = Slot.where.not(wpo: nil).order(:timeslot).first
+    @slotwpolast = Slot.where.not(wpo: nil).order(:timeslot).last
+    @slotwpoweeks = Slot.select(:timeslot).where.not(wpo: nil).map{|o| o.timeslot.to_datetime.cweek}.uniq
+    if @slotwpoweeks.count == 1  # only one wpo
+      @wpostartdate = @slotwpofirst.timeslot.to_datetime.beginning_of_week
+                       # reverted wpo is first link in chain
+    else # more than one wpo
+        @issue = "Multiple WPOs present - this operation cannot be done."
+        return
+    end
+    @wposlots = Slot.includes(:lessons)
+                    .where("timeslot > ? AND timeslot < ?", @wpostartdate, @wpostartdate + 7.days)
+                    .order(:location, :timeslot)
+  end
+
+  #==================================================================
+  # POST /removeslot.json
+  def removeslot
+    @errors = ""
+    @rsdomchange = Hash.new
+    params['domchange'].each do |k, v|
+      @rsdomchange[k] = v
+    end
+    if @rsdomchange['action'] != 'removeslot'
+      @errors = "action is invalid for removeslot function" 
+    end
+    @slots = Slot.includes(:lessons).where(id: @rsdomchange['object_id'].to_i)
+    
+    if @slots.count != 1
+      @errors= "Not a valid slot"
+    elsif @slots[0].lessons.count > 0
+      @errors = "Slot has content - cannot remove"
+    end
+    if @errors.length > 0
+      respond_to do |format|
+        format.json { render json: @errors, status: :unprocessable_entity }
+        return
+      end
+    end
+    # Now safe to delete this slot.
+    @slot = Slot.find(@slots[0].id)
+    respond_to do |format|
+      if @slot.delete
+        format.json { render json: @rsdomchange, status: :ok }
+      else
+        format.json { render json: @slot.errors.full_messages, status: :unprocessable_entity }
+        logger.debug "unprocessable entity(line 1172): " + @slot.errors.full_messages.inspect 
+      end
+    end
+  end
+
 
 #***********************************************************************
 #***********************************************************************
@@ -1107,11 +1280,13 @@ end
     @slotwpolast = Slot.where.not(wpo: nil).order(:timeslot).last
     
     mystartcopyfromdate = @slotwpolast.timeslot.to_datetime.beginning_of_week
-    myendcopyfromdate = mystartcopyfromdate + 7.days 
-    mycopynumweeks      = copytermweeks_params["num_weeks"].to_i
+    myendcopyfromdate = mystartcopyfromdate + 7.days
+    # the parameter passed in for copytermweeks_params["num_weeks"] is to the
+    # user the number of weeks required in this term.
+    # We must ajust this to be the number of weeks copied.
+    mycopynumweeks      = copytermweeks_params["num_weeks"].to_i - 1
     mystartcopytodate   = mystartcopyfromdate + 7.days
-    myendcopytodate     = mystartcopytodate + (mycopynumweeks -2) * 7
-    #myfirstweekdate     = copytermweeks_params["first_week"].to_date
+    myendcopytodate     = mystartcopytodate + mycopynumweeks.weeks
     myfirstweekdate     = copytermweeks_params["first_week"].to_datetime.beginning_of_week
         
     logger.debug("mystartcopyfromdate:" + mystartcopyfromdate.inspect)
@@ -1209,7 +1384,7 @@ end
       response.stream.write "<p>Copy from week beginning: " +
                              mystartcopyfromdate.strftime("  %A %e/%-m/%y  ") + "</p>"
       response.stream.write "<p>Building a term containing : " +
-                             mycopynumweeks.to_s + " weeks</p>"
+                             (mycopynumweeks + 1).to_s + " weeks</p>"
       response.stream.write "<p>And staring first week of next term on : " +
                              myfirstweekdate.strftime("  %A %e/%-m/%y  ") + " weeks</p>"
     end
