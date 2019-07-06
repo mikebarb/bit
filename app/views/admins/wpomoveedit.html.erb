@@ -1,20 +1,24 @@
 <h1>Admin Controller - Move Week Plus One (WPO)</h1>
 <br>
-    <p>This function provides the ability to move the week plus one (WPO)
-       to a different week. This is the first week of the next term. </p>
-    <br>
-    <p>Current WPO span is</p>
-    <p>first: <%= @wpostartdate.strftime("%A %e/%-m/%y") %></p>
-    <p>last : <%= @wpoenddate.strftime("%A %e/%-m/%y") %></p>
-    <br>
-    <p>End of Term: <%=@endofterm.strftime("%A %e/%-m/%y") %></p>
-    <br>
+<p>This function provides the ability to move the week plus one (WPO)
+   to a different week. This is the first week of the next term. </p>
+<br>
+<% if @issue.length > 0 %>
+    <p><b><%= @issue %></b></p>
+<% else %>
+  <p>Current WPO span is</p>
+  <p>first: <%= @wpostartdate.strftime("%A %e/%-m/%y") %></p>
+  <p>last : <%= @wpoenddate.strftime("%A %e/%-m/%y") %></p>
+  <br>
+  <p>End of Term: <%=@endofterm.strftime("%A %e/%-m/%y") %></p>
+  <br>
 
-    <%= form_tag("wpomove", method: "get") do %>
-      <%= label_tag("moveto", "Date of the week (Monday) to move the wpo to:") %>
-      <%= date_field_tag("moveto") %>
-      <br><br>
-      <%= submit_tag("Proceed with WPO move") %>
-    <% end %>
+  <%= form_tag("wpomove", method: "get") do %>
+    <%= label_tag("moveto", "Date of the week (Monday) to move the wpo to:") %>
+    <%= date_field_tag("moveto") %>
+    <br><br>
+    <%= submit_tag("Proceed with WPO move") %>
+  <% end %>
+<% end %>
 
 
