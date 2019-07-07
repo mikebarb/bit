@@ -42,30 +42,46 @@ class AdminsController < ApplicationController
 #---------------------------------------------------------------------------
   # GET /admins/checkchains
   def checkchains
+    flagstream = true
+    @errors = Array.new
+    #byebug
+    response.headers['Content-Type'] = 'html/event-stream' #if flagstream
+    #response.headers['Cache-Control'] = 'no-cache' if flagstream
+    response.headers['X-Accel-Buffering'] = 'no' if flagstream
     mydisplay = render_to_string("admins/checkchainsstream_head.html", :formats => [:html])
-    response.stream.write mydisplay
+    response.stream.write mydisplay if flagstream
 
     # show oldest date in database and youngest date in database
     @oldestdate      = Slot.order(:timeslot).first.timeslot
-    response.stream.write "<p>Oldest day in database  : #{@oldestdate.strftime("%a %d/%m/%Y")}</p>"
+    response.stream.write "<p>Oldest day in database  : #{@oldestdate.strftime("%a %d/%m/%Y")}</p>" if flagstream
+    @errors.push("Oldest day in database  :" + @oldestdate.strftime('%a %d/%m/%Y'))
     @newestdate      = Slot.order(:timeslot).reverse_order.first.timeslot
-    response.stream.write "<p>Newest day in database  : #{@newestdate.strftime("%a %d/%m/%Y")}</p>"
+    response.stream.write "<p>Newest day in database  : #{@newestdate.strftime("%a %d/%m/%Y")}</p>" if flagstream
+    @errors.push("Newest day in database  :" +  @newestdate.strftime("%a %d/%m/%Y"))
     @oldestslotchain = Slot.order(:timeslot).where.not(first: nil).first.timeslot
-    response.stream.write "<p>Oldest chain in database: #{@oldestslotchain.strftime("%a %d/%m/%Y")}</p>"
+    response.stream.write "<p>Oldest chain in database: #{@oldestslotchain.strftime("%a %d/%m/%Y")}</p>" if flagstream
+    @errors.push("Oldest chain in database:" +  @oldestslotchain.strftime("%a %d/%m/%Y"))
     # warn if all the wpos are not in the same week
-    response.stream.write "<p><b>Week Plus One slots</b></p>"
+    response.stream.write "<p><b>Week Plus One slots</b></p>" if flagstream
+    @errors.push("Week Plus One slots")
     @slotwpofirst = Slot.where.not(wpo: nil).order(:timeslot).first
-    response.stream.write "<p>Oldest wpo (week+one)   : #{@slotwpofirst.timeslot.strftime("%a %d/%m/%Y")}</p>"
+    response.stream.write "<p>Oldest wpo (week+one)   : #{@slotwpofirst.timeslot.strftime("%a %d/%m/%Y")}</p>" if flagstream
+    @errors.push("Oldest wpo (week+one)   :" +  @slotwpofirst.timeslot.strftime("%a %d/%m/%Y"))
     @slotwpolast = Slot.select(:timeslot).where.not(wpo: nil).order(:timeslot).last
-    response.stream.write "<p>Newest wpo (week+one)   : #{@slotwpolast.timeslot.strftime("%a %d/%m/%Y")}</p>"
+    response.stream.write "<p>Newest wpo (week+one)   : #{@slotwpolast.timeslot.strftime("%a %d/%m/%Y")}</p>" if flagstream
+    @errors.push("Newest wpo (week+one)   : " + @slotwpolast.timeslot.strftime("%a %d/%m/%Y"))
     @slotwpoweeks = Slot.select(:timeslot).where.not(wpo: nil).map{|o| o.timeslot.to_datetime.cweek}.uniq
     if @slotwpoweeks.count > 1  # wpo is in two separate weeks!
-      response.stream.write "<p><b>WARNING:</b> wpo slots (week plus one) are NOT all in the same week!</p>"
+      response.stream.write "<p><b>WARNING:</b> wpo slots (week plus one) are NOT all in the same week!</p>" if flagstream
+    @errors.push("WARNING: wpo slots (week plus one) are NOT all in the same week!")
     else  # wpo in a single week - all good
       if @slotwpofirst.id == @slotwpofirst.first
         response.stream.write "<p>Note:<br>wpo slots (week plus one) are isolated from the previous term!<br>" + 
                                           "This is usually the result of a wpo revert operation.<br>" +
-                                          "Changes in the current term DO NOT FLOW into this wpo.</p>"
+                                          "Changes in the current term DO NOT FLOW into this wpo.</p>" if flagstream
+        errors.push("Note:<br>wpo slots (week plus one) are isolated from the previous term! " +
+                    "This is usually the result of a wpo revert operation. " +
+                    "Changes in the current term DO NOT FLOW into this wpo.")
       end
     end
     # end of current term
@@ -73,16 +89,18 @@ class AdminsController < ApplicationController
     checklastnonwposlot = Slot.where("timeslot < ? ", @wpostartdate)
                               .order(:timeslot).last
     @endofterm = checklastnonwposlot.timeslot.to_datetime.end_of_week
-    response.stream.write "<p><b>Last day of term previous to last WPO</b></p>"
-    response.stream.write "<p>End of term   : #{@endofterm.strftime("%a %d/%m/%Y")}</p>"
-    response.stream.write "<br>"
+    response.stream.write "<p><b>Last day of term previous to last WPO</b></p>" if flagstream
+    response.stream.write "<p>End of term   : #{@endofterm.strftime("%a %d/%m/%Y")}</p>" if flagstream
+    response.stream.write "<br>" if flagstream
+    @errors.push("Last day of term previous to last WPO - " +
+                 "End of term:" +  @endofterm.strftime("%a %d/%m/%Y"))
 
     # Checking  options
-    @flagCheckwpos              = true    # true to check, false to ignore
+    @flagCheckwpos              = false    # true to check, false to ignore
     @flagCheckSlots             = true    # ditto
-    @flagCheckLessons           = true    # ditto
-    @flagCheckTutroles          = true    # ditto
-    @flagCheckRoles             = true    # ditto
+    @flagCheckLessons           = false    # ditto
+    @flagCheckTutroles          = false    # ditto
+    @flagCheckRoles             = false    # ditto
     
     # Fixing options
     flagFixNilTerminate        = false    # true to fix, false to monitor
@@ -96,8 +114,8 @@ class AdminsController < ApplicationController
     mydisplay = render_to_string("admins/checkchainsstream_body.html",
                                  :formats => [:html], :layout => false,
                                  locals: {mydata: @errors})
-    response.stream.write mydisplay
-    @errors.clear
+    response.stream.write mydisplay if flagstream
+    @errors.clear if flagstream
     
     #----------------- show wpo entries -------------------------------
     # wpo = week + one   - the first week in the following term
@@ -133,8 +151,8 @@ class AdminsController < ApplicationController
       mydisplay = render_to_string("admins/checkchainsstream_body.html",
                                    :formats => [:html], :layout => false,
                                    locals: {mydata: @errors})
-      response.stream.write mydisplay
-      @errors.clear
+      response.stream.write mydisplay if flagstream
+      @errors.clear if flagstream
     end
 
     #----------------- slot chains -------------------------------
@@ -154,11 +172,11 @@ class AdminsController < ApplicationController
           @numberoferrors_slots += 1   # keep count of chains with errors
           flagerror = false            # reset for this pass
         end
-        if !flagbreak
-          response.stream.write "<p><font size='-2'>Progressing through slots."
+        if !flagbreak 
+          response.stream.write "<p><font size='-2'>Progressing through slots." if flagstream
           flagbreak = true
         else
-          response.stream.write "."
+          response.stream.write "." if flagstream
         end
         thischain = Slot.where(first: firstslot.first)  # all links in the chain
         chainindex = Hash.new     # index chain links by link.id
@@ -207,7 +225,7 @@ class AdminsController < ApplicationController
         end
       end
       if flagbreak
-        response.stream.write "</font></p>"
+        response.stream.write "</font></p>" if flagstream
         flagbreak = false
       end
       @numberoferrors_slots += 1 if flagerror  # count error on last pass
@@ -215,8 +233,8 @@ class AdminsController < ApplicationController
       mydisplay = render_to_string("admins/checkchainsstream_body.html",
                                    :formats => [:html], :layout => false,
                                    locals: {mydata: @errors})
-      response.stream.write mydisplay
-      @errors.clear
+      response.stream.write mydisplay if flagstream
+      @errors.clear if flagstream
     end    
 
     
@@ -238,10 +256,10 @@ class AdminsController < ApplicationController
         count += 1
         #break if count > 100
         if !flagbreak
-          response.stream.write "<p><font size='-2'>Progressing through lessons ."
+          response.stream.write "<p><font size='-2'>Progressing through lessons ." if flagstream
           flagbreak = true
         else
-          response.stream.write "."
+          response.stream.write "." if flagstream
         end
         if flagerror
           @numberoferrors_lessons += 1 
@@ -309,7 +327,7 @@ class AdminsController < ApplicationController
         #end
       end
       if flagbreak
-        response.stream.write "</font></p>"
+        response.stream.write "</font></p>" if flagstream
         flagbreak = false
       end
 
@@ -317,8 +335,8 @@ class AdminsController < ApplicationController
       mydisplay = render_to_string("admins/checkchainsstream_body.html",
                                    :formats => [:html], :layout => false,
                                    locals: {mydata: @errors})
-      response.stream.write mydisplay
-      @errors.clear
+      response.stream.write mydisplay if flagstream
+      @errors.clear if flagstream
       #byebug
 
       # ---------- Now work through the short lesson chains -------------
@@ -327,10 +345,10 @@ class AdminsController < ApplicationController
       flagbreak = false
       @keepshortchain.each do |short|
         if !flagbreak
-          response.stream.write "<p><font size='-2'>Progressing through short chains."
+          response.stream.write "<p><font size='-2'>Progressing through short chains." if flagstream
           flagbreak = true
         else
-          response.stream.write "."
+          response.stream.write "." if flagstream
         end
         firstlink = Lesson.find(short)
         lessonchain = Lesson.includes(:slot, :students, :tutors).where(first: firstlink.first)  # all links in the chain
@@ -411,7 +429,7 @@ class AdminsController < ApplicationController
         end
       end
       if flagbreak
-        response.stream.write "</font></p>"
+        response.stream.write "</font></p>" if flagstream
         flagbreak = false
       end
       @numberoferrors_lessons += 1 if flagerror  # count error on last pass
@@ -419,11 +437,11 @@ class AdminsController < ApplicationController
         mydisplay = render_to_string("admins/checkchainsstream_body.html",
                                      :formats => [:html], :layout => false,
                                      locals: {mydata: @displayshortlesson})
-        response.stream.write mydisplay
+        response.stream.write mydisplay if flagstream
         
         mydisplay = render_to_string("admins/checkchainsstream_todo.html",
                                      :formats => [:html], :layout => false)
-        response.stream.write mydisplay
+        response.stream.write mydisplay if flagstream
       end
     end
     
@@ -461,10 +479,10 @@ class AdminsController < ApplicationController
         count += 1
         #break if count > 2
         if !flagbreak
-          response.stream.write "<p><font size='-2'>Progressing through #{desc}."
+          response.stream.write "<p><font size='-2'>Progressing through #{desc}." if flagstream
           flagbreak = true
         else
-          response.stream.write "."
+          response.stream.write "." if flagstream
         end
         thisblock = checkrole.where(block: firstcheckrole.block)  # all links in the block
         blockindex = Hash.new      # track every link in the block - index by link id
@@ -569,7 +587,7 @@ class AdminsController < ApplicationController
         end
       end
       if flagbreak
-        response.stream.write "</font></p>"
+        response.stream.write "</font></p>" if flagstream
         flagbreak = false
       end
       #if checkrole == Tutrole
@@ -584,13 +602,21 @@ class AdminsController < ApplicationController
       mydisplay = render_to_string("admins/checkchainsstream_body.html",
                                    :formats => [:html], :layout => false,
                                    locals: {mydata: @errors})
-      response.stream.write mydisplay
-      @errors.clear
+
+      response.stream.write mydisplay if flagstream
+      @errors.clear if flagstream
       @numberoferrors_checkrole = 0
       @keepshortchaincheckrole.clear
     end
-    response.stream.write "<p><b>Checks Complete</b></p>"
-    response.stream.close
+    if flagstream
+      response.stream.write "<p><b>Checks Complete</b></p>"
+      response.stream.close
+      logger.debug "finish case flagstream is true"
+      return
+    else
+      logger.debug "finish with flagstream is false"
+      render :checkchains and return
+    end
   end
 
 #---------------------------------------------------------------------------

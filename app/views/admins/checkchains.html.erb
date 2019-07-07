@@ -1,0 +1,13 @@
+<h1>DB Checks - Check Chains</h1>
+<% 
+@errors.each do |s| 
+%><p><% 
+  if s.respond_to?('each') 
+    s.each do |e| 
+      %> <%= e %> <%
+    end
+  else
+    %><%= s %><%
+  end
+%></p><%
+end %>
