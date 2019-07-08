@@ -203,16 +203,23 @@ class TutorsController < ApplicationController
   # DELETE /tutors/1
   # DELETE /tutors/1.json
   def destroy
-    if @tutor.destroy
-      respond_to do |format|
+    @error = ""
+    if @tutor.status != 'inactive'
+      @error = "Tutor was NOT destroyed - NOT inactive"
+    elsif Tutrole.where(tutor_id: @tutor.id).count > 0
+      @error = "Tutor was NOT destroyed - is present in lessons in the database"
+    end
+    respond_to do |format|
+      if @error.length > 0
+        format.html { redirect_to tutors_url, notice:  @error }
+        format.json { render json: @error, status: :unprocessable_entity }
+      elsif @tutor.destroy
         format.html { redirect_to tutors_url, notice: 'Tutor was successfully destroyed.' }
         format.json { head :no_content }
-      end
-    else
-      respond_to do |format|
+      else
         format.html { redirect_to tutors_url, 
           notice: "#{@tutor.errors.messages[:base].reduce { |memo, m| memo + m } }" +
-                  " Tutor was NOT destroyed." 
+                    " Tutor was NOT destroyed." 
         }
         format.json { render json: @tutor.errors, status: :unprocessable_entity }
       end

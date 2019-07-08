@@ -289,13 +289,20 @@ class StudentsController < ApplicationController
   # DELETE /students/1
   # DELETE /students/1.json
   def destroy
-    if @student.destroy
-      respond_to do |format|
+    @error = ""
+    if @student.status != 'inactive'
+      @error = "Student was NOT destroyed - NOT inactive"
+    elsif Role.where(student_id: @student.id).count > 0
+      @error = "Student was NOT destroyed - is present in lessons in the database"
+    end
+    respond_to do |format|
+      if @error.length > 0
+        format.html { redirect_to students_url, notice:  @error }
+        format.json { render json: @error, status: :unprocessable_entity }
+      elsif @student.destroy
         format.html { redirect_to students_url, notice: 'Student was successfully destroyed.' }
         format.json { head :no_content }
-      end
-    else
-      respond_to do |format|
+      else
         format.html { redirect_to students_url, 
           notice: "#{@student.errors.messages[:base].reduce { |memo, m| memo + m } }" +
                   " Student was NOT destroyed." 
