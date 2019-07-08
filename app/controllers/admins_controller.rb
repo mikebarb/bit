@@ -44,12 +44,12 @@ class AdminsController < ApplicationController
   def checkchains
     flagstream = true
     @errors = Array.new
-    #byebug
     response.headers['Content-Type'] = 'html/event-stream' #if flagstream
     #response.headers['Cache-Control'] = 'no-cache' if flagstream
     response.headers['X-Accel-Buffering'] = 'no' if flagstream
     mydisplay = render_to_string("admins/checkchainsstream_head.html", :formats => [:html])
     response.stream.write mydisplay if flagstream
+
 
     # show oldest date in database and youngest date in database
     @oldestdate      = Slot.order(:timeslot).first.timeslot
@@ -96,16 +96,23 @@ class AdminsController < ApplicationController
                  "End of term:" +  @endofterm.strftime("%a %d/%m/%Y"))
 
     # Checking  options
-    @flagCheckwpos              = false    # true to check, false to ignore
+    @flagCheckwpos              = true    # true to check, false to ignore
     @flagCheckSlots             = true    # ditto
-    @flagCheckLessons           = false    # ditto
-    @flagCheckTutroles          = false    # ditto
-    @flagCheckRoles             = false    # ditto
+    @flagCheckLessons           = true    # ditto
+    @flagCheckTutroles          = true    # ditto
+    @flagCheckRoles             = true    # ditto
     
     # Fixing options
-    flagFixNilTerminate        = false    # true to fix, false to monitor
-    flagFixLessonDisconnects   = false    # ditto
-    flagfixwpos                = false    # ditto
+    flagfixwpos                 = false    # true to fix, false to monitor
+    flagFixNilTerminate         = false    # ditto
+    flagFixLessonDisconnects    = false    # ditto
+
+    flagfixwpos              = true if params.has_key?(:fix) && params[:fix] == 'wpos'
+    flagFixNilTerminate      = true if params.has_key?(:fix) && params[:fix] == 'NilTerminate'
+    flagFixLessonDisconnects = true if params.has_key?(:fix) && params[:fix] == 'LessonDisconnects'
+    logger.debug "flagfixwpos: "              + flagfixwpos.inspect
+    logger.debug "flagFixNilTerminate: "      + flagFixNilTerminate.inspect
+    logger.debug "flagFixLessonDisconnects: " + flagFixLessonDisconnects.inspect
 
     @errors              = Array.new
     @displayshort        = Array.new
@@ -153,10 +160,19 @@ class AdminsController < ApplicationController
                                    locals: {mydata: @errors})
       response.stream.write mydisplay if flagstream
       @errors.clear if flagstream
+    
+      if @numberoferrors_wpos > 0
+        response.stream.write "<p>This link allows you to fix WPO errors just detected.<br>" +
+                              "<b> Only do this if you understand what you are doing as incorrect " +
+                              "use could CORRUPT YOUR DATABASE!!!</b></p>" +
+                              "<p>Test in the staging environment first</p>"
+        response.stream.write "<p><a href='/admins/checkchains?fix=wpos'>Fix WPOs</a></p>"
+      end
     end
 
     #----------------- slot chains -------------------------------
     @numberoferrors_slots = 0
+    flagErrorNilTerminate = 0
     if @flagCheckSlots    
       @errors.push("------------------- Check slot chains ----------------")
       # deal with slots
@@ -217,6 +233,7 @@ class AdminsController < ApplicationController
         end
         if !thislink.next.nil?    # check last link encounted has next == nil
           @errors.push(firstslot.first.to_s + " chain not nil terminated " + thislink.inspect)
+          flagErrorNilTerminate += 1
           flagerror = true
           if flagFixNilTerminate
             thislink.next = nil
@@ -235,11 +252,20 @@ class AdminsController < ApplicationController
                                    locals: {mydata: @errors})
       response.stream.write mydisplay if flagstream
       @errors.clear if flagstream
+      # diplay the link to fix nil terminate errors if any present
+      if flagErrorNilTerminate > 0
+        response.stream.write "<p>This link allows you to fix slot errors that are not nil terminated just detected.<br>" +
+                              "<b> Only do this if you understand what you are doing as incorrect " +
+                              "use could CORRUPT YOUR DATABASE!!!</b></p>" +
+                              "<p>Test in the staging environment first</p>"
+        response.stream.write "<p><a href='/admins/checkchains?fix=NilTerminate'>Fix NilTerminate</a></p>"
+      end
     end    
 
     
     #----------------- lesson chains -------------------------------
     @numberoferrors_lessons = 0
+    flagErrorNilTerminate = 0
     if @flagCheckLessons
       @errors.push("------------------- Check lesson chains ----------------")
       #@lessonlinkerroroccurred = false
@@ -311,6 +337,7 @@ class AdminsController < ApplicationController
         if !thislink.next.nil?    # check last link encounted has next == nil
           @errors.push(firstlesson.first.to_s + " chain not nil terminated " + thislink.inspect)
           #@keepshortchain.push(firstlesson.first) unless flagflowerror
+          flagErrorNilTerminate += 1
           if flagFixNilTerminate
             thislink.next = nil
             thislink.save
@@ -338,11 +365,20 @@ class AdminsController < ApplicationController
       response.stream.write mydisplay if flagstream
       @errors.clear if flagstream
       #byebug
-
+      
+      if flagErrorNilTerminate > 0
+        response.stream.write "<p>This link allows you to fix lesson errors that are not nil terminated just detected.<br>" +
+                              "<b> Only do this if you understand what you are doing as incorrect " +
+                              "use could CORRUPT YOUR DATABASE!!!</b></p>" + 
+                              "<p>Test in the staging environment first</p>"
+        response.stream.write "<p><a href='/admins/checkchains?fix=NilTerminate'>Fix NilTerminate</a></p>"
+      end
+      
       # ---------- Now work through the short lesson chains -------------
       @displayshortlesson = Array.new
       # analyse short chain errors
-      flagbreak = false
+      flagErrorLessonDisconnects = 0
+       flagbreak = false
       @keepshortchain.each do |short|
         if !flagbreak
           response.stream.write "<p><font size='-2'>Progressing through short chains." if flagstream
@@ -415,9 +451,15 @@ class AdminsController < ApplicationController
                                   countstudents, counttutors])
             end
             leftlinks.delete(lastlink.id)
-            disconnectedlessons.push(lastlink.id)   # keep track of lessons to possibley be removed
+            disconnectedlessons.push(lastlink.id)   # keep track of lessons to possibly be removed
             lastlink = lessonchainindex[lastlink.next]             # select next link
           end
+          if flagpersonspresent
+            @displayshortlesson.push("Will not be able to remove these " + 
+                                     "disconnected lessons until you manually " +
+                                     "remove the tutors and/or students in them.")
+          end
+          flagErrorLessonDisconnects += 1 if disconnectedlessons.count > 0
           if flagFixLessonDisconnects
             if !flagpersonspresent  # NO tutors or students present in lessons
               @displayshortlesson.push("removed lessons "+ disconnectedlessons.inspect )
@@ -432,6 +474,7 @@ class AdminsController < ApplicationController
         response.stream.write "</font></p>" if flagstream
         flagbreak = false
       end
+      
       @numberoferrors_lessons += 1 if flagerror  # count error on last pass
       if @displayshortlesson.length > 0
         mydisplay = render_to_string("admins/checkchainsstream_body.html",
@@ -443,6 +486,14 @@ class AdminsController < ApplicationController
                                      :formats => [:html], :layout => false)
         response.stream.write mydisplay if flagstream
       end
+      if flagErrorLessonDisconnects > 0
+        response.stream.write "<p>This link allows you to fix lesson chains that are disconnected that have been just detected.<br>" +
+                              "<b> Only do this if you understand what you are doing as incorrect " +
+                              "use could CORRUPT YOUR DATABASE!!!</b></p>" +
+                              "<p>Test in the staging environment first</p>"
+        response.stream.write "<p><a href='/admins/checkchains?fix=LessonDisconnects'>Fix Lesson Disconnects</a></p>"
+      end
+
     end
     
     #----------------- tutrole and tut chains -------------------------------
@@ -471,6 +522,7 @@ class AdminsController < ApplicationController
       flagerror = false
       @numberoferrors_checkrole = 0
       flagbreak = false
+      flagErrorNilTerminate = 0 
       checkroleblocks.each do |firstcheckrole|   # step through blocks - one by one 
         if flagerror
           @numberoferrors_checkrole += 1 
@@ -560,6 +612,7 @@ class AdminsController < ApplicationController
               @keepshortchaincheckrole.push(k)
               flagerror = true
               if (!(thislink.next.nil?))              # but is not nil terminated
+                flagErrorNilTerminate += 1
                 if flagFixNilTerminate
                   @errors.push(firstcheckrole.block.to_s + " block " + k.to_s +
                                " FIXING -" + desc + "segment last link requires nil termination " +
@@ -605,6 +658,13 @@ class AdminsController < ApplicationController
 
       response.stream.write mydisplay if flagstream
       @errors.clear if flagstream
+      if flagErrorNilTerminate > 0
+        response.stream.write "<p>This link allows you to fix #{desc} errors that are not nil terminated just detected.<br>" +
+                              "<b> Only do this if you understand what you are doing as incorrect " +
+                              "use could CORRUPT YOUR DATABASE!!!</b></p>" +
+                              "<p>Test in the staging environment first</p>"
+        response.stream.write "<p><a href='/admins/checkchains?fix=NilTerminate'>Fix NilTerminate</a></p>"
+      end
       @numberoferrors_checkrole = 0
       @keepshortchaincheckrole.clear
     end
