@@ -1737,7 +1737,7 @@ end
                     # do not copy certain kinds!
                     flagstudentcopy = true if ['scheduled', 'attended', 'away',
                                       'absent', 'bye'].include?(@blockRoles[0].status)
-                    flagstudentcopy = false if ['catchup', 'bonus', 'free'].include?(@blockRoles[0].kind)
+                    flagstudentcopy = false if ['catchup', 'catchupcourtesy', 'bonus', 'free'].include?(@blockRoles[0].kind)
                     next unless flagstudentcopy
                     # if so, copy  this student-lesson
                     thisroleid = @blockRoles[0].id
