@@ -704,6 +704,7 @@ class AdminsController < ApplicationController
     mydisplay = render_to_string("admins/deleteolddatastream_head.html", 
                 :formats => [:html])
     response.stream.write mydisplay
+
     if deleteolddata_params["to"] == ""
       #@result = "Failed to pass required parameter (date)!"
       #mydisplay = render_to_string("admins/deleteolddatastream_head.html", 
@@ -712,8 +713,8 @@ class AdminsController < ApplicationController
       return
     end
     @startdatetokeep = deleteolddata_params["to"].to_date
-    #if @startdatetokeep > DateTime.now - 365.days
-    if @startdatetokeep > DateTime.now - 10.days
+    if @startdatetokeep > DateTime.now - 365.days
+    #if @startdatetokeep > DateTime.now - 10.days
       #@result = "You must keep at least one year of data!"
       #mydisplay = render_to_string("admins/deleteolddatastream_head.html", 
       #            :formats => [:html], :layout => false, locals: {mydate: @result})
@@ -877,6 +878,55 @@ class AdminsController < ApplicationController
     #logger.debug "removestudents: " + removestudents.count.to_s
     response.stream.write "<p>Delete inactive students now no longer referred to in the calendar.</p>"
     Student.where(status: 'inactive').where.not(id: linkedstudents.map{|o| o.student_id}).delete_all
+
+    # Remove users who have the role of tutor or student that are
+    # in the student or tutor table with a status of inactive.
+
+    # Set users with role of 'tutor' to inactive who are inactive
+    # in the tutor table.
+    
+    inactivetutors = Tutor.select(:email)
+                          .where(status: "inactive")
+                          .where.not(email: nil)
+                          .where.not(email: '')
+                          .pluck(:email)
+    inactivatetutorusers = User.select(:id)
+                       .where(role: 'tutor')
+                       .where(email: inactivetutors)
+                       .pluck(:id)
+    logger.debug "inactivatetutorusers: " + inactivatetutorusers.inspect
+    # update these user roles
+    User.where(id: inactivatetutorusers).update(role: "inactive") if inactivatetutorusers.count > 0
+
+    # Now do the students
+    inactivestudents = Student.select(:email)
+                              .where(status: "inactive")
+                              .where.not(email: nil)
+                              .where.not(email: '')
+                              .pluck(:email)
+    inactivatestudentusers = User.select(:id)
+                       .where(role: 'student')
+                       .where(email: inactivestudents)
+                       .pluck(:id)
+    logger.debug "inactivatestudentusers: " + inactivatestudentusers.inspect
+    # update these user roles
+    User.where(id: inactivatestudentusers).update(role: "inactive") if inactivatestudentusers.count > 0
+
+    # Remove users who have the role of inactive that are
+    # not in the change table of inactive.
+    removeusers = Array.new
+    changeusers = Change.select(:user).distinct.pluck(:user) # list all users in the change table
+    inactiveusers = User.select(:id)
+                         .where(role: "inactive")
+                         .pluck(:id)              # all users that are inactive
+    inactiveusers.each do |c|
+      unless changeusers.include?(c) 
+        removeusers.push(c)
+      end
+    end
+    logger.debug "remove users: " + removeusers.inspect
+    # delete these users
+    User.where(id: removeusers).delete_all if removeusers.count > 0 
 
     response.stream.write "<p>Delete old date is COMPLETE.</p>"
     response.stream.close
@@ -1126,14 +1176,26 @@ end
 #---------------------------------------------------------------------------
 def addslotedit
   @issue = ""
+  @newdatabase = false
   @slotwpofirst = Slot.where.not(wpo: nil).order(:timeslot).first
   @slotwpolast = Slot.where.not(wpo: nil).order(:timeslot).last
   @slotwpoweeks = Slot.select(:timeslot).where.not(wpo: nil).map{|o| o.timeslot.to_datetime.cweek}.uniq
   if @slotwpoweeks.count == 1  # only one wpo
     wpostartdate = @slotwpofirst.timeslot.to_datetime.beginning_of_week
-  else # more than one wpo
-      @issue = "Multiple WPOs present - this operation cannot be done."
+  elsif @slotwpoweeks.count == 0 # no wpo present
+    if Slot.all.count == 0  # no slots at all in database - fresh database
+      @newdatabase = true
+      @issue = "Empty database - please supply the date for the first wpo."
+      @locationsselect = Array.new
+      @locationsselect.push(['OTHER', 'OTHER'])
       return
+    else
+      @issue = "No WPOs present - this operation cannot be done."
+      return
+    end
+  else
+    @issue = "Multiple WPOs present - this operation cannot be done."
+    return
   end
   # set all these wpo status
   @wpostartdate = wpostartdate  # start of wpo week
@@ -1164,6 +1226,7 @@ end
 #---------------------------------------------------------------------------
   def addslot
     @issue = ""
+    @newdatabase = false
     @slotwpofirst = Slot.where.not(wpo: nil).order(:timeslot).first
     @slotwpolast = Slot.where.not(wpo: nil).order(:timeslot).last
     @slotwpoweeks = Slot.select(:timeslot).where.not(wpo: nil).map{|o| o.timeslot.to_datetime.cweek}.uniq
@@ -1171,11 +1234,22 @@ end
     if @slotwpoweeks.count == 1  # only one wpo
       @wpostartdate = @slotwpofirst.timeslot.to_datetime.beginning_of_week
                        # reverted wpo is first link in chain
-    else # more than one wpo
-        @issue = "Multiple WPOs present - this operation cannot be done."
+    elsif @slotwpoweeks.count == 0 # no wpo present
+      if Slot.all.count == 0  # no slots at all in database - fresh database
+        @newdatabase = true
+        if(params.has_key?['wpostartdate'] &&
+           params['wpostartdate'] != '')
+          @wpostartdate = params['wpostartdate'].to_datetime.beginning_of_week
+        end
+      else
+        @issue = "No WPOs present - this operation cannot be done."
         return
+      end
+    else
+      @issue = "Multiple WPOs present - this operation cannot be done."
+      return
     end
-    #wposlots = Slot.where("timeslot > ? AND timeslot < ?", @wpostartdate, @wpostartdate + 7.days)
+    
     location = params['location'].upcase
     if location == "OTHER"
       location = params['location_other'].upcase
@@ -1184,6 +1258,20 @@ end
         return
       end
     end
+    # need to ensure firt three charactes of location are unique
+    # if the loction is different to existing locations.
+    existinglocations = Slot.select(:location).distinct.pluck(:location)
+    existinglocations3 = existinglocations.map{|o| o[0..2]}
+    #byebug
+    unless existinglocations.include?(location)    # doen't match an existing location
+      if existinglocations3.include?(location[0..2])  # first three letters already exist
+        @issue = "You have selected OTHER location of " + location + 
+                 " which does not have THE FIRST 3 LETTERS unique!"
+        return
+      end 
+    end
+    return
+    
     day      = params['day']
     time = params['time'].match(/^(\d\d):(\d\d)$/)
     daynames = ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday"]

@@ -8,7 +8,8 @@ Place all the behaviors and hooks related to the matching controller here.
 var myhost = window.location.protocol + '//' + window.location.hostname;   // base url for ajax
 
 
-$(document).ready(function() {
+//$(document).ready(function() {
+function ready_page_addslotedit(){
   if(document.getElementById('page_name')){
     var page_name = document.getElementById('page_name').innerHTML;
     //console.log("page name: " + page_name);
@@ -20,7 +21,7 @@ $(document).ready(function() {
   }else{
     return;
   }
- });
+ }
  
 function ready_addslotedit() {
   showhideotherlocation(document.getElementById('location'));
@@ -115,4 +116,6 @@ function ready_removeslot(){
 //------------- End of 'remove_slot' function --------------------------------
 }
 
-  
+//$(document).ready(ready);
+//$(document).on('turbolinks:load', ready);
+$(document).on('turbolinks:load', ready_page_addslotedit);  

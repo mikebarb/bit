@@ -16,6 +16,14 @@ class User < ApplicationRecord    # required migrating to rails 5.0
     end while self.class.exists?(auth_token: auth_token)
   end
 
+  def active_for_authentication?
+    result = super && self.role != 'inactive'
+  end
+
+  def inactive_message
+    role != 'inactive' ? super : :disabled_account
+  end
+
   private
 
     def set_defaults
@@ -29,6 +37,4 @@ class User < ApplicationRecord    # required migrating to rails 5.0
         self.role = 'student'
       end
     end
-
-
 end

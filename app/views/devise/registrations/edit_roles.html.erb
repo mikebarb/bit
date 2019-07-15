@@ -8,7 +8,7 @@
 
   <div class="field">
     <%= f.label :role %><br>
-    <%= f.text_field :role %>
+    <%= f.select :role, ['', 'admin', 'tutor', 'student', 'inactive'] %>
   </div> 
 
   <div class="actions">
