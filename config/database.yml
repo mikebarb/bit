@@ -67,6 +67,14 @@ prodsyd:
   host: frozen-beach-84686.csf4r3cevrgb.ap-southeast-2.rds.amazonaws.com
   port: 5432
 
+prodtwb:
+  <<: *default
+  database: prodtwb
+  username: <%= ENV['DB_USER'] %>
+  password: <%= ENV['DB_PASSWORD'] %>
+  host: frozen-beach-84686.csf4r3cevrgb.ap-southeast-2.rds.amazonaws.com
+  port: 5432
+
 stagingsyd:
   <<: *default
   database: <%= ENV['DB_NAME'] %>
@@ -74,6 +82,12 @@ stagingsyd:
   password: <%= ENV['DB_PASSWORD'] %>
 
 stagingcbr:
+  <<: *default
+  database: <%= ENV['DB_NAME'] %>
+  username: <%= ENV['DB_USER'] %>
+  password: <%= ENV['DB_PASSWORD'] %>
+
+stagingtwb:
   <<: *default
   database: <%= ENV['DB_NAME'] %>
   username: <%= ENV['DB_USER'] %>

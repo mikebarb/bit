@@ -5370,7 +5370,7 @@ else      # Not to test.
       }
       #------------- end of lambda function: formatLesson ---------
 
-      render flexibledisplay
+      ### correction ###render flexibledisplay
       
       # General formatting for each site sheet
       myformat.push(googleVertAlign.call(sheet_id, 1, 1, nil, nil, "TOP"))
@@ -5655,7 +5655,7 @@ else      # Not to test.
       #<br>
     end       # end looping sites
 end           # end of testing option.
-    return      # return without rendering.
+    ### correction ###return      # return without rendering.
   end
 
 
