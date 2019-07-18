@@ -1215,7 +1215,9 @@ def addslotedit
   # end of current term
   endoftermslot = Slot.where("timeslot < ?", @wpostartdate)
                   .order(:timeslot).last
-  @endofterm = endoftermslot.timeslot.to_datetime.end_of_week
+  if endoftermslot != nil
+    @endofterm = endoftermslot.timeslot.to_datetime.end_of_week
+  end
   locations = Hash.new
   @days = Hash.new
   @times = Hash.new

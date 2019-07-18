@@ -9,7 +9,9 @@
       <p>Current WPO span is</p>
       <p>first: <%= @wpostartdate.strftime("%A %e/%-m/%y") %></p>
       <p>last : <%= @wpoenddate.strftime("%A %e/%-m/%y") %></p>
-      <p>End of Term: <%=@endofterm.strftime("%A %e/%-m/%y") %></p>
+      <% if @endofterm != nil %>
+       <p>End of Term: <%=@endofterm.strftime("%A %e/%-m/%y") %></p>
+      <% end %>
       <br>
     <% end %>
     <%= form_tag("addslot", method: "get") do %>
