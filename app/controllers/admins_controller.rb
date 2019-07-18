@@ -52,7 +52,15 @@ class AdminsController < ApplicationController
 
 
     # show oldest date in database and youngest date in database
-    @oldestdate      = Slot.order(:timeslot).first.timeslot
+    firstslot =  Slot.order(:timeslot).first
+    if firstslot == nil
+      @errors = "Database is empty -nothing to report"
+      response.stream.write "<p>#{@errors}</p>"
+      response.stream.write "<p><b>Checks Complete</b></p>"
+      response.stream.close
+      return
+    end
+    @oldestdate      = firstslot.timeslot
     response.stream.write "<p>Oldest day in database  : #{@oldestdate.strftime("%a %d/%m/%Y")}</p>" if flagstream
     @errors.push("Oldest day in database  :" + @oldestdate.strftime('%a %d/%m/%Y'))
     @newestdate      = Slot.order(:timeslot).reverse_order.first.timeslot
@@ -79,7 +87,7 @@ class AdminsController < ApplicationController
         response.stream.write "<p>Note:<br>wpo slots (week plus one) are isolated from the previous term!<br>" + 
                                           "This is usually the result of a wpo revert operation.<br>" +
                                           "Changes in the current term DO NOT FLOW into this wpo.</p>" if flagstream
-        errors.push("Note:<br>wpo slots (week plus one) are isolated from the previous term! " +
+        @errors.push("Note:<br>wpo slots (week plus one) are isolated from the previous term! " +
                     "This is usually the result of a wpo revert operation. " +
                     "Changes in the current term DO NOT FLOW into this wpo.")
       end
@@ -88,13 +96,14 @@ class AdminsController < ApplicationController
     @wpostartdate = @slotwpolast.timeslot.to_datetime.beginning_of_week  
     checklastnonwposlot = Slot.where("timeslot < ? ", @wpostartdate)
                               .order(:timeslot).last
-    @endofterm = checklastnonwposlot.timeslot.to_datetime.end_of_week
-    response.stream.write "<p><b>Last day of term previous to last WPO</b></p>" if flagstream
-    response.stream.write "<p>End of term   : #{@endofterm.strftime("%a %d/%m/%Y")}</p>" if flagstream
-    response.stream.write "<br>" if flagstream
-    @errors.push("Last day of term previous to last WPO - " +
-                 "End of term:" +  @endofterm.strftime("%a %d/%m/%Y"))
-
+    if checklastnonwposlot != nil
+      @endofterm = checklastnonwposlot.timeslot.to_datetime.end_of_week
+      response.stream.write "<p><b>Last day of term previous to last WPO</b></p>" if flagstream
+      response.stream.write "<p>End of term   : #{@endofterm.strftime("%a %d/%m/%Y")}</p>" if flagstream
+      response.stream.write "<br>" if flagstream
+      @errors.push("Last day of term previous to last WPO - " +
+                   "End of term:" +  @endofterm.strftime("%a %d/%m/%Y"))
+    end
     # Checking  options
     @flagCheckwpos              = true    # true to check, false to ignore
     @flagCheckSlots             = true    # ditto
@@ -1188,6 +1197,8 @@ def addslotedit
       @issue = "Empty database - please supply the date for the first wpo."
       @locationsselect = Array.new
       @locationsselect.push(['OTHER', 'OTHER'])
+      @daynames = ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday"]
+      @daynamesselect = @daynames.map{|o| [o, o]}
       return
     else
       @issue = "No WPOs present - this operation cannot be done."
@@ -1270,7 +1281,6 @@ end
         return
       end 
     end
-    return
     
     day      = params['day']
     time = params['time'].match(/^(\d\d):(\d\d)$/)
