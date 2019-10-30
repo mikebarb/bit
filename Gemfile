@@ -95,7 +95,7 @@ end
 
 # Devise gems
 #gem 'devise', '3.4.1'
-gem 'devise', '~>4.4.3'
+gem 'devise', '~>4.7.1'
 
 # mailgun support - used by devise in cloud9 as it block smtp
 gem 'mailgun-ruby'
