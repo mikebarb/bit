@@ -1115,8 +1115,10 @@ def wpomoveedit
   #   then we have a normal setup
   # otherwise we have a corrupted build (possibly populate term aborted)
   if @slotwpoweeks.count == 1  # only one wpo
-    wpostartdate = @slotslastchain[0].timeslot.to_datetime.beginning_of_week
-                     # reverted wpo is first link in chain
+    #wpostartdate = @slotslastchain[0].timeslot.to_datetime.beginning_of_week
+    #                 # reverted wpo is first link in chain
+    #byebug
+    wpostartdate = @slotwpofirst.timeslot.to_datetime.beginning_of_week
   else # more than one wpo
       @issue = "Multiple WPOs present - this operation cannot be done."
       return
@@ -1145,8 +1147,9 @@ end
     #   then we have a normal setup
     # otherwise we have a corrupted build (possibly populate term aborted)
     if @slotwpoweeks.count == 1  # only one wpo
-      wpostartdate = @slotslastchain[0].timeslot.to_datetime.beginning_of_week
-                       # reverted wpo is first link in chain
+      #wpostartdate = @slotslastchain[0].timeslot.to_datetime.beginning_of_week
+      #                 # reverted wpo is first link in chain
+      wpostartdate = @slotwpofirst.timeslot.to_datetime.beginning_of_week
     else # more than one wpo
         @issue = "Multiple WPOs present - this operation cannot be done."
         return
