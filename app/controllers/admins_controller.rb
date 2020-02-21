@@ -1253,8 +1253,8 @@ end
     elsif @slotwpoweeks.count == 0 # no wpo present
       if Slot.all.count == 0  # no slots at all in database - fresh database
         @newdatabase = true
-        if(params.has_key?['wpostartdate'] &&
-           params['wpostartdate'] != '')
+        logger.debug "wpostartdate: " + params['wpostartdate']
+        if(params.has_key?('wpostartdate') && params['wpostartdate'] != '')
           @wpostartdate = params['wpostartdate'].to_datetime.beginning_of_week
         end
       else
