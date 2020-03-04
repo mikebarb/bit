@@ -30,7 +30,7 @@ gem "sprockets-rails", '>=2.0.0'
 gem 'pg', '~>0.18'
 gem 'rails_12factor'
 # Use Puma as the app server
-gem 'puma', '~> 3.0'
+gem 'puma', '~> 3.12'
 # Use SCSS for stylesheets
 #gem 'sass-rails', '~> 4.0.3'
 gem 'sass-rails', '~> 5.0'
